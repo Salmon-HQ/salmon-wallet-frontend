@@ -26,37 +26,61 @@ WHITE = (0xFC, 0xFC, 0xFC)
 # neutral-1000 is the only legal ink there, at 6.50:1. Navy keeps white.
 INK_ON_CORAL = (0x07, 0x09, 0x11)
 
-# Каждый frame: (capture, eyebrow, headline, background)
-DECK = [
-    # (captura, eyebrow, headline, fondo, stores). The powerups surface is
-    # closed for the submission, so no Powerup frame is in the deck.
-    ("01-home",         "OPEN-SOURCE. SELF-CUSTODIAL.", "Your keys.\nYour coins.",         "coral", None),
-    ("02-send",         None, "Send to any wallet\nor .sol name",                          "navy",  None),
-    ("03-transactions", None, "Your assets and activity,\none view.",                      "coral", None),
-    ("04-collectibles", None, "Your NFTs,\nfront and center",                              "navy",  None),
-    ("05-nft-detail",   None, "Every collectible,\nin detail",                             "coral", None),
-    ("06-token-info",   None, "Live prices\nfor every token",                              "navy",  None),
-    # About is the most dispensable frame: version and links, not the product
-    # in use, which is what Play asks the captures to show. App Store only.
+# Each frame: (capture, eyebrow, headline, background). Captions count as
+# listing metadata: no "exchange", "trade" or "order", no prices or awards.
+HOME = ("01-home", "OPEN-SOURCE. SELF-CUSTODIAL.", "One wallet.\nOnly what you need.", "coral")
+SWAP = ("02-swap", None, "Swap tokens.\nSee every cost first.", "navy")
+PHONE_DECK = [
+    HOME,
+    SWAP,
+    ("03-powerups", None, "Switch Powerups on\nwhen you need them", "coral"),
+    ("04-payments", None, "Get paid\nwith a QR code", "navy"),
+    ("05-send", None, "Send to any wallet\nor .sol name", "coral"),
+    ("06-nfts", None, "Your NFTs,\nfront and center", "navy"),
+]
+# The U.K. listing must not show Swap: token detail takes its place, and the
+# catalogue is the one captured with Swap switched off for the region.
+UK_DECK = [
+    HOME,
+    ("07-token-info", None, "Live prices\nfor every token", "navy"),
+    ("03-powerups-uk", None, "Switch Powerups on\nwhen you need them", "coral"),
+    *PHONE_DECK[3:],
+]
+SEEKER_DECK = [
+    HOME,
+    ("02-seed-vault", None, "Your keys stay\nin Seed Vault", "navy"),
+    ("03-mwa-connect", None, "Connect to dApps\nin one tap", "coral"),
+    ("04-sign", None, "Know what you sign\nbefore you sign", "navy"),
+    ("05-skr", None, "Your SKR staking,\nin one place", "coral"),
+    ("06-swap", None, SWAP[2], "navy"),
 ]
 
 CWS_DECK = [
     ("01-home",         "Your whole portfolio,\none click away",  "coral"),
-    ("02-transactions", "Every transaction,\nin plain language",  "navy"),
-    ("03-collectibles", "Your NFTs,\nfront and center",           "coral"),
-    ("04-settings",     "Connect to dApps.\nSign with clarity.",  "navy"),
+    ("02-swap",         "Swap tokens.\nSee every cost first.",    "navy"),
+    ("03-powerups",     "Switch Powerups on\nwhen you need them", "coral"),
+    ("04-sign",         "Know what you sign\nbefore you sign",    "navy"),
     ("05-send",         "Send to any wallet\nor .sol name",       "coral"),
 ]
 
 STORES = {
-    # name:        (canvas,        source dir,      output dir)
-    "play":        ((1080, 1920), "android-staged", "play/phone"),
-    "app-store":   ((1320, 2868), "ios-staged",     "app-store/iphone-6.9"),
+    # name:          (canvas,       source dir,       output dir,              deck)
+    "play":          ((1080, 1920), "android-staged", "play/phone",            PHONE_DECK),
+    "app-store":     ((1320, 2868), "ios-staged",     "app-store/iphone-6.9",  PHONE_DECK),
+    "app-store-uk":  ((1320, 2868), "ios-staged",     "app-store/iphone-6.9-uk", UK_DECK),
+    "dapp-store":    ((1080, 1920), "seeker-staged",  "dapp-store/screenshots", SEEKER_DECK),
     # Apaisado: la captura es el side panel (400x800), asi que va a la derecha
     # y el caption ocupa la mitad izquierda — centrada en un lienzo horizontal
     # dejaria dos franjas vacias enormes.
-    "chrome-web-store": ((1280, 800), "extension-staged", "chrome-web-store/screenshots"),
+    "chrome-web-store": ((1280, 800), "extension-staged", "chrome-web-store/screenshots", CWS_DECK),
 }
+
+
+def fresh(out):
+    """An output dir holding only this run's frames: two generations side by side ship a mixed set."""
+    out.mkdir(parents=True, exist_ok=True)
+    for old in out.glob("*.png"):
+        old.unlink()
 
 
 def gradient(size, top, bot):
@@ -134,11 +158,11 @@ def draw_caption(im, eyebrow, headline, canvas_w, top_y, ink):
 
 
 def compose_landscape(store):
-    (cw, ch), src_dir, out_dir = STORES[store]
+    (cw, ch), src_dir, out_dir, deck = STORES[store]
     src, out = SRC / src_dir, ROOT / out_dir
-    out.mkdir(parents=True, exist_ok=True)
+    fresh(out)
     made = []
-    for i, (capture, headline, bg) in enumerate(CWS_DECK, start=1):
+    for i, (capture, headline, bg) in enumerate(deck, start=1):
         shot = src / f"{capture}.png"
         if not shot.exists():
             print(f"  !! falta {shot.name}"); continue
@@ -171,15 +195,13 @@ def compose_landscape(store):
 def compose(store):
     if store == "chrome-web-store":
         return compose_landscape(store)
-    (cw, ch), src_dir, out_dir = STORES[store]
+    (cw, ch), src_dir, out_dir, deck = STORES[store]
     src = SRC / src_dir
     out = ROOT / out_dir
-    out.mkdir(parents=True, exist_ok=True)
+    fresh(out)
     made = []
     n = 0
-    for capture, eyebrow, headline, bg, only in DECK:
-        if only and store not in only:
-            continue
+    for capture, eyebrow, headline, bg in deck:
         n += 1
         shot_path = src / f"{capture}.png"
         if not shot_path.exists():
