@@ -1,0 +1,92 @@
+appId: io.salmonwallet.app
+---
+# Solana dApp Store shots of a dApp asking the Seed Vault wallet to connect and
+# to sign a message. Run after capture-seeker.yaml, with the Solana Mobile
+# playground serving on the emulator (`npx solana-mobile playground`, then
+# `adb reverse tcp:4747 tcp:4747`). The connect is approved; the message is
+# never signed: its request is shot and cancelled.
+# A request left over from an earlier run holds the wallet: start from a clean
+# Chrome and a freshly launched wallet, past the dev launcher, before the dApp
+# calls it.
+- clearState: com.android.chrome
+- launchApp
+# dev-launcher-pass.yaml's two launcher steps; that subflow then waits for a
+# fresh install's welcome screen, and this wallet already exists.
+- runFlow:
+    when:
+      visible: 'Development Build'
+    commands:
+      - tapOn:
+          text: 'http://.*:8081'
+          optional: true
+      - waitForAnimationToEnd:
+          timeout: 60000
+- runFlow:
+    when:
+      visible: 'Development Build'
+    commands:
+      - openLink: 'salmonwallet://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081'
+      - waitForAnimationToEnd:
+          timeout: 60000
+- extendedWaitUntil:
+    visible:
+      id: 'lock-password-input|home-screen'
+    timeout: 60000
+- openLink: http://localhost:4747
+# Chrome's first-run screens, on an emulator where Chrome never opened.
+- runFlow:
+    when:
+      visible: 'Use without an account'
+    commands:
+      - tapOn: 'Use without an account'
+- runFlow:
+    when:
+      visible: 'No thanks'
+    commands:
+      - tapOn: 'No thanks'
+- extendedWaitUntil:
+    visible: 'Reset authorization'
+    timeout: 30000
+- tapOn: 'Reset authorization'
+- tapOn: 'Connect'
+- extendedWaitUntil:
+    visible:
+      id: 'mwa-lock|confirm-dialog-confirm|confirm-dialog-hold'
+    timeout: 30000
+- runFlow: ../../subflows/mwa-unlock.yaml
+- extendedWaitUntil:
+    visible:
+      id: 'confirm-dialog-confirm|confirm-dialog-hold'
+    timeout: 30000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: ${OUT}/03-mwa-connect
+- runFlow: ../../subflows/mwa-approve-sheet.yaml
+- runFlow:
+    when:
+      visible:
+        id: 'UsePin'
+    file: ../../subflows/seed-vault-confirm.yaml
+- extendedWaitUntil:
+    notVisible:
+      id: 'confirmation-window|confirm-dialog-confirm|confirm-dialog-hold|UsePin'
+    timeout: 20000
+
+# Reloading hands Maestro a fresh view of the page; the playground keeps its
+# authorization across reloads.
+- openLink: http://localhost:4747
+- tapOn: 'Sign Message'
+- extendedWaitUntil:
+    visible:
+      id: 'mwa-lock|confirm-dialog-confirm|confirm-dialog-hold'
+    timeout: 30000
+- runFlow: ../../subflows/mwa-unlock.yaml
+- extendedWaitUntil:
+    visible:
+      id: 'confirm-dialog-confirm|confirm-dialog-hold'
+    timeout: 30000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: ${OUT}/04-sign
+- tapOn:
+    id: 'confirm-dialog-cancel'

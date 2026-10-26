@@ -4,6 +4,7 @@
 #
 #   store-assets/staging/run.sh                    # global set
 #   STAGING_REGION=uk store-assets/staging/run.sh  # App Store U.K. set
+#   STAGING_REGION=seeker store-assets/staging/run.sh  # dApp Store set (SKR stake)
 here=${0:A:h}
 envfile=$here/../../apps/mobile/.maestro/.env.test
 [[ -f $envfile ]] || { print -u2 "missing $envfile (copy .env.test.example)"; exit 1; }

@@ -2,7 +2,9 @@ appId: io.salmonwallet.app
 ---
 # Store-screenshot capture flow (not part of the test suite). Runs against the
 # staging proxy (store-assets/staging, see store-assets/README.md); ${OUT} is
-# an absolute output dir. Seven captures: home, swap, powerups, payments, send,
-# nfts, token detail. capture-uk.yaml adds the App Store U.K. catalogue.
+# an absolute output dir. Seven captures: home, powerups, payments, send, nfts
+# and token detail, then Swap (swap-shot.yaml), all from wallet A.
+# capture-uk.yaml adds the App Store U.K. catalogue.
 - runFlow: ../../subflows/onboard-walletA.yaml
 - runFlow: capture-shots.yaml
+- runFlow: swap-shot.yaml
