@@ -83,7 +83,10 @@ const mockFlow = {
   setToken: jest.fn(),
   liveBalance: 2.5,
   nativeBalance: 2.5,
-  recipient: { address: 'Dest111111111111111111111111111111111111111' },
+  recipient: { address: 'Dest111111111111111111111111111111111111111' } as {
+    address: string;
+    name?: string;
+  },
   setRecipient: jest.fn(),
   amount: '',
   setAmount: jest.fn(),
@@ -104,6 +107,7 @@ const mockFlow = {
   request: null as unknown,
   startFromRequest: jest.fn(),
   clearRequest: jest.fn(),
+  recipientWarning: null as string | null,
 };
 
 /** The last `onScan` the recipient screen handed the scanner, and whether it was up. */
@@ -142,6 +146,7 @@ jest.mock('react-i18next', () => {
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('../../test-utils/themeTokens'),
   ...jest.requireActual('../../../../packages/shared/src/utils/sol-fees'),
+  ...jest.requireActual('../../../../packages/shared/src/utils/decimals'),
   ...jest.requireActual('../../../../packages/shared/src/utils/send-failure-report'),
   // What the review shows about a payment request is real: the suite pins it.
   ...jest.requireActual('../../../../packages/shared/src/utils/sendRequestReview'),
@@ -163,7 +168,8 @@ jest.mock('@salmon/shared', () => ({
     `≈ ${String((parseFloat(amount) || 0) * (price ?? 0))} USD`,
   SOL_CONSTANTS: { ADDRESS: 'So11111111111111111111111111111111111111112' },
   formatTokenAmount: (value: number) => String(value),
-  sanitizeDecimalInput: (value: string) => value,
+  // Real: the amount field's limit to the token's places is what it pins.
+  ...jest.requireActual('../../../../packages/shared/src/utils/decimal-input'),
   getShortAddress: (value: string) => (value ? `${value.slice(0, 4)}…${value.slice(-4)}` : null),
   chunkAddress: (value: string) => value,
   tabularNums: { native: { fontVariant: ['tabular-nums'] } },
@@ -272,6 +278,7 @@ jest.mock('../../src/components/TokenSelectList', () => {
 jest.mock('../../hooks/useTabChrome', () => ({
   useTabChrome: () => ({
     floatingBottomOffset: 0,
+    screenActionBottomPadding: 0,
     scrollBottomPadding: 0,
     insets: { top: 0, bottom: 0 },
   }),
@@ -510,6 +517,53 @@ describe('the review screen — what a payment request locks (spec 033 US3)', ()
   });
 });
 
+describe('the review screen — a recipient no key controls', () => {
+  afterEach(() => {
+    mockFlow.recipientWarning = null;
+  });
+
+  // Whichever way the recipient arrived, scanned or pasted requests included,
+  // the review warns and still lets the user confirm.
+  it('warns about an off-curve recipient without blocking the commit', () => {
+    mockFlow.request = null;
+    mockFlow.token = SOL_TOKEN;
+    mockFlow.amount = '1';
+    mockFlow.liveBalance = 2.5;
+    mockFlow.recipientWarning = 'send.validation.off_curve_no_funds';
+    render(<SendReviewScreen />);
+    expect(screen.getByTestId('send-review-recipient-warning')).toBeTruthy();
+    expect(screen.getByTestId('send-confirm-button').props.accessibilityState.disabled).toBe(false);
+  });
+
+  it('shows no warning for an ordinary recipient', () => {
+    mockFlow.request = null;
+    mockFlow.token = SOL_TOKEN;
+    mockFlow.amount = '1';
+    render(<SendReviewScreen />);
+    expect(screen.queryByTestId('send-review-recipient-warning')).toBeNull();
+  });
+});
+
+describe('the review screen — the address row', () => {
+  afterEach(() => {
+    mockFlow.recipient = { address: 'Dest111111111111111111111111111111111111111' };
+  });
+
+  it('shows no second address row when "To" already is the address', () => {
+    mockFlow.request = null;
+    render(<SendReviewScreen />);
+    expect(screen.getByTestId('send-review-to')).toBeTruthy();
+    expect(screen.queryByTestId('send-confirm-address')).toBeNull();
+  });
+
+  it('shows the address under a contact name', () => {
+    mockFlow.request = null;
+    mockFlow.recipient = { address: 'Dest111111111111111111111111111111111111111', name: 'Ana' };
+    render(<SendReviewScreen />);
+    expect(screen.getByTestId('send-confirm-address')).toBeTruthy();
+  });
+});
+
 describe('the recipient screen — 04A and 04B', () => {
   it('04A: an address the validator rejects blocks Continue and says why', () => {
     mockValidation = {
@@ -616,7 +670,8 @@ describe('the amount screen — the shortcuts', () => {
 
     fireEvent.press(screen.getByTestId(`send-shortcuts-${key}`));
 
-    expect(mockFlow.setAmount).toHaveBeenCalledWith(expected);
+    // The fill names itself, so the transfer can tell Max from a typed amount.
+    expect(mockFlow.setAmount).toHaveBeenCalledWith(expected, key);
   });
 
   it('MAX is the whole balance — it has never subtracted a fee', () => {
@@ -624,7 +679,28 @@ describe('the amount screen — the shortcuts', () => {
 
     fireEvent.press(screen.getByTestId('send-shortcuts-max'));
 
-    expect(mockFlow.setAmount).toHaveBeenCalledWith(String(mockFlow.liveBalance));
+    expect(mockFlow.setAmount).toHaveBeenCalledWith(String(mockFlow.liveBalance), 'max');
+  });
+
+  // A digit past the token's places is simply not taken (owner, option a).
+  it("takes no digit past the token's decimal places", () => {
+    mockFlow.token = USDC_TOKEN;
+    render(<SendAmountScreen />);
+
+    fireEvent.changeText(screen.getByTestId('send-amount-input'), '0.1234567');
+
+    expect(mockFlow.setAmount).toHaveBeenLastCalledWith('0.123456');
+    mockFlow.token = SOL_TOKEN;
+  });
+
+  it('takes no separator for a token with no decimals', () => {
+    mockFlow.token = { ...USDC_TOKEN, decimals: 0 };
+    render(<SendAmountScreen />);
+
+    fireEvent.changeText(screen.getByTestId('send-amount-input'), '5.');
+
+    expect(mockFlow.setAmount).toHaveBeenLastCalledWith('5');
+    mockFlow.token = SOL_TOKEN;
   });
 
   it('keeps Review dead on an empty amount', () => {
@@ -635,6 +711,16 @@ describe('the amount screen — the shortcuts', () => {
 
   it('keeps Review dead when the amount exceeds the balance', () => {
     mockFlow.amount = '99';
+
+    render(<SendAmountScreen />);
+
+    expect(screen.getByTestId('send-review-button').props.accessibilityState.disabled).toBe(true);
+  });
+
+  // The transfer could only round such an amount to another one: 2.5 of a
+  // whole-unit token used to go out as 3.
+  it('keeps Review dead on an amount finer than the token', () => {
+    mockFlow.amount = '0.0000000001';
 
     render(<SendAmountScreen />);
 

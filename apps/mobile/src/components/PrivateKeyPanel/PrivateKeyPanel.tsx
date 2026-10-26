@@ -12,7 +12,6 @@
 
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import * as Clipboard from 'expo-clipboard';
 import { GlobeIcon, iconSize } from '../../icons';
 import { useTranslation } from 'react-i18next';
 
@@ -43,6 +42,7 @@ import { ListRow } from '../ListRow';
 import { RevealCover } from '../RevealCover';
 import { WarningNotice } from '../WarningNotice';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
+import { secretClipboard } from '../../../hooks/useSecretClipboard';
 import { useSecretScreen } from '../../../hooks/useSecretScreen';
 import { BitcoinSvgIcon, EthereumSvgIcon, SolanaSvgIcon } from '../Icon/SvgIcons';
 
@@ -125,6 +125,7 @@ export function PrivateKeyPanel({
   const {
     revealedIndexes,
     copiedIndex,
+    secretCopiedIndex,
     copyFailedIndex,
     reauthIndex,
     setReauthIndex,
@@ -133,7 +134,8 @@ export function PrivateKeyPanel({
     handleReauthenticated,
     handleCopy,
   } = usePrivateKeyPanelLogic({
-    copyToClipboard: (privateKey) => Clipboard.setStringAsync(privateKey),
+    // Cleared 60 s later, or on the return to the app (useSecretClipboard).
+    copyToClipboard: (privateKey) => secretClipboard.copy(privateKey),
     onCopyError: (error) => console.error('Failed to copy private key:', error),
     biometricAvailable,
     verifyBiometric,
@@ -283,6 +285,11 @@ export function PrivateKeyPanel({
               {copyFailedIndex === index && (
                 <View testID={`private-key-copy-error-${index}`}>
                   <WarningNotice tone="error" title={t('settings.copy_failed')} />
+                </View>
+              )}
+              {secretCopiedIndex === index && (
+                <View testID={`private-key-clipboard-clears-${index}`}>
+                  <WarningNotice tone="info" title={t('settings.secret_copied')} />
                 </View>
               )}
             </Card>

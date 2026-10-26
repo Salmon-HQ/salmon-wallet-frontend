@@ -35,6 +35,8 @@ export interface UsePrivateKeyPanelLogicParams {
 export interface UsePrivateKeyPanelLogicResult {
   revealedIndexes: Set<number>;
   copiedIndex: CopyFeedbackKey | true | null;
+  /** The key last copied: the screen says when Salmon clears the clipboard. */
+  secretCopiedIndex: number | null;
   copyFailedIndex: number | null;
   reauthIndex: number | null;
   setReauthIndex: (index: number | null) => void;
@@ -55,12 +57,14 @@ export function usePrivateKeyPanelLogic({
   const [revealedIndexes, setRevealedIndexes] = useState<Set<number>>(new Set());
   const { copiedKey: copiedIndex, trigger: showCopied, reset: resetCopied } = useCopyFeedback();
   const [copyFailedIndex, setCopyFailedIndex] = useState<number | null>(null);
+  const [secretCopiedIndex, setSecretCopiedIndex] = useState<number | null>(null);
   const [reauthIndex, setReauthIndex] = useState<number | null>(null);
 
   const resetRevealState = useCallback(() => {
     setRevealedIndexes(new Set());
     resetCopied();
     setCopyFailedIndex(null);
+    setSecretCopiedIndex(null);
     setReauthIndex(null);
   }, [resetCopied]);
 
@@ -105,6 +109,7 @@ export function usePrivateKeyPanelLogic({
       try {
         await copyToClipboard(privateKey);
         setCopyFailedIndex(null);
+        setSecretCopiedIndex(index);
         showCopied(index);
       } catch (error) {
         // Surface the failure — a silent no-op looks like a successful copy.
@@ -118,6 +123,7 @@ export function usePrivateKeyPanelLogic({
   return {
     revealedIndexes,
     copiedIndex,
+    secretCopiedIndex,
     copyFailedIndex,
     reauthIndex,
     setReauthIndex,

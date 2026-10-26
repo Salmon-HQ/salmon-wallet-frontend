@@ -78,6 +78,12 @@ export interface UseAccountsState {
   error: string | null;
   /** Whether an error is present (derived from error !== null) */
   isError: boolean;
+  /**
+   * Set while the stored seeds have no password: the mainnet addresses those
+   * seeds derive, for the owner to recognise before choosing one
+   * (`protectWallet`). Nothing else may open until then. `null` otherwise.
+   */
+  unprotectedAddresses: string[] | null;
 }
 
 /**
@@ -94,6 +100,8 @@ export interface UseAccountsActions {
   unlockAccounts: (password: string) => Promise<boolean>;
   /** Unlock accounts with a cached derived key (for biometric unlock) */
   unlockWithCachedKey: (keyCache: DerivedKeyCache) => Promise<boolean>;
+  /** Encrypt a wallet stored without a password under a newly chosen one; whether it worked */
+  protectWallet: (password: string) => Promise<boolean>;
   /** Change the active account */
   changeAccount: (targetId: string) => Promise<void>;
   /** Clear the network switching flag */
@@ -114,6 +122,8 @@ export interface UseAccountsActions {
   removeAccount: (targetId: string, password?: string) => Promise<void>;
   /** Remove all accounts */
   removeAllAccounts: () => Promise<void>;
+  /** Drop the wallets held in memory, keys included, without touching storage */
+  forgetAccounts: () => void;
   /** Add a trusted app */
   addTrustedApp: (domain: string, app?: TrustedApp, targetNetworkId?: string) => Promise<void>;
   /** Remove a trusted app */
@@ -340,6 +350,7 @@ export function useAccounts(): [UseAccountsState, UseAccountsActions] {
   const [tokens, setTokens] = useState<CustomTokens>({});
   const [switchingNetwork, setSwitchingNetwork] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [unprotectedAddresses, setUnprotectedAddresses] = useState<string[] | null>(null);
 
   // --------------------------------------------------------------------------
   // Account Loading
@@ -364,12 +375,14 @@ export function useAccounts(): [UseAccountsState, UseAccountsActions] {
     unlockAccounts,
     unlockWithCachedKey,
     initAccounts,
+    protectWallet,
   } = useAccountsSecurity({
     setLocked,
     setRequiredLock,
     setReady,
     setLoaded,
     setError,
+    setUnprotectedAddresses,
     loadMetadata,
     loadAccounts,
     restoreAccount,
@@ -418,22 +431,24 @@ export function useAccounts(): [UseAccountsState, UseAccountsActions] {
     networkId,
   });
 
-  const { addAccount, editAccount, removeAccount, removeAllAccounts } = useAccountsMutations({
-    counter,
-    setCounter,
-    accounts,
-    setAccounts,
-    accountId,
-    setAccountId,
-    networkId,
-    setNetworkId,
-    setPathIndex,
-    setLocked,
-    setRequiredLock,
-    setTrustedApps,
-    setTokens,
-    formatAccountForStorage,
-  });
+  const { addAccount, editAccount, removeAccount, removeAllAccounts, forgetAccounts } =
+    useAccountsMutations({
+      counter,
+      setCounter,
+      accounts,
+      setAccounts,
+      accountId,
+      setAccountId,
+      networkId,
+      setNetworkId,
+      setPathIndex,
+      setLocked,
+      setRequiredLock,
+      setTrustedApps,
+      setTokens,
+      setUnprotectedAddresses,
+      formatAccountForStorage,
+    });
 
   const resetError = useCallback(() => setError(null), []);
 
@@ -457,6 +472,7 @@ export function useAccounts(): [UseAccountsState, UseAccountsActions] {
     switchingNetwork,
     error,
     isError: error !== null,
+    unprotectedAddresses,
   };
 
   const actions: UseAccountsActions = {
@@ -465,6 +481,7 @@ export function useAccounts(): [UseAccountsState, UseAccountsActions] {
     lockAccounts,
     unlockAccounts,
     unlockWithCachedKey,
+    protectWallet,
     changeAccount,
     clearSwitchingNetwork,
     changeNetwork,
@@ -475,6 +492,7 @@ export function useAccounts(): [UseAccountsState, UseAccountsActions] {
     editAccount,
     removeAccount,
     removeAllAccounts,
+    forgetAccounts,
     addTrustedApp,
     removeTrustedApp,
     importTokens,

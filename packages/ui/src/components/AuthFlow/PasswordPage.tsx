@@ -11,6 +11,7 @@ import {
   ApiError,
   createAccount,
   fontFamily,
+  fontWeight,
   fontSize,
   getMirrorNetworks,
   getScanNetworks,
@@ -29,7 +30,8 @@ import {
 import { LockIcon } from '../../icons';
 import { generateAccountName } from '@salmon/shared/utils/account';
 import { useSemantic } from '../../theme/ThemeProvider';
-import { PrimaryButton } from '../Button';
+import { PrimaryButton, SecondaryButton } from '../Button';
+import { ConfirmDialog } from '../ConfirmDialog';
 import { LoadingScreen } from '../LoadingScreen';
 import { PasswordInput, PasswordStrengthBar } from '../PasswordInput';
 import { ScreenHeader } from '../ScreenHeader';
@@ -60,13 +62,20 @@ const strengthContainer: CSSProperties = {
   paddingRight: spacing.xs,
 };
 
-export function PasswordPage({
-  mnemonic,
-  flowType,
-  onCreating,
-  onSuccess,
-  onBack,
-}: PasswordPageProps): React.ReactElement {
+const addressList: CSSProperties = {
+  width: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: spacing.xs,
+  marginBottom: spacing.lg,
+};
+
+export function PasswordPage(props: PasswordPageProps): React.ReactElement {
+  const { flowType, onSuccess } = props;
+  const protect = props.flowType === 'protect' ? props : null;
+  const mnemonic = props.flowType === 'protect' ? '' : props.mnemonic;
+  const onCreating = props.flowType === 'protect' ? undefined : props.onCreating;
+  const onBack = props.flowType === 'protect' ? undefined : props.onBack;
   const { t } = useTranslation();
   const { status, step, text } = useSemantic();
   const [state, actions] = useAccountsContext();
@@ -91,7 +100,25 @@ export function PasswordPage({
     margin: 0,
   };
 
-  const showSingleInput = state.requiredLock;
+  const addressText: CSSProperties = {
+    color: text.primary,
+    fontFamily: fontFamily.mono,
+    fontSize: fontSize.caption,
+    lineHeight: `${Math.round(fontSize.caption * lineHeight.normal)}px`,
+    margin: 0,
+    overflowWrap: 'anywhere',
+  };
+
+  const addressLabel: CSSProperties = {
+    ...termsText,
+    fontWeight: fontWeight.medium,
+    textAlign: 'left',
+  };
+
+  // Protecting asks for a new password, never an existing one.
+  const showSingleInput = !protect && state.requiredLock;
+  // A wallet the owner does not recognise leaves by removal, after its sheet.
+  const [removeOpen, setRemoveOpen] = useState(false);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -169,6 +196,15 @@ export function PasswordPage({
     // Yield to UI thread so LoadingScreen renders before heavy crypto derivation
     await new Promise((resolve) => setTimeout(resolve, YIELD_TO_PAINT_MS));
 
+    if (protect) {
+      const protectedNow = await actions.protectWallet(password);
+      pendingSuccessRef.current = protectedNow;
+      setSubmerged(protectedNow);
+      setError(protectedNow ? null : t('wallet.protect.error'));
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const accountName = generateAccountName(state.counter, t('wallet.name_template'));
       const scanNetworks = await getScanNetworks();
@@ -213,6 +249,7 @@ export function PasswordPage({
     mnemonic,
     onCreating,
     password,
+    protect,
     showSingleInput,
     state.counter,
     t,
@@ -241,9 +278,11 @@ export function PasswordPage({
 
   const buttonText = isChecking
     ? t('wallet.create.passwordChecking') || 'Checking...'
-    : flowType === 'create'
-      ? t('wallet.create_wallet') || 'CREATE WALLET'
-      : t('wallet.recover_wallet') || 'RECOVER ACCOUNT';
+    : protect
+      ? t('wallet.protect.button')
+      : flowType === 'create'
+        ? t('wallet.create_wallet') || 'CREATE WALLET'
+        : t('wallet.recover_wallet') || 'RECOVER ACCOUNT';
 
   return (
     <>
@@ -270,10 +309,14 @@ export function PasswordPage({
         chrome={
           <ScreenHeader
             onBack={onBack}
-            stepIndicator={{
-              totalSteps: flowType === 'create' ? CREATE_FLOW_STEPS : 2,
-              currentStep: flowType === 'create' ? CREATE_FLOW_STEPS : 2,
-            }}
+            stepIndicator={
+              protect
+                ? undefined
+                : {
+                    totalSteps: flowType === 'create' ? CREATE_FLOW_STEPS : 2,
+                    currentStep: flowType === 'create' ? CREATE_FLOW_STEPS : 2,
+                  }
+            }
             backDisabled={isLoading || isChecking}
           />
         }
@@ -289,12 +332,22 @@ export function PasswordPage({
           // and moving everything below it. Reserved and left empty now.
           showSingleInput ? undefined : (
             <OnboardingDescription>
-              {t('wallet.create.choose_a_password_body')}
+              {protect ? t('wallet.protect.body') : t('wallet.create.choose_a_password_body')}
             </OnboardingDescription>
           )
         }
         body={
           <>
+            {protect && (
+              <div style={addressList} data-testid="password-protect-addresses">
+                <p style={addressLabel}>{t('wallet.protect.addresses_label')}</p>
+                {protect.addresses.map((address) => (
+                  <p key={address} style={addressText}>
+                    {address}
+                  </p>
+                ))}
+              </div>
+            )}
             <div style={inputContainer}>
               <PasswordInput
                 testID="password-input"
@@ -343,20 +396,35 @@ export function PasswordPage({
           </>
         }
         assist={
-          <p style={termsText}>
-            {flowType === 'recover'
-              ? t('wallet.recover.terms_prefix')
-              : t('wallet.create.terms_prefix')}
-            <a
-              data-testid="password-terms-link"
-              href="https://salmonwallet.io/terms"
-              target="_blank"
-              rel="noreferrer"
-              style={{ color: step.active, cursor: 'pointer', textDecoration: 'none' }}
+          protect ? undefined : (
+            <p style={termsText}>
+              {flowType === 'recover'
+                ? t('wallet.recover.terms_prefix')
+                : t('wallet.create.terms_prefix')}
+              <a
+                data-testid="password-terms-link"
+                href="https://salmonwallet.io/terms"
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: step.active, cursor: 'pointer', textDecoration: 'none' }}
+              >
+                {t('general.terms_and_conditions')}
+              </a>
+            </p>
+          )
+        }
+        secondary={
+          protect ? (
+            <SecondaryButton
+              tone="danger"
+              onPress={() => setRemoveOpen(true)}
+              disabled={isLoading || isChecking}
+              fullWidth
+              testID="password-protect-remove-button"
             >
-              {t('general.terms_and_conditions')}
-            </a>
-          </p>
+              {t('wallet.protect.remove_button')}
+            </SecondaryButton>
+          ) : undefined
         }
         action={
           <PrimaryButton
@@ -371,13 +439,28 @@ export function PasswordPage({
         }
       />
 
+      {protect && (
+        <ConfirmDialog
+          visible={removeOpen}
+          onClose={() => setRemoveOpen(false)}
+          title={t('wallet.protect.remove_title')}
+          message={t('wallet.protect.remove_message')}
+          confirmText={t('settings.confirm_remove')}
+          cancelText={t('actions.cancel')}
+          isDanger
+          onConfirm={protect.onRemoveWallet}
+        />
+      )}
+
       {held && (
         <LoadingScreen
           visible={isLoading}
           title={
-            flowType === 'recover'
-              ? t('wallet.recover.recovering_account')
-              : t('wallet.create.creating_account')
+            protect
+              ? t('wallet.protect.protecting')
+              : flowType === 'recover'
+                ? t('wallet.recover.recovering_account')
+                : t('wallet.create.creating_account')
           }
           subtitle={t('wallet.create.securing_wallet')}
           showTips

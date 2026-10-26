@@ -51,10 +51,13 @@ jobs:
       - name: Format check
         run: pnpm format:check
 
-      # Seed phrases and keypairs in tracked files. GitHub's secret scanning
-      # knows API tokens, not BIP39.
+      # Seed phrases and private keys in tracked files. GitHub's secret
+      # scanning knows API tokens, not BIP39 or WIF. The detector's own
+      # fixtures run first so the gate cannot silently stop catching things.
       - name: No wallet material in the tree
-        run: pnpm check:no-secrets
+        run: |
+          node --test scripts/check-no-secrets.test.mjs
+          pnpm check:no-secrets
 
       # test:coverage, not test: every package carries a coverage floor in its
       # vitest/jest config (a ratchet — set just under the measured value, only

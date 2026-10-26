@@ -4,8 +4,9 @@
  * the window. Approval CONTENT — what each page shows and signs — stays in
  * the page; only the plumbing lives here.
  */
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { getAnalytics, trackEvent } from '@salmon/shared';
+import { USER_REJECTED_ERROR } from '../../utils/types';
 
 export const BACKGROUND_CHANNEL = 'salmon_extension_background_channel';
 
@@ -29,9 +30,15 @@ export function trackDAppApproval(event: DAppApprovalEvent): void {
 interface UseDAppApprovalParams {
   requestId: string | number;
   onDismiss: (approved: boolean) => void;
+  /**
+   * Signing requests only: the account the background checked the site's
+   * grant against (named in this window's URL), and the one that would sign
+   * now. When they differ the request is refused before anything is shown.
+   */
+  binding?: { approved: string | null; active: string | undefined };
 }
 
-export function useDAppApproval({ requestId, onDismiss }: UseDAppApprovalParams) {
+export function useDAppApproval({ requestId, onDismiss, binding }: UseDAppApprovalParams) {
   const [loading, setLoading] = useState(false);
 
   const sendToBackground = useCallback(
@@ -47,7 +54,7 @@ export function useDAppApproval({ requestId, onDismiss }: UseDAppApprovalParams)
   );
 
   const reject = useCallback(() => {
-    sendToBackground({ error: 'User rejected the request' });
+    sendToBackground({ error: USER_REJECTED_ERROR });
     onDismiss(false);
   }, [onDismiss, sendToBackground]);
 
@@ -90,5 +97,14 @@ export function useDAppApproval({ requestId, onDismiss }: UseDAppApprovalParams)
     [onDismiss, sendToBackground]
   );
 
-  return { loading, setLoading, sendToBackground, reject, approve };
+  // The same refusal the background gives a site whose grant names another
+  // account: it has to connect again.
+  const refused = !!binding?.active && binding.active !== binding.approved;
+  useEffect(() => {
+    if (!refused) return;
+    sendToBackground({ error: 'Not connected' });
+    onDismiss(false);
+  }, [refused, sendToBackground, onDismiss]);
+
+  return { loading, setLoading, sendToBackground, reject, approve, refused };
 }

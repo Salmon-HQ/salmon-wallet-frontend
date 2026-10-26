@@ -14,6 +14,7 @@ import {
   formatTokenAmount,
   getShortAddress,
   getSolShortfall,
+  isSendableAmount,
   spacing,
   useFiatLine,
   type BlockchainType,
@@ -80,11 +81,12 @@ export function StepAmount({
     });
   }, [blockchain, nativeBalance, token.address]);
 
-  const isValid = useMemo(() => {
-    const numAmount = parseFloat(amount);
-    const amountValid = !isNaN(numAmount) && numAmount > 0 && numAmount <= tokenBalance;
-    return amountValid && !solShortfall;
-  }, [amount, tokenBalance, solShortfall]);
+  const isValid = useMemo(
+    () =>
+      isSendableAmount(amount, tokenBalance, token.decimals ?? SOL_CONSTANTS.DECIMALS) &&
+      !solShortfall,
+    [amount, tokenBalance, token.decimals, solShortfall]
+  );
 
   // The balance fills; a fill stays lit until the user types over it.
   const shortcuts = useAmountShortcuts({
@@ -138,6 +140,7 @@ export function StepAmount({
         testID="send-amount"
         value={amount}
         onChangeValue={shortcuts.onAmountChange}
+        maxDecimals={token.decimals ?? SOL_CONSTANTS.DECIMALS}
         focused={shortcuts.selected !== ''}
         subtext={fiatDisplay}
       />
@@ -155,7 +158,9 @@ export function StepAmount({
       {/* Who this pays, restated where the amount is decided. */}
       <Card padding="sm" gap={spacing.sm} testID="send-amount-recipient">
         <KeyValueRow label={t('transactions.to')} value={recipient.name ?? recipientShort} />
-        <KeyValueRow label={t('send.screens.address')} value={recipientShort} />
+        {!!recipient.name && (
+          <KeyValueRow label={t('send.screens.address')} value={recipientShort} />
+        )}
       </Card>
 
       {/* What the transfer costs and how long it takes. */}

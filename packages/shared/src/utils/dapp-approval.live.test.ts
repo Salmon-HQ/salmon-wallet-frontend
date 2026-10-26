@@ -38,7 +38,7 @@ import {
   setTransactionMessageFeePayerSigner,
   setTransactionMessageLifetimeUsingBlockhash,
 } from '@solana/kit';
-import { getAddMemoInstruction } from '@solana-program/memo';
+import { getAddMemoInstruction, LEGACY_MEMO_PROGRAM_ADDRESS_V3 } from '@solana-program/memo';
 import { getTransferSolInstruction } from '@solana-program/system';
 
 import { approveSolanaTransactionRequest, previewSolanaApprovalEffects } from './dapp-approval';
@@ -100,7 +100,11 @@ live('v1 transaction through the approval path (live devnet)', () => {
               destination: RECIPIENT,
               amount: TRANSFER_LAMPORTS,
             }),
-            getAddMemoInstruction({ memo: 'salmon-v1-approval-'.repeat(90) }),
+            // Memo v3: the dApp preview holds the upgradeable v4.
+            getAddMemoInstruction(
+              { memo: 'salmon-v1-approval-'.repeat(90) },
+              { programAddress: LEGACY_MEMO_PROGRAM_ADDRESS_V3 }
+            ),
           ],
           m
         ),

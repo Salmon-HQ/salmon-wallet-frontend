@@ -268,6 +268,7 @@ export function SendPage({
             nftError={nftError}
             request={flow.request}
             liveBalance={flow.liveBalance}
+            recipientWarning={flow.recipientWarning}
           />
         )}
 

@@ -41,6 +41,7 @@ Refines the repo-root `AGENTS.md` (canonical rules) for this app.
   extension until they accept it. CI compares the built manifest with
   `manifest-permissions.json`; refresh it on purpose, and say why in the PR:
   `pnpm --filter @salmon/extension build && pnpm check:manifest --write`.
-- Firefox is linted with `web-ext` (pinned by version in
-  `.github/workflows/build-extension.yml`; bump by hand) and rebuilt twice to
-  prove determinism, because AMO rebuilds from `salmon-wallet-source.zip`.
+- Releases ship Chrome only: `.github/workflows/build-extension.yml` builds,
+  attests and publishes the Chrome zip and the source archive. The Firefox
+  build (`build:firefox:prod`) stays a local command; CI neither builds nor
+  lints it.

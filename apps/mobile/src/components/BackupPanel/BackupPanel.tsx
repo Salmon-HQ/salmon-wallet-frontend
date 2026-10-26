@@ -12,7 +12,6 @@
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import * as Clipboard from 'expo-clipboard';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -32,6 +31,7 @@ import { ConfirmSheet } from '../ConfirmSheet';
 import { RevealCover } from '../RevealCover';
 import { SeedWordGrid } from '../SeedPhrase';
 import { WarningNotice } from '../WarningNotice';
+import { secretClipboard } from '../../../hooks/useSecretClipboard';
 import { useSecretScreen } from '../../../hooks/useSecretScreen';
 import { useThemedStyles } from '../../theme/useThemedStyles';
 
@@ -64,13 +64,15 @@ export function BackupPanel({ onBack, biometricAvailable, verifyBiometric }: Bac
     reauthVisible,
     setReauthVisible,
     copied,
+    secretCopied,
     copyFailed,
     handleReveal,
     handleReauthenticated,
     handleCopy,
   } = useBackupPanelLogic({
     activeAccount,
-    copyToClipboard: (mnemonic) => Clipboard.setStringAsync(mnemonic),
+    // Cleared 60 s later, or on the return to the app (useSecretClipboard).
+    copyToClipboard: (mnemonic) => secretClipboard.copy(mnemonic),
     onCopyError: (error) => console.error('Failed to copy seed phrase:', error),
     biometricAvailable,
     verifyBiometric,
@@ -112,6 +114,12 @@ export function BackupPanel({ onBack, biometricAvailable, verifyBiometric }: Bac
       )}
 
       {copyFailed && <WarningNotice tone="error" title={t('settings.copy_failed')} />}
+
+      {secretCopied && (
+        <View testID="backup-seed-clipboard-clears">
+          <WarningNotice tone="info" title={t('settings.secret_copied')} />
+        </View>
+      )}
 
       <View style={styles.actions}>
         <SecondaryButton

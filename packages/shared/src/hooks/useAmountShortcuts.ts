@@ -11,13 +11,14 @@
  */
 import { useCallback, useMemo, useState } from 'react';
 import type { ChipOption } from '../types/ui/chip';
+import { fromBaseUnits, toBaseUnits } from '../utils/decimals';
 
-/** `1` is MAX — the whole balance. */
+/** Whole percents of the balance, so a fill is computed on integers; `100` is MAX. */
 export const AMOUNT_SHORTCUTS = [
-  { key: '25', value: 0.25 },
-  { key: '50', value: 0.5 },
-  { key: '75', value: 0.75 },
-  { key: 'max', value: 1 },
+  { key: '25', percent: 25 },
+  { key: '50', percent: 50 },
+  { key: '75', percent: 75 },
+  { key: 'max', percent: 100 },
 ] as const;
 
 export type AmountShortcutKey = (typeof AMOUNT_SHORTCUTS)[number]['key'];
@@ -27,7 +28,12 @@ export interface UseAmountShortcutsParams {
   balance: number | undefined;
   /** Token decimals the fill is truncated to (never rounded up past the balance). */
   decimals: number | undefined;
-  setAmount: (amount: string) => void;
+  /**
+   * Receives every amount the field shows. A fill also names itself, so the
+   * send can tell Max — the whole balance — from an amount that happens to
+   * equal it.
+   */
+  setAmount: (amount: string, shortcut?: AmountShortcutKey) => void;
   /** Translated label for the whole-balance fill. */
   maxLabel: string;
 }
@@ -62,10 +68,12 @@ export function useAmountShortcuts({
   const select = useCallback(
     (key: string) => {
       const option = AMOUNT_SHORTCUTS.find((shortcut) => shortcut.key === key);
-      if (!option || balance === undefined) return;
-      const scale = 10 ** (decimals ?? 9);
-      const truncated = Math.floor(balance * option.value * scale) / scale;
-      setAmount(truncated > 0 ? truncated.toString() : '0');
+      if (!option || balance === undefined || !(Number.isFinite(balance) && balance >= 0)) return;
+      // On integers, so the fill never loses its last unit to floating point
+      // (1.15 * 1e6 is 1149999.9999999998).
+      const places = decimals ?? 9;
+      const units = (toBaseUnits(balance, places) * BigInt(option.percent)) / 100n;
+      setAmount(fromBaseUnits(units, places), option.key);
       setSelected(key);
     },
     [balance, decimals, setAmount]

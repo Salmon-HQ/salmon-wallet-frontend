@@ -44,7 +44,9 @@ export function TransferReceipt({
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
   const { status } = useSemantic();
-  const { floatingBottomOffset } = useTabChrome();
+  // Both hosts (the send and NFT success screens) own the bottom inset with
+  // their SafeAreaView; the action row adds only the air above it.
+  const { screenActionBottomPadding } = useTabChrome();
 
   // The haptic is the whole of the arrival: the receipt is simply there,
   // complete, the frame it mounts. When the flow is still settling, the
@@ -83,7 +85,7 @@ export function TransferReceipt({
         </Card>
       </View>
 
-      <View style={[styles.action, { paddingBottom: floatingBottomOffset }]}>
+      <View style={[styles.action, { paddingBottom: screenActionBottomPadding }]}>
         {explorerUrl && !settling ? (
           <SecondaryButton
             testID="tx-success-explorer-link"

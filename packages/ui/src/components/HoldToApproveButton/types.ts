@@ -4,6 +4,8 @@ export interface HoldToApproveButtonProps {
   loading?: boolean;
   children: string;
   testID?: string;
+  /** Id of an element that describes the button, e.g. why it is disabled. */
+  ariaDescribedBy?: string;
   /**
    * Which control the hold wraps. `secondary` for a held action that is not
    * the screen's committing one — the seed-phrase copy, for instance. The

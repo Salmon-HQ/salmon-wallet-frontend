@@ -21,7 +21,6 @@ import {
   fontWeight,
   getInitials,
   getShortAddress,
-  lineHeight,
   spacing,
   tabularNums,
   useAccountsContext,
@@ -68,7 +67,13 @@ export function DerivedAccountsSheet({
     <BottomSheetContainer
       visible={visible}
       onClose={scanning ? IGNORE_DISMISS : onDismiss}
-      title={<SheetTitle>{title}</SheetTitle>}
+      title={
+        <SheetTitle
+          subtitle={!scanning && rows.length > 0 ? t('wallet.derived.found_body') : undefined}
+        >
+          {title}
+        </SheetTitle>
+      }
       testID={testID}
       style={style}
       className={className}
@@ -94,20 +99,7 @@ export function DerivedAccountsSheet({
           />
         ) : (
           <>
-            <span
-              style={{
-                fontFamily: fontFamily.sans,
-                fontWeight: fontWeight.medium,
-                fontSize: fontSize.body,
-                lineHeight: `${fontSize.body * lineHeight.snug}px`,
-                color: semantic.text.secondary,
-                textAlign: 'center',
-              }}
-            >
-              {t('wallet.derived.found_body')}
-            </span>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.md }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.xl }}>
               {rows.map(({ index, address, balanceFormatted, name }) => {
                 const isChecked = checked.includes(index);
                 return (

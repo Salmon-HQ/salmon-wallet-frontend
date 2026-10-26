@@ -54,12 +54,18 @@ export function PaymentsAskSheet({
           showsVerticalScrollIndicator={false}
         >
           <Pressable onPress={Keyboard.dismiss} accessible={false} style={layout.content}>
-            <SectionLabel variant="caps">{form.amountLabel}</SectionLabel>
-            <AmountEntryCard testID="payments-amount" {...form.amountCard} {...focus} />
-            <SectionLabel variant="caps">{form.noteLabel}</SectionLabel>
-            <TextField testID="payments-note" {...form.noteField} />
-            <SectionLabel variant="caps">{form.expiryLabel}</SectionLabel>
-            <ChipGroup testID="payments-expiry" {...form.expiryChips} />
+            <View style={layout.field}>
+              <SectionLabel variant="caps">{form.amountLabel}</SectionLabel>
+              <AmountEntryCard testID="payments-amount" {...form.amountCard} {...focus} />
+            </View>
+            <View style={layout.field}>
+              <SectionLabel variant="caps">{form.noteLabel}</SectionLabel>
+              <TextField testID="payments-note" {...form.noteField} />
+            </View>
+            <View style={layout.field}>
+              <SectionLabel variant="caps">{form.expiryLabel}</SectionLabel>
+              <ChipGroup testID="payments-expiry" {...form.expiryChips} />
+            </View>
             {form.errorRow && <KeyValueRow testID="payments-error" {...form.errorRow} />}
           </Pressable>
         </ScrollView>
@@ -81,13 +87,19 @@ const layout = StyleSheet.create({
   scroll: {
     flex: 1,
   },
+  // 12 under the sheet's title, 20 between fields (the component gap,
+  // DESIGN.md §Layout), 12 between a field and its label.
   content: {
-    paddingHorizontal: s(spacing['2xl']),
+    paddingHorizontal: s(spacing.screenGutter),
+    paddingTop: vs(spacing.md),
     paddingBottom: vs(spacing.md),
+    gap: vs(spacing.xl),
+  },
+  field: {
     gap: vs(spacing.md),
   },
   footer: {
-    paddingHorizontal: s(spacing['2xl']),
+    paddingHorizontal: s(spacing.screenGutter),
     paddingTop: vs(spacing.sm),
   },
 });

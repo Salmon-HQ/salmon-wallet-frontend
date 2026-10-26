@@ -45,4 +45,18 @@ describe('SheetTitle', () => {
     expect(screen.getByTestId('leading-icon')).toBeTruthy();
     expect(screen.getByText('Warning')).toBeTruthy();
   });
+
+  // The subtitle is the header's, never a loose line in the body.
+  it('renders the subtitle under the title, centred in the secondary voice', () => {
+    renderInMode(
+      'dark',
+      <SheetTitle subtitle="Drag to change the order.">Arrange tabs</SheetTitle>
+    );
+
+    const title = screen.getByText('Arrange tabs');
+    const subtitle = screen.getByText('Drag to change the order.');
+    expect(title.compareDocumentPosition(subtitle) & 4).toBeTruthy();
+    expect(subtitle.style.textAlign).toBe('center');
+    expect(subtitle.style.color).toBe(asRenderedColor(createSemantic('dark').text.secondary));
+  });
 });

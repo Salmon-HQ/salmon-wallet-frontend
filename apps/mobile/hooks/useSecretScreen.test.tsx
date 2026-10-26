@@ -6,14 +6,16 @@
  * screenshot, and one that releases too early re-exposes key material while
  * a sibling secret component is still mounted. Capture prevention is
  * Android-only — on iOS the workaround behind it blacks out the live screen
- * on some devices (expo/expo#24041), so iOS gets only the app-switcher blur.
+ * on some devices (expo/expo#24041), so iOS gets only the app-switcher blur,
+ * which the root turns on for the whole app (`useAppSwitcherProtection`).
  */
+import React from 'react';
 import { Text } from 'react-native';
-import { render } from '@testing-library/react-native';
+import { act, render } from '@testing-library/react-native';
 
 const mockPreventScreenCaptureAsync = jest.fn((_key: string) => Promise.resolve());
 const mockAllowScreenCaptureAsync = jest.fn((_key: string) => Promise.resolve());
-const mockEnableAppSwitcherProtectionAsync = jest.fn(() => Promise.resolve());
+const mockEnableAppSwitcherProtectionAsync = jest.fn((_intensity?: number) => Promise.resolve());
 const mockDisableAppSwitcherProtectionAsync = jest.fn(() => Promise.resolve());
 
 // Mirrors the real module's keyed refcounting so the test exercises the key
@@ -38,17 +40,23 @@ jest.mock('expo-screen-capture', () => {
       }
       return Promise.resolve();
     },
-    enableAppSwitcherProtectionAsync: () => mockEnableAppSwitcherProtectionAsync(),
+    enableAppSwitcherProtectionAsync: (intensity?: number) =>
+      mockEnableAppSwitcherProtectionAsync(intensity),
     disableAppSwitcherProtectionAsync: () => mockDisableAppSwitcherProtectionAsync(),
   };
 });
 
 import { Platform } from 'react-native';
-import { useSecretScreen, __resetAppSwitcherRefCountForTests } from './useSecretScreen';
+import { useAppSwitcherProtection, useSecretScreen } from './useSecretScreen';
 
 function SecretScreen({ label = 'test-secret' }: { label?: string }) {
   useSecretScreen(label);
   return <Text>secret</Text>;
+}
+
+function AppRoot() {
+  useAppSwitcherProtection();
+  return <Text>app</Text>;
 }
 
 describe('useSecretScreen', () => {
@@ -63,7 +71,6 @@ describe('useSecretScreen', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    __resetAppSwitcherRefCountForTests();
   });
 
   it('requests screen capture protection while mounted and releases it on unmount', () => {
@@ -115,22 +122,60 @@ describe('useSecretScreen', () => {
       Platform.OS = originalOS;
     });
 
-    it('enables the app switcher blur once and disables it after the last unmount', () => {
-      const first = render(<SecretScreen label="ios-a" />);
-      const second = render(<SecretScreen label="ios-b" />);
-
-      // Reference counted: enabled once, not once per component.
+    // The blur covers the whole app from the root (balances and the address
+    // were in the app-switcher snapshot). A secret screen leaving must not
+    // switch it off underneath the rest of the app.
+    // The blur covers the whole app for the life of the process: a secret
+    // screen leaving, or the root remounting after an error, never switches it
+    // off, and it is turned on once (each call adds another native observer).
+    it('turns the full blur on once for the process, and nothing turns it off', () => {
+      const root = render(<AppRoot />);
       expect(mockEnableAppSwitcherProtectionAsync).toHaveBeenCalledTimes(1);
+      expect(mockEnableAppSwitcherProtectionAsync).toHaveBeenCalledWith(1);
+
+      const secret = render(<SecretScreen label="ios-a" />);
+      secret.unmount();
       // Never on iOS: the secure-field workaround blacks out the live screen
       // on some devices (expo/expo#24041).
       expect(mockPreventScreenCaptureAsync).not.toHaveBeenCalled();
 
-      first.unmount();
+      root.unmount();
+      render(<AppRoot />);
+      expect(mockEnableAppSwitcherProtectionAsync).toHaveBeenCalledTimes(1);
       expect(mockDisableAppSwitcherProtectionAsync).not.toHaveBeenCalled();
-
-      second.unmount();
-      expect(mockDisableAppSwitcherProtectionAsync).toHaveBeenCalledTimes(1);
     });
+  });
+
+  // A refused native call is not protection: the next mount tries again,
+  // and once it has worked nothing calls it a second time.
+  it('tries the blur again after a refused call, and stops once it is on', async () => {
+    const originalOS = Platform.OS;
+    Platform.OS = 'ios';
+    // A fresh copy of the hook's module (its process-wide flag starts empty),
+    // sharing this test's React and React Native.
+    let fresh: () => void = () => undefined;
+    function FreshRoot() {
+      fresh();
+      return <Text>app</Text>;
+    }
+    const sharedReact = React;
+    const sharedNative = jest.requireActual('react-native');
+    jest.isolateModules(() => {
+      jest.doMock('react', () => sharedReact);
+      jest.doMock('react-native', () => sharedNative);
+      fresh = require('./useSecretScreen').useAppSwitcherProtection;
+    });
+    mockEnableAppSwitcherProtectionAsync.mockRejectedValueOnce(new Error('no key window'));
+
+    render(<FreshRoot />).unmount();
+    await act(async () => {});
+    render(<FreshRoot />).unmount();
+    await act(async () => {});
+    render(<FreshRoot />);
+    await act(async () => {});
+
+    expect(mockEnableAppSwitcherProtectionAsync).toHaveBeenCalledTimes(2);
+    Platform.OS = originalOS;
   });
 
   describe('on Android', () => {
@@ -143,6 +188,7 @@ describe('useSecretScreen', () => {
     });
 
     it('skips the iOS-only app switcher call, since FLAG_SECURE already blanks Recents', () => {
+      render(<AppRoot />);
       const screen = render(<SecretScreen label="android" />);
 
       expect(mockPreventScreenCaptureAsync).toHaveBeenCalledTimes(1);

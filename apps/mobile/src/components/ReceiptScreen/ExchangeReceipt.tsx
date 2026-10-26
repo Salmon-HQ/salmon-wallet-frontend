@@ -402,7 +402,9 @@ const stylesFor = (t: Semantic) =>
       marginTop: 'auto',
       alignSelf: 'stretch',
       paddingTop: vs(spacing.md),
-      paddingBottom: vs(spacing['2xl']),
+      // The same air as every bottom action over a safe area that owns the
+      // inset (useTabChrome's screenActionBottomPadding).
+      paddingBottom: vs(spacing.screenBottom),
       gap: vs(spacing.md),
     },
   });

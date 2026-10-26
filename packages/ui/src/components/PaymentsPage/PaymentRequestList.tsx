@@ -26,7 +26,7 @@ export function PaymentRequestList({
     <div
       data-testid={testID}
       className={className}
-      style={{ display: 'flex', flexDirection: 'column', gap: spacing.screenGutter, ...style }}
+      style={{ display: 'flex', flexDirection: 'column', gap: spacing.xl, ...style }}
     >
       {rows.length === 0 ? (
         <StateBlock tone="empty" testID="payments-empty" {...empty} />

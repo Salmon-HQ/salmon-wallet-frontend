@@ -1,4 +1,4 @@
-import type { ViewStyle } from 'react-native';
+import type { AccessibilityActionEvent, AccessibilityActionInfo, ViewStyle } from 'react-native';
 import type {
   ButtonPropsBase,
   SecondaryButtonPropsBase,
@@ -7,11 +7,22 @@ import type {
 
 export type { SecondaryButtonTone } from '@salmon/shared';
 
-export interface PrimaryButtonProps extends ButtonPropsBase {
+/**
+ * Actions an assistive technology can perform on the control (React Native's
+ * accessibility actions). Mobile only: the hold-to-approve controls give
+ * Switch Access, Voice Access, Switch Control and Voice Control a way to
+ * commit without holding a finger down.
+ */
+interface AssistiveActions {
+  accessibilityActions?: AccessibilityActionInfo[];
+  onAccessibilityAction?: (event: AccessibilityActionEvent) => void;
+}
+
+export interface PrimaryButtonProps extends ButtonPropsBase, AssistiveActions {
   style?: ViewStyle;
 }
 
-export interface SecondaryButtonProps extends SecondaryButtonPropsBase {
+export interface SecondaryButtonProps extends SecondaryButtonPropsBase, AssistiveActions {
   style?: ViewStyle;
 }
 

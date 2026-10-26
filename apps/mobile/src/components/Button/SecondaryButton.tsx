@@ -36,6 +36,8 @@ export function SecondaryButton({
   trailingIcon,
   testID,
   accessibilityHint,
+  accessibilityActions,
+  onAccessibilityAction,
 }: SecondaryButtonProps) {
   const isDisabled = disabled || loading;
   const isDanger = tone === 'danger';
@@ -51,6 +53,8 @@ export function SecondaryButton({
       accessibilityLabel={children}
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: !!isDisabled, busy: !!loading }}
+      accessibilityActions={accessibilityActions}
+      onAccessibilityAction={onAccessibilityAction}
       onPress={onPress}
       disabled={isDisabled}
       activeOpacity={0.8}

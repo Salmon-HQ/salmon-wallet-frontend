@@ -10,13 +10,28 @@
  * account that is not the wallet's own is refused too.
  */
 import type { ProgramInstructionRule } from '../../core/verify';
-import { SYSTEM_PROGRAM, TOKEN_2022_PROGRAM, TOKEN_PROGRAM } from '../../core/verify';
+import {
+  ASSOCIATED_TOKEN_PROGRAM,
+  COMPUTE_BUDGET_INSTRUCTIONS,
+  COMPUTE_BUDGET_PROGRAM,
+  SYSTEM_PROGRAM,
+  TOKEN_2022_PROGRAM,
+  TOKEN_PROGRAM,
+} from '../../core/verify';
 
-/** SPL Token: CloseAccount (9, rent to the wallet), SyncNative (17), InitializeAccount3 (18). */
+/**
+ * SPL Token: CloseAccount (9), SyncNative (17), InitializeAccount3 (18). A
+ * close is of a token account this message creates for the wallet (its
+ * pass-through wrapped-SOL account) and pays the rent to the wallet: closing
+ * any other account would hand its rent back as if the swap had paid it.
+ */
 const TOKEN_RULE: ProgramInstructionRule = {
   width: 1,
   codes: [9, 17, 18],
-  binds: [{ code: 9, index: 1, mustBe: 'feePayer' }],
+  binds: [
+    { code: 9, index: 0, mustBe: 'ownAtaCreatedHere' },
+    { code: 9, index: 1, mustBe: 'feePayer' },
+  ],
 };
 
 export const SWAP_INSTRUCTIONS: Readonly<Record<string, ProgramInstructionRule>> = {
@@ -28,7 +43,26 @@ export const SWAP_INSTRUCTIONS: Readonly<Record<string, ProgramInstructionRule>>
   },
   [TOKEN_PROGRAM]: TOKEN_RULE,
   [TOKEN_2022_PROGRAM]: TOKEN_RULE,
+  [COMPUTE_BUDGET_PROGRAM]: COMPUTE_BUDGET_INSTRUCTIONS,
+  /**
+   * Associated Token: `createIdempotent` (1) only, paid by the wallet — what
+   * both providers emit. The owner is the wallet, or 0x's settlement account
+   * at most twice (`assertSwapAccountCreates` in core/verify); rent is allowed
+   * only for an account the swap opens and leaves open (`assertSwapPaysWallet`).
+   */
+  [ASSOCIATED_TOKEN_PROGRAM]: {
+    width: 1,
+    codes: [1],
+    binds: [{ code: 1, index: 0, mustBe: 'feePayer' }],
+  },
 };
 
 /** The largest slippage a build may carry; the backend defaults to 50. */
 export const MAX_SLIPPAGE_BPS = 1000;
+
+/**
+ * The largest Salmon fee a build may carry, in basis points. The fee is 50
+ * today (0.5%); the cap leaves room to change it without a wallet release
+ * while refusing a fee no one declared.
+ */
+export const MAX_SALMON_FEE_BPS = 100;

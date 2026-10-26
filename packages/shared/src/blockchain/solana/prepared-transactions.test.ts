@@ -1,9 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  address,
+  appendTransactionMessageInstruction,
+  compileTransactionMessage,
   createKeyPairSignerFromPrivateKeyBytes,
+  createTransactionMessage,
   getBase64Decoder,
   getCompiledTransactionMessageDecoder,
+  getCompiledTransactionMessageEncoder,
   getTransactionDecoder,
+  getTransactionEncoder,
+  setTransactionMessageFeePayer,
+  setTransactionMessageLifetimeUsingBlockhash,
+  type Blockhash,
 } from '@solana/kit';
 import {
   ADDRESS_LOOKUP_TABLE_PROGRAM_ADDRESS,
@@ -25,12 +34,11 @@ const nodeRefusal = () =>
 // ============================================================================
 
 /**
- * Unsigned v0 transaction carrying one address-table lookup and one System
- * instruction an NFT flow may carry. The instruction code matters: the flow's
- * expectation refuses the System instructions that move lamports.
+ * A table step: an unsigned v0 `ExtendLookupTable` of `LOOKUP_TABLE_ADDRESS`
+ * by the test wallet, the one instruction a table step carries.
  */
-const FIXTURE_B64 =
-  'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQABAoqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEBAgACDAAAAAABAAAAAAAAAAHtSSjGKNHCxurpAziQWZVhKVknOlxj+TY2wUYUrIc30QEAAA==';
+const TABLE_STEP_B64 =
+  'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQACBIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29c7UkoxijRwsbq6QM4kFmVYSlZJzpcY/k2NsFGFKyHN9EAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJ3pq+XM5t6yI0YkskERvUAAjCSZvYuU8EYJEmCAAAA4zLa+S+r7Oi2P/ekQAXl/f2a+hWHVrYcWpX5BLO40IEBAwQBAAACLAIAAAABAAAAAAAAAIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cAA==';
 
 /**
  * The work step: the same lookup, and an SPL Token `Burn` of `NFT_MINT` by the
@@ -191,10 +199,10 @@ describe('prepared-transactions', () => {
     await expect(
       signAndSendPreparedSolanaTransactions(
         account as never,
-        { transactions: [{ transaction: FIXTURE_B64, step: 'lookup_table_create' }] },
+        { transactions: [{ transaction: TABLE_STEP_B64, step: 'lookup_table_create' }] },
         BURN_NFT
       )
-    ).rejects.toThrow(/does not act on/);
+    ).rejects.toThrow(/invokes AddressLookupTab1e1111111111111111111111111/);
     expect(rpc.sendTransaction).not.toHaveBeenCalled();
   });
 
@@ -283,7 +291,7 @@ describe('prepared-transactions', () => {
     const response: PreparedNftTransactionResponse = {
       transactions: [
         {
-          transaction: FIXTURE_B64,
+          transaction: TABLE_STEP_B64,
           step: 'lookup_table_extend',
           lookupTableAddress: LOOKUP_TABLE_ADDRESS,
           expectedLookupTableAddressCount: 20,
@@ -348,5 +356,121 @@ describe('prepared-transactions', () => {
         BURN_NFT
       )
     ).rejects.toMatchObject({ cause });
+  });
+
+  describe('a multi-step flow is checked whole before anything is sent', () => {
+    const OTHER_TABLE = 'EkSnNWid2cvwEVnVx9aBqawnmiCNiDgp3gUdkDPTKN1N';
+    /** A table step by the test wallet carrying the given table instructions (0 create, 2 extend). */
+    async function tableStep(actions: { code: number; table: string }[]): Promise<string> {
+      const signer = await createKeyPairSignerFromPrivateKeyBytes(
+        new Uint8Array(32).fill(1),
+        false
+      );
+      let message = setTransactionMessageLifetimeUsingBlockhash(
+        { blockhash: FRESH_BLOCKHASH as Blockhash, lastValidBlockHeight: 1n },
+        setTransactionMessageFeePayer(signer.address, createTransactionMessage({ version: 0 }))
+      );
+      for (const { code, table } of actions) {
+        message = appendTransactionMessageInstruction(
+          {
+            programAddress: ADDRESS_LOOKUP_TABLE_PROGRAM_ADDRESS,
+            accounts: [
+              { address: address(table), role: 1 },
+              { address: signer.address, role: 2 },
+              { address: signer.address, role: 3 },
+              { address: address('11111111111111111111111111111111'), role: 0 },
+            ],
+            data: new Uint8Array([code, 0, 0, 0, ...new Array(9).fill(0)]),
+          } as never,
+          message
+        ) as never;
+      }
+      const messageBytes = getCompiledTransactionMessageEncoder().encode(
+        compileTransactionMessage(message)
+      );
+      return Buffer.from(
+        getTransactionEncoder().encode({
+          messageBytes: messageBytes as never,
+          signatures: { [signer.address]: null } as never,
+        })
+      ).toString('base64');
+    }
+    const refusesBeforeSending = async (
+      transactions: { transaction: string; step: string }[],
+      why: RegExp
+    ) => {
+      const rpc = createRpc();
+      const account = await createAccount({ rpc });
+      await expect(
+        signAndSendPreparedSolanaTransactions(account as never, { transactions }, BURN_NFT)
+      ).rejects.toThrow(why);
+      expect(rpc.sendTransaction).not.toHaveBeenCalled();
+    };
+
+    // A table step that lands spends rent even when the step after it is
+    // refused, so no step is sent until every step has passed.
+    it('sends no table step when the work step is refused', async () => {
+      await refusesBeforeSending(
+        [
+          { transaction: TABLE_STEP_B64, step: 'lookup_table_extend' },
+          { transaction: TABLE_STEP_B64, step: 'burn' },
+        ],
+        /invokes AddressLookupTab1e/
+      );
+    });
+
+    it('refuses table steps that act on more than one table', async () => {
+      await refusesBeforeSending(
+        [
+          {
+            transaction: await tableStep([{ code: 2, table: LOOKUP_TABLE_ADDRESS }]),
+            step: 'lookup_table_extend',
+          },
+          {
+            transaction: await tableStep([{ code: 2, table: OTHER_TABLE }]),
+            step: 'lookup_table_extend',
+          },
+          { transaction: NFT_WORK_B64, step: 'burn' },
+        ],
+        /more than one table/
+      );
+    });
+
+    it('refuses a table step carrying more than one table instruction', async () => {
+      const double = await tableStep([
+        { code: 2, table: LOOKUP_TABLE_ADDRESS },
+        { code: 2, table: LOOKUP_TABLE_ADDRESS },
+      ]);
+      await refusesBeforeSending(
+        [
+          { transaction: double, step: 'lookup_table_extend' },
+          { transaction: NFT_WORK_B64, step: 'burn' },
+        ],
+        /exactly one table instruction/
+      );
+    });
+
+    it('refuses a second create, or more extends than a table can hold', async () => {
+      const create = await tableStep([{ code: 0, table: LOOKUP_TABLE_ADDRESS }]);
+      const extend = await tableStep([{ code: 2, table: LOOKUP_TABLE_ADDRESS }]);
+      await refusesBeforeSending(
+        [
+          { transaction: create, step: 'lookup_table_create' },
+          { transaction: create, step: 'lookup_table_create' },
+          { transaction: NFT_WORK_B64, step: 'burn' },
+        ],
+        /at most one create/
+      );
+      await refusesBeforeSending(
+        [
+          ...Array.from({ length: 14 }, () => ({
+            transaction: extend,
+            step: 'lookup_table_extend',
+          })),
+          { transaction: NFT_WORK_B64, step: 'burn' },
+        ],
+        /at most one create/
+      );
+    });
   });
 });

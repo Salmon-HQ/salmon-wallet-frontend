@@ -29,7 +29,7 @@ vi.mock('../storage', () => ({
 import { initAnalytics, resetAnalytics, type AnalyticsClient } from './client';
 import { ANALYTICS_EVENTS } from './events';
 import { AnalyticsIngestRefusedError, createMemoryTransport } from './transport';
-import type { AnalyticsBatch, AnalyticsPlatform } from './types';
+import type { AnalyticsBatch, AnalyticsPlatform, AnalyticsProps } from './types';
 
 /** Lets any `void flush()` microtasks/promises settle. */
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -618,4 +618,54 @@ describe('AnalyticsClient build routing', () => {
 
     expect(postedTo()).toEqual([`${STAGING}/v1/events`]);
   });
+});
+
+describe('AnalyticsClient event time', () => {
+  // 2026-10-21 15:42:07.123 UTC.
+  const NOW = Date.UTC(2026, 9, 21, 15, 42, 7, 123);
+  const START_OF_DAY = Date.UTC(2026, 9, 21);
+  // Every event that follows an on-chain transaction, as the backend's
+  // `TRANSACTION_EVENTS` (src/analytics/event-schema.js) lists them.
+  const DAY_ONLY = [
+    'first_send_completed',
+    'send_completed',
+    'nft_sent',
+    'first_swap_completed',
+    'swap_completed',
+    'memo_sent',
+    'payment_request_paid',
+    'dapp_transaction_signed',
+  ] as const;
+  type Event = (typeof ANALYTICS_EVENTS)[number];
+  const PROPS: Partial<Record<Event, AnalyticsProps>> = {
+    send_completed: { chain: 'solana', success: true },
+    nft_sent: { chain: 'solana', success: false },
+    swap_completed: { from_chain: 'solana', to_chain: 'solana', success: true },
+    memo_sent: { success: true },
+  };
+
+  async function trackAt(event: Event) {
+    const transport = createMemoryTransport();
+    const client = initAnalytics({ platform: 'extension', appVersion: '3.0.0', transport });
+    await client.whenReady();
+    await client.setConsent(true);
+    vi.spyOn(Date, 'now').mockReturnValue(NOW);
+    client.track(event, PROPS[event] ?? {});
+    vi.mocked(Date.now).mockRestore();
+    await client.flush();
+    return transport.batches[0].events[0].ts;
+  }
+
+  // An event sent the moment a transaction lands, stamped to the millisecond,
+  // lines up with that transaction on the public chain.
+  it.each(DAY_ONLY)('stamps %s with its UTC day only', async (event) => {
+    expect(await trackAt(event)).toBe(START_OF_DAY);
+  });
+
+  it.each(ANALYTICS_EVENTS.filter((event) => !(DAY_ONLY as readonly Event[]).includes(event)))(
+    'keeps the exact time of %s, which no transaction follows',
+    async (event) => {
+      expect(await trackAt(event)).toBe(NOW);
+    }
+  );
 });

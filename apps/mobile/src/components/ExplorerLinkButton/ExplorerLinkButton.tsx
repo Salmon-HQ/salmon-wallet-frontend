@@ -144,7 +144,8 @@ const stylesFor = (_t: Semantic) =>
     content: {
       paddingHorizontal: s(spacing.screenGutter),
       paddingTop: vs(spacing.md),
-      gap: vs(spacing.md),
+      // The component gap (DESIGN.md §Layout): 20 between sibling rows.
+      gap: vs(spacing.xl),
     },
   });
 

@@ -247,6 +247,8 @@ export function useSendTransaction({
             symbol: params.token.symbol,
             memo: params.memo,
             references: params.references,
+            max: params.max,
+            amountText: params.amountText,
           }
         );
 

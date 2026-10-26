@@ -1,304 +1,338 @@
-/**
- * dApp events from Mobile Wallet Adapter (spec 042, FR-011–FR-013): one
- * prop-less event per request the user approved and the wallet answered, read
- * where it leaves the app; nothing for a decline, a closed sheet, a failed
- * signature or a refusal on Seed Vault's own screen.
- */
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import React from 'react';
+import { StyleSheet } from 'react-native';
+import { render, screen, waitFor, within } from '@testing-library/react-native';
+import { verifyCallingPackage } from '@solana-mobile/mobile-wallet-adapter-walletlib';
 
-import {
-  startTestAnalytics,
-  type SentEvent,
-} from '../../../../packages/shared/src/test-utils/analytics';
+import { MwaRequest } from './MwaRequest';
+
+const mockAddress = 'AKnL4NNf3DGWZJS6cPknBuEGnVsV4A4m5tgebLHaRSZ9';
+const mockOrigin = 'https://dapp.example';
+const mockToken = new Uint8Array([7, 7, 7, 7]);
+
+// `@solana/kit` is ESM Jest cannot load; the MWA helpers only use it inside
+// the signing functions, which these tests never reach.
+jest.mock('@solana/kit', () => ({}));
+jest.mock('@salmon/shared', () => {
+  const mwa = jest.requireActual('@salmon/shared/src/utils/mwa');
+  return {
+    // The detail cards are the kit's, drawn for real: what they say about who
+    // is asking is what these tests pin.
+    ...jest.requireActual('../../test-utils/themeTokens'),
+    ...mwa,
+    ...jest.requireActual('@salmon/shared/src/utils/address'),
+    decodeDAppMessage: (data: number[]) => ({ text: String.fromCharCode(...data) }),
+    // The transaction sheet's own preview is not under test: what is, is the
+    // site line it is handed and whether its confirm is held.
+    toSignAllTransactionsRequest: () => ({}),
+    useSolanaTransactionApproval: () => ({
+      feeSol: null,
+      parsingError: null,
+      effects: null,
+      effectsLoading: false,
+      details: null,
+    }),
+    dappTransactionDisplay: (input: { origin: string }) => ({ rows: [{ value: input.origin }] }),
+    dappTransactionGate: () => ({ requiresHold: false, canApprove: true }),
+    useAccountsContext: () => [
+      {
+        networkId: 'solana-mainnet',
+        activeAccount: { name: 'Savings' },
+        activeTrustedApps: {
+          [mockOrigin]: { address: mockAddress, authToken: mwa.encodeMwaAuthToken(mockToken) },
+        },
+      },
+      {},
+    ],
+  };
+});
 
 jest.mock('@solana-mobile/mobile-wallet-adapter-walletlib', () => ({
   __esModule: true,
-  MWARequestFailReason: { UserDeclined: 'USER_DECLINED', InvalidSignatures: 'INVALID_SIGNATURES' },
+  MWARequestFailReason: { UserDeclined: 'USER_DECLINED' },
   MWARequestType: {
     AuthorizeDappRequest: 'AUTHORIZE_DAPP',
-    ReauthorizeDappRequest: 'REAUTHORIZE_DAPP',
-    DeauthorizeDappRequest: 'DEAUTHORIZE_DAPP',
     SignMessagesRequest: 'SIGN_MESSAGES',
     SignTransactionsRequest: 'SIGN_TRANSACTIONS',
-    SignAndSendTransactionsRequest: 'SIGN_AND_SEND_TRANSACTIONS',
   },
   verifyCallingPackage: jest.fn().mockResolvedValue(true),
 }));
 
-const mockAddTrustedApp = jest.fn();
-const mockSignIn = jest.fn();
-const mockSignMessages = jest.fn();
-const mockSignTransactions = jest.fn();
-const mockSignAndSend = jest.fn();
-
-// The barrel drags the Solana stack in: the real analytics client, and the
-// signers and wallet state as stand-ins.
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('../../../../packages/shared/src/analytics'),
-  mwaPrecheck: () => ({ ok: true, origin: 'https://dapp.example' }),
-  useAccountsContext: () => [
-    { networkId: 'solana-mainnet', activeTrustedApps: [], activeAccount: { name: 'Main' } },
-    { addTrustedApp: mockAddTrustedApp, removeTrustedApp: jest.fn() },
-  ],
-  mwaDisplayName: () => 'Example',
-  mwaIconUrl: () => undefined,
-  getShortAddress: (address: string) => address,
-  newMwaAuthToken: () => new Uint8Array([7]),
-  encodeMwaAuthToken: () => 'token',
-  mwaAuthorizedAccount: (address: string) => ({ address }),
-  mwaSignIn: (...args: unknown[]) => mockSignIn(...args),
-  mwaSignMessages: (...args: unknown[]) => mockSignMessages(...args),
-  mwaSignTransactions: (...args: unknown[]) => mockSignTransactions(...args),
-  mwaSignAndSend: (...args: unknown[]) => mockSignAndSend(...args),
-  decodeDAppMessage: () => ({ text: 'Hello' }),
-  isSeedVaultError: (error: unknown) => (error as { seedVault?: boolean }).seedVault === true,
-  toSignAllTransactionsRequest: () => ({ method: 'signAllTransactions' }),
-  useSolanaTransactionApproval: () => ({
-    feeSol: null,
-    parsingError: null,
-    effects: null,
-    effectsLoading: false,
-    details: null,
+jest.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, options?: { origin?: string }) =>
+      options?.origin ? `${key} ${options.origin}` : key,
   }),
-  dappTransactionDisplay: () => ({}),
-  dappTransactionGate: () => ({ canApprove: true, requiresHold: false }),
-  spacing: { lg: 16 },
 }));
 
-jest.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
+jest.mock('../components/ConfirmSheet', () => ({
+  ConfirmSheet: (props: {
+    title: string;
+    message: string;
+    confirmText?: string;
+    requiresHold?: boolean;
+    confirmDisabled?: boolean;
+    bedrock?: boolean;
+    children?: React.ReactNode;
+  }) => {
+    const { Text: T, View: V } = jest.requireActual('react-native');
+    return (
+      <V>
+        <T testID="sheet-title">{props.title}</T>
+        {props.children}
+        <T testID="sheet-message">{props.message}</T>
+        <T testID="sheet-ground">{props.bedrock ? 'bedrock' : 'thermocline'}</T>
+        <T testID="sheet-confirm">{props.confirmText}</T>
+        <T testID="sheet-hold">{props.requiresHold ? 'hold' : 'tap'}</T>
+        <T testID="sheet-ready">{props.confirmDisabled ? 'checking' : 'ready'}</T>
+      </V>
+    );
+  },
+}));
+// The bubble rides reanimated, which has no worklets runtime in Jest.
+jest.mock('../components/IconBubble', () => ({ IconBubble: () => null }));
 jest.mock('react-native-safe-area-context', () => ({
-  useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+  useSafeAreaInsets: () => ({ top: 0, bottom: 0 }),
 }));
-jest.mock('../components/DepthBackground', () => ({ DepthBackground: () => null }));
-jest.mock('../components/ConfirmSheet', () => {
-  const { Text, TouchableOpacity, View } = require('react-native');
-  return {
-    ConfirmSheet: ({ onConfirm, onClose }: { onConfirm: () => void; onClose: () => void }) => (
-      <View>
-        <TouchableOpacity onPress={onConfirm}>
-          <Text>confirm</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={onClose}>
-          <Text>close</Text>
-        </TouchableOpacity>
-      </View>
-    ),
-  };
-});
-jest.mock('../components/TransactionConfirmation', () => {
-  const { Text, TouchableOpacity, View } = require('react-native');
-  return {
-    TransactionConfirmation: ({
-      onConfirm,
-      onBack,
-      error,
-    }: {
-      onConfirm: () => void;
-      onBack: () => void;
-      error: string | null;
-    }) => (
-      <View>
-        <TouchableOpacity onPress={onConfirm}>
-          <Text>confirm</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={onBack}>
-          <Text>close</Text>
-        </TouchableOpacity>
-        {error ? <Text>{`error:${error}`}</Text> : null}
-      </View>
-    ),
-  };
-});
-
-import { getAnalytics } from '@salmon/shared';
-import type { MWARequest } from '@solana-mobile/mobile-wallet-adapter-walletlib';
-
-import { MwaRequest } from './MwaRequest';
-
-const account = { getReceiveAddress: () => 'Addr1' } as never;
-const identity = { identityUri: 'https://dapp.example', identityName: 'Example' };
-const base = { requestId: 'r1', sessionId: 's', chain: 'solana:mainnet', appIdentity: identity };
-
-const authorize = (extra: object = {}) =>
-  ({ __type: 'AUTHORIZE_DAPP', ...base, ...extra }) as unknown as MWARequest;
-const signMessages = {
-  __type: 'SIGN_MESSAGES',
-  ...base,
-  authorizationScope: [1],
-  payloads: [[72, 105]],
-} as unknown as MWARequest;
-const signTransactions = {
-  __type: 'SIGN_TRANSACTIONS',
-  ...base,
-  authorizationScope: [1],
-  payloads: [[1, 2, 3]],
-} as unknown as MWARequest;
-const signAndSend = {
-  __type: 'SIGN_AND_SEND_TRANSACTIONS',
-  ...base,
-  authorizationScope: [1],
-  payloads: [[1, 2, 3]],
-} as unknown as MWARequest;
-
-const seedVaultRefusal = () =>
-  Object.assign(new Error('cancelled'), { seedVault: true, reason: 'cancelled' });
-
-let analytics: Awaited<ReturnType<typeof startTestAnalytics>>;
-/** What had been recorded each time the dApp got an answer. */
-let atRespond: SentEvent[][];
-const respond = jest.fn(() => {
-  // A flush hands the queue to the transport before its first await.
-  void getAnalytics()?.flush();
-  atRespond.push(analytics.delivered());
-});
-
-beforeEach(async () => {
-  jest.clearAllMocks();
-  analytics = await startTestAnalytics();
-  atRespond = [];
-});
-
-function show(request: MWARequest) {
-  return render(<MwaRequest request={request} respond={respond} account={account} />);
-}
-
-async function approve(request: MWARequest) {
-  const screen = show(request);
-  fireEvent.press(screen.getByText('confirm'));
-  await waitFor(() => expect(respond).toHaveBeenCalled());
-}
-
-describe('approved requests', () => {
-  it('counts a connection once, before the answer, with no props', async () => {
-    mockAddTrustedApp.mockResolvedValue(undefined);
-
-    await approve(authorize());
-
-    expect(respond).toHaveBeenCalledWith(
-      expect.objectContaining({ accounts: [{ address: 'Addr1' }] })
+jest.mock('../components/TransactionConfirmation', () => ({
+  TransactionConfirmation: (props: {
+    display: { rows: { value: string }[] };
+    confirmLabel?: string;
+    requiresHold?: boolean;
+    confirmDisabled?: boolean;
+  }) => {
+    const { Text: T, View: V } = jest.requireActual('react-native');
+    return (
+      <V>
+        <T testID="tx-site">{props.display.rows[0]?.value}</T>
+        <T testID="tx-confirm">{props.confirmLabel}</T>
+        <T testID="tx-hold">{props.requiresHold ? 'hold' : 'tap'}</T>
+        <T testID="tx-ready">{props.confirmDisabled ? 'checking' : 'ready'}</T>
+      </V>
     );
-    expect(atRespond).toEqual([[{ event: 'dapp_connected', props: {} }]]);
-    expect(await analytics.sent()).toEqual([{ event: 'dapp_connected', props: {} }]);
-  });
+  },
+}));
 
-  it('still answers an approved connection when tracking throws', async () => {
-    mockAddTrustedApp.mockResolvedValue(undefined);
-    const shared = jest.requireMock('@salmon/shared');
-    const spy = jest.spyOn(shared, 'trackEvent').mockImplementation(() => {
-      throw new Error('analytics broke');
-    });
-
-    await approve(authorize());
-
-    expect(respond).toHaveBeenCalledWith(
-      expect.objectContaining({ accounts: [{ address: 'Addr1' }] })
+describe('MwaRequest — sign messages', () => {
+  // The extension names the signing account on its sign screen; the mobile
+  // sheet named only the site and the text.
+  it('names the site, the account that signs and the message, each in its card, on bedrock', async () => {
+    const account = { getReceiveAddress: () => mockAddress } as never;
+    render(
+      <MwaRequest
+        account={account}
+        respond={jest.fn()}
+        request={
+          {
+            __type: 'SIGN_MESSAGES',
+            requestId: 'r1',
+            chain: 'solana:mainnet',
+            appIdentity: { identityUri: mockOrigin },
+            authorizationScope: mockToken,
+            payloads: [[104, 105]],
+          } as never
+        }
+      />
     );
-    spy.mockRestore();
-  });
 
-  it('counts a sign-in connection as a connection', async () => {
-    mockAddTrustedApp.mockResolvedValue(undefined);
-    mockSignIn.mockResolvedValue({ signature: 'sig' });
-
-    await approve(authorize({ signInPayload: { domain: 'dapp.example' } }));
-
-    expect(respond).toHaveBeenCalledWith(
-      expect.objectContaining({ signInResult: { signature: 'sig' } })
-    );
-    expect(atRespond).toEqual([[{ event: 'dapp_connected', props: {} }]]);
-    expect(await analytics.sent()).toEqual([{ event: 'dapp_connected', props: {} }]);
-  });
-
-  it('counts signed messages once, before the answer', async () => {
-    mockSignMessages.mockResolvedValue([new Uint8Array([1])]);
-
-    await approve(signMessages);
-
-    expect(respond).toHaveBeenCalledWith({ signedPayloads: [new Uint8Array([1])] });
-    expect(atRespond).toEqual([[{ event: 'dapp_message_signed', props: {} }]]);
-    expect(await analytics.sent()).toEqual([{ event: 'dapp_message_signed', props: {} }]);
-  });
-
-  it('counts signed transactions once, before the answer', async () => {
-    mockSignTransactions.mockResolvedValue([new Uint8Array([1]), new Uint8Array([2])]);
-
-    await approve(signTransactions);
-
-    expect(atRespond).toEqual([[{ event: 'dapp_transaction_signed', props: {} }]]);
-    expect(await analytics.sent()).toEqual([{ event: 'dapp_transaction_signed', props: {} }]);
-  });
-
-  it('counts sent transactions once, before the answer', async () => {
-    mockSignAndSend.mockResolvedValue({ signatures: [new Uint8Array([1])] });
-
-    await approve(signAndSend);
-
-    expect(respond).toHaveBeenCalledWith({ signedTransactions: [new Uint8Array([1])] });
-    expect(atRespond).toEqual([[{ event: 'dapp_transaction_signed', props: {} }]]);
-    expect(await analytics.sent()).toEqual([{ event: 'dapp_transaction_signed', props: {} }]);
+    // The calling app is checked first; this one is verified.
+    await waitFor(() => expect(screen.getByTestId('sheet-ready').props.children).toBe('ready'));
+    expect(screen.getByTestId('mwa-site-origin').props.children).toBe(mockOrigin);
+    const wallet = screen.getByTestId('mwa-wallet');
+    expect(within(wallet).getByText('Savings')).toBeTruthy();
+    expect(within(wallet).getByText(mockAddress)).toBeTruthy();
+    expect(screen.getByTestId('mwa-message-text').props.children).toBe('hi');
+    expect(screen.getByTestId('sheet-message').props.children).toBe('dapp.sign_message_hint');
+    expect(screen.getByTestId('sheet-ground').props.children).toBe('bedrock');
   });
 });
 
-describe('requests that record nothing', () => {
+/**
+ * Digital Asset Links can only vouch for a native app: any web page or app
+ * can open a session claiming any site. An unverified claim may still connect
+ * and sign in, but the sheet names it as a claim and the approval is held.
+ */
+describe('MwaRequest — connect and sign in', () => {
+  const account = { getReceiveAddress: () => mockAddress } as never;
+  const connect = (signInPayload?: object) => (
+    <MwaRequest
+      account={account}
+      respond={jest.fn()}
+      request={
+        {
+          __type: 'AUTHORIZE_DAPP',
+          requestId: 'c1',
+          chain: 'solana:mainnet',
+          appIdentity: { identityUri: mockOrigin, identityName: 'Example' },
+          signInPayload,
+        } as never
+      }
+    />
+  );
+  const siteLine = () => screen.getByTestId('mwa-site-origin').props.children;
+
   it.each([
-    ['connection', authorize()],
-    ['message', signMessages],
-    ['transaction', signTransactions],
-    ['sign and send', signAndSend],
-  ])('a declined %s or a closed sheet', async (_, request) => {
-    fireEvent.press(show(request).getByText('close'));
+    ['connect', undefined, 'dapp.connect_title'],
+    ['sign in', { domain: 'dapp.example' }, 'dapp.sign_in_title'],
+  ])('names an unverified %s as a claim and asks for a hold', async (_, signIn, title) => {
+    jest.mocked(verifyCallingPackage).mockResolvedValueOnce(false);
+    render(connect(signIn));
 
-    expect(respond).toHaveBeenCalledWith({ failReason: 'USER_DECLINED' });
-    expect(await analytics.sent()).toEqual([]);
-  });
-
-  it('a connection that could not be saved', async () => {
-    mockAddTrustedApp.mockRejectedValue(new Error('storage'));
-
-    await approve(authorize());
-
-    expect(respond).toHaveBeenCalledWith({ failReason: 'USER_DECLINED' });
-    expect(await analytics.sent()).toEqual([]);
+    await waitFor(() => expect(screen.getByTestId('sheet-ready').props.children).toBe('ready'));
+    expect(screen.getByTestId('sheet-title').props.children).toBe(title);
+    expect(siteLine()).toBe(`dapp.mwa_unverified_origin ${mockOrigin}`);
+    expect(screen.getByTestId('mwa-unverified')).toBeTruthy();
+    expect(screen.getByTestId('sheet-ground').props.children).toBe('bedrock');
+    expect(screen.getByTestId('sheet-hold').props.children).toBe('hold');
+    expect(screen.getByTestId('sheet-confirm').props.children).toBe('dapp.hold_to_approve');
   });
 
   it.each([
-    ['a failed', new Error('rpc'), { failReason: 'INVALID_SIGNATURES', valid: [false] }],
-    ['a Seed Vault refused', seedVaultRefusal(), { failReason: 'USER_DECLINED' }],
-  ])('%s message signature', async (_, error, answer) => {
-    mockSignMessages.mockRejectedValue(error);
+    ['connect', undefined, 'dapp.approve'],
+    ['sign in', { domain: 'dapp.example' }, 'dapp.sign_in_action'],
+  ])('keeps a verified %s a plain tap under the site', async (_, signIn, confirm) => {
+    jest.mocked(verifyCallingPackage).mockResolvedValueOnce(true);
+    render(connect(signIn));
 
-    await approve(signMessages);
+    await waitFor(() => expect(screen.getByTestId('sheet-ready').props.children).toBe('ready'));
+    expect(siteLine()).toBe(mockOrigin);
+    expect(screen.queryByTestId('mwa-unverified')).toBeNull();
+    expect(screen.getByTestId('sheet-hold').props.children).toBe('tap');
+    expect(screen.getByTestId('sheet-confirm').props.children).toBe(confirm);
+  });
+});
 
-    expect(respond).toHaveBeenCalledWith(answer);
-    expect(await analytics.sent()).toEqual([]);
+/**
+ * The token a connect hands out is the dApp's from then on, but whether the
+ * app asking now is the site it names is checked again in every session: an
+ * unverified one is named as a claim on every sheet, and each approval costs
+ * a hold, not only the connect.
+ */
+describe('MwaRequest — later requests from an unverified app', () => {
+  const account = { getReceiveAddress: () => mockAddress } as never;
+  beforeEach(() => {
+    jest.mocked(verifyCallingPackage).mockReset().mockResolvedValue(true);
+  });
+  const signed = (type: 'SIGN_MESSAGES' | 'SIGN_TRANSACTIONS') => (
+    <MwaRequest
+      account={account}
+      respond={jest.fn()}
+      request={
+        {
+          __type: type,
+          requestId: 'r2',
+          chain: 'solana:mainnet',
+          appIdentity: { identityUri: mockOrigin },
+          authorizationScope: mockToken,
+          payloads: [[104, 105]],
+        } as never
+      }
+    />
+  );
+
+  it('names the claim on the message sheet and asks for a hold', async () => {
+    jest.mocked(verifyCallingPackage).mockResolvedValueOnce(false);
+    render(signed('SIGN_MESSAGES'));
+
+    await waitFor(() => expect(screen.getByTestId('sheet-ready').props.children).toBe('ready'));
+    expect(screen.getByTestId('mwa-site-origin').props.children).toBe(
+      `dapp.mwa_unverified_origin ${mockOrigin}`
+    );
+    expect(screen.getByTestId('mwa-unverified')).toBeTruthy();
+    expect(screen.getByTestId('sheet-hold').props.children).toBe('hold');
+    expect(screen.getByTestId('sheet-confirm').props.children).toBe('dapp.hold_to_approve');
   });
 
-  it('a Seed Vault refused transaction', async () => {
-    mockSignTransactions.mockRejectedValue(seedVaultRefusal());
+  it("keeps a verified app's message sheet a plain tap under the site", async () => {
+    jest.mocked(verifyCallingPackage).mockResolvedValueOnce(true);
+    render(signed('SIGN_MESSAGES'));
 
-    await approve(signTransactions);
-
-    expect(respond).toHaveBeenCalledWith({ failReason: 'USER_DECLINED' });
-    expect(await analytics.sent()).toEqual([]);
+    await waitFor(() => expect(screen.getByTestId('sheet-ready').props.children).toBe('ready'));
+    expect(screen.getByTestId('sheet-hold').props.children).toBe('tap');
+    expect(screen.getByTestId('sheet-confirm').props.children).toBe('dapp.sign');
   });
 
-  it('a failed transaction signature, shown on the screen and not answered', async () => {
-    mockSignTransactions.mockRejectedValue(new Error('rpc'));
+  it('names the claim on the transaction sheet and asks for a hold', async () => {
+    jest.mocked(verifyCallingPackage).mockResolvedValueOnce(false);
+    render(signed('SIGN_TRANSACTIONS'));
 
-    const screen = show(signTransactions);
-    fireEvent.press(screen.getByText('confirm'));
-    await screen.findByText('error:rpc');
-
-    expect(respond).not.toHaveBeenCalled();
-    expect(await analytics.sent()).toEqual([]);
+    await waitFor(() => expect(screen.getByTestId('tx-ready').props.children).toBe('ready'));
+    expect(screen.getByTestId('tx-site').props.children).toBe(
+      `dapp.mwa_unverified_origin ${mockOrigin}`
+    );
+    expect(screen.getByTestId('tx-hold').props.children).toBe('hold');
+    expect(screen.getByTestId('tx-confirm').props.children).toBe('dapp.hold_to_approve');
   });
 
-  it('a send the network partly refused', async () => {
-    mockSignAndSend.mockResolvedValue({ valid: [false] });
+  it("keeps a verified app's transaction a plain tap when its effects need none", async () => {
+    jest.mocked(verifyCallingPackage).mockResolvedValueOnce(true);
+    render(signed('SIGN_TRANSACTIONS'));
 
-    await approve(signAndSend);
+    await waitFor(() => expect(screen.getByTestId('tx-ready').props.children).toBe('ready'));
+    expect(screen.getByTestId('tx-site').props.children).toBe(mockOrigin);
+    expect(screen.getByTestId('tx-hold').props.children).toBe('tap');
+  });
 
-    expect(respond).toHaveBeenCalledWith({ failReason: 'INVALID_SIGNATURES', valid: [false] });
-    expect(await analytics.sent()).toEqual([]);
+  // The Bedrock Rule: the transaction approval stands on opaque bedrock, not on
+  // the water column — nothing of the dApp or the motif shows through it.
+  it('stands the transaction approval on bedrock', async () => {
+    const { semantic } = jest.requireActual('../../test-utils/themeTokens');
+    render(signed('SIGN_TRANSACTIONS'));
+
+    await waitFor(() => expect(screen.getByTestId('tx-ready').props.children).toBe('ready'));
+    const surface = StyleSheet.flatten(screen.getByTestId('mwa-transaction-surface').props.style);
+    expect(surface.backgroundColor).toBe(semantic.surface.bedrock);
+  });
+});
+
+/**
+ * The native check gets the origin the sheet shows, normalised in JS, never
+ * the raw identity URI: the two parsers then cannot disagree, and the native
+ * module parses the URI outside its own error handling, so a string Java
+ * rejects could take the approval down. A failed check is unverified.
+ */
+describe('MwaRequest — what the identity check is given', () => {
+  const account = { getReceiveAddress: () => mockAddress } as never;
+  beforeEach(() => {
+    jest.mocked(verifyCallingPackage).mockReset().mockResolvedValue(true);
+  });
+  const request = (type: string, identityUri: string) =>
+    ({
+      __type: type,
+      requestId: 'r3',
+      chain: 'solana:mainnet',
+      appIdentity: { identityUri, identityName: 'Example' },
+      authorizationScope: mockToken,
+      payloads: [[104, 105]],
+    }) as never;
+
+  it.each(['AUTHORIZE_DAPP', 'SIGN_MESSAGES', 'SIGN_TRANSACTIONS'])(
+    'checks the normalised origin for %s',
+    async (type) => {
+      render(
+        <MwaRequest
+          account={account}
+          respond={jest.fn()}
+          request={request(type, `${mockOrigin}/app?ref=1`)}
+        />
+      );
+      await waitFor(() => expect(verifyCallingPackage).toHaveBeenCalled());
+      expect(verifyCallingPackage).toHaveBeenCalledWith(mockOrigin);
+    }
+  );
+
+  it('treats a native failure as unverified', async () => {
+    jest
+      .mocked(verifyCallingPackage)
+      .mockReset()
+      .mockRejectedValue(new Error('URISyntaxException'));
+    render(
+      <MwaRequest
+        account={account}
+        respond={jest.fn()}
+        request={request('SIGN_MESSAGES', mockOrigin)}
+      />
+    );
+
+    await waitFor(() => expect(screen.getByTestId('sheet-hold').props.children).toBe('hold'));
   });
 });

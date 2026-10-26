@@ -1,6 +1,7 @@
 /**
- * SheetTitle — the one hand-drawn title style every sheet draws (24
- * semibold, centred), on the DOM.
+ * SheetTitle — the one title style every sheet draws (24 semibold,
+ * centred), with the optional subtitle under it in the screen header's
+ * subtitle voice, on the DOM.
  *
  * The mobile twin is
  * `apps/mobile/src/components/BottomSheetContainer/SheetTitle.tsx`; same
@@ -22,7 +23,7 @@ import {
 import { useSemantic } from '../../theme/ThemeProvider';
 import type { SheetTitleProps } from './types';
 
-export function SheetTitle({ leading, children, style, className }: SheetTitleProps) {
+export function SheetTitle({ leading, children, subtitle, style, className }: SheetTitleProps) {
   const t = useSemantic();
 
   // A `<span>` is inline and centres nothing; mobile's `Text` is a block
@@ -43,28 +44,52 @@ export function SheetTitle({ leading, children, style, className }: SheetTitlePr
     lineHeight: fontSize.headline * lineHeight.condensed + 'px',
   };
 
-  if (!leading) {
-    return (
-      <span className={className} style={{ ...title, ...style }}>
-        {children}
-      </span>
-    );
-  }
-
-  return (
+  // The subtitle owns the header's outer box when there is one, so the
+  // caller's style lands on the whole header either way.
+  const outer = subtitle ? undefined : { className, style };
+  const heading = !leading ? (
+    <span className={outer?.className} style={{ ...title, ...outer?.style }}>
+      {children}
+    </span>
+  ) : (
     <div
-      className={className}
+      className={outer?.className}
       style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         gap: spacing.xs,
-        ...style,
+        ...outer?.style,
       }}
     >
       {leading}
       <span style={{ ...title, paddingLeft: 0, paddingRight: 0, display: 'inline' }}>
         {children}
+      </span>
+    </div>
+  );
+  if (!subtitle) return heading;
+
+  return (
+    <div
+      className={className}
+      style={{ display: 'flex', flexDirection: 'column', gap: spacing.xs, ...style }}
+    >
+      {heading}
+      <span
+        style={{
+          display: 'block',
+          paddingLeft: spacing.screenGutter,
+          paddingRight: spacing.screenGutter,
+          fontFamily: fontFamily.sans,
+          fontWeight: fontWeight.medium,
+          fontSize: fontSize.subtitle,
+          lineHeight: fontSize.subtitle * lineHeight.snug + 'px',
+          color: t.text.secondary,
+          textAlign: 'center',
+        }}
+      >
+        {subtitle}
       </span>
     </div>
   );

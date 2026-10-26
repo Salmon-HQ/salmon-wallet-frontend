@@ -34,6 +34,7 @@ import {
   formatTokenAmount,
   getShortAddress,
   getSolShortfall,
+  isSendableAmount,
   useFieldFocus,
   s,
   spacing,
@@ -70,8 +71,10 @@ export default function SendAmountScreen() {
   const router = useRouter();
   const styles = useThemedStyles(stylesFor);
   const amountFocus = useFieldFocus();
-  const { floatingBottomOffset } = useTabChrome();
-  const actionLift = useKeyboardLift(floatingBottomOffset, vs(spacing.sm));
+  // The SafeAreaView's bottom edge owns the inset; the action row adds only
+  // the air above it, as far from the floor as Home's Powerups button.
+  const { screenActionBottomPadding } = useTabChrome();
+  const actionLift = useKeyboardLift(screenActionBottomPadding, vs(spacing.sm));
   const {
     blockchain,
     token,
@@ -100,13 +103,16 @@ export default function SendAmountScreen() {
     });
   }, [blockchain, nativeBalance, token]);
 
-  const isValid = useMemo(() => {
-    const numAmount = parseFloat(amount);
-    const amountValid = !isNaN(numAmount) && numAmount > 0 && numAmount <= tokenBalance;
-    // Blocked rather than warned: without the fee the network refuses the
-    // transfer outright, so letting it through only spends the user's time.
-    return !!token && !!recipient && amountValid && !solShortfall;
-  }, [amount, tokenBalance, token, recipient, solShortfall]);
+  const isValid = useMemo(
+    () =>
+      !!token &&
+      !!recipient &&
+      isSendableAmount(amount, tokenBalance, token.decimals ?? SOL_CONSTANTS.DECIMALS) &&
+      // Blocked rather than warned: without the fee the network refuses the
+      // transfer outright, so letting it through only spends the user's time.
+      !solShortfall,
+    [amount, tokenBalance, token, recipient, solShortfall]
+  );
 
   // The balance fills; a fill stays lit until the user types over it.
   const shortcuts = useAmountShortcuts({
@@ -168,6 +174,7 @@ export default function SendAmountScreen() {
           testID="send-amount"
           value={amount}
           onChangeValue={shortcuts.onAmountChange}
+          maxDecimals={token ? (token.decimals ?? SOL_CONSTANTS.DECIMALS) : undefined}
           subtext={fiatDisplay}
           focused={amountFocus.focused || shortcuts.selected !== ''}
           onFocus={amountFocus.onFocus}
@@ -188,7 +195,9 @@ export default function SendAmountScreen() {
         {/* Who this pays, restated where the amount is decided. */}
         <Card padding="sm" gap={spacing.sm} testID="send-amount-recipient">
           <KeyValueRow label={t('transactions.to')} value={recipient?.name ?? recipientShort} />
-          <KeyValueRow label={t('send.screens.address')} value={recipientShort} />
+          {!!recipient?.name && (
+            <KeyValueRow label={t('send.screens.address')} value={recipientShort} />
+          )}
         </Card>
 
         {/* What the transfer costs and how long it takes — the two questions
