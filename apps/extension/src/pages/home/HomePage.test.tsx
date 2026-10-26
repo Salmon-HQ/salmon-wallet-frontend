@@ -41,7 +41,7 @@ vi.mock('../../components', () => ({
     <div data-testid="home-sub-tabs">{tabs.map((tab) => tab.key).join('|')}</div>
   ),
   HomeTabOrderSheet: () => null,
-  PowerupsFab: () => null,
+  PowerupsFab: () => <div data-testid="powerups-fab" />,
   DataAttribution: () => null,
   DerivedAccountsSheet: ({ visible, scanning }: { visible: boolean; scanning: boolean }) =>
     visible ? (
@@ -100,10 +100,12 @@ vi.mock('./BitcoinColumn', () => ({ BitcoinColumn: () => <div data-testid="bitco
 
 // The Powerups entry is a build-time alias; Home only reads the flag, the
 // registry and the catalogue, so what is behind it is stubbed rather than
-// loaded. Nothing installed: the Powerup tabs are their own suite.
+// loaded. Nothing is installed unless a test installs Memo.
 vi.mock('@salmon/ui/powerups', () => ({
   POWERUPS_ENABLED: true,
-  POWERUPS: [],
+  POWERUPS: [
+    { id: 'memo', nameKey: 'Memo', networks: ['solana-mainnet'], entries: { tab: 'MemoPage' } },
+  ],
   POWERUP_TAB_KEYS: [],
   isPowerupOnNetwork: () => false,
   getPowerupCatalog: () => [],
@@ -137,6 +139,7 @@ const accountsState = {
 // same treatment every other page suite here gives it: name what the page
 // actually reads.
 const derivedScanState = vi.hoisted(() => ({}) as Record<string, unknown>);
+const account = vi.hoisted(() => ({ watchOnly: false, installed: [] as string[] }));
 
 vi.mock('@salmon/shared', async () => {
   const homeShell = await vi.importActual<typeof import('@salmon/shared/hooks/useHomeShell')>(
@@ -188,7 +191,7 @@ vi.mock('@salmon/shared', async () => {
     componentSizes: { sheetFadeGradientHeight: 30 },
     useTheme: () => ({ preference: 'system', setPreference: vi.fn() }),
     useSendContacts: () => ({ contacts: [], ownWallets: [], loading: false }),
-    isWatchOnlyAccount: () => false,
+    isWatchOnlyAccount: () => account.watchOnly,
     AddressbookError: class AddressbookError extends Error {},
     getBlockchainFromNetworkId: (id: string) => id.split('-')[0],
     getNetworkLabel: () => null,
@@ -313,9 +316,10 @@ vi.mock('@salmon/shared', async () => {
     useHomePowerupsCatalog: homePowerups.useHomePowerupsCatalog,
     useNetworkPowerups: () => ({ enabled: ['memo'], disabled: {}, providers: {} }),
     allowlistForDevice: (allowlist: unknown) => allowlist,
+    EMPTY_POWERUP_ALLOWLIST: { enabled: [], disabled: {}, providers: {} },
     useInstalledPowerups: () => ({
-      installed: [],
-      isInstalled: () => false,
+      installed: account.installed,
+      isInstalled: (id: string) => account.installed.includes(id),
       install: vi.fn(),
       uninstall: vi.fn(),
     }),
@@ -325,9 +329,9 @@ vi.mock('@salmon/shared', async () => {
 });
 
 // The real shell reads the tab order through its own module path, not the
-// barrel, so the arrangement is pinned there too.
+// barrel: the user never arranged the row, so it is the shell's default.
 vi.mock('@salmon/shared/hooks/useHomeTabOrder', () => ({
-  useHomeTabOrder: () => ({ order: ['portfolio', 'nfts'], setOrder: vi.fn() }),
+  useHomeTabOrder: (defaults: string[]) => ({ order: defaults, setOrder: vi.fn() }),
 }));
 
 vi.mock('@salmon/shared/utils/account', () => ({
@@ -397,5 +401,28 @@ describe('HomePage — the derived-accounts sheet is mounted where the user is',
     Object.assign(derivedScanState, { sheetVisible: true, sheetRequested: false });
     render(<HomePage onAddAccount={vi.fn()} />);
     expect(screen.queryByTestId('derived-sheet-answer')).toBeNull();
+  });
+});
+
+describe('HomePage — a watch-only account', () => {
+  afterEach(() => {
+    cleanup();
+    Object.assign(account, { watchOnly: false, installed: [] });
+  });
+
+  it('shows an installed Powerup and the + to a signing account', () => {
+    account.installed = ['memo'];
+    render(<HomePage onAddAccount={vi.fn()} />);
+
+    expect(screen.getByTestId('home-sub-tabs').textContent).toBe('portfolio|nfts|memo');
+    expect(screen.getByTestId('powerups-fab')).toBeTruthy();
+  });
+
+  it('sees only its assets and NFTs: no Powerup tab, no +', () => {
+    Object.assign(account, { watchOnly: true, installed: ['memo'] });
+    render(<HomePage onAddAccount={vi.fn()} />);
+
+    expect(screen.getByTestId('home-sub-tabs').textContent).toBe('portfolio|nfts');
+    expect(screen.queryByTestId('powerups-fab')).toBeNull();
   });
 });
