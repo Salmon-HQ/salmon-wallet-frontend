@@ -9,10 +9,9 @@ jest.mock('react-i18next', () => ({
 }));
 
 // The real barrel pulls in @solana/kit, which jest-expo cannot transform.
-// Only the three layout tokens this pair reads are needed here.
+// Only the two layout tokens this pair reads are needed here.
 jest.mock('@salmon/shared', () => ({
   spacing: { md: 12 },
-  componentSizes: { buttonHeightCompact: 42 },
   vs: (value: number) => value,
 }));
 
@@ -79,11 +78,11 @@ describe('ConfirmationButtons — the pair stacks, full width', () => {
     ]);
   });
 
-  it('reserves the same height in every state the pair can be in', () => {
-    // The second action is not always "Confirm" — an expired quote makes it
-    // "Refresh Quote". Both buttons pin their height, so the stack occupies
-    // the same space whichever label it carries.
-    const heights = (label?: string) => {
+  it("sizes both actions as the app's standard buttons, in every state", () => {
+    // The pair is the same Back/Confirm every other review shows (Send's,
+    // for one): no size of its own. The standard button's height is fixed,
+    // so "Refresh Quote" in place of "Confirm" moves nothing above it.
+    const sizes = (label?: string) => {
       const tree = render(
         <ConfirmationButtons onBack={jest.fn()} onConfirm={jest.fn()} confirmLabel={label} />
       ).toJSON() as unknown as Node;
@@ -92,12 +91,12 @@ describe('ConfirmationButtons — the pair stacks, full width', () => {
         return [style.height, style.minHeight];
       });
     };
-    const confirm = heights('Confirmar');
+    const confirm = sizes('Confirmar');
     expect(confirm).toEqual([
-      [42, 42],
-      [42, 42],
+      [undefined, undefined],
+      [undefined, undefined],
     ]);
-    expect(heights('Actualizar cotización')).toEqual(confirm);
+    expect(sizes('Actualizar cotización')).toEqual(confirm);
   });
 
   it('spins the confirm button only while a fresh quote is in flight', () => {
