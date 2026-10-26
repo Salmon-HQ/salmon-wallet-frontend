@@ -24,11 +24,7 @@ export const ConfirmationButtons: React.FC<ConfirmationButtonsProps> = ({
   // takes over (see ConfirmationHost), so the button never spins for it.
   return (
     <View style={[styles.buttonsContainer, style]}>
-      <SecondaryButton
-        onPress={onBack}
-        disabled={isRefreshing}
-        testID="confirmation-back-button"
-      >
+      <SecondaryButton onPress={onBack} disabled={isRefreshing} testID="confirmation-back-button">
         {t('general.back')}
       </SecondaryButton>
       {requiresHold ? (
