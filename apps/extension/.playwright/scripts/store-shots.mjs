@@ -38,10 +38,13 @@ async function toHome() {
   // A fresh profile lands on Success, then the consent prompt, before Home.
   await page
     .getByTestId('success-go-to-wallet-button')
-    .click({ timeout: 60_000 })
+    .click({ timeout: 5_000 })
     .catch(() => {});
+  // The consent screen's close mark is the header's back button; the header's
+  // own testID sits on its container.
   await page
-    .getByTestId('analytics-consent-decline')
+    .getByTestId('analytics-consent-screen')
+    .getByTestId('screen-header-back-button')
     .click({ timeout: 10_000 })
     .catch(() => {});
   await waitHome(page);
@@ -125,24 +128,41 @@ let pending = approvalWindow();
 await dapp.evaluate(() => {
   window.__connect = window.salmon.connect();
 });
-await approve(await pending);
+const connectWindow = await pending;
+await sleep(2000);
+await unlockOrRecover(connectWindow);
+await approve(connectWindow);
 await dapp.evaluate(() => window.__connect);
 pending = approvalWindow();
 await dapp.evaluate((text) => {
   window.__sign = window.salmon.signMessage(new TextEncoder().encode(text)).catch(() => null);
 }, MESSAGE);
 const signWindow = await pending;
+await signWindow.setViewportSize(PANEL);
 await signWindow.emulateMedia({ colorScheme: MODE });
-await signWindow.getByTestId('dapp-approve-button').waitFor({ timeout: 20_000 });
-await sleep(3000);
+// An approval window asks for the password on its own.
+await sleep(2000);
+await unlockOrRecover(signWindow);
+await signWindow.getByTestId('dapp-sign-message-approval').waitFor({ timeout: 20_000 });
+// The message itself in view, and Sign armed the way a person arms it (the
+// pointer over the window, then onto the button), never pressed.
+await signWindow.getByTestId('raw-message').scrollIntoViewIfNeeded();
+const sign = signWindow.getByTestId('dapp-approve-button');
+for (let i = 0; i < 40 && !(await sign.isEnabled()); i++) {
+  await signWindow.mouse.move(100, 200);
+  await signWindow.mouse.move(140, 260);
+  await sign.hover();
+  await sleep(500);
+}
+await sleep(1500);
 await shot('04-sign.png', signWindow);
 await signWindow.close();
 await dapp.close();
 
-// 05 send — the review of 0.5 SOL to a .sol name
+// 05 send — the review of 0.5 SOL to a .sns name
 await toHome();
 await page.getByTestId('home-send-button').click({ timeout: 8000 });
-await page.getByTestId('send-recipient-input').fill('toly.sol', { timeout: 20_000 });
+await page.getByTestId('send-recipient-input').fill(process.env.RECIPIENT ?? 'salmonwallet.sns', { timeout: 20_000 });
 await page.getByTestId('send-continue-button').click({ timeout: 30_000 });
 await page.getByTestId('send-amount-input').fill('0.5', { timeout: 20_000 });
 await page.getByTestId('send-review-button').click({ timeout: 20_000 });
