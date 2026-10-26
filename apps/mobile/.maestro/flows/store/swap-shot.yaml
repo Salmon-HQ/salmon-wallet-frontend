@@ -1,0 +1,45 @@
+appId: io.salmonwallet.app
+---
+# 02 swap, from Home. 0.01 SOL: the backend only quotes what the wallet really
+# holds, plus fees. Review is reached and left; it is never confirmed.
+- tapOn:
+    id: 'powerups-fab'
+- extendedWaitUntil:
+    visible:
+      id: 'powerups-row-swap'
+    timeout: 20000
+- tapOn:
+    id: 'powerups-row-swap'
+- tapOn:
+    id: 'powerups-detail-toggle-swap'
+- waitForAnimationToEnd:
+    timeout: 3000
+- runFlow: ../../subflows/dismiss-bottom-sheet.yaml
+- tapOn:
+    id: 'portfolio-tab-swap'
+- extendedWaitUntil:
+    visible:
+      id: 'swap-amount-input'
+    timeout: 30000
+- tapOn:
+    id: 'swap-amount-input'
+- inputText: '0.01'
+- tapOn:
+    id: 'swap-amount-fiat'
+- tapOn:
+    id: 'swap-submit-button'
+# The quote expires within a minute and the button turns into Refresh Quote:
+# shoot as soon as the review has settled.
+- extendedWaitUntil:
+    visible:
+      id: 'confirmation-details-card'
+    timeout: 60000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: ${OUT}/02-swap
+- tapOn:
+    id: 'confirmation-back-button'
+- extendedWaitUntil:
+    visible:
+      id: 'swap-amount-input'
+    timeout: 20000

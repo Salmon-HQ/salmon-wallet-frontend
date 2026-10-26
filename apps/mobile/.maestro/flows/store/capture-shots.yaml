@@ -3,13 +3,12 @@ env:
   # The send shot's recipient; override with -e RECIPIENT=...
   RECIPIENT: salmonwallet.sns
 ---
-# The store shots from an unlocked Home with nothing installed, against the
-# staging proxy (store-assets/staging): the balance, history and NFTs are the
-# staged account's, prices and the Swap quote are live. Entered through
-# capture.yaml (fresh install + onboarding).
+# Wallet A's store shots (all but Swap, which capture.yaml takes last with
+# swap-shot.yaml) from an unlocked Home with nothing installed, against the staging proxy
+# (store-assets/staging): the balance, history and NFTs are the staged
+# account's, prices are live. Entered through capture.yaml.
 #
-# Nothing here signs: the Swap shot stops on the review and leaves by its back
-# button; the send shot stops on Review.
+# Nothing here signs: the send shot stops on Review.
 # ----------------------------------------------------------- the two tabs --
 - extendedWaitUntil:
     visible:
@@ -176,50 +175,4 @@ env:
 - extendedWaitUntil:
     visible:
       id: 'powerups-fab'
-    timeout: 20000
-
-# ----------------------------------------------------------------- 02 swap --
-# Last, so no earlier shot shows a Swap tab (the U.K. set reuses them).
-# 0.01 SOL: within what the demo wallet really holds, which is all the
-# backend will quote. Review is reached and left; it is never confirmed.
-- tapOn:
-    id: 'powerups-fab'
-- extendedWaitUntil:
-    visible:
-      id: 'powerups-row-swap'
-    timeout: 20000
-- tapOn:
-    id: 'powerups-row-swap'
-- tapOn:
-    id: 'powerups-detail-toggle-swap'
-- waitForAnimationToEnd:
-    timeout: 3000
-- runFlow: ../../subflows/dismiss-bottom-sheet.yaml
-- tapOn:
-    id: 'portfolio-tab-swap'
-- extendedWaitUntil:
-    visible:
-      id: 'swap-amount-input'
-    timeout: 30000
-- tapOn:
-    id: 'swap-amount-input'
-- inputText: '0.01'
-- tapOn:
-    id: 'swap-amount-fiat'
-- tapOn:
-    id: 'swap-submit-button'
-# The quote expires within a minute and the button turns into Refresh Quote:
-# shoot as soon as the review has settled.
-- extendedWaitUntil:
-    visible:
-      id: 'confirmation-details-card'
-    timeout: 60000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: ${OUT}/02-swap
-- tapOn:
-    id: 'confirmation-back-button'
-- extendedWaitUntil:
-    visible:
-      id: 'swap-amount-input'
     timeout: 20000

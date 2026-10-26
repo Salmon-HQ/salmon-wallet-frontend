@@ -2,7 +2,7 @@
 /**
  * Staging proxy for store screenshots: the app talks to it instead of the
  * production API, and it answers the staged wallets' balance, history and NFTs
- * (and SKR stake) from `staged.mjs` (Apple 2.3.9 wants fictional account data). Everything else
+ * (and, for the Seeker deck, an SKR stake) from `staged.mjs` (Apple 2.3.9 wants fictional account data). Everything else
  * passes through, so prices, charts, token lists and Swap quotes are real.
  *
  * Pass-through GETs are recorded in `cache/` the first time and replayed after,
@@ -12,6 +12,7 @@
  *
  *   SALMON_TEST_WALLET_A_ADDR=… [SALMON_SEED_VAULT_ADDR=…] node proxy.mjs
  *   STAGING_REGION=uk …    # Swap switched off for the region (App Store U.K. set)
+ *   STAGING_REGION=seeker … # an SKR stake on the staged wallets (dApp Store set)
  *   STAGING_PORT=3900 …    # default
  *
  * The runner in `store-assets/README.md` loads the addresses from the e2e env
@@ -77,7 +78,10 @@ async function stagedBalance(owner) {
         symbol: t.symbol,
         name: t.name,
         type: t.type,
-        ...(t.type === 'native' ? {} : { mint: t.mint, tags: ['verified'], logo: coin.image }),
+        // The logo prod's `?include=logo` gives native SOL; CoinGecko's is a different mark.
+        ...(t.type === 'native'
+          ? { logo: 'https://assets-cdn.trustwallet.com/blockchains/solana/info/logo.png' }
+          : { mint: t.mint, tags: ['verified'], logo: coin.image }),
         address: t.mint,
         coingeckoId: coin.id,
         price,
@@ -98,7 +102,9 @@ async function staged(method, url) {
     // No stake accounts: Home's total is then exactly the sum of the token rows.
     return { ...(await getJson(url.pathname)), data: [] };
   }
-  if (url.pathname === '/v1/solana-mainnet/skr/stake' && WALLETS.includes(url.searchParams.get('owner'))) {
+  // SKR is staged for the Seeker deck only: on the other decks a stake would add
+  // a Staking row and change Home's total.
+  if (REGION === 'seeker' && url.pathname === '/v1/solana-mainnet/skr/stake' && WALLETS.includes(url.searchParams.get('owner'))) {
     return skrStake(await getJson(url.pathname + url.search));
   }
   if (url.pathname === '/v1/solana-mainnet/nft' && WALLETS.includes(url.searchParams.get('publicKey'))) {
