@@ -7,6 +7,8 @@
 
 import { browser } from 'wxt/browser';
 
+import { toPageResponse } from '../utils/page-response';
+
 // Chrome MV3 and Firefox 115+ (MV2 included) have storage.session; the
 // storage.local fallback only serves older browsers the manifest excludes.
 const sessionArea = browser.storage.session ?? browser.storage.local;
@@ -508,7 +510,7 @@ export default defineBackground(() => {
         const responseHandler = responseHandlers.get(msg.data.id);
         responseHandlers.delete(msg.data.id);
         if (responseHandler) {
-          responseHandler(msg.data, msg.data.id);
+          responseHandler(toPageResponse(msg.data), msg.data.id);
         }
         // Request answered — close its approval popup window. The onRemoved
         // listener is now a no-op (the response handler is already deleted), so

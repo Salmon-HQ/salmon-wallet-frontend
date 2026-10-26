@@ -1966,3 +1966,36 @@ describe('Bitcoin Transfer Integration Tests', () => {
     });
   });
 });
+
+describe('BitcoinAccount key material', () => {
+  // An account object reaches app state and could reach a log line, a crash
+  // report or a state serializer; its private key must not travel with it.
+  it('keeps the WIF and the BIP32 node out of anything that serializes the account', async () => {
+    const account = await createBitcoinAccount({
+      network: BITCOIN_NETWORKS['bitcoin-mainnet'],
+      mnemonic: TEST_MNEMONIC,
+      index: 0,
+      apiFunctions: mockApiFunctions,
+    });
+    const wif = account.retrieveSecurePrivateKey();
+
+    expect(Object.keys(account)).not.toContain('keyPair');
+    expect(Object.keys(account)).not.toContain('node');
+    expect(JSON.stringify(account)).not.toContain(wif);
+    expect(JSON.stringify(account)).not.toContain('chainCode');
+    expect(JSON.stringify({ ...account })).not.toContain(wif);
+  });
+
+  it('still hands the key to the code that signs', async () => {
+    const account = await createBitcoinAccount({
+      network: BITCOIN_NETWORKS['bitcoin-mainnet'],
+      mnemonic: TEST_MNEMONIC,
+      index: 0,
+      apiFunctions: mockApiFunctions,
+    });
+
+    expect(account.retrieveSecurePrivateKey()).toMatch(/^[KL5][1-9A-HJ-NP-Za-km-z]{50,51}$/);
+    expect(account.getBip32Node()?.toWIF()).toBe(account.retrieveSecurePrivateKey());
+    expect(account.getPublicKey()).toHaveLength(33);
+  });
+});

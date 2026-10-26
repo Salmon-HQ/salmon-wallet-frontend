@@ -608,11 +608,14 @@ describe('useAccounts Hook', () => {
 
       const restored = result.current[0].accounts[0];
       expect(restored.id).toBe('imported-id');
-      expect(restored.secret).toEqual({
-        kind: 'privateKey',
-        privateKey: 'base58-secret-key',
-        networkId: 'solana-mainnet',
-      });
+      // The key is sealed (readable, not enumerable), so compare its fields.
+      expect(restored.secret.kind).toBe('privateKey');
+      expect(restored.secret.kind === 'privateKey' && restored.secret.privateKey).toBe(
+        'base58-secret-key'
+      );
+      expect(restored.secret.kind === 'privateKey' && restored.secret.networkId).toBe(
+        'solana-mainnet'
+      );
       expect(restored.networksAccounts['solana-mainnet']?.[0]).toBeTruthy();
     });
 
