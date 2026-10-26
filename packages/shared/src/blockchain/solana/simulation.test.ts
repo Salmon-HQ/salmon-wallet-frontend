@@ -307,6 +307,48 @@ describe('deriveEffects', () => {
     if (result.kind !== 'effects') throw new Error('expected effects');
     expect(result.tokens[0]?.amount).toBe(-42_000_000n);
   });
+
+  // Without the mint there are no decimals to show the amount at, and no supply
+  // to judge an approval by: 25 USDC would read as 25,000,000.
+  it('reports a balance change of a mint the network did not return as undetermined', () => {
+    const result = deriveEffects(
+      derivationInput({
+        before: new Map([
+          [USDC_ATA, tokenAccount({ mint: USDC, owner: WALLET, amount: 100_000_000n })],
+        ]),
+        after: new Map([
+          [USDC_ATA, tokenAccount({ mint: USDC, owner: WALLET, amount: 75_000_000n })],
+        ]),
+        mints: new Map(),
+      })
+    );
+
+    expect(result).toMatchObject({ kind: 'undetermined', reason: 'account-state-unavailable' });
+  });
+
+  it('reports an approval on a mint the network did not return as undetermined', () => {
+    const balance = tokenAccount({ mint: USDC, owner: WALLET, amount: 100_000_000n });
+    const result = deriveEffects(
+      derivationInput({
+        before: new Map([[USDC_ATA, balance]]),
+        after: new Map([
+          [
+            USDC_ATA,
+            tokenAccount({
+              mint: USDC,
+              owner: WALLET,
+              amount: 100_000_000n,
+              delegate: SPENDER,
+              delegatedAmount: 5_000_000_000_000_000n,
+            }),
+          ],
+        ]),
+        mints: new Map(),
+      })
+    );
+
+    expect(result).toMatchObject({ kind: 'undetermined', reason: 'account-state-unavailable' });
+  });
 });
 
 // ============================================================================
