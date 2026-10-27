@@ -1,0 +1,11 @@
+appId: io.salmonwallet.app
+---
+# Refreshes only the Swap shot (wallet A, fresh install), against the staging
+# proxy. The quote is live, so a router having a bad moment fails this one shot;
+# rerun it alone instead of the whole deck.
+- runFlow: ../../subflows/onboard-walletA.yaml
+- extendedWaitUntil:
+    visible:
+      id: 'token-row-SOL'
+    timeout: 60000
+- runFlow: swap-shot.yaml

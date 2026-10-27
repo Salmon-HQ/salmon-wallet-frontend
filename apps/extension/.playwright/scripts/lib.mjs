@@ -77,11 +77,11 @@ export function writeReport(name, body) {
  *   Extra context options. Used by capture scripts that need a higher
  *   `deviceScaleFactor` to judge fine detail; leave empty for normal runs.
  */
-export async function launch(overrides = {}) {
+export async function launch({ profile = profileDir, ...overrides } = {}) {
   if (!fs.existsSync(extDist)) throw new Error('Missing extension dist at ' + extDist);
-  fs.mkdirSync(profileDir, { recursive: true });
+  fs.mkdirSync(profile, { recursive: true });
 
-  const ctx = await chromium.launchPersistentContext(profileDir, {
+  const ctx = await chromium.launchPersistentContext(profile, {
     channel: 'chromium',
     headless: false,
     viewport: { width: 1280, height: 900 },

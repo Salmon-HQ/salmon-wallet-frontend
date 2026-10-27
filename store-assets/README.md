@@ -6,34 +6,29 @@ asset specs, Apple screenshot specs 2025+, AMO listing guide).
 
 | Store | What goes here | Required | Status |
 |---|---|---|---|
-| `play/` | `feature-graphic.png` 1024×500 (required), `icon-512.png` 512×512 32-bit with alpha (required), `phone/` 2–8 screenshots 9:16 (1080×1920 ✓), `listing.txt` copy | yes | **complete** — 6 frames on the redesign (2026-09-03, dark mode, Pixel 9 Pro emulator via `flows/store/capture.yaml`). **Stale since 1.3.0:** production builds carry Powerups, so Home gains Swap and Payments tabs and the deck lacks a Swap frame |
-| `app-store/iphone-6.9/` | 1290×2796 or 1320×2868 portrait screenshots (the required tier since 2025) | yes, before first submission | **complete** — 6 frames 1320×2868 (Home, Send amount, Activity, NFTs, NFT detail, Token detail) from the iPhone 16 simulator (2026-09-03, redesign, no Powerup, no About). **Stale since 1.3.0:** the shipped Home shows the Powerup tabs, `01-home` shows a test token (`mockJUP`), and there is no Swap frame. Recapture from a Release build: `run.sh --device <udid> -e OUT=… flows/store/capture.yaml` then `compose.py app-store`; the dev-client gear is hidden before capturing (see below) |
-| `chrome-web-store/` | `screenshots/` 1280×800 (min 1, up to 5), `store-icon-128.png` (96×96 art in 128 canvas ✓), `promo-small-440x280.png` (required — listings without it rank below listings that have one) | yes | **complete** — 5 screenshots from the extension side panel (400×800 captures via `apps/extension/.playwright/scripts/store-shots.mjs`), composed by `compose.py chrome-web-store` |
-| `amo/screenshots/` | 1280×800 recommended (1.6:1) | recommended | empty — can reuse the CWS captures, but prefer un-captioned crops: AMO advises against text on the image |
-| `play/tablet-7/` · `play/tablet-10/` | 4–8 screenshots each, 1,080–7,680px, 9:16 or 16:9 | no, but see below | **missing** — never captured |
-| `source/` | raw, unframed captures (Maestro / Playwright output) before any framing | — | `android-staged/` (7, redesign), `ios-staged/` (6, redesign), `extension-staged/` (side panel 400×800) |
+| `app-store/iphone-6.9/` | 1320×2868 portrait screenshots; App Store Connect scales them to the required "iPhone with Dynamic Island (medium)" class | yes | 6 frames for 1.4.0: Home, Swap review, Powerups catalogue, Payments QR, Send review, NFTs |
+| `app-store/iphone-6.9-uk/` | the English (U.K.) localisation's set | yes, for the U.K. listing | the same deck with no Swap anywhere: token detail replaces the Swap frame, and the catalogue is the one captured with Swap switched off for the region |
+| `app-store/header-3840x1646.png` | product page header (creative asset, guideline 2.3.14) | no | from `SOT/03-dev/Design System/Store Graphics.pen` |
+| `play/` | `feature-graphic.png` 1024×500, `icon-512.png`, `phone/` 2–8 screenshots, `listing.txt` | yes | feature graphic from `Store Graphics.pen`; `phone/` is the App Store deck on Android |
+| `play/tablet-7/` · `play/tablet-10/` | 4–8 screenshots each, 1,080–7,680px | no, see below | filled with the phone frames |
+| `dapp-store/` | `screenshots/` 4–8 of one size, `banner-1200x600.png`, `icon-512.png` (opaque) | yes | banner from `Store Graphics.pen`; screenshots show the Seeker features (Seed Vault, Mobile Wallet Adapter, SKR) |
+| `chrome-web-store/` | `screenshots/` 1280×800 (up to 5), `store-icon-128.png`, `promo-small-440x280.png` | yes (promo tile ranks the listing) | 5 frames from the side panel: Home, Swap review, Powerups, a dApp message to sign, Send review; promo tile from `Store Graphics.pen` |
+| `amo/screenshots/` | 1280×800 | recommended | empty: the extension never shipped on Firefox |
+| `source/` | raw captures, never uploaded | — | `ios-staged/`, `android-staged/`, `seeker-staged/`, `extension-staged/` |
 
-## iOS captures: the dev-client gear (2026-09-03)
+Captions live in `compose.py`'s decks. They count as listing metadata: no "exchange", "trade" or "order", no prices or awards, and the U.K. deck never mentions Swap.
 
-The simulator shots come from the Expo dev client, whose floating gear sits
-bottom-right (and over the header on the auth screens). It is not part of the
-app; Apple will reject a screenshot that shows it. Before submission either
-crop/paint it out in `compose.py` or capture from a release build
-(`expo run:ios --configuration Release`), which has no overlay. Same gear made
-the Settings header untappable through Maestro on iOS; `open-settings.yaml`
-closes the dev menu and retries.
+## Refreshing the decks
 
-## Staging (2026-09-03)
+Every screenshot shows one fictional account (Apple 2.3.9): the same balances, history and NFTs on every platform. `staging/proxy.mjs` stands in front of the production API, answers the staged wallets' balance, history, stakes, NFTs and SKR position from `staging/staged.mjs`, and passes everything else through, so prices, charts and the Swap quote are real. Pass-through answers are recorded in `staging/cache/` and replayed, so a deck shot today and one shot next week show the same figures; delete the cache to record fresh prices. The NFTs are Salmon's own art (`staging/make-nft-art.py`), served from this repository over https because the app loads NFT media over https only.
 
-The 2026-08 deck was captured against a mock backend that staged a $13,046.12
-portfolio; that mock server was never committed. The 2026-09-03 captures run
-against the **live** local backend with Wallet A from `.env.test` (the same
-fixture wallet the e2e suites use) — real, small balances. Apple §2.3.9 wants
-fictional data, so before the next submission either commit a mock (a Node
-proxy in front of `salmon-api` that stages the balance, history and NFT
-endpoints and passes everything else through; `EXPO_PUBLIC_API_HOST/PORT` for
-mobile, `context.route()` in the Playwright script for the side panel) or
-accept the live figures. The capture flows do not care which.
+1. `store-assets/staging/run.sh` starts the proxy on port 3900 (`STAGING_REGION=uk` switches Swap off for the U.K. catalogue, `STAGING_REGION=seeker` adds the SKR stake for the dApp Store deck). At start it prints a check: the staged total, any token without a logo, the mode, and whether a live Swap quote simulates.
+2. iOS: build a Release app pointed at it, `EXPO_PUBLIC_SALMON_ENV=production EXPO_PUBLIC_API_URL=http://localhost:3900 npx expo run:ios --configuration Release --device <udid> --no-bundler`, then from `apps/mobile/.maestro`: `SALMON_API_URL=http://localhost:3900 ./run.sh --release --device <udid> --test-output-dir=<dir> -e OUT=ios flows/store/capture.yaml` and `flows/store/capture-uk.yaml` (with the U.K. proxy). Maestro 2.11 writes screenshots only inside `--test-output-dir`; copy them into `source/ios-staged/`.
+3. Android: a debug build (a release build refuses plain http to the proxy) with Metro started with the same `EXPO_PUBLIC_*` values; the same flows with `--device emulator-5554`. Play's emulator must not run Seed Vault, or the catalogue offers SKR. The dApp Store deck runs `flows/store/capture-seeker.yaml` and `capture-seeker-mwa.yaml` on a Seeker emulator set up as in the Maestro README's "Seeker emulator" section, with the proxy in `seeker` mode.
+4. Extension: `VITE_API_URL=http://127.0.0.1:3900 pnpm build` in `apps/extension`, then `node .playwright/scripts/store-shots.mjs`.
+5. `python3 store-assets/compose.py` frames every deck; it clears each output folder first, so no stale frame survives.
+
+The Swap frame quotes 0.01 SOL: the backend quotes only amounts the demo wallet really holds, so the quote is live while the balance on screen is staged. When the proxy's check says Swap fails, the router is having a bad moment: shoot the rest and retake the Swap frame alone with `flows/store/capture-swap.yaml`. Nothing in the flows signs: Swap stops on its review, the dApp request is closed unanswered.
 
 ## Tablets: deliberately deferred (2026-08-07)
 
