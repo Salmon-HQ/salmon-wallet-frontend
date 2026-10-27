@@ -166,6 +166,12 @@ if [[ $IS_ANDROID -eq 1 ]]; then
   [[ "$("${ADB[@]}" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == "1" ]] \
     || die "no booted Android device${DEVICE:+ ($DEVICE)}. Boot the emulator first."
   ok "Android device booted"
+  # Behind a screen lock Android keeps app storage sealed: the app reads as not
+  # installed and every flow fails on its first selector.
+  [[ "$("${ADB[@]}" shell dumpsys user 2>/dev/null | grep -m1 -o 'RUNNING_[A-Z_]*')" == "RUNNING_UNLOCKED" ]] \
+    || die "the Android device is locked. Unlock it with the PIN in .env.test (SALMON_SEED_VAULT_PIN):
+      $SUITE_DIR/android-unlock.sh${DEVICE:+ --device $DEVICE}"
+  ok "Android device unlocked"
 fi
 
 # ------------------------------------------------------------------ bundle ---
