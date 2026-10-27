@@ -49,7 +49,7 @@ UK_DECK = [
 SEEKER_DECK = [
     HOME,
     ("02-seed-vault", None, "Your keys stay\nin Seed Vault", "navy"),
-    ("03-mwa-connect", None, "Connect to dApps\nin one tap", "coral"),
+    ("03-mwa-connect", None, "Every dApp request,\nchecked", "coral"),
     ("04-sign", None, "Know what you sign\nbefore you sign", "navy"),
     ("05-skr", None, "Your SKR staking,\nin one place", "coral"),
     ("06-swap", None, SWAP[2], "navy"),
