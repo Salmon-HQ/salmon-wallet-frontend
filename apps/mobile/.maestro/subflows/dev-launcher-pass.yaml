@@ -26,6 +26,10 @@ appId: io.salmonwallet.app
       visible: 'Development Build'
     commands:
       - openLink: 'salmonwallet://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081'
+      # iOS asks before a link opens an app ("Open in …?") and waits there.
+      - tapOn:
+          text: 'Open'
+          optional: true
       - waitForAnimationToEnd:
           timeout: 60000
 

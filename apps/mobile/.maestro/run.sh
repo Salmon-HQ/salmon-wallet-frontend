@@ -154,6 +154,11 @@ fi
 # the same machine fails in seconds with an IOException that reads like a
 # broken flow. Refuse instead, naming the run that holds it.
 LOCK_DIR="${TMPDIR:-/tmp}/salmon-maestro.lock"
+# A runner killed with -9 leaves its lock behind. Free it once that run is gone
+# and no Maestro JVM is left holding the device.
+if ! kill -0 "$(cat "$LOCK_DIR/pid" 2>/dev/null)" 2>/dev/null && ! pgrep -f maestro.cli.AppKt >/dev/null; then
+  rm -rf "$LOCK_DIR"
+fi
 if ! mkdir "$LOCK_DIR" 2>/dev/null; then
   die "another Maestro run holds $LOCK_DIR (pid $(cat "$LOCK_DIR/pid" 2>/dev/null || echo '?')).
     Wait for it, or remove the directory if that run is gone."
@@ -166,6 +171,12 @@ if [[ $IS_ANDROID -eq 1 ]]; then
   [[ "$("${ADB[@]}" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == "1" ]] \
     || die "no booted Android device${DEVICE:+ ($DEVICE)}. Boot the emulator first."
   ok "Android device booted"
+  # Behind a screen lock Android keeps app storage sealed: the app reads as not
+  # installed and every flow fails on its first selector.
+  [[ "$("${ADB[@]}" shell dumpsys user 2>/dev/null | grep -m1 -o 'RUNNING_[A-Z_]*')" == "RUNNING_UNLOCKED" ]] \
+    || die "the Android device is locked. Unlock it with the PIN in .env.test (SALMON_SEED_VAULT_PIN):
+      $SUITE_DIR/android-unlock.sh${DEVICE:+ --device $DEVICE}"
+  ok "Android device unlocked"
 fi
 
 # ------------------------------------------------------------------ bundle ---
@@ -204,13 +215,43 @@ if [[ $IS_ANDROID -eq 1 && $RELEASE -eq 0 ]]; then
   ok "installed build opens without the dev menu"
 fi
 
+# ------------------------------------------------------------- seed vault ---
+# The Seed Vault and dApp flows fail on their first Seed Vault screen when a
+# precondition is missing, which reads as a broken flow. Check what can be seen
+# from here; README.md, "Seeker emulator", covers the rest.
+if [[ "${PASSTHROUGH[*]}" == *seed-vault* || "${PASSTHROUGH[*]}" == *seeker* ]]; then
+  [[ $IS_ANDROID -eq 1 ]] || die "Seed Vault flows run on an Android emulator; pass --device emulator-5554."
+  [[ -n "${SALMON_SEED_VAULT_PIN:-}" ]] || die "Missing in .env.test: SALMON_SEED_VAULT_PIN (the Seed Vault and screen-lock PIN)."
+  "${ADB[@]}" shell pm path com.solanamobile.seedvaultimpl 2>/dev/null | grep -q '^package:' \
+    || die "the Seed Vault simulator is not installed on the device. See README.md, \"Seeker emulator\"."
+  # The app accepts the simulator only when __DEV__ is true (src/seed-vault/bridge.ts).
+  [[ $RELEASE -eq 0 ]] || die "a release build never offers the Seed Vault simulator; run these flows on the dev build."
+  curl -s -m 10 -H 'expo-platform: android' -H 'accept: application/expo+json,application/json' "${METRO_URL%/status}" 2>/dev/null | grep -q 'dev=true' \
+    || die "Metro serves a production bundle (started with --no-dev), and the app then hides Seed Vault.
+    Restart it without --no-dev."
+  ok "Seed Vault simulator installed, development bundle"
+fi
+
 # ------------------------------------------------------------ devnet ------
 # Every flow that sends or views funds or NFTs does it on devnet. This keeps
 # Wallet A funded (topped up from B) and holding the NFT fixture (a transfer
 # moves it to B; the next run mints another), and stops the run, naming the
 # faucet, when B runs low. The secrets reach it through the environment.
-FIXTURE_OUT=$(node --no-deprecation "$SUITE_DIR/../../../scripts/devnet-fixtures.cjs" 2>&1) || die "$FIXTURE_OUT"
-ok "$FIXTURE_OUT"
+# Store captures (flows/store/) read staged data from store-assets' proxy and
+# never touch devnet, so a run of only those skips it.
+STORE=0 OTHER=0
+for arg in "${PASSTHROUGH[@]}"; do
+  case $arg in
+    *flows/store/*) STORE=1 ;;
+    *flows/*|*suites/*) OTHER=1 ;;
+  esac
+done
+if [[ $STORE -eq 1 && $OTHER -eq 0 ]]; then
+  ok "devnet fixtures skipped: store captures only"
+else
+  FIXTURE_OUT=$(node --no-deprecation "$SUITE_DIR/../../../scripts/devnet-fixtures.cjs" 2>&1) || die "$FIXTURE_OUT"
+  ok "$FIXTURE_OUT"
+fi
 
 # ------------------------------------------------------------------- run -----
 CMD=(maestro)

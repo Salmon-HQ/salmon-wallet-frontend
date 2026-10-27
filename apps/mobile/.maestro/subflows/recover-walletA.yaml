@@ -10,14 +10,23 @@ appId: io.salmonwallet.app
     visible:
       id: 'recover-word-input-1'
     timeout: 30000
-# iOS: the simulator keyboard drops characters when the grid splits the typed
-# phrase across boxes and moves focus mid-word, so the phrase goes through the
-# app's own paste button — run.sh puts the seed on the simulator pasteboard.
+# One word per box: typing the whole phrase drops characters when the grid
+# moves focus mid-word. The simulator pasteboard is the Mac's, so the seed is
+# typed, never pasted.
 - runFlow:
     file: ./type-seed.yaml
     env:
       SEED: ${MAESTRO_SALMON_TEST_SEED_A}
       FIELD: 'recover-word-input'
+# iOS: the keyboard is still up after the last word, and a tap meant for Next
+# can land on it; a space there grows the grid to 24 boxes and Next goes away.
+# Tapping the title closes the keyboard first.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          id: 'onboarding-slot-title'
 - extendedWaitUntil:
     visible:
       id: 'recover-next-button'

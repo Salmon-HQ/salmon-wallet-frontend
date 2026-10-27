@@ -1,0 +1,40 @@
+appId: com.solanamobile.seedvaultimpl
+---
+# One-time setup of a Seeker emulator: loads wallet A's test seed into the Seed
+# Vault simulator, PIN SALMON_SEED_VAULT_PIN, so the Seed Vault flows have an
+# account to pick. A word per field, as in subflows/type-seed.yaml; the fields
+# are SeedPhrase#0 … #N-1 and the lower ones sit below the keyboard.
+- launchApp
+- tapOn: 'Import'
+- extendedWaitUntil:
+    visible:
+      id: 'SeedPin'
+    timeout: 10000
+- tapOn:
+    id: 'SeedPin'
+- inputText: ${MAESTRO_SALMON_SEED_VAULT_PIN}
+- evalScript: ${output.seedWords = MAESTRO_SALMON_TEST_SEED_A.trim().split(/\s+/); output.seedIndex = 0}
+- runFlow:
+    when:
+      true: ${output.seedWords.length == 24}
+    commands:
+      - tapOn:
+          id: 'PhraseLength24'
+- repeat:
+    while:
+      true: ${output.seedIndex < output.seedWords.length}
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: ${'SeedPhrase#' + output.seedIndex}
+          direction: DOWN
+          centerElement: true
+      - tapOn:
+          id: ${'SeedPhrase#' + output.seedIndex}
+      - inputText: ${output.seedWords[output.seedIndex]}
+      - evalScript: ${output.seedIndex = output.seedIndex + 1}
+- tapOn:
+    id: 'Save'
+- extendedWaitUntil:
+    visible: 'My Seeds'
+    timeout: 10000

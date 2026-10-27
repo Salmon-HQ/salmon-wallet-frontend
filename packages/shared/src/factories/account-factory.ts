@@ -13,6 +13,7 @@
  */
 
 import { getRandomAvatar } from '../utils/avatar';
+import { sealAccountSecret } from '../utils/account-secret';
 import {
   generateAccountId,
   createBlockchainAccountForNetwork,
@@ -113,7 +114,7 @@ export async function createAccount(options: CreateAccountOptions): Promise<Crea
     id,
     name,
     avatar,
-    secret: { kind: 'mnemonic', mnemonic },
+    secret: sealAccountSecret({ kind: 'mnemonic', mnemonic }),
     pathIndexes,
     networksAccounts,
     ...(derivedFrom ? { derivedFrom } : {}),
@@ -161,7 +162,7 @@ export async function importAccountFromPrivateKey(
     id,
     name,
     avatar,
-    secret: { kind: 'privateKey', privateKey, networkId },
+    secret: sealAccountSecret({ kind: 'privateKey', privateKey, networkId }),
     // Index 0 is the only slot an imported key occupies; it is not a
     // derivation index, just the position the rest of the app indexes by.
     pathIndexes: { [networkId]: [0] },

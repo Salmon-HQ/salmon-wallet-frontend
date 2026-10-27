@@ -1,0 +1,37 @@
+appId: io.salmonwallet.app
+---
+# The App Store U.K. set's own frame: the Powerups catalogue with Swap
+# switched off for the region (proxy started with STAGING_REGION=uk), so no
+# U.K. screenshot shows Swap. Every other U.K. frame is reused from
+# capture.yaml's run. Fresh install, so Swap is not installed either.
+- runFlow: ../../subflows/onboard-walletA.yaml
+- extendedWaitUntil:
+    visible:
+      id: 'token-row-SOL'
+    timeout: 60000
+# Payments installed as in the global set, so the two catalogues differ
+# only by Swap.
+- tapOn:
+    id: 'powerups-fab'
+- extendedWaitUntil:
+    visible:
+      id: 'powerups-row-payments'
+    timeout: 20000
+- tapOn:
+    id: 'powerups-row-payments'
+- tapOn:
+    id: 'powerups-detail-toggle-payments'
+- waitForAnimationToEnd:
+    timeout: 3000
+- runFlow: ../../subflows/dismiss-bottom-sheet.yaml
+- tapOn:
+    id: 'powerups-fab'
+- extendedWaitUntil:
+    visible:
+      id: 'powerups-row-payments'
+    timeout: 20000
+- assertNotVisible:
+    id: 'powerups-row-swap'
+- waitForAnimationToEnd:
+    timeout: 10000
+- takeScreenshot: ${OUT}/03-powerups-uk

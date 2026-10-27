@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, StyleSheet } from 'react-native';
-import { spacing, vs, componentSizes } from '@salmon/shared';
+import { spacing, vs } from '@salmon/shared';
 import { HoldToApproveButton, PrimaryButton, SecondaryButton } from '../Button';
 import type { ConfirmationButtonsProps } from './types';
 
@@ -24,12 +24,7 @@ export const ConfirmationButtons: React.FC<ConfirmationButtonsProps> = ({
   // takes over (see ConfirmationHost), so the button never spins for it.
   return (
     <View style={[styles.buttonsContainer, style]}>
-      <SecondaryButton
-        onPress={onBack}
-        disabled={isRefreshing}
-        style={styles.backButton}
-        testID="confirmation-back-button"
-      >
+      <SecondaryButton onPress={onBack} disabled={isRefreshing} testID="confirmation-back-button">
         {t('general.back')}
       </SecondaryButton>
       {requiresHold ? (
@@ -45,7 +40,6 @@ export const ConfirmationButtons: React.FC<ConfirmationButtonsProps> = ({
           onPress={onConfirm}
           loading={isRefreshing}
           disabled={isRefreshing || confirmDisabled}
-          style={styles.confirmButton}
           testID="confirmation-confirm-button"
         >
           {confirmLabel ?? t('general.confirm')}
@@ -65,19 +59,11 @@ const styles = StyleSheet.create({
   // The order is the app's, not this screen's: OnboardingLayout's ratified
   // band order is assist / secondary / action with the full-width primary
   // bottom-most, so Back sits above Confirm here too.
+  //
+  // Both buttons keep the standard size every other review uses (Send's, for
+  // one); its height is fixed, so nothing above moves when the label changes.
   buttonsContainer: {
     flexDirection: 'column',
     gap: vs(spacing.md),
-  },
-  // Height is the only legal override on either button, and it is fixed on
-  // both — so the stack's own height is the same in every state and nothing
-  // above it moves when the confirm label changes.
-  backButton: {
-    minHeight: vs(componentSizes.buttonHeightCompact),
-    height: vs(componentSizes.buttonHeightCompact),
-  },
-  confirmButton: {
-    minHeight: vs(componentSizes.buttonHeightCompact),
-    height: vs(componentSizes.buttonHeightCompact),
   },
 });

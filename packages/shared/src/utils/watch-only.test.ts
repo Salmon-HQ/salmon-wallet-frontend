@@ -64,8 +64,10 @@ describe('watch-only accounts in the secret vault', () => {
     // account would be restored as a mnemonic account with an empty phrase and
     // would take the derivation branch on every unlock.
     expect(toStoredSecret(WATCH_ONLY_SECRET)).toEqual(WATCH_ONLY_SECRET);
-    expect(toAccountSecret(undefined)).toEqual({ kind: 'mnemonic', mnemonic: '' });
-    expect(toAccountSecret(undefined)).not.toEqual(WATCH_ONLY_SECRET);
+    const missing = toAccountSecret(undefined);
+    expect(missing.kind).toBe('mnemonic');
+    expect(missing.kind === 'mnemonic' && missing.mnemonic).toBe('');
+    expect(missing).not.toEqual(WATCH_ONLY_SECRET);
   });
 
   it('leaves a legacy mnemonic vault byte-identical', () => {

@@ -36,8 +36,10 @@ home for mobile integration tests.
 - **Secrets**: live in `.env.test` (gitignored). Document any new
   variable in `.env.test.example`. Never pin literal seed words,
   passwords, or wallet addresses in a tracked YAML file — assert by
-  structural property (e.g. `assertNotVisible: "Tap to Reveal"`)
-  instead.
+  structural property instead: tap the reveal overlay by id, then
+  `extendedWaitUntil: notVisible:` that same id. iOS keeps secret text out
+  of the hierarchy, so a text assertion on it passes whatever the screen
+  shows.
 - **Recovery cost**: each action flow re-recovers from seed. Acceptable
   for isolation; the suite orchestrator does not de-dup recoveries.
 - **Destructive reset**: `actions/reset/remove-all-wallets.yaml` wipes

@@ -98,13 +98,13 @@ export class BitcoinAccount {
   readonly path: string;
 
   /** Bitcoin keypair for signing */
-  readonly keyPair: BitcoinKeyPair;
+  readonly #keyPair: BitcoinKeyPair;
 
   /** P2PKH address derived from public key */
   readonly address: string;
 
   /** Original BIP32 node for advanced operations (optional) */
-  private readonly node?: BIP32Interface;
+  readonly #node?: BIP32Interface;
 
   private readonly fetchBalanceFn: FetchBitcoinBalanceFn;
   private readonly fetchRecentTransactionsFn: FetchBitcoinRecentTransactionsFn;
@@ -121,14 +121,22 @@ export class BitcoinAccount {
     this.network = options.network;
     this.index = options.index;
     this.path = options.path;
-    this.keyPair = options.keyPair;
+    this.#keyPair = options.keyPair;
     this.address = options.keyPair.address;
-    this.node = options.node;
+    this.#node = options.node;
     this.fetchBalanceFn = options.fetchBalance;
     this.fetchRecentTransactionsFn = options.fetchRecentTransactions;
     this.fetchUtxosFn = options.fetchUtxos;
     this.broadcastTransactionFn = options.broadcastTransaction;
     this.fetchTransactionHexFn = options.fetchTransactionHex;
+  }
+
+  /**
+   * The signing key pair. Held in a private field and read through a getter,
+   * so JSON.stringify, inspect and spread of the account never carry the WIF.
+   */
+  get keyPair(): BitcoinKeyPair {
+    return this.#keyPair;
   }
 
   /**
@@ -138,7 +146,7 @@ export class BitcoinAccount {
    * @returns WIF-encoded private key
    */
   retrieveSecurePrivateKey(): string {
-    return this.keyPair.privateKeyWIF;
+    return this.#keyPair.privateKeyWIF;
   }
 
   /**
@@ -155,7 +163,7 @@ export class BitcoinAccount {
    * @returns The account's public key as Uint8Array (33 bytes compressed)
    */
   getPublicKey(): Uint8Array {
-    return this.keyPair.publicKey;
+    return this.#keyPair.publicKey;
   }
 
   /**
@@ -429,7 +437,7 @@ export class BitcoinAccount {
     if (!node) {
       throw new Error('Bitcoin BIP32 node not available');
     }
-    const signingKeyPair: SigningKeyPair = { ...this.keyPair, node };
+    const signingKeyPair: SigningKeyPair = { ...this.#keyPair, node };
 
     const result = await sendBitcoin(
       this.network,
@@ -575,6 +583,6 @@ export class BitcoinAccount {
    * @returns BIP32Interface node or undefined
    */
   getBip32Node(): BIP32Interface | undefined {
-    return this.node;
+    return this.#node;
   }
 }
