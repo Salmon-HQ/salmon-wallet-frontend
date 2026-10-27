@@ -10,9 +10,9 @@ appId: io.salmonwallet.app
     visible:
       id: 'recover-word-input-1'
     timeout: 30000
-# iOS: the simulator keyboard drops characters when the grid splits the typed
-# phrase across boxes and moves focus mid-word, so the phrase goes through the
-# app's own paste button — run.sh puts the seed on the simulator pasteboard.
+# One word per box: typing the whole phrase drops characters when the grid
+# moves focus mid-word. The simulator pasteboard is the Mac's, so the seed is
+# typed, never pasted.
 - runFlow:
     file: ./type-seed.yaml
     env:

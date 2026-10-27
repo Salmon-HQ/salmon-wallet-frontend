@@ -154,6 +154,11 @@ fi
 # the same machine fails in seconds with an IOException that reads like a
 # broken flow. Refuse instead, naming the run that holds it.
 LOCK_DIR="${TMPDIR:-/tmp}/salmon-maestro.lock"
+# A runner killed with -9 leaves its lock behind. Free it once that run is gone
+# and no Maestro JVM is left holding the device.
+if ! kill -0 "$(cat "$LOCK_DIR/pid" 2>/dev/null)" 2>/dev/null && ! pgrep -f maestro.cli.AppKt >/dev/null; then
+  rm -rf "$LOCK_DIR"
+fi
 if ! mkdir "$LOCK_DIR" 2>/dev/null; then
   die "another Maestro run holds $LOCK_DIR (pid $(cat "$LOCK_DIR/pid" 2>/dev/null || echo '?')).
     Wait for it, or remove the directory if that run is gone."
