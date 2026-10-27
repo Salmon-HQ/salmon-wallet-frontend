@@ -23,7 +23,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { PORTFOLIO, SOL, history, nfts, skrStake, toBase } from './staged.mjs';
+import { PORTFOLIO, SOL, USDC, history, nfts, skrStake, toBase } from './staged.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.STAGING_PORT ?? 3900);
@@ -118,6 +118,25 @@ async function staged(method, url) {
   return null;
 }
 
+// Printed at start so a capture run begins knowing what the shots will show:
+// a token without a logo renders as text, and a live Swap quote that does not
+// simulate leaves the Swap shot on an error banner.
+async function preflight() {
+  const rows = await stagedBalance(WALLETS[0]);
+  const noLogo = rows.filter((r) => !r.logo).map((r) => r.symbol);
+  const total = rows.reduce((sum, r) => sum + r.usdBalance, 0).toFixed(2);
+  console.log(`check    ${rows.length} tokens, $${total}, ${noLogo.length ? `NO LOGO: ${noLogo.join(', ')}` : 'every token with a logo'}`);
+  console.log(`check    SKR stake ${REGION === 'seeker' ? 'on' : 'off'}, Swap ${REGION === 'uk' ? 'off for the region' : 'on'}`);
+  if (REGION === 'uk' || !process.env.SALMON_TEST_WALLET_A_ADDR) return;
+  const q = new URLSearchParams({ inputMint: SOL, outputMint: USDC, publicKey: process.env.SALMON_TEST_WALLET_A_ADDR, uiAmount: '0.01' });
+  const out = await upstream('GET', `/v1/solana-mainnet/ft/swap/build?${q}`, { accept: 'application/json' });
+  console.log(
+    out.status === 200
+      ? 'check    a 0.01 SOL Swap quote builds and simulates'
+      : `check    SWAP FAILS NOW (${JSON.parse(out.body).error_description ?? out.status}): the Swap shot fails until the router recovers; retake it alone with flows/store/capture-swap.yaml`
+  );
+}
+
 function send(res, status, type, body) {
   res.writeHead(status, { ...CORS, 'content-type': type });
   res.end(body);
@@ -147,4 +166,7 @@ createServer(async (req, res) => {
     console.error(`error    ${req.method} ${mask(req.url)}: ${error.message}`);
     send(res, 502, 'application/json', JSON.stringify({ error: 'staging_proxy', message: error.message }));
   }
-}).listen(PORT, () => console.log(`staging proxy on http://localhost:${PORT} (region: ${REGION})`));
+}).listen(PORT, () => {
+  console.log(`staging proxy on http://localhost:${PORT} (region: ${REGION})`);
+  preflight().catch((error) => console.error(`check    failed: ${mask(error.message)}`));
+});

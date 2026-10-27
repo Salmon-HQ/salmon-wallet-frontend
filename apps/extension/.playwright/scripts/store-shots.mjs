@@ -64,7 +64,10 @@ async function openCatalog() {
 }
 
 async function closeCatalog() {
-  await page.getByRole('button', { name: /^(back|go back)$/i }).first().click();
+  await page
+    .getByRole('button', { name: /^(back|go back)$/i })
+    .first()
+    .click();
   await page.getByTestId('home-screen').waitFor({ state: 'visible', timeout: 20_000 });
   await sleep(1500);
 }
@@ -162,7 +165,9 @@ await dapp.close();
 // 05 send — the review of 0.5 SOL to a .sns name
 await toHome();
 await page.getByTestId('home-send-button').click({ timeout: 8000 });
-await page.getByTestId('send-recipient-input').fill(process.env.RECIPIENT ?? 'salmonwallet.sns', { timeout: 20_000 });
+await page
+  .getByTestId('send-recipient-input')
+  .fill(process.env.RECIPIENT ?? 'salmonwallet.sns', { timeout: 20_000 });
 await page.getByTestId('send-continue-button').click({ timeout: 30_000 });
 await page.getByTestId('send-amount-input').fill('0.5', { timeout: 20_000 });
 await page.getByTestId('send-review-button').click({ timeout: 20_000 });
