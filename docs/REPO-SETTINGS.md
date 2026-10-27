@@ -23,16 +23,23 @@ Equivalent CLI: `gh api repos/Salmon-HQ/salmon-wallet-frontend/rulesets
 --method POST --input <ruleset.json>` — ask before scripting this; the UI is
 clearer the first time.
 
-## 2. Squash-only merges
+## 2. Merge settings for the staging flow
 
-The `conventional PR title` check exists because the PR title becomes the
-commit on `main`. That only holds with squash merges.
+PRs into `staging` are squash-merged, so the PR title becomes the commit and
+the `conventional PR title` check (`pr-rules.yml`) guards it. The release PR
+from `staging` to `main` is merged with a merge commit, so `main` shares
+`staging`'s history (`CONTRIBUTING.md`, "Pull requests").
 
 Settings → General → Pull Requests:
 
-- Allow squash merging: ON, default commit message **Pull request title**.
-- Allow merge commits: OFF. Allow rebase merging: OFF.
-- Automatically delete head branches: ON (keeps the branch list clean).
+- Allow squash merging: ON, default commit message **Pull request title and
+  description**; otherwise a PR with one commit lands with that commit's
+  subject instead of the checked title.
+- Allow merge commits: ON, for the release PR. Allow rebase merging: OFF.
+- Automatically delete head branches: ON (keeps the branch list clean), with
+  a `Protect staging` ruleset (branch `refs/heads/staging`: block deletion,
+  block force pushes) so merging a release PR never deletes `staging`.
+- Default branch: `staging`, so a contributor's clone and PR start there.
 
 ## 3. Deploy environment gate
 
