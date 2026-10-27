@@ -104,6 +104,15 @@ Confirm the app is actually reaching the backend rather than timing out:
 docker logs --since 3m salmon-api-backend | grep -cE "GET|POST"
 ```
 
+## Seeker emulator
+
+The Seed Vault and dApp flows (`flows/actions/seed-vault/`, and the dApp Store captures in `flows/store/`) run on an Android emulator with Solana Mobile's Seed Vault simulator (`SeedVaultSimulator` from `solana-mobile/seed-vault-sdk`). Each of these fails on its first Seed Vault screen when its precondition is missing, so `run.sh` checks the ones it can see before such a flow starts.
+
+- **Screen lock:** the emulator's PIN is `SALMON_SEED_VAULT_PIN` (see "Backend reachability" above), which the Seed Vault flows also type. An emulator whose PIN nobody knows cannot be unlocked after a boot: replace it.
+- **Seed:** load wallet A's seed into the simulator once per emulator, `./run.sh --device emulator-5554 flows/actions/seed-vault/import-test-seed.yaml`. The simulator offers several accounts from it; wallet A is the one at `m/44'/501'/0'/0'`, so flows pick the account by wallet A's address (`seed-vault-account-<address>`), not by position in the list.
+- **Development bundle:** the app accepts the simulator only when `__DEV__` is true (`src/seed-vault/bridge.ts`), so these flows need the dev build with Metro started without `--no-dev`. Against a release build or a production bundle the Seed Vault option never appears. `run.sh` refuses both.
+- **dApp side:** the dApp flows open Solana Mobile's playground dApp in Chrome at `localhost:4747`, started with `npx solana-mobile playground --cluster <network>`. Its cluster must match the network the wallet is on, or the wallet refuses the request; `--cluster mainnet` also needs `--url <rpc>`. On a fresh emulator Chrome first shows its own welcome screens: get past them once before a run.
+
 ## Running
 
 Use `./run.sh`. It is to this suite what `playwright.config.ts` + `env.ts` are
