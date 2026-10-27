@@ -1102,6 +1102,67 @@ describe('useAccounts Hook', () => {
       );
     });
 
+    it('never leaves a listed wallet without its secret when removeAccount stops between its writes', async () => {
+      // An app killed between the vault write and the list write must not leave
+      // a wallet listed whose secret is gone: unlock would then fail for every
+      // wallet with "wrong password".
+      const mockAccount1 = createMockAccount();
+      const mockAccount2 = { ...createMockAccount(), id: 'account_interrupted_remove' };
+      const stored = [mockAccount1, mockAccount2].map(({ id, name, avatar, pathIndexes }) => ({
+        id,
+        name,
+        avatar,
+        pathIndexes,
+      }));
+
+      (storage.getStorageItem as any).mockImplementation((key: string) => {
+        if (key === 'salmon_accounts') return Promise.resolve(stored);
+        if (key === 'salmon_mnemonics')
+          return Promise.resolve(
+            unlockedVault({
+              [mockAccount1.id]: MOCK_MNEMONIC,
+              [mockAccount2.id]: MOCK_MNEMONIC,
+            })
+          );
+        if (key === 'salmon_active_account_id') return Promise.resolve(mockAccount1.id);
+        if (key === 'salmon_active_network_id') return Promise.resolve('solana-mainnet');
+        return Promise.resolve(null);
+      });
+
+      const { result } = renderHook(() => useAccounts());
+
+      await waitFor(() => {
+        expect(result.current[0].ready).toBe(true);
+        expect(result.current[0].accounts).toHaveLength(2);
+      });
+
+      // What is on disk once the second of the two writes fails, whichever it is.
+      const persisted: { list: string[]; vault: string[] } = {
+        list: stored.map(({ id }) => id),
+        vault: [mockAccount1.id, mockAccount2.id],
+      };
+      (encryptMnemonics as any).mockImplementation(async (vault: Record<string, string>) => ({
+        vault: { ids: Object.keys(vault) },
+        requiredLock: true,
+      }));
+      let writes = 0;
+      (storage.setStorageItem as any).mockImplementation(async (key: string, value: any) => {
+        if (key !== 'salmon_accounts' && key !== 'salmon_mnemonics') return;
+        writes += 1;
+        if (writes === 2) throw new Error('interrupted');
+        if (key === 'salmon_accounts') persisted.list = value.map(({ id }: { id: string }) => id);
+        else persisted.vault = value.ids;
+      });
+
+      await act(async () => {
+        await expect(result.current[1].removeAccount(mockAccount1.id)).rejects.toThrow(
+          'interrupted'
+        );
+      });
+
+      for (const id of persisted.list) expect(persisted.vault).toContain(id);
+    });
+
     it('should re-encrypt mnemonics when removing account without explicit password from encrypted wallet', async () => {
       // When removeAccount is called without a password but the wallet is encrypted,
       // encryptMnemonics handles re-encryption using stashed password or cached key.

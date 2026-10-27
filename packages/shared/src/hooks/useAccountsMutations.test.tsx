@@ -316,7 +316,10 @@ describe('useAccountsMutations editing from a stale window', () => {
 });
 
 describe('useAccountsMutations removing', () => {
-  it('writes the vault before the list', async () => {
+  // Stopped between the two writes, the vault keeps a secret the list no longer
+  // names (harmless, as the next test shows); the other order would leave a
+  // listed wallet without its secret.
+  it('writes the list before the vault', async () => {
     storageMap.set('salmon_accounts', [wallet('W'), wallet('X')].map(formatAccountForStorage));
     storeVault({ W: 'secret-of-W', X: 'secret-of-X' });
     const sidePanel = openWindow([wallet('W'), wallet('X')]);
@@ -324,7 +327,7 @@ describe('useAccountsMutations removing', () => {
     await act(() => sidePanel.result.current.removeAccount('X'));
 
     const keys = vi.mocked(storage.setStorageItem).mock.calls.map(([key]) => key);
-    expect(keys.indexOf('salmon_mnemonics')).toBeLessThan(keys.indexOf('salmon_accounts'));
+    expect(keys.indexOf('salmon_accounts')).toBeLessThan(keys.indexOf('salmon_mnemonics'));
   });
 
   it('keeps seeds the list no longer names when its last entry goes', async () => {
