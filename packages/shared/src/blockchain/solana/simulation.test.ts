@@ -999,9 +999,16 @@ type Raw = ReturnType<typeof rawSol>;
  * before the transaction, and what the simulation says it holds after.
  */
 function rpcFor(before: Record<string, Raw | null>, after: Record<string, Raw | null> = before) {
+  // The chain always has the mints a token account names; a test that cares
+  // about one passes its own.
+  const book = {
+    [USDC]: rawMint(5_000_000_000_000_000n, OTHER),
+    [WSOL]: rawMint(0n, OTHER, 9),
+    ...before,
+  };
   return {
     getMultipleAccounts: vi.fn((addresses: readonly Address[]) => ({
-      send: async () => ({ value: addresses.map((key) => before[key] ?? null) }),
+      send: async () => ({ value: addresses.map((key) => book[key] ?? null) }),
     })),
     simulateTransaction: vi.fn(
       (_wire: unknown, config: { accounts: { addresses: readonly Address[] } }) => ({
@@ -1050,12 +1057,12 @@ function rawToken(
   } as unknown as Raw;
 }
 
-/** Raw RPC payload for the USDC mint, with `authority` able to mint. */
-function rawMint(supply: bigint, authority: Address): Raw {
+/** Raw RPC payload for a mint (USDC's decimals by default), with `authority` able to mint. */
+function rawMint(supply: bigint, authority: Address, decimals = 6): Raw {
   const data = getMintEncoder().encode({
     mintAuthority: some(authority),
     supply,
-    decimals: 6,
+    decimals,
     isInitialized: true,
     freezeAuthority: none(),
     extensions: none(),

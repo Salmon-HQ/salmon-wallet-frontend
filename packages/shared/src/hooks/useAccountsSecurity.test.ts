@@ -446,10 +446,11 @@ describe('useAccountsSecurity — protecting a wallet that has no password', () 
 
     await act(() => result.current.initAccounts());
 
-    expect(params.restoreAccount).toHaveBeenCalledWith({
-      secret: { kind: 'mnemonic', mnemonic: 'stub mnemonic value' },
-      pathIndexes: { 'solana-mainnet': [0] },
-    });
+    expect(params.restoreAccount).toHaveBeenCalledTimes(1);
+    const [{ secret, pathIndexes }] = vi.mocked(params.restoreAccount).mock.calls[0];
+    // The phrase is sealed (readable, not enumerable), so compare its fields.
+    expect(secret.kind === 'mnemonic' && secret.mnemonic).toBe('stub mnemonic value');
+    expect(pathIndexes).toEqual({ 'solana-mainnet': [0] });
     expect(params.setUnprotectedAddresses).toHaveBeenCalledWith(['Derived1']);
     expect(params.loadAccounts).not.toHaveBeenCalled();
     expect(params.setError).toHaveBeenLastCalledWith(null);
