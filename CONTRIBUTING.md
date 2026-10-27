@@ -39,7 +39,10 @@ Package names: `@salmon/shared`, `@salmon/ui`, `@salmon/mobile`,
 - A fix that cannot wait for the next release may go straight to `main` as an
   exception: branch from `main`, label the PR `exception`, and right after it
   merges, merge `main` into `staging` with a merge commit
-  (`git switch staging && git merge origin/main && git push origin staging`).
+  (`git switch staging && git merge origin/main`), run `pnpm typecheck`, then
+  `git push origin staging`. Git can join two copies of the same new function
+  without marking a conflict; the typecheck catches it. A merge built without
+  a working tree is good only once CI passes on the push to `staging`.
 - The `PR rules` workflow checks both: a conventional PR title, and that a PR
   into `main` comes from `staging` unless it carries the `exception` label.
 - Conventional commits in English (`feat:`, `fix:`, `docs:`, `chore:`, ...).
