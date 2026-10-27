@@ -115,30 +115,6 @@ jobs:
           node --test scripts/check-e2e-selectors.test.mjs
           node scripts/check-e2e-selectors.mjs
 
-  pr-title:
-    name: conventional PR title
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    permissions:
-      pull-requests: read
-    steps:
-      # Squash-merge policy makes the PR title the commit on main; this
-      # replaces commitlint-on-commits entirely.
-      - uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6.1.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          types: |
-            feat
-            fix
-            refactor
-            docs
-            test
-            chore
-            perf
-            ci
-
   zizmor:
     name: workflow security lint
     runs-on: ubuntu-24.04
