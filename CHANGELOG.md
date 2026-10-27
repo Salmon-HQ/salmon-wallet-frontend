@@ -23,6 +23,7 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 - The password screen for a wallet that came over without a password also offers to remove that wallet from this device, after a confirmation. Removing all wallets also removes a wallet left over from the old version, which could come back afterwards.
 - The warning for an address no one controls reads "No person controls this address. Anything you send to it may be lost forever." Send review shows the address once, and adds an Address row only when "To" shows a contact's name.
 - A Powerup switched off in your region names itself in the notice ("Swap isn't available in this region.").
+- A watch-only wallet shows only its assets and NFTs: Home offers no Powerup tabs and no + to add one. Powerups installed on the device come back on a wallet that can sign.
 - Sheets and confirmation dialogs share one layout: the details sit in cards with the same spacing in every sheet, and a dialog that only offered a Close button closes from its backdrop.
 - Optional analytics asks for your consent again, because it now counts more: how often the app opens, which Powerups you turn on and use, and the dApp connections and signatures you approve (never which dApp), together with the platform and the app version. Events carry no amounts, and the ones that follow a transaction carry only its day. A consent given to the earlier analytics keeps covering only the earlier list.
 
@@ -35,6 +36,7 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 - A dApp transaction whose signature never expires (a durable nonce) says so and needs Hold to Approve.
 - When the preview cannot run (a network error), the screen says it could not determine what the transaction does and needs Hold to Approve, instead of staying on "Simulating this transaction…". A request that carries no transaction message is shown as one that could not be decoded, and cannot be approved.
 - The dApp transaction and message screens name the account that signs, and an undetermined preview says why, as the extension does.
+- The Back and Confirm buttons on the Swap review and on dApp transaction approvals are the same size as every other button in the app; they were shorter there.
 - Swap checks, before you sign, that the swap pays you: a Jupiter route must send the output to your own account with the amounts on screen, and a 0x route is simulated and refused unless you receive at least the minimum shown. Reported by iblitzc0de.
 - A dApp on the other Solana network no longer dead-ends: when it asks to connect on Devnet (or Mainnet) and your wallet holds that network, Salmon offers to switch, then shows the usual connect approval. A network Salmon does not support is named in the refusal.
 - A dApp that reaches Salmon before any wallet exists is told so, with a button that opens Salmon to create or import one.
@@ -54,6 +56,7 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 - Sheets share one layout: the details sit in cards with the same spacing in every sheet, a sheet that only offered a Close button closes from its handle, backdrop or Back, and the confirmations that used the system alert use Salmon's own sheet.
 - Bottom buttons on send, collectible, confirmation, dApp approval and receipt screens sit as far from the bottom edge as the Powerups button.
 - Optional analytics asks for your consent again, because it now counts more: how often the app opens, which Powerups you turn on and use, and the dApp connections and signatures you approve (never which dApp), together with the platform and the app version. Events carry no amounts, and the ones that follow a transaction carry only its day. A consent given to the earlier analytics keeps covering only the earlier list.
+- A watch-only wallet shows only its assets and NFTs: Home offers no Powerup tabs and no + to add one. Powerups installed on the device come back on a wallet that can sign.
 
 ## mobile 1.2.0 — 2026-09-28
 

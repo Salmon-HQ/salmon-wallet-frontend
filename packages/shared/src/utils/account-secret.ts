@@ -27,17 +27,43 @@ export type SecretVault = Record<string, StoredSecret>;
  */
 export function toAccountSecret(stored: StoredSecret | undefined): AccountSecret {
   if (typeof stored === 'string' || stored == null) {
-    return { kind: 'mnemonic', mnemonic: stored ?? '' };
+    return sealAccountSecret({ kind: 'mnemonic', mnemonic: stored ?? '' });
   }
-  return stored;
+  return sealAccountSecret(stored);
+}
+
+/**
+ * A copy of the secret whose mnemonic or private key stays readable but is
+ * not enumerable, so JSON.stringify, inspect and spread of an account (which
+ * lives in app state for the whole unlocked session) never carry it.
+ */
+export function sealAccountSecret(secret: AccountSecret): AccountSecret {
+  const sealed = { ...secret };
+  // The spread skips a field an earlier seal hid, so the value comes from the
+  // original: sealing twice keeps the secret.
+  const hide = (field: 'mnemonic' | 'privateKey', value: string) =>
+    Object.defineProperty(sealed, field, {
+      value,
+      enumerable: false,
+      writable: true,
+      configurable: true,
+    });
+  if (secret.kind === 'mnemonic') hide('mnemonic', secret.mnemonic);
+  if (secret.kind === 'privateKey') hide('privateKey', secret.privateKey);
+  return sealed;
 }
 
 /**
  * Writes a secret back into vault form, preserving the legacy string shape for
- * mnemonics (see the module note).
+ * mnemonics (see the module note). The vault is encrypted as JSON, so a private
+ * key is copied out of its sealed field explicitly.
  */
 export function toStoredSecret(secret: AccountSecret): StoredSecret {
-  return secret.kind === 'mnemonic' ? secret.mnemonic : secret;
+  if (secret.kind === 'mnemonic') return secret.mnemonic;
+  if (secret.kind === 'privateKey') {
+    return { kind: 'privateKey', privateKey: secret.privateKey, networkId: secret.networkId };
+  }
+  return secret;
 }
 
 /** Builds the full vault payload from the in-memory accounts. */

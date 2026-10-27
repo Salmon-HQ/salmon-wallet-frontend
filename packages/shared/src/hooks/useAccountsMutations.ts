@@ -265,10 +265,12 @@ export function useAccountsMutations({
           }
         }
 
-        // The vault, then the list: a window that re-reads on the list finds
-        // the vault it describes.
-        await setStorageItem(STORAGE_KEYS.MNEMONICS, encryptResult.vault);
+        // The list, then the vault: stopped in between, the vault keeps one
+        // secret too many, which nothing reads. The other order would leave a
+        // listed wallet without its secret, and unlock fails for every wallet.
+        // A window that re-reads on the list still finds every secret it lists.
         await writeStoredAccounts(newStored);
+        await setStorageItem(STORAGE_KEYS.MNEMONICS, encryptResult.vault);
         if (password) {
           setRequiredLock(true);
         }

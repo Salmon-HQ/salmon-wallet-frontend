@@ -1,0 +1,55 @@
+# Rules on the PR itself (CONTRIBUTING.md, "Pull requests"), re-checked when
+# its title, base or labels change, which CI's plain `pull_request` misses.
+# Plain `pull_request` only, so fork runs get no secrets, and no step runs a
+# shell on PR-controlled text.
+name: PR rules
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, edited, labeled, unlabeled]
+
+permissions: {}
+
+concurrency:
+  group: pr-rules-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  pr-title:
+    name: conventional PR title
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read
+    steps:
+      # A squash merge takes the PR title as its commit; this replaces
+      # commitlint-on-commits entirely.
+      - uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6.1.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            refactor
+            docs
+            test
+            chore
+            perf
+            ci
+
+  release-source:
+    name: main takes PRs from staging
+    if: github.event.pull_request.base.ref == 'main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    permissions: {}
+    steps:
+      - name: The PR comes from staging, or is labelled exception
+        if: >-
+          !contains(github.event.pull_request.labels.*.name, 'exception') &&
+          !(github.event.pull_request.head.ref == 'staging' &&
+          github.event.pull_request.head.repo.full_name == github.repository)
+        run: |
+          echo "::error::A PR into main comes from staging. Branch from staging and open the PR there; a fix that cannot wait for the next release goes in with the 'exception' label."
+          exit 1

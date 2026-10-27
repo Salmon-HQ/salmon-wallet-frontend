@@ -119,8 +119,8 @@ export interface TransactionProposal {
   };
   /**
    * How each signing attempt ended: `true` once the network confirmed it,
-   * `false` when signing or sending failed. Backing out is not an attempt,
-   * and an outcome the network could not confirm either way reports nothing.
+   * `false` when signing or sending failed. Backing out is not an attempt, and
+   * an unknown outcome (sent, but the network never answered) calls nothing.
    * Core ignores whatever this throws, so it never changes what is signed or
    * what the user sees.
    */

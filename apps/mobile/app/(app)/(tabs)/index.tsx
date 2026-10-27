@@ -67,6 +67,7 @@ import {
   useFocusModePhase,
   useNetworkPowerups,
   allowlistForDevice,
+  EMPTY_POWERUP_ALLOWLIST,
   useHomeSubTabContent,
   fontFamilyNative,
   fontSize,
@@ -374,12 +375,17 @@ export default function HomeScreen() {
   // 029 §5.2): fail closed, so until the catalogue answers no Powerup is
   // offered, and a switched-off one keeps its tab only to show why.
   // A Powerup that needs more than a network (SKR: Seed Vault) is left out
-  // on a device without it (spec 040).
+  // on a device without it (spec 040). A watch-only account holds no key, so
+  // it sees its assets and NFTs and no Powerup: no tab, no catalogue entry.
   const networkAllowlist = useNetworkPowerups(networkId ?? null);
   const deviceCapabilities = useDeviceCapabilities();
+  const watchOnly = isWatchOnlyAccount(activeAccount);
   const powerupAllowlist = useMemo(
-    () => allowlistForDevice(networkAllowlist, POWERUPS, deviceCapabilities),
-    [networkAllowlist, deviceCapabilities]
+    () =>
+      watchOnly
+        ? EMPTY_POWERUP_ALLOWLIST
+        : allowlistForDevice(networkAllowlist, POWERUPS, deviceCapabilities),
+    [watchOnly, networkAllowlist, deviceCapabilities]
   );
   const powerupTabs = useHomePowerupTabs({
     installed,
@@ -602,6 +608,9 @@ export default function HomeScreen() {
     allowlist: powerupAllowlist,
     onOpenTab: (id) => setActiveSubTab(id as HomeSubTabKey),
   });
+  useEffect(() => {
+    if (watchOnly) handleCatalogClose();
+  }, [watchOnly, handleCatalogClose]);
 
   // Staked SOL opens its stake accounts; Staked SKR opens the SKR Powerup's
   // tab, or the catalogue on its detail to install it (spec 039).
@@ -697,7 +706,7 @@ export default function HomeScreen() {
         onSendPress={handleSendPress}
         onReceivePress={handleReceivePress}
         onActivityPress={handleActivityPress}
-        sendDisabled={isWatchOnlyAccount(activeAccount)}
+        sendDisabled={watchOnly}
       />
     </View>
   );
@@ -982,7 +991,7 @@ export default function HomeScreen() {
       {/* The `+`. It floats over the content and opens the catalogue; while
           the catalogue is up the plus turns into the close mark. It leaves
           with the content when a task takes the screen. */}
-      {POWERUPS_ENABLED && !isTaskEngaged && (
+      {POWERUPS_ENABLED && !isTaskEngaged && !watchOnly && (
         // Floats in with the content after the lock; a layer of its own, so
         // the float does not overwrite the button's leap transform.
         <Reanimated.View

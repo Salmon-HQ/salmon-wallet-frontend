@@ -1,6 +1,7 @@
 appId: io.salmonwallet.app
 ---
 # Reveal private key. PK MUST NOT be screenshotted.
+# Revealing asks for the wallet password first, in a confirm sheet.
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - runFlow: ../../../subflows/open-settings.yaml
 - tapOn:
@@ -18,10 +19,43 @@ appId: io.salmonwallet.app
 # Reveal the first key via its labeled overlay.
 - tapOn:
     id: 'private-key-reveal-overlay-0'
-- waitForAnimationToEnd:
-    timeout: 4000
-# Do NOT screenshot revealed PK. Verify reveal by absence of "Tap to Reveal".
-- assertNotVisible: 'Tap to Reveal'
+- extendedWaitUntil:
+    visible:
+      id: 'confirm-dialog-password'
+    timeout: 10000
+# A wrong password keeps the secret covered: the sheet says so and stays, and
+# cancelling it leaves the cover in place.
+- tapOn:
+    id: 'confirm-dialog-password'
+- inputText: 'not-the-wallet-password'
+- tapOn:
+    id: 'confirm-dialog-confirm'
+- extendedWaitUntil:
+    visible:
+      id: 'confirm-dialog-password-error'
+    timeout: 15000
+- tapOn:
+    id: 'confirm-dialog-cancel'
+- extendedWaitUntil:
+    visible:
+      id: 'private-key-reveal-overlay-0'
+    timeout: 10000
+- tapOn:
+    id: 'private-key-reveal-overlay-0'
+- extendedWaitUntil:
+    visible:
+      id: 'confirm-dialog-password'
+    timeout: 10000
+- tapOn:
+    id: 'confirm-dialog-password'
+- inputText: ${MAESTRO_SALMON_TEST_PASSWORD}
+- tapOn:
+    id: 'confirm-dialog-confirm'
+# Do NOT screenshot revealed PK. Verify the reveal by the overlay going away.
+- extendedWaitUntil:
+    notVisible:
+      id: 'private-key-reveal-overlay-0'
+    timeout: 30000
 - tapOn:
     id: 'private-key-done-button'
 - waitForAnimationToEnd:

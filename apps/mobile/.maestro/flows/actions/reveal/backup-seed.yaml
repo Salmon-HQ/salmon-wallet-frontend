@@ -1,23 +1,57 @@
 appId: io.salmonwallet.app
 ---
 # Reveal seed phrase. Words MUST NOT be screenshotted — assert via hierarchy.
-# Finding: no password prompt observed on Wallet A (derived key cached in stash).
+# Revealing asks for the wallet password first, in a confirm sheet.
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - runFlow: ../../../subflows/open-settings.yaml
 - tapOn:
     id: 'settings-item-backup-seed'
 - waitForAnimationToEnd:
     timeout: 4000
-- assertVisible: 'Backup Seed Phrase'
+- assertVisible:
+    id: 'settings-panel-backup'
 # Reveal the seed via its labeled overlay.
 - tapOn:
     id: 'backup-seed-reveal-overlay'
-- waitForAnimationToEnd:
-    timeout: 4000
-# Verify reveal happened by absence of "Tap to Reveal" placeholder.
+- extendedWaitUntil:
+    visible:
+      id: 'confirm-dialog-password'
+    timeout: 10000
+# A wrong password keeps the secret covered: the sheet says so and stays, and
+# cancelling it leaves the cover in place.
+- tapOn:
+    id: 'confirm-dialog-password'
+- inputText: 'not-the-wallet-password'
+- tapOn:
+    id: 'confirm-dialog-confirm'
+- extendedWaitUntil:
+    visible:
+      id: 'confirm-dialog-password-error'
+    timeout: 15000
+- tapOn:
+    id: 'confirm-dialog-cancel'
+- extendedWaitUntil:
+    visible:
+      id: 'backup-seed-reveal-overlay'
+    timeout: 10000
+- tapOn:
+    id: 'backup-seed-reveal-overlay'
+- extendedWaitUntil:
+    visible:
+      id: 'confirm-dialog-password'
+    timeout: 10000
+- tapOn:
+    id: 'confirm-dialog-password'
+- inputText: ${MAESTRO_SALMON_TEST_PASSWORD}
+- tapOn:
+    id: 'confirm-dialog-confirm'
+# Verify the reveal by the overlay going away.
 # Do NOT screenshot revealed words and do NOT pin seed-word literals here —
 # matching specific words would leak parts of SALMON_TEST_SEED_A into version control.
-- assertNotVisible: 'Tap to Reveal'
+- extendedWaitUntil:
+    notVisible:
+      id: 'backup-seed-reveal-overlay'
+    timeout: 30000
 - tapOn:
     id: 'backup-seed-done-button'
 - waitForAnimationToEnd:

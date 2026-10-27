@@ -10,7 +10,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-import { createAccount } from './account-factory';
+import { createAccount, importAccountFromPrivateKey } from './account-factory';
 
 vi.mock('../utils/avatar', () => ({ getRandomAvatar: () => 'avatar' }));
 vi.mock('../utils/account', () => ({
@@ -56,5 +56,32 @@ describe('createAccount', () => {
 
     expect(account.networksAccounts['solana-mainnet']).toHaveLength(1);
     expect(account.derivedFrom).toBeUndefined();
+  });
+
+  it('builds an account whose serialization never carries the mnemonic', async () => {
+    const { account } = await createAccount({
+      name: 'Account 1',
+      mnemonic: 'twelve words go here',
+      networkIds: ['solana-mainnet'],
+    });
+
+    expect(JSON.stringify(account)).not.toContain('twelve words');
+    expect(account.secret.kind === 'mnemonic' && account.secret.mnemonic).toBe(
+      'twelve words go here'
+    );
+  });
+});
+
+describe('importAccountFromPrivateKey', () => {
+  it('builds an account whose serialization never carries the private key', async () => {
+    const { account } = await importAccountFromPrivateKey({
+      name: 'Imported',
+      privateKey: 'base58-private-key',
+    });
+
+    expect(JSON.stringify(account)).not.toContain('base58-private-key');
+    expect(account.secret.kind === 'privateKey' && account.secret.privateKey).toBe(
+      'base58-private-key'
+    );
   });
 });

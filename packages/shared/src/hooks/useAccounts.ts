@@ -28,6 +28,7 @@ import {
   createBlockchainAccountForSeedVault,
 } from '../utils';
 import { getRandomAvatar } from '../utils/avatar';
+import { sealAccountSecret } from '../utils/account-secret';
 import type { BlockchainAccount } from '../types/blockchain';
 import type {
   NetworksAccounts,
@@ -169,8 +170,11 @@ function formatAccountForStorage(account: Account): StoredAccount {
  * Creates a new account with the given options.
  * Supports creating accounts for Solana, Bitcoin, and Ethereum networks.
  */
-async function restoreAccount(options: RestoreAccountOptions): Promise<Account> {
-  const { name, avatar, secret, pathIndexes = {} } = options;
+export async function restoreAccount(options: RestoreAccountOptions): Promise<Account> {
+  const { name, avatar, pathIndexes = {} } = options;
+  // Every caller's secret ends up in app state, the legacy migration's bare
+  // mnemonic included, so it is sealed here once for all of them.
+  const secret = sealAccountSecret(options.secret);
 
   const id = generateAccountId();
 

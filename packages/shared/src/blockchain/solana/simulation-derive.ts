@@ -121,10 +121,6 @@ export function deriveEffects(input: DerivationInput): NoEffect | Effects | Unde
       continue;
     }
 
-    const mint = mints.get(mintAddress);
-    const decimals = mint?.decimals ?? 0;
-    const symbol = resolveSymbol?.(mintAddress) ?? null;
-
     // Ownership is diffed before amounts, because losing the account outranks
     // anything that moved inside it. SetAuthority(AccountOwner) leaves the
     // balance and the delegate identical, so every comparison below reports
@@ -145,19 +141,35 @@ export function deriveEffects(input: DerivationInput): NoEffect | Effects | Unde
     // A missing snapshot is a real balance of zero: absent before means the
     // transaction created the account, absent after means it closed it.
     const amount = (post?.amount ?? 0n) - (pre?.amount ?? 0n);
-    if (amount !== 0n) {
-      tokens.push({ tokenAccount, mint: mintAddress, amount, decimals, symbol });
-    }
 
     // An approval is a *new or enlarged* delegation in the post state. A
     // delegation that was already there and is untouched is pre-existing
     // exposure, not something this transaction is asking for.
-    if (!post?.delegate) {
+    const grantsApproval =
+      !!post?.delegate &&
+      (pre?.delegate !== post.delegate || post.delegatedAmount > (pre?.delegatedAmount ?? 0n));
+    if (amount === 0n && !grantsApproval) {
       continue;
     }
-    const isNewSpender = pre?.delegate !== post.delegate;
-    const isLarger = post.delegatedAmount > (pre?.delegatedAmount ?? 0n);
-    if (!isNewSpender && !isLarger) {
+
+    // Without the mint there are no decimals to show the amount at and no
+    // supply to judge an approval by, so no row would be right.
+    const mint = mints.get(mintAddress);
+    if (!mint) {
+      return {
+        kind: 'undetermined',
+        account,
+        reason: 'account-state-unavailable',
+        detail: `Mint ${mintAddress} of token account ${tokenAccount} was not returned.`,
+      };
+    }
+    const { decimals } = mint;
+    const symbol = resolveSymbol?.(mintAddress) ?? null;
+
+    if (amount !== 0n) {
+      tokens.push({ tokenAccount, mint: mintAddress, amount, decimals, symbol });
+    }
+    if (!grantsApproval || !post?.delegate) {
       continue;
     }
 
@@ -168,7 +180,7 @@ export function deriveEffects(input: DerivationInput): NoEffect | Effects | Unde
       amount: post.delegatedAmount,
       decimals,
       symbol,
-      scope: classifyApprovalScope(post.delegatedAmount, post.amount, mint?.supply ?? 0n),
+      scope: classifyApprovalScope(post.delegatedAmount, post.amount, mint.supply),
     });
   }
 
