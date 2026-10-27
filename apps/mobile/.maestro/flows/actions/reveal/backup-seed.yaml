@@ -17,6 +17,29 @@ appId: io.salmonwallet.app
     visible:
       id: 'confirm-dialog-password'
     timeout: 10000
+# A wrong password keeps the secret covered: the sheet says so and stays, and
+# cancelling it leaves the cover in place.
+- tapOn:
+    id: 'confirm-dialog-password'
+- inputText: 'not-the-wallet-password'
+- tapOn:
+    id: 'confirm-dialog-confirm'
+- extendedWaitUntil:
+    visible:
+      id: 'confirm-dialog-password-error'
+    timeout: 15000
+- tapOn:
+    id: 'confirm-dialog-cancel'
+- extendedWaitUntil:
+    visible:
+      id: 'backup-seed-reveal-overlay'
+    timeout: 10000
+- tapOn:
+    id: 'backup-seed-reveal-overlay'
+- extendedWaitUntil:
+    visible:
+      id: 'confirm-dialog-password'
+    timeout: 10000
 - tapOn:
     id: 'confirm-dialog-password'
 - inputText: ${MAESTRO_SALMON_TEST_PASSWORD}
