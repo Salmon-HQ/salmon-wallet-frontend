@@ -38,16 +38,26 @@ export const EXTERNAL = new Set([
   'order-12',
   'Salmon Treasury',
   'Salmon Test NFT',
+  // The staged NFT collection on the store screenshots (store-assets/staging/staged.mjs).
+  'Salmon Run #1',
   // Seed Vault simulator screens, drawn over Salmon (subflows/seed-vault-confirm.yaml),
   // and the name its wallet carries into Salmon's switcher.
   'UsePin',
   'PinEntryField',
   'Connection request',
   'Account 2',
+  // The simulator's own Import screen (flows/actions/seed-vault/import-test-seed.yaml).
+  'SeedPin',
+  'PhraseLength24',
+  'Save',
+  'My Seeds',
   // Solana Mobile playground, the test dApp the MWA flows open.
   'Reset authorization',
   'Sign Transaction',
   'Sign and Send',
+  // Chrome's first-run screens on a fresh emulator, before the playground opens.
+  'Use without an account',
+  'No thanks',
 ]);
 
 const read = (p) => readFileSync(p, 'utf8');
