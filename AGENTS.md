@@ -14,6 +14,15 @@ pnpm + turbo monorepo (the web app was retired on 2026-09-02; the extension
 is the only DOM app). The same business logic powers both apps, so
 ownership boundaries are the core discipline of this codebase.
 
+## Branches and pull requests
+
+A change starts from `staging` and its PR targets `staging`; it is
+squash-merged, so the PR title becomes the commit. `main` is what the stores
+ship and takes only the release PR from `staging`, merged with a merge commit.
+A PR straight to `main` is an exception the owner agrees to: it carries the
+`exception` label, and `main` is merged into `staging` right after. The
+`PR rules` workflow enforces both; `CONTRIBUTING.md` has the commands.
+
 ## Ownership model
 
 | Location          | Owns                                                                                                                                                  | Why                                                                                               |
