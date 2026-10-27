@@ -77,7 +77,7 @@ env:
     id: 'payments-create'
 - extendedWaitUntil:
     visible:
-      id: 'payments-sheet-qr'
+      id: 'payments-sheet-code'
     timeout: 20000
 - waitForAnimationToEnd:
     timeout: 10000
