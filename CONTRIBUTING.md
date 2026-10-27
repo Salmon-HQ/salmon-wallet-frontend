@@ -31,12 +31,17 @@ Package names: `@salmon/shared`, `@salmon/ui`, `@salmon/mobile`,
 
 ## Pull requests
 
-- Branch from `main`; keep PRs focused on a single change.
-- `staging` is `main` plus the work still under test. Right after every merge
-  to `main`, merge `main` into `staging` with a merge commit
-  (`git switch staging && git merge origin/main && git push origin staging`),
-  keeping what `staging` has that `main` does not yet; never reset `staging`
-  to `main`.
+- Branch from `staging` and open the PR into `staging`; keep PRs focused on a
+  single change. It is squash-merged, so the PR title becomes the commit.
+- `main` is what is released. It takes changes only through a PR from
+  `staging`, merged with a merge commit, never squash: `main` then shares
+  `staging`'s history and the next release PR carries only what is new.
+- A fix that cannot wait for the next release may go straight to `main` as an
+  exception: branch from `main`, label the PR `exception`, and right after it
+  merges, merge `main` into `staging` with a merge commit
+  (`git switch staging && git merge origin/main && git push origin staging`).
+- The `PR rules` workflow checks both: a conventional PR title, and that a PR
+  into `main` comes from `staging` unless it carries the `exception` label.
 - Conventional commits in English (`feat:`, `fix:`, `docs:`, `chore:`, ...).
 - Run the targeted checks for every package you touched before opening the PR.
 - Every user-facing string must exist in both English and Spanish locale files
