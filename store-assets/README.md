@@ -10,7 +10,7 @@ asset specs, Apple screenshot specs 2025+, AMO listing guide).
 | `app-store/iphone-6.9-uk/` | the English (U.K.) localisation's set | yes, for the U.K. listing | the same deck with no Swap anywhere: token detail replaces the Swap frame, and the catalogue is the one captured with Swap switched off for the region |
 | `app-store/header-3840x1646.png` | product page header (creative asset, guideline 2.3.14) | no | from `SOT/03-dev/Design System/Store Graphics.pen` |
 | `play/` | `feature-graphic.png` 1024×500, `icon-512.png`, `phone/` 2–8 screenshots, `listing.txt` | yes | feature graphic from `Store Graphics.pen`; `phone/` is the App Store deck on Android |
-| `play/tablet-7/` · `play/tablet-10/` | 4–8 screenshots each, 1,080–7,680px | no, see below | filled with the phone frames |
+| `play/tablet-7/` · `play/tablet-10/` | 4–8 screenshots each, 1,080–7,680px | no, see below | no folder of their own: upload the `play/phone/` frames to both slots |
 | `dapp-store/` | `screenshots/` 4–8 of one size, `banner-1200x600.png`, `icon-512.png` (opaque) | yes | banner from `Store Graphics.pen`; screenshots show the Seeker features (Seed Vault, Mobile Wallet Adapter, SKR) |
 | `chrome-web-store/` | `screenshots/` 1280×800 (up to 5), `store-icon-128.png`, `promo-small-440x280.png` | yes (promo tile ranks the listing) | 5 frames from the side panel: Home, Swap review, Powerups, a dApp message to sign, Send review; promo tile from `Store Graphics.pen` |
 | `amo/screenshots/` | 1280×800 | recommended | empty: the extension never shipped on Firefox |
@@ -24,7 +24,7 @@ Every screenshot shows one fictional account (Apple 2.3.9): the same balances, h
 
 1. `store-assets/staging/run.sh` starts the proxy on port 3900 (`STAGING_REGION=uk` switches Swap off for the U.K. catalogue, `STAGING_REGION=seeker` adds the SKR stake for the dApp Store deck). At start it prints a check: the staged total, any token without a logo, the mode, and whether a live Swap quote simulates.
 2. iOS: build a Release app pointed at it, `EXPO_PUBLIC_SALMON_ENV=production EXPO_PUBLIC_API_URL=http://localhost:3900 npx expo run:ios --configuration Release --device <udid> --no-bundler`, then from `apps/mobile/.maestro`: `SALMON_API_URL=http://localhost:3900 ./run.sh --release --device <udid> --test-output-dir=<dir> -e OUT=ios flows/store/capture.yaml` and `flows/store/capture-uk.yaml` (with the U.K. proxy). Maestro 2.11 writes screenshots only inside `--test-output-dir`; copy them into `source/ios-staged/`.
-3. Android: a debug build (a release build refuses plain http to the proxy) with Metro started with the same `EXPO_PUBLIC_*` values; the same flows with `--device emulator-5554`. Play's emulator must not run Seed Vault, or the catalogue offers SKR. The dApp Store deck runs `flows/store/capture-seeker.yaml` and `capture-seeker-mwa.yaml` on a Seeker emulator set up as in the Maestro README's "Seeker emulator" section, with the proxy in `seeker` mode.
+3. Android: a debug build (a release build refuses plain http to the proxy) with Metro started with the same `EXPO_PUBLIC_*` values; the same flows with `--device emulator-5554`. Play's emulator must not run Seed Vault, or the catalogue offers SKR. The dApp Store deck runs `flows/store/capture-seeker.yaml` and `capture-seeker-mwa.yaml` on a Seeker emulator set up as in the Maestro README's "Seeker emulator" section, with the proxy in `seeker` mode. `capture-seeker-mwa.yaml` takes `-e DAPP_URL=https://www.salmonwallet.io/dapp-demo.html`: the dApp has to be served over https so the frames show a real address instead of `localhost`. Its source is `staging/dapp-demo.html`; it goes on the website (`public/dapp-demo.html`) only while capturing. Store captures skip `run.sh`'s devnet fixtures, so they need no backend checkout.
 4. Extension: `VITE_API_URL=http://127.0.0.1:3900 pnpm build` in `apps/extension`, then `node .playwright/scripts/store-shots.mjs`.
 5. `python3 store-assets/compose.py` frames every deck; it clears each output folder first, so no stale frame survives.
 
@@ -66,11 +66,8 @@ canvas — that would be the phone UI blown up):
 1. **Does the app actually have a distinct tablet layout?** If it only scales the phone
    layout, tablet screenshots add little beyond filling the slot, and that is a finding to
    report rather than paper over.
-2. **The staged portfolio has to match the phone deck.** The mock server that staged it is
-   not in this repo (see `apps/mobile/.maestro/` and the commit that added the capture
-   flows). Captured against the live API, walletA shows whatever it holds that day — and a
-   listing whose phone screenshots read $4,307.89 while its tablet screenshots read $0.00
-   looks broken.
+2. **The staged portfolio has to match the phone deck.** Capture through `staging/proxy.mjs`
+   like every other deck, so the tablet frames show the same account as the phone frames.
 
 ## Icons are generated, not drawn — `make-icons.py`
 

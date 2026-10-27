@@ -232,8 +232,21 @@ fi
 # Wallet A funded (topped up from B) and holding the NFT fixture (a transfer
 # moves it to B; the next run mints another), and stops the run, naming the
 # faucet, when B runs low. The secrets reach it through the environment.
-FIXTURE_OUT=$(node --no-deprecation "$SUITE_DIR/../../../scripts/devnet-fixtures.cjs" 2>&1) || die "$FIXTURE_OUT"
-ok "$FIXTURE_OUT"
+# Store captures (flows/store/) read staged data from store-assets' proxy and
+# never touch devnet, so a run of only those skips it.
+STORE=0 OTHER=0
+for arg in "${PASSTHROUGH[@]}"; do
+  case $arg in
+    *flows/store/*) STORE=1 ;;
+    *flows/*|*suites/*) OTHER=1 ;;
+  esac
+done
+if [[ $STORE -eq 1 && $OTHER -eq 0 ]]; then
+  ok "devnet fixtures skipped: store captures only"
+else
+  FIXTURE_OUT=$(node --no-deprecation "$SUITE_DIR/../../../scripts/devnet-fixtures.cjs" 2>&1) || die "$FIXTURE_OUT"
+  ok "$FIXTURE_OUT"
+fi
 
 # ------------------------------------------------------------------- run -----
 CMD=(maestro)

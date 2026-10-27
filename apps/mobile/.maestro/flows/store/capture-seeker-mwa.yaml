@@ -1,8 +1,10 @@
 appId: io.salmonwallet.app
 ---
 # Solana dApp Store shots of a dApp asking the Seed Vault wallet to connect and
-# to sign a message. Run after capture-seeker.yaml, with the Solana Mobile
-# playground serving on the emulator (`npx solana-mobile playground`, then
+# to sign a message. Run after capture-seeker.yaml. The store frames use the
+# demo dApp served over https (`-e DAPP_URL=<its address>`, page source in
+# store-assets/staging/dapp-demo.html); without DAPP_URL the flow opens the
+# Solana Mobile playground on the emulator (`npx solana-mobile playground`, then
 # `adb reverse tcp:4747 tcp:4747`). The connect is approved; the message is
 # never signed: its request is shot and cancelled.
 # A request left over from an earlier run holds the wallet: start from a clean
@@ -32,7 +34,7 @@ appId: io.salmonwallet.app
     visible:
       id: 'lock-password-input|home-screen'
     timeout: 60000
-- openLink: http://localhost:4747
+- openLink: "${DAPP_URL || 'http://localhost:4747'}"
 # Chrome's first-run screens, on an emulator where Chrome never opened.
 - runFlow:
     when:
@@ -74,7 +76,7 @@ appId: io.salmonwallet.app
 
 # Reloading hands Maestro a fresh view of the page; the playground keeps its
 # authorization across reloads.
-- openLink: http://localhost:4747
+- openLink: "${DAPP_URL || 'http://localhost:4747'}"
 - tapOn: 'Sign Message'
 - extendedWaitUntil:
     visible:
