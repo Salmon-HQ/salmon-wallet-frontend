@@ -39,10 +39,17 @@ export function toAccountSecret(stored: StoredSecret | undefined): AccountSecret
  */
 export function sealAccountSecret(secret: AccountSecret): AccountSecret {
   const sealed = { ...secret };
-  if (sealed.kind === 'mnemonic') Object.defineProperty(sealed, 'mnemonic', { enumerable: false });
-  if (sealed.kind === 'privateKey') {
-    Object.defineProperty(sealed, 'privateKey', { enumerable: false });
-  }
+  // The spread skips a field an earlier seal hid, so the value comes from the
+  // original: sealing twice keeps the secret.
+  const hide = (field: 'mnemonic' | 'privateKey', value: string) =>
+    Object.defineProperty(sealed, field, {
+      value,
+      enumerable: false,
+      writable: true,
+      configurable: true,
+    });
+  if (secret.kind === 'mnemonic') hide('mnemonic', secret.mnemonic);
+  if (secret.kind === 'privateKey') hide('privateKey', secret.privateKey);
   return sealed;
 }
 
