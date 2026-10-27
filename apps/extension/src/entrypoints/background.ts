@@ -7,6 +7,7 @@
 
 import { browser } from 'wxt/browser';
 
+import { toPageResponse } from '../utils/page-response';
 import { USER_REJECTED_ERROR } from '../utils/types';
 
 // Chrome MV3 and Firefox 115+ (MV2 included) have storage.session; the
@@ -579,7 +580,7 @@ export default defineBackground(() => {
         const responseHandler = responseHandlers.get(msg.data.id);
         responseHandlers.delete(msg.data.id);
         if (responseHandler) {
-          responseHandler(msg.data, msg.data.id);
+          responseHandler(toPageResponse(msg.data), msg.data.id);
           // Only the user's own rejection cools the site down: a failed
           // signature or a request the screen could not take is not that.
           if (msg.data.error === USER_REJECTED_ERROR) startCoolDown(msg.data.id);

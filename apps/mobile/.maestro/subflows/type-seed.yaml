@@ -18,6 +18,10 @@ appId: io.salmonwallet.app
     commands:
       - tapOn:
           id: ${FIELD + '-' + (output.seedIndex + 1)}
+      # Typing before the tap has moved focus appends the word to the previous
+      # box (two words in one, the next box empty).
+      - waitForAnimationToEnd:
+          timeout: 2000
       - inputText: ${output.seedWords[output.seedIndex]}
       # The keyboard covers the lower boxes; close it so the next one can be
       # found and tapped.
