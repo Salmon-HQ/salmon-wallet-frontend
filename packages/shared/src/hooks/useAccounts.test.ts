@@ -5,7 +5,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { useAccounts } from './useAccounts';
+import { restoreAccount, useAccounts } from './useAccounts';
 import type { Account } from '../types/account';
 import * as storage from '../storage';
 import * as encryption from '../crypto/encryption';
@@ -1998,5 +1998,23 @@ describe('useAccounts Hook', () => {
       expect(state.activeBlockchainAccount).toBeDefined();
       expect(state.activeBlockchainAccount?.getReceiveAddress()).toBeTruthy();
     });
+  });
+});
+
+describe('restoreAccount', () => {
+  // A public BIP-39 test vector, not a wallet.
+  const MNEMONIC =
+    'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
+
+  beforeEach(() => {
+    (createSolanaAccount as any).mockResolvedValue(mockSolanaAccount);
+  });
+
+  it('seals a mnemonic handed to it bare, as the legacy migration hands it', async () => {
+    const account = await restoreAccount({ secret: { kind: 'mnemonic', mnemonic: MNEMONIC } });
+
+    expect(account.secret.kind === 'mnemonic' && account.secret.mnemonic).toBe(MNEMONIC);
+    expect(JSON.stringify(account)).not.toContain('abandon');
+    expect({ ...account.secret }).not.toHaveProperty('mnemonic');
   });
 });

@@ -7,6 +7,7 @@ import {
   buildSecretVault,
   getAccountMnemonic,
   seedVaultAccessToRelease,
+  sealAccountSecret,
 } from './account-secret';
 import type { Account, AccountSecret } from '../types/account';
 
@@ -129,6 +130,15 @@ describe('account secret exposure', () => {
     const account = makeAccount('b', toAccountSecret(PRIVATE_KEY_SECRET));
 
     for (const text of serializations(account)) expect(text).not.toContain('base58-key');
+  });
+
+  it('keeps the mnemonic and the key readable when a sealed secret is sealed again', () => {
+    const mnemonic = sealAccountSecret(sealAccountSecret({ kind: 'mnemonic', mnemonic: MNEMONIC }));
+    const key = sealAccountSecret(toAccountSecret(PRIVATE_KEY_SECRET));
+
+    expect(mnemonic.kind === 'mnemonic' && mnemonic.mnemonic).toBe(MNEMONIC);
+    expect(key.kind === 'privateKey' && key.privateKey).toBe('base58-key');
+    expect(JSON.stringify([mnemonic, key])).not.toMatch(/abandon|base58-key/);
   });
 
   it('still hands the mnemonic and the key to the code that reads them', () => {
