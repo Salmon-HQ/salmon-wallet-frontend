@@ -46,6 +46,11 @@ export const EXTERNAL = new Set([
   'PinEntryField',
   'Connection request',
   'Account 2',
+  // The simulator's own Import screen (flows/actions/seed-vault/import-test-seed.yaml).
+  'SeedPin',
+  'PhraseLength24',
+  'Save',
+  'My Seeds',
   // Solana Mobile playground, the test dApp the MWA flows open.
   'Reset authorization',
   'Sign Transaction',

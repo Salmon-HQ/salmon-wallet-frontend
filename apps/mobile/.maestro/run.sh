@@ -210,6 +210,23 @@ if [[ $IS_ANDROID -eq 1 && $RELEASE -eq 0 ]]; then
   ok "installed build opens without the dev menu"
 fi
 
+# ------------------------------------------------------------- seed vault ---
+# The Seed Vault and dApp flows fail on their first Seed Vault screen when a
+# precondition is missing, which reads as a broken flow. Check what can be seen
+# from here; README.md, "Seeker emulator", covers the rest.
+if [[ "${PASSTHROUGH[*]}" == *seed-vault* || "${PASSTHROUGH[*]}" == *seeker* ]]; then
+  [[ $IS_ANDROID -eq 1 ]] || die "Seed Vault flows run on an Android emulator; pass --device emulator-5554."
+  [[ -n "${SALMON_SEED_VAULT_PIN:-}" ]] || die "Missing in .env.test: SALMON_SEED_VAULT_PIN (the Seed Vault and screen-lock PIN)."
+  "${ADB[@]}" shell pm path com.solanamobile.seedvaultimpl 2>/dev/null | grep -q '^package:' \
+    || die "the Seed Vault simulator is not installed on the device. See README.md, \"Seeker emulator\"."
+  # The app accepts the simulator only when __DEV__ is true (src/seed-vault/bridge.ts).
+  [[ $RELEASE -eq 0 ]] || die "a release build never offers the Seed Vault simulator; run these flows on the dev build."
+  curl -s -m 10 -H 'expo-platform: android' -H 'accept: application/expo+json,application/json' "${METRO_URL%/status}" 2>/dev/null | grep -q 'dev=true' \
+    || die "Metro serves a production bundle (started with --no-dev), and the app then hides Seed Vault.
+    Restart it without --no-dev."
+  ok "Seed Vault simulator installed, development bundle"
+fi
+
 # ------------------------------------------------------------ devnet ------
 # Every flow that sends or views funds or NFTs does it on devnet. This keeps
 # Wallet A funded (topped up from B) and holding the NFT fixture (a transfer
