@@ -4,7 +4,7 @@ import { SOLANA_NETWORKS } from '../blockchain/solana';
 import { BITCOIN_NETWORKS } from '../blockchain/bitcoin';
 import { ETHEREUM_NETWORKS } from '../blockchain/ethereum';
 import type { SolanaNetwork, BitcoinNetwork, EthereumNetwork } from '../types/blockchain';
-import { getPathIndex } from './account';
+import { getPathIndex, mainnetReceiveAddresses } from './account';
 import type { AnyNetwork } from '../types/blockchain';
 import type {
   NetworkPathIndexes,
@@ -102,6 +102,8 @@ export interface MigrationDeps {
 export type MigrationResult =
   | { status: 'no-migration' }
   | { status: 'needs-password' }
+  /** An unprotected v2 record: it migrates only under a newly chosen password. */
+  | { status: 'needs-new-password'; addresses: string[] }
   | {
       status: 'migrated';
       accounts: Account[];
@@ -113,6 +115,40 @@ export type MigrationResult =
       tokens: CustomTokens;
       requiredLock: boolean;
     };
+
+/** The seeds an unprotected record holds in the clear, keyed by the address it claims. */
+function cleartextMnemonics(storedWallets: LegacyWallets): Record<string, string> {
+  if (storedWallets.mnemonics) return storedWallets.mnemonics as Record<string, string>;
+  return Object.fromEntries(
+    storedWallets.wallets.flatMap(({ address, mnemonic }) =>
+      mnemonic ? [[address, mnemonic]] : []
+    )
+  );
+}
+
+/**
+ * Removes an unprotected record whose migration wrote the vault but stopped
+ * before removing it: only once the vault opens and holds every seed the record
+ * carries, so no seed exists only in the record when it goes. Otherwise it stays.
+ */
+async function removeMigratedRecord(
+  storedWallets: LegacyWallets,
+  vault: unknown,
+  password: string
+): Promise<void> {
+  try {
+    const secrets = Object.values(
+      await unlock<Record<string, unknown>>(vault as LockedVault, password)
+    );
+    const seeds = Object.values(cleartextMnemonics(storedWallets));
+    if (seeds.length === 0 || !seeds.every((seed) => secrets.includes(seed))) return;
+  } catch {
+    return;
+  }
+  await removeStorageItem(STORAGE_KEYS.WALLETS);
+  await removeStorageItem(STORAGE_KEYS.ACTIVE);
+  await removeStorageItem(STORAGE_KEYS.ENDPOINTS);
+}
 
 // ============================================================================
 // Migration Function
@@ -130,49 +166,49 @@ export type MigrationResult =
  */
 export async function migrateLegacyWallets(
   deps: MigrationDeps,
-  password?: string
+  password?: string,
+  /**
+   * `newPassword`: the password was just chosen and confirmed on the
+   * create-password screen, not typed at the lock screen. Only such a password
+   * may protect a record that had none.
+   */
+  options: { newPassword?: boolean } = {}
 ): Promise<MigrationResult> {
   const storedWallets = await getStorageItem<LegacyWallets>(STORAGE_KEYS.WALLETS);
   if (!storedWallets) return { status: 'no-migration' };
 
-  // A password is required whether or not the legacy record had one. The v2
-  // wallet let its owner keep seed phrases with no password at all, and
-  // migrating that state as it stood wrote them to AsyncStorage and
-  // chrome.storage.local in cleartext, where the wallet had no way of ever
-  // encrypting them again. v3 has one rule for stored mnemonics — encrypted or
-  // not written — and the migration is not an exception to it.
-  if (!password) {
+  // A wallet that already has its vault is past migrating: the legacy record
+  // beside it is never written over the vault.
+  const vault = await getStorageItem<unknown>(STORAGE_KEYS.MNEMONICS);
+  if (vault) {
+    if (password && !storedWallets.passwordRequired) {
+      await removeMigratedRecord(storedWallets, vault, password);
+    }
+    return { status: 'no-migration' };
+  }
+
+  // v2 let an owner keep seed phrases with no password. Such a record is never
+  // encrypted under whatever is typed at the lock screen: it waits for a
+  // password chosen and confirmed for it, and until then names the addresses
+  // its seeds derive (never the ones it claims) so the owner can tell whether
+  // the wallet is theirs.
+  const preview = !storedWallets.passwordRequired && !(password && options.newPassword);
+
+  if (!preview && !password) {
     return { status: 'needs-password' };
   }
 
-  // Handle password-protected wallets
-  if (storedWallets.passwordRequired) {
-    if (!('mnemonics' in storedWallets) || !storedWallets.mnemonics) {
-      // Migrate from old format where mnemonic was in wallet
-      const decryptedWallets = await unlock<typeof storedWallets.wallets>(
-        storedWallets.wallets as unknown as LockedVault,
-        password
-      );
-      storedWallets.wallets = decryptedWallets;
-      storedWallets.mnemonics = storedWallets.wallets.reduce(
-        (m, wallet) => {
-          if (wallet.mnemonic) {
-            m[wallet.address] = wallet.mnemonic;
-            delete wallet.mnemonic;
-          }
-          return m;
-        },
-        {} as Record<string, string>
-      );
-    } else {
-      // New format with separate mnemonics
-      storedWallets.mnemonics = await unlock<Record<string, string>>(
-        storedWallets.mnemonics as unknown as LockedVault,
-        password
-      );
-    }
+  if (!storedWallets.passwordRequired) {
+    // Unprotected: the record holds its mnemonics in the clear, beside the
+    // wallets in the oldest format.
+    storedWallets.mnemonics = cleartextMnemonics(storedWallets);
   } else if (!('mnemonics' in storedWallets) || !storedWallets.mnemonics) {
-    // Unprotected wallet, migrate mnemonics
+    // Migrate from old format where mnemonic was in wallet
+    const decryptedWallets = await unlock<typeof storedWallets.wallets>(
+      storedWallets.wallets as unknown as LockedVault,
+      password as string
+    );
+    storedWallets.wallets = decryptedWallets;
     storedWallets.mnemonics = storedWallets.wallets.reduce(
       (m, wallet) => {
         if (wallet.mnemonic) {
@@ -182,6 +218,12 @@ export async function migrateLegacyWallets(
         return m;
       },
       {} as Record<string, string>
+    );
+  } else {
+    // New format with separate mnemonics
+    storedWallets.mnemonics = await unlock<Record<string, string>>(
+      storedWallets.mnemonics as unknown as LockedVault,
+      password as string
     );
   }
 
@@ -301,9 +343,17 @@ export async function migrateLegacyWallets(
     }
   }
 
-  // One write, always encrypted. A record that arrived without a password is
-  // encrypted under the one its owner just chose.
-  const lockedMnemonics = await lock(newMnemonics, password);
+  if (preview) {
+    const addresses = mainnetReceiveAddresses(newAccounts);
+    if (addresses.length === 0) {
+      throw new Error('The unprotected wallet has no seed to derive an address from');
+    }
+    return { status: 'needs-new-password', addresses };
+  }
+
+  // One write, always encrypted: under the password the record opened with, or
+  // the one just chosen for a record that had none.
+  const lockedMnemonics = await lock(newMnemonics, password as string);
   await setStorageItem(STORAGE_KEYS.MNEMONICS, { ...lockedMnemonics, isEncrypted: true });
 
   // Save migrated data

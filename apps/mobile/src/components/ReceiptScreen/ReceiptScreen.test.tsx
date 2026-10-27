@@ -50,7 +50,11 @@ jest.mock('../../utils/sinkAndFloat', () => ({
 }));
 
 jest.mock('../../../hooks/useTabChrome', () => ({
-  useTabChrome: () => ({ floatingBottomOffset: 96, insets: { top: 0, bottom: 34 } }),
+  useTabChrome: () => ({
+    floatingBottomOffset: 96,
+    screenActionBottomPadding: 20,
+    insets: { top: 0, bottom: 34 },
+  }),
 }));
 
 jest.mock('../Button', () => {

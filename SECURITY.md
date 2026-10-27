@@ -10,6 +10,8 @@ Report vulnerabilities privately through **GitHub Security Advisories**: open
 [Report a vulnerability](https://github.com/Salmon-HQ/salmon-wallet-frontend/security/advisories/new)
 (the repository's **Security** tab → **Report a vulnerability**). Only repository administrators can see the report, and the discussion stays private until a fix ships.
 
+You can also email **hello@salmonwallet.io**, the security contact for this repository.
+
 Please include:
 
 - A description of the vulnerability and its impact.

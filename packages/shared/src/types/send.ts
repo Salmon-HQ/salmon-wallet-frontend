@@ -32,6 +32,10 @@ export interface SendTransactionParams {
   memo?: string;
   /** Solana Pay references the transfer instruction carries as read-only keys, in order */
   references?: readonly string[];
+  /** The user asked for the whole balance (Max); the transfer may send the raw balance itself (Solana only) */
+  max?: boolean;
+  /** The amount exactly as typed, for a conversion `amount`'s floating point could misread (Solana only) */
+  amountText?: string;
 }
 
 /**

@@ -27,7 +27,7 @@ import type {
   AnalyticsProps,
   AnalyticsTransport,
 } from './types';
-import { V1_EVENTS, type AnalyticsEventName } from './events';
+import { TRANSACTION_EVENTS, V1_EVENTS, type AnalyticsEventName } from './events';
 import { createHttpTransport, isRetryable } from './transport';
 
 const DEFAULT_BATCH_SIZE = 20;
@@ -36,6 +36,13 @@ const DEFAULT_FLUSH_INTERVAL_MS = 30_000;
 const MAX_QUEUE_LENGTH = 200;
 /** The backend's per-batch cap; it drops everything past it. */
 const MAX_EVENTS_PER_REQUEST = 100;
+const DAY_MS = 86_400_000;
+
+/** When an event happened, as precisely as it may say: see `TRANSACTION_EVENTS`. */
+function eventTime(event: AnalyticsEventName): number {
+  const now = Date.now();
+  return TRANSACTION_EVENTS.has(event) ? now - (now % DAY_MS) : now;
+}
 
 function isDevEnvironment(): boolean {
   return typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production';
@@ -204,7 +211,11 @@ class AnalyticsClient {
     const validated = this.strict ? validateEvent(event, props) : safeValidateEvent(event, props);
     if (!validated) return;
 
-    this.queue.push({ event: validated.event, props: validated.props, ts: Date.now() });
+    this.queue.push({
+      event: validated.event,
+      props: validated.props,
+      ts: eventTime(validated.event),
+    });
     if (this.queue.length > MAX_QUEUE_LENGTH) {
       this.queue = this.queue.slice(-MAX_QUEUE_LENGTH);
     }

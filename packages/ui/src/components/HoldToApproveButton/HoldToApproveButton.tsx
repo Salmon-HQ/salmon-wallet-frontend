@@ -34,6 +34,7 @@ export function HoldToApproveButton({
   loading,
   children,
   testID,
+  ariaDescribedBy,
   variant = 'primary',
 }: HoldToApproveButtonProps): React.ReactElement {
   const { text } = useSemantic();
@@ -105,6 +106,7 @@ export function HoldToApproveButton({
         disabled={disabled}
         loading={loading}
         testID={testID}
+        ariaDescribedBy={ariaDescribedBy}
       >
         {children}
       </ButtonControl>

@@ -108,12 +108,17 @@ export function deriveSolanaWsUrl(nodeUrl: string): string {
  *
  * The port is deliberately not compared: `deriveSolanaWsUrl` shifts explicit
  * ports itself, and a different port on the same host is not a redirection.
+ *
+ * The override is returned normalized, and one carrying credentials is
+ * ignored: the platform's own URL parser may read an odd string as a
+ * different host than the one compared here.
  */
 export function resolveSolanaWsUrl(nodeUrl: string, wsUrl?: string): string {
   if (wsUrl) {
     try {
-      if (new URL(wsUrl).hostname === new URL(nodeUrl).hostname) {
-        return wsUrl;
+      const url = new URL(wsUrl);
+      if (!url.username && !url.password && url.hostname === new URL(nodeUrl).hostname) {
+        return url.href;
       }
     } catch {
       // Unparseable override — fall through to the derivation.

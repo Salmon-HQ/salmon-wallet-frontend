@@ -1,7 +1,8 @@
 export {
   assertSolanaTransactionMatches,
   bubblegumAssets,
-  invocationsOf,
+  lookupTableActions,
+  swapAccountCreates,
   SolanaTransactionMismatchError,
   UNVERIFIED,
 } from './solana-transaction';

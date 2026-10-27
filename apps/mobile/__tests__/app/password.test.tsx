@@ -11,6 +11,9 @@ const mockGetStashItem = jest.fn();
 const mockRemoveStashItem = jest.fn();
 const mockCreateAccount = jest.fn();
 const mockUseAccountsContext = jest.fn();
+const mockProtectWallet = jest.fn();
+const mockRemoveAllAccounts = jest.fn();
+const mockDisarm = jest.fn();
 /**
  * The wait's exit handoff, captured instead of auto-fired: navigation now
  * waits for the LoadingScreen's `onExited` (the wave must leave the screen
@@ -152,6 +155,51 @@ jest.mock('../../src/components', () => {
         { onPress, disabled, accessibilityRole: 'button' },
         React.createElement(Text, null, children)
       ),
+    SecondaryButton: ({
+      children,
+      onPress,
+      testID,
+    }: {
+      children?: React.ReactNode;
+      onPress?: () => void;
+      testID?: string;
+    }) =>
+      React.createElement(
+        TouchableOpacity,
+        { onPress, testID, accessibilityRole: 'button' },
+        React.createElement(Text, null, children)
+      ),
+    // The kit's sheet, as the screen drives it: confirm runs the action and
+    // then closes, as the real sheet does.
+    ConfirmSheet: ({
+      visible,
+      title,
+      message,
+      onConfirm,
+      onClose,
+    }: {
+      visible: boolean;
+      title: string;
+      message: string;
+      onConfirm: () => Promise<void> | void;
+      onClose: () => void;
+    }) =>
+      visible
+        ? React.createElement(
+            View,
+            null,
+            React.createElement(Text, null, title),
+            React.createElement(Text, null, message),
+            React.createElement(TouchableOpacity, {
+              testID: 'sheet-confirm',
+              onPress: async () => {
+                await onConfirm();
+                onClose();
+              },
+            }),
+            React.createElement(TouchableOpacity, { testID: 'sheet-cancel', onPress: onClose })
+          )
+        : null,
     ScreenHeader: ({ onBack }: { onBack?: () => void }) =>
       React.createElement(
         TouchableOpacity,
@@ -160,6 +208,10 @@ jest.mock('../../src/components', () => {
       ),
   };
 });
+
+jest.mock('../../src/contexts/BiometricContext', () => ({
+  useBiometric: () => ({ disarm: (...args: unknown[]) => mockDisarm(...args) }),
+}));
 
 jest.mock('react-native-safe-area-context', () => ({
   SafeAreaView: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
@@ -298,5 +350,104 @@ describe('PasswordScreen', () => {
 
     // The same slot, now revealed — nothing was added to the tree.
     expect(screen.getByText('strength:medium')).toBeTruthy();
+  });
+
+  describe('protecting a wallet stored without a password', () => {
+    const ADDRESSES = ['AddressOne111', 'AddressTwo222'];
+
+    beforeEach(() => {
+      mockGetStashItem.mockResolvedValue(null);
+      mockProtectWallet.mockResolvedValue(true);
+      useLocalSearchParams.mockReturnValue({ type: 'protect' });
+      mockUseAccountsContext.mockReturnValue([
+        // A cleartext vault opens unlocked, with no lock required.
+        { requiredLock: false, counter: 1, unprotectedAddresses: ADDRESSES },
+        {
+          checkPassword: mockCheckPassword,
+          addAccount: mockAddAccount,
+          unlockAccounts: mockUnlockAccounts,
+          protectWallet: mockProtectWallet,
+          removeAllAccounts: mockRemoveAllAccounts,
+        },
+      ]);
+    });
+
+    // A wallet the owner does not recognise has a way out that is not a
+    // password: removing it, the same removal as removing every wallet,
+    // after a sheet that says what that costs.
+    it('removes the wallet only once its sheet is confirmed, then opens the welcome screen', async () => {
+      mockRemoveAllAccounts.mockResolvedValue(undefined);
+      mockDisarm.mockResolvedValue(undefined);
+      render(<PasswordScreen />);
+
+      fireEvent.press(screen.getByText('wallet.protect.remove_button'));
+      expect(screen.getByText('wallet.protect.remove_title')).toBeTruthy();
+      expect(screen.getByText('wallet.protect.remove_message')).toBeTruthy();
+      expect(mockRemoveAllAccounts).not.toHaveBeenCalled();
+
+      await act(async () => fireEvent.press(screen.getByTestId('sheet-confirm')));
+
+      expect(mockDisarm).toHaveBeenCalledTimes(1);
+      expect(mockRemoveAllAccounts).toHaveBeenCalledTimes(1);
+      expect(mockReplace).toHaveBeenCalledWith('/(auth)');
+      expect(mockProtectWallet).not.toHaveBeenCalled();
+    });
+
+    it('keeps the wallet when its sheet is dismissed', () => {
+      render(<PasswordScreen />);
+
+      fireEvent.press(screen.getByText('wallet.protect.remove_button'));
+      fireEvent.press(screen.getByTestId('sheet-cancel'));
+
+      expect(screen.queryByText('wallet.protect.remove_title')).toBeNull();
+      expect(mockRemoveAllAccounts).not.toHaveBeenCalled();
+    });
+
+    it('lists the addresses the wallet holds', () => {
+      render(<PasswordScreen />);
+
+      for (const address of ADDRESSES) expect(screen.getByText(address)).toBeTruthy();
+      expect(screen.getByText('wallet.protect.body')).toBeTruthy();
+    });
+
+    it('protects the wallet with the confirmed password, then opens it', async () => {
+      render(<PasswordScreen />);
+
+      fireEvent.changeText(
+        screen.getByPlaceholderText('wallet.create.passwordNew'),
+        'pw-fixture-valid'
+      );
+      fireEvent.changeText(
+        screen.getByPlaceholderText('wallet.create.passwordRepeat'),
+        'pw-fixture-valid'
+      );
+      fireEvent.press(screen.getByText('wallet.protect.button'));
+
+      await act(async () => {
+        jest.advanceTimersByTime(100);
+      });
+
+      await waitFor(() => expect(mockProtectWallet).toHaveBeenCalledWith('pw-fixture-valid'));
+      expect(mockCreateAccount).not.toHaveBeenCalled();
+      expect(mockAddAccount).not.toHaveBeenCalled();
+      expect(mockCheckPassword).not.toHaveBeenCalled();
+
+      act(() => {
+        mockWaitOnExited.current?.();
+      });
+      expect(mockReplace).toHaveBeenCalledWith('/(app)/(tabs)');
+    });
+
+    it('takes the addresses from the wallet, never from the link that opened the screen', () => {
+      mockUseAccountsContext.mockReturnValue([
+        { requiredLock: true, counter: 1, unprotectedAddresses: null },
+        { protectWallet: mockProtectWallet },
+      ]);
+
+      render(<PasswordScreen />);
+
+      expect(screen.queryByText('wallet.protect.button')).toBeNull();
+      expect(screen.queryByText('wallet.protect.remove_button')).toBeNull();
+    });
   });
 });

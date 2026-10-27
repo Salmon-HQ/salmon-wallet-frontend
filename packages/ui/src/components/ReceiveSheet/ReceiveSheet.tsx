@@ -110,8 +110,11 @@ export function ReceiveSheet({
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
+          // 12 under the sheet's title, then the component gap of 20 between
+          // blocks (DESIGN.md §Layout).
+          paddingTop: spacing.md,
           paddingBottom: spacing['2xl'],
-          gap: componentSizes.receiveContentGap,
+          gap: spacing.xl,
         }}
       >
         {/* The badge labels the QR, not the sheet, so the two travel as one
@@ -122,11 +125,19 @@ export function ReceiveSheet({
             flexDirection: 'column',
             alignItems: 'center',
             gap: spacing.md,
-            marginTop: spacing.headerPadding,
           }}
         >
+          {/* Off mainnet the environment rides in the badge: it says "Solana"
+              on devnet too, and a deposit made to a test address is not money
+              (spec 026 D6). */}
           <span data-testid="receive-chain-badge" style={badgeStyle}>
             {t('token.send.blockchainAddress', { blockchain: chainName })}
+            {networkLabel ? (
+              <>
+                {' · '}
+                <span data-testid="receive-network-label">{networkLabel}</span>
+              </>
+            ) : null}
           </span>
 
           <div
@@ -154,24 +165,6 @@ export function ReceiveSheet({
             />
           </div>
         </div>
-
-        {/* Off mainnet the environment is named under the code: a deposit made
-            to a test address is not money (spec 026 D6). */}
-        {!!networkLabel && (
-          <span
-            data-testid="receive-network-label"
-            style={{
-              fontFamily: fontFamily.sans,
-              fontWeight: fontWeight.semibold,
-              fontSize: fontSize.caption,
-              letterSpacing: letterSpacing.label,
-              color: semantic.text.tertiary,
-              textAlign: 'center',
-            }}
-          >
-            {networkLabel}
-          </span>
-        )}
 
         {/* Wrong-network deposits are unrecoverable, so say so here. */}
         <WarningNotice

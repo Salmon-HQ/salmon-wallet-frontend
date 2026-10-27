@@ -21,17 +21,7 @@
  * and a handful once powerups add theirs.
  */
 import React, { useCallback, useRef, useState } from 'react';
-import {
-  fontFamily,
-  fontSize,
-  fontWeight,
-  lineHeight,
-  motionEasing,
-  motionMs,
-  shadowsCSS,
-  spacing,
-  type HomeTabOrderTab,
-} from '@salmon/shared';
+import { motionEasing, motionMs, shadowsCSS, spacing, type HomeTabOrderTab } from '@salmon/shared';
 import { useTranslation } from 'react-i18next';
 
 import { useSemantic } from '../../theme/ThemeProvider';
@@ -150,7 +140,11 @@ export function HomeTabOrderSheet({
     <BottomSheetContainer
       visible={visible}
       onClose={onClose}
-      title={<SheetTitle>{t('home.tabs.order.title', 'Arrange tabs')}</SheetTitle>}
+      title={
+        <SheetTitle subtitle={t('home.tabs.order.hint', 'Drag to change the order.')}>
+          {t('home.tabs.order.title', 'Arrange tabs')}
+        </SheetTitle>
+      }
       testID={testID}
       style={style}
       className={className}
@@ -164,19 +158,6 @@ export function HomeTabOrderSheet({
           gap: spacing.xl,
         }}
       >
-        <span
-          style={{
-            fontFamily: fontFamily.sans,
-            fontWeight: fontWeight.medium,
-            fontSize: fontSize.body,
-            lineHeight: `${fontSize.body * lineHeight.snug}px`,
-            color: semantic.text.secondary,
-            textAlign: 'center',
-          }}
-        >
-          {t('home.tabs.order.hint', 'Drag to change the order.')}
-        </span>
-
         <div style={{ display: 'flex', flexDirection: 'column', gap: ROW_GAP }}>
           {tabs.map((tab: HomeTabOrderTab, index) => {
             const isDragged = drag?.index === index;

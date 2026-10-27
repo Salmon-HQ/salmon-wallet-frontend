@@ -158,9 +158,9 @@ describe('API Config Module', () => {
   });
 
   describe('detectEnvironment', () => {
-    it('should return "local" by default when no env vars are set', () => {
+    it('should return "production" by default when no env vars are set', () => {
       const env = detectEnvironment();
-      expect(env).toBe('local');
+      expect(env).toBe('production');
     });
 
     it('should return "local" when EXPO_PUBLIC_SALMON_ENV is "local"', () => {
@@ -224,10 +224,10 @@ describe('API Config Module', () => {
       expect(env).toBe('local');
     });
 
-    it('should return "local" for unrecognized NODE_ENV values', () => {
+    it('should return "production" for unrecognized NODE_ENV values', () => {
       process.env.NODE_ENV = 'unknown';
       const env = detectEnvironment();
-      expect(env).toBe('local');
+      expect(env).toBe('production');
     });
 
     it('should ignore invalid SALMON_ENV values and fall back to NODE_ENV', () => {
@@ -237,10 +237,10 @@ describe('API Config Module', () => {
       expect(env).toBe('production');
     });
 
-    it('should ignore invalid SALMON_ENV values and return "local" if no valid NODE_ENV', () => {
+    it('should ignore invalid SALMON_ENV values and return "production" if no valid NODE_ENV', () => {
       process.env.VITE_SALMON_ENV = 'invalid-env';
       const env = detectEnvironment();
-      expect(env).toBe('local');
+      expect(env).toBe('production');
     });
 
     it('should prefer SALMON_ENV over NODE_ENV', () => {
@@ -258,10 +258,11 @@ describe('API Config Module', () => {
     });
 
     it('should handle case-sensitive environment values', () => {
-      process.env.EXPO_PUBLIC_SALMON_ENV = 'PRODUCTION';
+      process.env.EXPO_PUBLIC_SALMON_ENV = 'LOCAL';
       const env = detectEnvironment();
-      // Should not match because it's case-sensitive
-      expect(env).toBe('local');
+      // Should not match because it's case-sensitive; with no NODE_ENV the
+      // build is treated as production.
+      expect(env).toBe('production');
     });
   });
 

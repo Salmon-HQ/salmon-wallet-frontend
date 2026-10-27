@@ -41,7 +41,6 @@ jest.mock('@salmon/shared', () => ({
   chunkAddress: (address: string) => address.replace(/(.{4})/g, '$1 ').trim(),
   componentSizes: {
     qrBorderWidth: 8,
-    receiveContentGap: 16,
     copyButtonWidth: 160,
     buttonHeightCompact: 44,
   },
@@ -111,6 +110,25 @@ describe('ReceiveSheet chain identity', () => {
     expect(screen.getByTestId('receive-chain-badge')).toHaveTextContent(
       'token.send.blockchainAddress:Solana'
     );
+  });
+
+  // Every piece of information sits in a container (DESIGN.md §Sheets): the
+  // environment off mainnet rides in the chain's own badge, never loose.
+  it('names the environment inside the chain badge off mainnet', () => {
+    render(
+      <ReceiveSheet
+        visible
+        onClose={() => {}}
+        address={ADDRESS}
+        blockchain="solana"
+        networkLabel="Devnet"
+      />
+    );
+
+    expect(screen.getByTestId('receive-chain-badge')).toHaveTextContent(
+      'token.send.blockchainAddress:Solana · Devnet'
+    );
+    expect(screen.getByTestId('receive-network-label')).toHaveTextContent('Devnet');
   });
 
   it('warns that only assets on that chain may be sent to this address', () => {

@@ -52,7 +52,9 @@ export default function NftBurnScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const styles = useThemedStyles(stylesFor);
-  const { floatingBottomOffset } = useTabChrome();
+  // The SafeAreaView's bottom edge owns the inset; the action row adds only
+  // the air above it, as far from the floor as Home's Powerups button.
+  const { screenActionBottomPadding } = useTabChrome();
   const { nft, account, burnPreview, burnPreparing, burnError, confirmBurn, resetBurn } =
     useNftFlow();
 
@@ -128,7 +130,7 @@ export default function NftBurnScreen() {
         )}
       </ScrollView>
 
-      <View style={[styles.action, { paddingBottom: floatingBottomOffset }]}>
+      <View style={[styles.action, { paddingBottom: screenActionBottomPadding }]}>
         <PrimaryButton
           testID="nft-burn-confirm-button"
           onPress={() => void confirmBurn()}

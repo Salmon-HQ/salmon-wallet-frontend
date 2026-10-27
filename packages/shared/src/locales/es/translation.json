@@ -148,11 +148,17 @@
     "effects_approval_body": "{{spender}} podría mover {{amount}} {{token}} de tu billetera, ahora y en el futuro, hasta que lo revoques.",
     "hold_to_approve": "Mantené para aprobar",
     "hold_to_approve_hint": "Esta solicitud necesita una aprobación deliberada. Mantené presionado el botón para firmarla.",
+    "approve_arming_hint": "Para activar este botón, llevá el puntero hasta él o mové el foco con el teclado.",
     "effects_reason_ownership_change": "Esta transacción entrega el control de una de tus cuentas de tokens a otra persona, así que los saldos posteriores ya no serían tuyos.",
+    "effects_reason_unanalysed": "Esta transacción usa programas o cuentas que Salmon no puede analizar, así que podría mover activos que no aparecen acá, como SOL en staking o NFTs.",
+    "effects_simulated_label": "Simulación: el resultado real puede ser distinto",
+    "effects_reason_unanalysed_account": "Esta transacción cambia una cuenta que Salmon no muestra acá, como el permiso para cerrar una cuenta de tokens o su depósito, que pasa a otra persona.",
+    "effects_reason_durable_nonce": "Esta firma no vence nunca, así que el sitio puede enviar la transacción más adelante, cuando quiera.",
     "batch_size": "Transacciones en esta solicitud",
     "batch_first_only": "Se van a firmar {{count}} transacciones. La comisión, la cantidad de instrucciones, quien paga la comisión y el blockhash de abajo describen solo la primera.",
     "mwa_refused_title": "Solicitud rechazada",
     "mwa_unverified": "Salmon no pudo confirmar que esta solicitud venga de {{origin}}. Aprobá solo si abriste esa app o sitio vos mismo.",
+    "mwa_unverified_origin": "App no verificada que dice ser {{origin}}",
     "mwa_watch_only": "La billetera activa solo observa saldos, así que no puede conectarse ni firmar. Cambiá a una billetera que tenga sus claves y volvé a intentar.",
     "mwa_identity_missing": "Esta app no dijo qué sitio es, así que Salmon no puede mostrarte quién lo pide. La solicitud se rechazó.",
     "mwa_network_unsupported": "Esta app pidió {{requested}}. Salmon funciona solo con Solana Mainnet y Devnet, así que la solicitud se rechazó.",
@@ -382,6 +388,7 @@
     "reveal_phrase_message": "Ingresá tu contraseña para mostrar la frase de recuperación. Cualquiera que la vea es dueño de todas las cuentas de esta billetera, para siempre.",
     "clipboard_warning_title": "El portapapeles no es privado",
     "clipboard_warning_description": "Cualquier otra app de este dispositivo puede leer lo que copiás, y algunos sistemas guardan un historial del portapapeles. Mejor anotá la frase en papel.",
+    "secret_copied": "Copiado. Salmon lo borra a los 60 s o cuando vuelvas a la app.",
     "clipboard_key_warning_description": "Cualquier otra app de este dispositivo puede leer lo que copiás, y algunos sistemas guardan un historial del portapapeles. Pegá la clave solo donde querías, y limpiá el portapapeles después.",
     "reveal_private_key_title": "Confirmá que sos vos",
     "reveal_private_key_message": "Ingresá tu contraseña para mostrar la clave privada. Cualquiera que la vea puede gastar todo lo que hay en esta cuenta, y no hay forma de revertirlo.",
@@ -593,6 +600,16 @@
       },
       "badge": "Seed Vault",
       "open_settings": "Abrir Ajustes"
+    },
+    "protect": {
+      "body": "Tu billetera todavía no tiene contraseña. Revisá que estas direcciones sean tuyas y elegí una contraseña para protegerla. Si no las reconocés, no uses esta billetera.",
+      "addresses_label": "Tus direcciones",
+      "button": "Proteger billetera",
+      "protecting": "Protegiendo tu billetera",
+      "error": "No pudimos proteger la billetera. Intentá de nuevo.",
+      "remove_button": "Eliminar esta billetera",
+      "remove_title": "¿Eliminar esta billetera?",
+      "remove_message": "Se borra de este dispositivo junto con su frase de recuperación. Si es tuya, solo vas a poder recuperarla con esa frase."
     }
   },
   "transactions": {
@@ -880,8 +897,8 @@
       "sol_domain_paused": "Los nombres “.sol” están pausados mientras SNS pasa a “.sns”. Usá el mismo nombre con .sns.",
       "same_address": "No podés enviarte a tu propia dirección",
       "no_info": "Esta cuenta todavía no existe on-chain. El destinatario va a tener que fondearla.",
-      "off_curve_no_funds": "Esta es una dirección derivada de programa sin fondos",
-      "off_curve_has_funds": "Esta es una dirección derivada de programa",
+      "off_curve_no_funds": "Ninguna persona controla esta dirección. Lo que envíes puede perderse para siempre.",
+      "off_curve_has_funds": "Ninguna persona controla esta dirección. Lo que envíes puede perderse para siempre.",
       "no_funds": "Esta dirección no tiene saldo de ETH",
       "unknown": "Error de validación desconocido"
     }

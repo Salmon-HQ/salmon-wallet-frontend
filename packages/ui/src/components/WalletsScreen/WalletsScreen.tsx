@@ -284,9 +284,7 @@ export function WalletsScreen({
         title={t('settings.wallets.total_title', 'Total balance')}
         message={t('settings.wallets.keep_one_included')}
         acknowledgeOnly
-        confirmText={t('actions.close')}
         onConfirm={() => {}}
-        confirmTestID="wallets-keep-one-close"
       />
     </SettingsPanelContent>
   );

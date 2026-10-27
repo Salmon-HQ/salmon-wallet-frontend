@@ -11,11 +11,14 @@ const mockLockAccounts = jest.fn().mockResolvedValue(undefined);
 const mockSession: { current: unknown } = { current: null };
 const mockState: Record<string, unknown> = {};
 const mockVerification = { current: 'verified' };
+const mockVerifiedOrigins: unknown[] = [];
 
 // `@solana/kit` is ESM Jest cannot load; the MWA helpers only use it inside
 // the signing functions, which this host never reaches.
 jest.mock('@solana/kit', () => ({}));
 jest.mock('@salmon/shared', () => ({
+  // The detail cards are the kit's, drawn for real.
+  ...jest.requireActual('../../test-utils/themeTokens'),
   ...jest.requireActual('@salmon/shared/src/utils/mwa'),
   ...jest.requireActual('@salmon/shared/src/utils/active-selection'),
   isSignableSolanaAccount: () => true,
@@ -56,17 +59,26 @@ jest.mock('./MwaRequest', () => ({
     const { Text: MockText } = jest.requireActual('react-native');
     return <MockText>{`request ${request.requestId}`}</MockText>;
   },
-  useIdentityVerification: () => mockVerification.current,
+  useIdentityVerification: (origin: unknown) => {
+    mockVerifiedOrigins.push(origin);
+    return mockVerification.current;
+  },
 }));
 
 // The sheet is the kit's; what is under test is which one the host shows and
 // what each choice tells the dApp. `onClose` runs after `onConfirm`, as the
 // real sheet does.
+// An acknowledge-only sheet has no buttons, as the real one: it leaves by
+// the container's own paths, which call `onClose` (`sheet-cancel` here).
 jest.mock('../components/ConfirmSheet', () => ({
   ConfirmSheet: (props: {
     title: string;
     message: string;
     confirmText?: string;
+    requiresHold?: boolean;
+    acknowledgeOnly?: boolean;
+    bedrock?: boolean;
+    children?: React.ReactNode;
     onConfirm: () => Promise<void> | void;
     onClose: () => void;
   }) => {
@@ -74,21 +86,29 @@ jest.mock('../components/ConfirmSheet', () => ({
     return (
       <V>
         <T>{props.title}</T>
+        {props.children}
         <T>{props.message}</T>
-        <P
-          testID="sheet-confirm"
-          onPress={async () => {
-            await props.onConfirm();
-            props.onClose();
-          }}
-        >
-          <T>{props.confirmText}</T>
-        </P>
+        {props.acknowledgeOnly ? null : (
+          <P
+            testID="sheet-confirm"
+            onPress={async () => {
+              await props.onConfirm();
+              props.onClose();
+            }}
+          >
+            <T>{props.confirmText}</T>
+          </P>
+        )}
         <P testID="sheet-cancel" onPress={props.onClose} />
+        <T testID="sheet-hold">{props.requiresHold ? 'hold' : 'tap'}</T>
+        <T testID="sheet-ground">{props.bedrock ? 'bedrock' : 'thermocline'}</T>
       </V>
     );
   },
 }));
+
+// The bubble rides reanimated, which has no worklets runtime in Jest.
+jest.mock('../components/IconBubble', () => ({ IconBubble: () => null }));
 
 // MwaRoot's own providers are not under test; MwaHost is rendered bare.
 jest.mock('../i18n', () => ({
@@ -203,21 +223,48 @@ describe('MwaHost — a devnet dApp on a mainnet wallet', () => {
     expect(mockRespond).not.toHaveBeenCalled();
     expect(screen.getByText('dapp.mwa_refused_title')).toBeTruthy();
     expect(screen.getByText(/dapp\.mwa_switch_failed/)).toBeTruthy();
+    // Nothing to confirm: no buttons, it leaves the way every sheet does.
+    expect(screen.queryByTestId('sheet-confirm')).toBeNull();
 
-    fireEvent.press(screen.getByTestId('sheet-confirm'));
+    fireEvent.press(screen.getByTestId('sheet-cancel'));
     expect(mockRespond).toHaveBeenCalledTimes(1);
     expect(mockRespond).toHaveBeenCalledWith({ failReason: 'USER_DECLINED' });
   });
 
   // The name is the dApp's own claim; the switch holds for the whole app.
-  it('puts the origin first, and warns when it cannot confirm who is asking', () => {
+  it('puts the origin first, as a claim and held when it cannot confirm who is asking', () => {
     mockVerification.current = 'unverified';
     given(walletOn('solana-mainnet'), connect('solana:devnet'));
     render(<MwaHost />);
 
-    const message = screen.getByText(/dapp\.mwa_switch_message/).props.children as string;
-    expect(message.split('\n\n')[0]).toBe('https://dapp.example');
-    expect(message).toContain('dapp.mwa_unverified');
+    expect(screen.getByTestId('mwa-site-origin').props.children).toBe(
+      'dapp.mwa_unverified_origin {"origin":"https://dapp.example"}'
+    );
+    expect(screen.getByTestId('mwa-unverified')).toBeTruthy();
+    expect(screen.getByTestId('sheet-ground').props.children).toBe('bedrock');
+    expect(screen.getByTestId('sheet-hold').props.children).toBe('hold');
+  });
+
+  it("keeps a verified dApp's switch a plain tap under the site", () => {
+    given(walletOn('solana-mainnet'), connect('solana:devnet'));
+    render(<MwaHost />);
+
+    expect(screen.getByTestId('mwa-site-origin').props.children).toBe('https://dapp.example');
+    expect(screen.queryByTestId('mwa-unverified')).toBeNull();
+    expect(screen.getByTestId('sheet-hold').props.children).toBe('tap');
+  });
+
+  // The native check gets the origin the sheet shows, never the raw URI.
+  it('checks the normalised origin, not the raw identity URI', () => {
+    mockVerifiedOrigins.length = 0;
+    given(walletOn('solana-mainnet'), {
+      ...connect('solana:devnet'),
+      appIdentity: { identityName: 'Playground', identityUri: 'https://dapp.example/app?ref=1' },
+    });
+    render(<MwaHost />);
+
+    expect(mockVerifiedOrigins).toContain('https://dapp.example');
+    expect(mockVerifiedOrigins).not.toContain('https://dapp.example/app?ref=1');
   });
 
   it('shows the request itself once the wallet is on the network asked for', () => {

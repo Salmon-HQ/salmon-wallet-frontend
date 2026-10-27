@@ -54,7 +54,9 @@ export default function SendReviewScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const styles = useThemedStyles(stylesFor);
-  const { floatingBottomOffset } = useTabChrome();
+  // The SafeAreaView's bottom edge owns the inset; the action row adds only
+  // the air above it, as far from the floor as Home's Powerups button.
+  const { screenActionBottomPadding } = useTabChrome();
   const {
     token,
     setToken,
@@ -69,6 +71,7 @@ export default function SendReviewScreen() {
     estimateFee,
     request,
     liveBalance,
+    recipientWarning,
   } = useSendFlow();
 
   // Started from a payment request: the requester fixed the token and the
@@ -179,13 +182,15 @@ export default function SendReviewScreen() {
             label={t('transactions.to')}
             value={recipient?.name ?? getShortAddress(destinationAddress) ?? destinationAddress}
           />
-          {/* Mono in 4-character chunks: fixed-width chunks are what let the
-              eye compare a prefix and suffix positionally. */}
-          <KeyValueRow
-            testID="send-confirm-address"
-            label={t('send.screens.address')}
-            value={getShortAddress(destinationAddress) ?? destinationAddress}
-          />
+          {/* The address gets its own row only when "To" shows a contact's name;
+              otherwise "To" already is the address. */}
+          {!!recipient?.name && (
+            <KeyValueRow
+              testID="send-confirm-address"
+              label={t('send.screens.address')}
+              value={getShortAddress(destinationAddress) ?? destinationAddress}
+            />
+          )}
           {resolvedFromDomain !== null && (
             <KeyValueRow
               testID="send-confirm-resolved-from"
@@ -220,9 +225,21 @@ export default function SendReviewScreen() {
             testID="send-review-insufficient"
           />
         )}
+
+        {/* Judged by the flow on whatever recipient it holds, so a scanned or
+            pasted request warns here like a typed address. A warning, not a
+            block. */}
+        {recipientWarning && (
+          <WarningNotice
+            tone="warning"
+            title={t(recipientWarning)}
+            style={styles.notice}
+            testID="send-review-recipient-warning"
+          />
+        )}
       </ScrollView>
 
-      <View style={[styles.action, { paddingBottom: floatingBottomOffset }]}>
+      <View style={[styles.action, { paddingBottom: screenActionBottomPadding }]}>
         <SecondaryButton
           testID="send-confirm-cancel-button"
           onPress={handleCancel}

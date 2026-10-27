@@ -9,6 +9,7 @@
  * what is pinned here. No index number appears anywhere.
  */
 import React from 'react';
+import { Alert } from 'react-native';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
 const mockRouter = { back: jest.fn(), push: jest.fn() };
@@ -116,8 +117,9 @@ jest.mock('react-i18next', () => {
 jest.mock('../../../../packages/shared/src/hooks/useBalance', () => ({
   useBalance: () => ({ hiddenBalance: false, toggleHidden: jest.fn() }),
 }));
+const mockExcluded: string[] = [];
 jest.mock('../../../../packages/shared/src/hooks/useUserConfig', () => ({
-  useUserConfig: () => ({ excludedFromTotal: [], setIncludedInTotal: jest.fn() }),
+  useUserConfig: () => ({ excludedFromTotal: mockExcluded, setIncludedInTotal: jest.fn() }),
 }));
 jest.mock('../../../../packages/shared/src/hooks/useWalletTotals', () => ({
   useWalletTotals: () => ({ totals: { w1: 10, w2: 5, w3: 3 } }),
@@ -175,6 +177,34 @@ jest.mock('../../src/components/DerivedAccountsSheet', () => {
         ? ReactActual.createElement(View, {
             testID: scanning ? 'derived-accounts-sheet-scanning' : 'derived-accounts-sheet',
           })
+        : null,
+  };
+});
+
+// The notice is the kit's sheet; what this suite reads is that the screen
+// raises it, with nothing to press — it leaves the way every sheet does.
+jest.mock('../../src/components/ConfirmSheet', () => {
+  const ReactActual = require('react');
+  const { Text, View } = require('react-native');
+  return {
+    ConfirmSheet: ({
+      visible,
+      title,
+      message,
+      acknowledgeOnly,
+    }: {
+      visible: boolean;
+      title: string;
+      message: string;
+      acknowledgeOnly?: boolean;
+    }) =>
+      visible
+        ? ReactActual.createElement(
+            View,
+            { testID: acknowledgeOnly ? 'notice-sheet' : 'confirm-sheet' },
+            ReactActual.createElement(Text, null, title),
+            ReactActual.createElement(Text, null, message)
+          )
         : null,
   };
 });
@@ -246,6 +276,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockDerived.scanningAccountId = null;
   mockDerived.rescanningAccountId = null;
+  mockExcluded.length = 0;
 });
 
 describe('Wallets — wallets of one seed', () => {
@@ -314,5 +345,21 @@ describe('Wallets — wallets of one seed', () => {
     // The wait is answered here, not on Home: the sheet the user asked for is
     // already on screen while the scan runs.
     expect(screen.getByTestId('derived-accounts-sheet-scanning')).toBeTruthy();
+  });
+});
+
+// The total can never be empty. Saying so is a sheet like every notice in the
+// app (DESIGN.md: ConfirmSheet over OS alerts), with no button to press.
+describe('Wallets — the last wallet in the total', () => {
+  it('keeps it in and says why, in a sheet with nothing to press', () => {
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    mockExcluded.push('w2', 'w3');
+    render(<WalletsScreen />);
+
+    fireEvent.press(screen.getByTestId('wallet-include-w1'));
+
+    expect(screen.getByTestId('notice-sheet')).toBeTruthy();
+    expect(screen.getByText('At least one wallet has to stay in the total.')).toBeTruthy();
+    expect(alert).not.toHaveBeenCalled();
   });
 });

@@ -22,6 +22,9 @@
  * Params:
  * - mnemonic: The seed phrase to encrypt (passed from previous screen)
  * - type: 'create' | 'recover' - determines button text and flow
+ * - type: 'protect' - a wallet stored without a password: the screen lists its
+ *   addresses and protects it with the password chosen. The addresses come
+ *   from the wallet state, never from the route, which a deep link can set.
  *
  * RequiredLock Logic:
  * - If requiredLock is true AND NOT in recover flow, user already has a password stored
@@ -73,8 +76,10 @@ import { Keyboard, Linking, StyleSheet, Text, TextInput, View } from 'react-nati
 import Animated from 'react-native-reanimated';
 import { useWaitPassage } from '../../src/utils/useWaitPassage';
 import { useEnrolmentPassword } from '../../src/contexts/EnrolmentPasswordContext';
+import { useBiometric } from '../../src/contexts/BiometricContext';
 import { useSemantic, useThemedStyles, useThemeMode } from '../../src/theme/useThemedStyles';
 import {
+  ConfirmSheet,
   LoadingScreen,
   OnboardingDescription,
   OnboardingLayout,
@@ -84,6 +89,7 @@ import {
   PrimaryButton,
   ReservedSlot,
   ScreenHeader,
+  SecondaryButton,
 } from '../../src/components';
 
 /** Warning, phrase, confirmation, password. */
@@ -121,7 +127,9 @@ export default function PasswordScreen() {
   const [seedVault] = useState(() =>
     params.type === 'seed-vault' ? getPendingSeedVaultSelection() : null
   );
-  const hasSecret = !!mnemonic || !!seedVault;
+  const protectAddresses = params.type === 'protect' ? state.unprotectedAddresses : null;
+  const protect = !!protectAddresses;
+  const hasSecret = !!mnemonic || !!seedVault || protect;
 
   // Get requiredLock from state - true if password already exists
   const requiredLock = state.requiredLock;
@@ -133,11 +141,22 @@ export default function PasswordScreen() {
   // They should always be able to set a new password, regardless of requiredLock
   const isRecoverFlow = flowType === 'recover';
 
-  // Only show single input when adding account to existing encrypted wallet (not during recover)
-  const showSingleInput = requiredLock && !isRecoverFlow;
+  // Only show single input when adding account to existing encrypted wallet
+  // (not during recover, and never when protecting: that sets a new password)
+  const showSingleInput = requiredLock && !isRecoverFlow && !protect;
 
   // Where the password waits for the biometric enrolment step.
   const enrolmentPassword = useEnrolmentPassword();
+
+  // A wallet the owner does not recognise leaves by removal, after its sheet:
+  // the same removal as removing every wallet, then the welcome screen.
+  const { disarm: disarmBiometric } = useBiometric();
+  const [removeOpen, setRemoveOpen] = useState(false);
+  const handleRemoveWallet = useCallback(async () => {
+    await disarmBiometric();
+    await actions.removeAllAccounts();
+    router.replace('/(auth)');
+  }, [actions, disarmBiometric]);
 
   // State
   const [password, setPassword] = useState('');
@@ -160,7 +179,7 @@ export default function PasswordScreen() {
    * unmounted wait is a wave cut mid-crossing. Consumed exactly once by
    * `handleWaitExited`.
    */
-  const pendingRouteRef = useRef<'/(auth)/biometric-setup' | null>(null);
+  const pendingRouteRef = useRef<'/(auth)/biometric-setup' | '/(app)/(tabs)' | null>(null);
   const handleWaitExited = useCallback(() => {
     const route = pendingRouteRef.current;
     if (!route) return;
@@ -262,6 +281,14 @@ export default function PasswordScreen() {
     // Yield to UI thread so LoadingScreen renders before heavy crypto derivation
     await new Promise((resolve) => setTimeout(resolve, YIELD_TO_PAINT_MS));
 
+    if (protect) {
+      const protectedNow = await actions.protectWallet(password);
+      pendingRouteRef.current = protectedNow ? '/(app)/(tabs)' : null;
+      setError(protectedNow ? null : t('wallet.protect.error'));
+      setIsLoading(false);
+      return;
+    }
+
     try {
       // Get counter from useAccounts state
       const accountName = generateAccountName(state.counter, t('wallet.name_template'));
@@ -357,6 +384,7 @@ export default function PasswordScreen() {
     password,
     actions,
     showSingleInput,
+    protect,
     t,
     state.counter,
     flowType,
@@ -376,6 +404,9 @@ export default function PasswordScreen() {
   const getButtonText = () => {
     if (isChecking) {
       return t('wallet.create.passwordChecking') || 'Checking...';
+    }
+    if (protect) {
+      return t('wallet.protect.button');
     }
     if (flowType === 'create') {
       return t('wallet.create_wallet') || 'CREATE WALLET';
@@ -401,8 +432,9 @@ export default function PasswordScreen() {
     : undefined;
 
   // Loading screen title based on flow
-  const loadingTitle =
-    flowType === 'recover'
+  const loadingTitle = protect
+    ? t('wallet.protect.protecting')
+    : flowType === 'recover'
       ? t('wallet.recover.recovering_account')
       : t('wallet.create.creating_account');
 
@@ -437,12 +469,18 @@ export default function PasswordScreen() {
         */
             mark={<LockIcon size={componentSizes.logoSizeSmall} color={semantic.text.primary} />}
             chrome={
+              // Protecting has no way back: nothing else opens until the
+              // wallet has a password.
               <ScreenHeader
-                onBack={handleBack}
-                stepIndicator={{
-                  totalSteps: flowType === 'create' ? CREATE_FLOW_STEPS : RECOVER_FLOW_STEPS,
-                  currentStep: flowType === 'create' ? CREATE_FLOW_STEPS : RECOVER_FLOW_STEPS,
-                }}
+                onBack={protect ? undefined : handleBack}
+                stepIndicator={
+                  protect
+                    ? undefined
+                    : {
+                        totalSteps: flowType === 'create' ? CREATE_FLOW_STEPS : RECOVER_FLOW_STEPS,
+                        currentStep: flowType === 'create' ? CREATE_FLOW_STEPS : RECOVER_FLOW_STEPS,
+                      }
+                }
                 backDisabled={isLoading || isChecking}
               />
             }
@@ -458,12 +496,24 @@ export default function PasswordScreen() {
               // and moving everything below it. Reserved and left empty now.
               showSingleInput ? undefined : (
                 <OnboardingDescription>
-                  {t('wallet.create.choose_a_password_body')}
+                  {protect ? t('wallet.protect.body') : t('wallet.create.choose_a_password_body')}
                 </OnboardingDescription>
               )
             }
             body={
               <>
+                {protectAddresses && (
+                  <View style={styles.addressList} testID="password-protect-addresses">
+                    <Text style={styles.addressLabel} maxFontSizeMultiplier={fontScaleCap.chrome}>
+                      {t('wallet.protect.addresses_label')}
+                    </Text>
+                    {protectAddresses.map((address) => (
+                      <Text key={address} style={styles.addressText} selectable>
+                        {address}
+                      </Text>
+                    ))}
+                  </View>
+                )}
                 <View style={styles.inputContainer}>
                   <PasswordInput
                     testID="password-input"
@@ -523,19 +573,33 @@ export default function PasswordScreen() {
               </>
             }
             assist={
-              <Text style={styles.termsText} maxFontSizeMultiplier={fontScaleCap.chrome}>
-                {flowType === 'recover'
-                  ? t('wallet.recover.terms_prefix')
-                  : t('wallet.create.terms_prefix')}
-                <Text
-                  style={styles.termsHighlight}
-                  onPress={handleTermsPress}
-                  testID="password-terms-link"
-                  accessibilityRole="link"
-                >
-                  {t('general.terms_and_conditions')}
+              protect ? undefined : (
+                <Text style={styles.termsText} maxFontSizeMultiplier={fontScaleCap.chrome}>
+                  {flowType === 'recover'
+                    ? t('wallet.recover.terms_prefix')
+                    : t('wallet.create.terms_prefix')}
+                  <Text
+                    style={styles.termsHighlight}
+                    onPress={handleTermsPress}
+                    testID="password-terms-link"
+                    accessibilityRole="link"
+                  >
+                    {t('general.terms_and_conditions')}
+                  </Text>
                 </Text>
-              </Text>
+              )
+            }
+            secondary={
+              protect ? (
+                <SecondaryButton
+                  tone="danger"
+                  onPress={() => setRemoveOpen(true)}
+                  disabled={isLoading || isChecking}
+                  testID="password-protect-remove-button"
+                >
+                  {t('wallet.protect.remove_button')}
+                </SecondaryButton>
+              ) : undefined
             }
             action={
               <PrimaryButton
@@ -549,6 +613,19 @@ export default function PasswordScreen() {
             }
           />
         </Animated.View>
+      )}
+
+      {protect && (
+        <ConfirmSheet
+          visible={removeOpen}
+          onClose={() => setRemoveOpen(false)}
+          title={t('wallet.protect.remove_title')}
+          message={t('wallet.protect.remove_message')}
+          confirmText={t('settings.confirm_remove')}
+          cancelText={t('actions.cancel')}
+          isDanger
+          onConfirm={handleRemoveWallet}
+        />
       )}
 
       {/* Loading Screen Overlay */}
@@ -600,5 +677,22 @@ const stylesFor = (t: Semantic) =>
     },
     termsHighlight: {
       color: t.step.active,
+    },
+    addressList: {
+      width: '100%',
+      gap: spacing.xs,
+      marginBottom: spacing.lg,
+    },
+    addressLabel: {
+      color: t.text.secondary,
+      fontFamily: fontFamilyNative.medium,
+      fontSize: s(fontSize.caption),
+      lineHeight: fontSize.caption * lineHeight.normal,
+    },
+    addressText: {
+      color: t.text.primary,
+      fontFamily: fontFamilyNative.mono,
+      fontSize: s(fontSize.caption),
+      lineHeight: fontSize.caption * lineHeight.normal,
     },
   });

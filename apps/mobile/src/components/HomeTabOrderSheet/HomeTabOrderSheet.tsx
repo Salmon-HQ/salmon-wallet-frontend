@@ -17,7 +17,7 @@
  * the set is two rows today and a handful once powerups add theirs.
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, View, Text, StyleSheet, type LayoutChangeEvent } from 'react-native';
+import { Pressable, View, StyleSheet, type LayoutChangeEvent } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -28,18 +28,7 @@ import Animated, {
   withTiming,
   type SharedValue,
 } from 'react-native-reanimated';
-import {
-  fontFamilyNative,
-  fontScaleCap,
-  fontSize,
-  lineHeight,
-  motionMs,
-  s,
-  shadows,
-  spacing,
-  vs,
-  type Semantic,
-} from '@salmon/shared';
+import { motionMs, s, shadows, spacing, vs, type Semantic } from '@salmon/shared';
 
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
@@ -238,15 +227,15 @@ export const HomeTabOrderSheet: React.FC<HomeTabOrderSheetProps> = ({
     <BottomSheetContainer
       visible={visible}
       onClose={onClose}
-      title={<SheetTitle>{t('home.tabs.order.title', 'Arrange tabs')}</SheetTitle>}
+      title={
+        <SheetTitle subtitle={t('home.tabs.order.hint', 'Drag to change the order.')}>
+          {t('home.tabs.order.title', 'Arrange tabs')}
+        </SheetTitle>
+      }
       testID={testID}
       style={style}
     >
       <View style={[styles.content, { paddingBottom: standardContentBottomPadding }]}>
-        <Text style={styles.hint} maxFontSizeMultiplier={fontScaleCap.chrome}>
-          {t('home.tabs.order.hint', 'Drag to change the order.')}
-        </Text>
-
         <View style={styles.list}>
           {tabs.map((tab, index) => (
             <TabOrderRow
@@ -282,13 +271,6 @@ const stylesFor = (t: Semantic) =>
       paddingHorizontal: s(spacing.screenGutter),
       paddingTop: vs(spacing.md),
       gap: vs(spacing.xl),
-    },
-    hint: {
-      fontFamily: fontFamilyNative.medium,
-      fontSize: s(fontSize.body),
-      lineHeight: s(fontSize.body) * lineHeight.snug,
-      color: t.text.secondary,
-      textAlign: 'center',
     },
     list: {
       gap: vs(ROW_GAP),

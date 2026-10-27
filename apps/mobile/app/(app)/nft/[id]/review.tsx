@@ -19,7 +19,7 @@ import React, { useCallback } from 'react';
 import { StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { getShortAddress, isSignableAccount, spacing } from '@salmon/shared';
+import { getShortAddress, isSignableAccount, spacing, useRecipientWarning } from '@salmon/shared';
 
 import {
   Card,
@@ -35,7 +35,9 @@ import { useTabChrome } from '../../../../hooks/useTabChrome';
 export default function NftSendReviewScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { floatingBottomOffset } = useTabChrome();
+  // The SafeAreaView's bottom edge owns the inset; the action row adds only
+  // the air above it, as far from the floor as Home's Powerups button.
+  const { screenActionBottomPadding } = useTabChrome();
   const {
     nft,
     account,
@@ -65,6 +67,8 @@ export default function NftSendReviewScreen() {
   const destination = resolvedRecipient ?? recipient;
   const resolvedFromDomain =
     resolvedRecipient && resolvedRecipient !== recipient ? recipient : null;
+  // An address with no private key behind it: a warning, as on the DOM twin.
+  const recipientWarning = useRecipientWarning(account, destination || null);
 
   const handleConfirm = useCallback(() => {
     void submitSend();
@@ -79,7 +83,7 @@ export default function NftSendReviewScreen() {
       subtitle={nft?.name}
       onBack={() => router.back()}
       backDisabled={sending}
-      footerBottomInset={floatingBottomOffset}
+      footerBottomInset={screenActionBottomPadding}
       footer={
         <PrimaryButton
           testID="nft-send-confirm-button"
@@ -125,6 +129,14 @@ export default function NftSendReviewScreen() {
       </Card>
 
       {!!sendError && <WarningNotice tone="error" title={t(sendError)} style={styles.notice} />}
+      {recipientWarning && (
+        <WarningNotice
+          tone="warning"
+          title={t(recipientWarning)}
+          style={styles.notice}
+          testID="nft-send-review-recipient-warning"
+        />
+      )}
     </SettingsScreenLayout>
   );
 }

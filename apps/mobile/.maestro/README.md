@@ -96,6 +96,8 @@ one:
 adb reverse tcp:3001 tcp:3001
 ```
 
+A screen lock on the emulator seals app storage after every boot until the PIN is entered: the app reads as not installed and flows fail on their first selector. `run.sh` refuses a locked device. Unlock it with `apps/mobile/.maestro/android-unlock.sh --device emulator-5554`, which types `SALMON_SEED_VAULT_PIN` from `.env.test`; give a new AVD that same PIN with `adb shell locksettings set-pin <PIN>`.
+
 Confirm the app is actually reaching the backend rather than timing out:
 
 ```bash

@@ -105,6 +105,31 @@ describe('usePrivateKeyPanelLogic', () => {
     expect(result.current.copyFailedIndex).toBeNull();
   });
 
+  // The confirmation says when Salmon clears the clipboard: it stays up under
+  // the key last copied, rather than flashing for the length of "Copied".
+  it('keeps saying the clipboard will be cleared under the key last copied', async () => {
+    vi.useFakeTimers();
+    const copyToClipboard = vi.fn().mockResolvedValue(undefined);
+    const { result } = renderHook(() => usePrivateKeyPanelLogic({ copyToClipboard }));
+    expect(result.current.secretCopiedIndex).toBeNull();
+
+    await act(async () => {
+      await result.current.revealKey(1);
+    });
+    await act(async () => {
+      await result.current.handleCopy('key-under-test', 1);
+    });
+    act(() => {
+      vi.advanceTimersByTime(10_000);
+    });
+
+    expect(result.current.copiedIndex).toBeNull();
+    expect(result.current.secretCopiedIndex).toBe(1);
+    act(() => result.current.resetRevealState());
+    expect(result.current.secretCopiedIndex).toBeNull();
+    vi.useRealTimers();
+  });
+
   it('a rejected copy surfaces the failure at that index and reports the error', async () => {
     const error = new Error('clipboard denied');
     const copyToClipboard = vi.fn().mockRejectedValue(error);

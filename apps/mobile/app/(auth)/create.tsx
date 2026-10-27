@@ -43,7 +43,7 @@ import {
   WarningNotice,
 } from '../../src/components';
 import { useSemantic, useThemedStyles } from '../../src/theme/useThemedStyles';
-import * as Clipboard from 'expo-clipboard';
+import { secretClipboard } from '../../hooks/useSecretClipboard';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -110,12 +110,15 @@ function SeedPhraseStep({ mnemonic, onNext, onBack, t }: SeedPhraseStepProps) {
   // A clipboard write can fail, and advancing depends on it here. Swallowing
   // the failure left the button dead with nothing on screen saying why.
   const [copyFailed, setCopyFailed] = useState(false);
+  const [secretCopied, setSecretCopied] = useState(false);
   const words = mnemonic ? mnemonic.split(' ') : [];
 
   const handleCopy = useCallback(async () => {
     try {
       setCopyFailed(false);
-      await Clipboard.setStringAsync(mnemonic);
+      // Cleared 60 s later, or on the return to the app (useSecretClipboard).
+      await secretClipboard.copy(mnemonic);
+      setSecretCopied(true);
       setShowToast(true);
       setTimeout(() => setShowToast(false), motionMs.feedbackHold);
     } catch (error) {
@@ -169,6 +172,11 @@ function SeedPhraseStep({ mnemonic, onNext, onBack, t }: SeedPhraseStepProps) {
             {copyFailed && (
               <View style={{ paddingTop: spacing.md }} testID="create-seed-copy-failed">
                 <WarningNotice tone="error" title={t('settings.copy_failed')} />
+              </View>
+            )}
+            {secretCopied && (
+              <View style={{ paddingTop: spacing.md }} testID="create-seed-clipboard-clears">
+                <WarningNotice tone="info" title={t('settings.secret_copied')} />
               </View>
             )}
           </View>

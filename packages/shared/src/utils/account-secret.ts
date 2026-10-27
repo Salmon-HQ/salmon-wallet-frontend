@@ -103,7 +103,10 @@ export function isSeedVaultAccount(account: Account | null | undefined): boolean
  * null. Access is per seed, and several wallets can share one: it is given up
  * only with the last of them.
  */
-export function seedVaultAccessToRelease(removed: Account, remaining: Account[]): string | null {
+export function seedVaultAccessToRelease(
+  removed: Pick<Account, 'secret'>,
+  remaining: Pick<Account, 'secret'>[]
+): string | null {
   if (removed.secret.kind !== 'seedVault') return null;
   const { authToken } = removed.secret;
   const shared = remaining.some(

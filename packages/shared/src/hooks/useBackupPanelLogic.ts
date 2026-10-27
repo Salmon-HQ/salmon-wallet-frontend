@@ -45,6 +45,8 @@ export interface UseBackupPanelLogicResult {
   reauthVisible: boolean;
   setReauthVisible: (visible: boolean) => void;
   copied: boolean;
+  /** A copy succeeded: the screen says when Salmon clears the clipboard. */
+  secretCopied: boolean;
   copyFailed: boolean;
   handleReveal: () => Promise<void>;
   handleReauthenticated: () => Promise<void>;
@@ -62,6 +64,7 @@ export function useBackupPanelLogic({
   const [reauthVisible, setReauthVisible] = useState(false);
   const { copied, trigger: showCopied } = useCopyFeedback();
   const [copyFailed, setCopyFailed] = useState(false);
+  const [secretCopied, setSecretCopied] = useState(false);
 
   // An account imported from a private key has no seed phrase to back up.
   const mnemonic = useMemo(() => getAccountMnemonic(activeAccount) ?? '', [activeAccount]);
@@ -105,6 +108,7 @@ export function useBackupPanelLogic({
     try {
       await copyToClipboard(mnemonic);
       setCopyFailed(false);
+      setSecretCopied(true);
       showCopied();
     } catch (error) {
       // A silent copy failure here means the user thinks the seed is saved.
@@ -122,6 +126,7 @@ export function useBackupPanelLogic({
     reauthVisible,
     setReauthVisible,
     copied,
+    secretCopied,
     copyFailed,
     handleReveal,
     handleReauthenticated,

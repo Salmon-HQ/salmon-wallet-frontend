@@ -14,7 +14,6 @@ import {
   dappTransactionGate,
   decodeDAppMessage,
   encodeMwaAuthToken,
-  getShortAddress,
   getStorageItem,
   mwaAuthorizedAccount,
   mwaChainToNetworkId,
@@ -27,7 +26,6 @@ import {
   mwaSignMessages,
   mwaSignTransactions,
   newMwaAuthToken,
-  spacing,
   toSignAllTransactionsRequest,
   useAccountsContext,
   useSolanaTransactionApproval,
@@ -42,10 +40,12 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTabChrome } from '../../hooks/useTabChrome';
 
 import { ConfirmSheet } from '../components/ConfirmSheet';
-import { DepthBackground } from '../components/DepthBackground';
 import { TransactionConfirmation } from '../components/TransactionConfirmation';
+import { useSemantic } from '../theme/useThemedStyles';
+import { MwaRequestDetails } from './MwaRequestDetails';
 
 /** Counts a completed approval; a tracking failure must never become a failure answer. */
 function countApproval(
@@ -219,13 +219,20 @@ type Verification = 'checking' | 'verified' | 'unverified';
 /**
  * Digital Asset Links: does the calling app really belong to the site it names?
  * Nothing is approvable while the answer is pending, and no answer is a no.
+ *
+ * It is given the origin the sheet shows, already normalised in JS
+ * (`mwaIdentityOrigin`), never the dApp's raw identity URI: the check then
+ * judges exactly what the user reads, and the native module, which parses the
+ * URI outside its own error handling, only ever sees a plain origin. A failure
+ * of any kind, thrown or rejected, is unverified.
  */
-export function useIdentityVerification(identityUri: string | undefined): Verification {
-  const [state, setState] = useState<Verification>(identityUri ? 'checking' : 'unverified');
+export function useIdentityVerification(origin: string | null | undefined): Verification {
+  const [state, setState] = useState<Verification>(origin ? 'checking' : 'unverified');
   useEffect(() => {
-    if (!identityUri) return undefined;
+    if (!origin) return undefined;
     let cancelled = false;
-    verifyCallingPackage(identityUri)
+    Promise.resolve()
+      .then(() => verifyCallingPackage(origin))
       .then((ok: unknown) => {
         if (!cancelled) setState(ok ? 'verified' : 'unverified');
       })
@@ -235,7 +242,7 @@ export function useIdentityVerification(identityUri: string | undefined): Verifi
     return () => {
       cancelled = true;
     };
-  }, [identityUri]);
+  }, [origin]);
   return state;
 }
 
@@ -272,20 +279,17 @@ function ConnectApproval({
 }: ApprovalProps<AuthorizeDappRequest>) {
   const { t } = useTranslation();
   const [state, actions] = useAccountsContext();
-  const verification = useIdentityVerification(request.appIdentity?.identityUri);
+  const verification = useIdentityVerification(origin);
   const { run } = useOnce();
   const address = account.getReceiveAddress();
   const name = mwaDisplayName(request.appIdentity?.identityName, origin);
   const signIn = request.signInPayload;
 
   // The origin and the warning come first: the name is the dApp's own claim.
-  const lines = [
-    origin,
-    ...(verification === 'unverified' ? [t('dapp.mwa_unverified', { origin })] : []),
-    name,
-    `${t('dapp.wallet_address')}: ${getShortAddress(address, 4) ?? address}`,
-    signIn ? t('dapp.sign_in_subtitle') : t('dapp.connect_permissions_hint'),
-  ];
+  // Digital Asset Links vouch only for native apps, so any page or app can
+  // claim any site: an unverified one is named as a claim, and its approval
+  // (a SIWS signature for that site included) costs a hold.
+  const unverified = verification === 'unverified';
 
   const approve = () =>
     run(async () => {
@@ -323,15 +327,30 @@ function ConnectApproval({
   return (
     <ConfirmSheet
       visible
+      bedrock
       title={signIn ? t('dapp.sign_in_title') : t('dapp.connect_title')}
-      message={lines.join('\n\n')}
-      confirmText={signIn ? t('dapp.sign_in_action') : t('dapp.approve')}
+      message={signIn ? t('dapp.sign_in_subtitle') : t('dapp.connect_permissions_hint')}
+      confirmText={
+        unverified
+          ? t('dapp.hold_to_approve')
+          : signIn
+            ? t('dapp.sign_in_action')
+            : t('dapp.approve')
+      }
       cancelText={t('dapp.deny')}
       isDanger={verification !== 'verified'}
       confirmDisabled={verification === 'checking'}
+      requiresHold={unverified}
       onClose={() => respond(declined)}
       onConfirm={approve}
-    />
+    >
+      <MwaRequestDetails
+        origin={origin}
+        name={name}
+        unverified={unverified}
+        account={{ name: state.activeAccount?.name, address }}
+      />
+    </ConfirmSheet>
   );
 }
 
@@ -342,6 +361,9 @@ function SignMessagesApproval({
   respond,
 }: ApprovalProps<SignMessagesRequest>) {
   const { t } = useTranslation();
+  const [state] = useAccountsContext();
+  const verification = useIdentityVerification(origin);
+  const unverified = verification === 'unverified';
   const { run } = useOnce();
   const payloads = useMemo(() => request.payloads.map(bytes), [request]);
   // The extension's reading of a message: text only when it is plain text,
@@ -368,13 +390,25 @@ function SignMessagesApproval({
   return (
     <ConfirmSheet
       visible
+      bedrock
       title={t('dapp.sign_message_title')}
-      message={`${origin}\n\n${shown}\n\n${t('dapp.sign_message_hint')}`}
-      confirmText={t('dapp.sign')}
+      message={t('dapp.sign_message_hint')}
+      confirmText={unverified ? t('dapp.hold_to_approve') : t('dapp.sign')}
       cancelText={t('dapp.reject')}
+      isDanger={verification !== 'verified'}
+      confirmDisabled={verification === 'checking'}
+      requiresHold={unverified}
       onClose={() => respond(declined)}
       onConfirm={approve}
-    />
+    >
+      <MwaRequestDetails
+        origin={origin}
+        name={mwaDisplayName(request.appIdentity?.identityName, origin)}
+        unverified={unverified}
+        account={{ name: state.activeAccount?.name, address: account.getReceiveAddress() }}
+        message={shown}
+      />
+    </ConfirmSheet>
   );
 }
 
@@ -385,7 +419,12 @@ function TransactionApproval({
   respond,
 }: ApprovalProps<SignTransactionsRequest | SignAndSendTransactionsRequest>) {
   const { t } = useTranslation();
+  const [state] = useAccountsContext();
+  const { surface } = useSemantic();
   const insets = useSafeAreaInsets();
+  const { floatingBottomOffset } = useTabChrome();
+  const verification = useIdentityVerification(origin);
+  const unverified = verification === 'unverified';
   const { run, running, busy } = useOnce();
   const [error, setError] = useState<string | null>(null);
   const answered = useRef(false);
@@ -418,7 +457,8 @@ function TransactionApproval({
 
   const display = dappTransactionDisplay(
     {
-      origin,
+      origin: unverified ? t('dapp.mwa_unverified_origin', { origin }) : origin,
+      signingAccount: { name: state.activeAccount?.name, address: account.getReceiveAddress() },
       effects,
       effectsLoading,
       feeSol,
@@ -428,6 +468,7 @@ function TransactionApproval({
     t
   );
   const gate = dappTransactionGate({ effects, effectsLoading, parsingError });
+  const requiresHold = gate.requiresHold || unverified;
 
   const approve = () =>
     run(async () => {
@@ -465,8 +506,12 @@ function TransactionApproval({
     });
 
   return (
-    <View style={[styles.surface, { paddingTop: insets.top }]}>
-      <DepthBackground />
+    // The Bedrock Rule: an approval stands on opaque bedrock, never on the
+    // water column, so nothing of the dApp or the motif shows through it.
+    <View
+      testID="mwa-transaction-surface"
+      style={[styles.surface, { paddingTop: insets.top, backgroundColor: surface.bedrock }]}
+    >
       <TransactionConfirmation
         display={display}
         // Backing out while signing would tell the dApp "no" while the wallet
@@ -475,12 +520,12 @@ function TransactionApproval({
           if (!busy.current) answer(declined);
         }}
         onConfirm={() => void approve()}
-        confirmLabel={gate.requiresHold ? t('dapp.hold_to_approve') : t('dapp.approve_and_sign')}
+        confirmLabel={requiresHold ? t('dapp.hold_to_approve') : t('dapp.approve_and_sign')}
         isRefreshing={running}
-        confirmDisabled={!gate.canApprove}
-        requiresHold={gate.requiresHold}
+        confirmDisabled={!gate.canApprove || verification === 'checking'}
+        requiresHold={requiresHold}
         error={error}
-        style={{ paddingBottom: insets.bottom + spacing.lg }}
+        style={{ paddingBottom: floatingBottomOffset }}
       />
     </View>
   );

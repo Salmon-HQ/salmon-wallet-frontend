@@ -1,0 +1,30 @@
+appId: io.salmonwallet.app
+---
+# A recipient no key controls, reviewed — never sent.
+#
+# The recipient is a program-derived address (the Memo program with the seed
+# "salmon-e2e-off-curve"), so no private key can ever move what it receives.
+# The review must:
+# - warn in plain words, without blocking Confirm;
+# - show the address once: an unnamed recipient's "To" already is the
+#   address, so the separate Address row stays hidden.
+#
+# Read-only: the flow stops at the review.
+- runFlow: ../../../subflows/onboard-walletA.yaml
+- runFlow: ../../../subflows/select-devnet.yaml
+- runFlow:
+    file: ../../../subflows/send-sol-devnet.yaml
+    env:
+      TO: 'CEVoirCAgsgKG7hbC5hKWGKKaNwRL3sVeCUzEkvh9nRr'
+      AMOUNT: '0.001'
+- assertVisible:
+    id: 'send-review-recipient-warning'
+- assertVisible: 'No person controls this address. Anything you send to it may be lost forever.'
+- assertVisible:
+    id: 'send-review-to'
+- assertNotVisible:
+    id: 'send-confirm-address'
+- assertVisible:
+    id: 'send-confirm-button'
+    enabled: true
+- takeScreenshot: screenshots/send-review-recipient-warning

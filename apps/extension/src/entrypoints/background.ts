@@ -8,6 +8,7 @@
 import { browser } from 'wxt/browser';
 
 import { toPageResponse } from '../utils/page-response';
+import { USER_REJECTED_ERROR } from '../utils/types';
 
 // Chrome MV3 and Firefox 115+ (MV2 included) have storage.session; the
 // storage.local fallback only serves older browsers the manifest excludes.
@@ -31,6 +32,8 @@ const SESSION_KEY_STORAGE_KEY = 'salmon_session_key';
 interface MessageData {
   id: string;
   method: string;
+  /** Set on an approval page's answer that refuses the request. */
+  error?: unknown;
   params?: {
     network?: string;
     [key: string]: unknown;
@@ -65,12 +68,29 @@ interface StorageData {
 
 type ResponseHandler = (data: unknown, id?: string) => void;
 
+/**
+ * How long a site, and the tab it asked from, are refused after the user
+ * rejects or closes its approval window. Without it a page asks again the
+ * moment the window closes and keeps the single approval slot for as long as
+ * its tab stays open, so no other site can be served.
+ *
+ * Best effort: a page that opens another tab on another subdomain is a new
+ * origin and a new tab, and a service-worker restart forgets every entry.
+ * Keying by tab also holds back, for those seconds, another site the user
+ * opens in the same tab; accepted for a wait this short.
+ */
+export const DECLINE_COOLDOWN_MS = 30_000;
+
 export default defineBackground(() => {
-  // storage.local holds the encrypted vault and the trusted-apps list, and
-  // Chrome lets content scripts read and write it by default. A compromised
-  // renderer could then copy the vault or mark its own origin trusted and
-  // connect without approval. No content script here uses storage, so only
-  // the extension's own pages keep access. Firefox has no access levels.
+  // storage.local holds the encrypted vault and the trusted-apps list, and by
+  // default every extension context can read and write it, content scripts
+  // included. A compromised renderer could then copy the vault or mark its own
+  // origin trusted and connect without approval. No content script here uses
+  // storage, so this limits it to the extension's own pages — where the
+  // browser can: Chrome applies access levels to storage.local from version
+  // 140. Firefox does not implement setAccessLevel at all (bug 1724754), so on
+  // Firefox, and on Chrome before 140, a compromised page process can still
+  // read and write storage.local, vault ciphertext and trusted apps included.
   const localArea = browser.storage.local as typeof browser.storage.local & {
     setAccessLevel?: (options: { accessLevel: 'TRUSTED_CONTEXTS' }) => Promise<void>;
   };
@@ -89,6 +109,28 @@ export default defineBackground(() => {
    * while it is still being created). At most one entry: see launchPopupWindow.
    */
   const approvalWindowOrigins = new Map<string, number | null>();
+  /** An origin, or `tab:<id>` -> the time until which its requests are refused. */
+  const declinedUntil = new Map<string, number>();
+  /** requestId -> the origin and tab it came from, while its window is open. */
+  const requestSources = new Map<string, { origin: string; tabId?: number }>();
+
+  /** Whether `key` is cooling down; an expired entry is dropped on the way. */
+  const isCoolingDown = (key: string): boolean => {
+    const until = declinedUntil.get(key);
+    if (until === undefined) return false;
+    if (until > Date.now()) return true;
+    declinedUntil.delete(key);
+    return false;
+  };
+
+  /** Starts the cool-down of the origin and tab a request came from. */
+  const startCoolDown = (requestId: string): void => {
+    const source = requestSources.get(requestId);
+    if (!source) return;
+    const until = Date.now() + DECLINE_COOLDOWN_MS;
+    declinedUntil.set(source.origin, until);
+    if (source.tabId !== undefined) declinedUntil.set(`tab:${source.tabId}`, until);
+  };
 
   // Accept the side panel's persistent port. No messages flow over it now; the
   // open connection just keeps the service worker alive while the side panel is
@@ -163,9 +205,16 @@ export default defineBackground(() => {
   const launchPopupWindow = async (
     message: Message,
     sender: chrome.runtime.MessageSender,
-    sendResponse: ResponseHandler
+    sendResponse: ResponseHandler,
+    boundAddress?: string
   ): Promise<void> => {
     const origin = sender.origin || '';
+    const tabId = sender.tab?.id;
+
+    if (isCoolingDown(origin) || (tabId !== undefined && isCoolingDown(`tab:${tabId}`))) {
+      sendResponse({ error: 'Declined moments ago, try again later', id: message.data.id });
+      return;
+    }
 
     // One approval window at a time, across all origins. Without this a page
     // can call a method in a loop, or navigate itself through subdomains, and
@@ -187,6 +236,11 @@ export default defineBackground(() => {
     searchParams.set('request', JSON.stringify(message.data));
     if (message.data.params?.network) {
       searchParams.set('network', message.data.params.network);
+    }
+    // The account the site's grant was checked against. The window signs with
+    // whatever account is active when it loads, and refuses if that differs.
+    if (boundAddress) {
+      searchParams.set('address', boundAddress);
     }
 
     const windowOptions = {
@@ -221,6 +275,7 @@ export default defineBackground(() => {
     }
     approvalWindows.set(message.data.id, popupId);
     approvalWindowOrigins.set(origin, popupId);
+    requestSources.set(message.data.id, { origin, tabId });
 
     const listener = (windowId: number): void => {
       if (windowId === popupId) {
@@ -230,12 +285,15 @@ export default defineBackground(() => {
         }
         const responseHandler = responseHandlers.get(message.data.id);
         if (responseHandler) {
+          // Closed without an answer: the user turned the site down.
+          startCoolDown(message.data.id);
           responseHandlers.delete(message.data.id);
           responseHandler({
             error: 'Operation cancelled',
             id: message.data.id,
           });
         }
+        requestSources.delete(message.data.id);
 
         browser.windows.onRemoved.removeListener(listener);
       }
@@ -254,7 +312,8 @@ export default defineBackground(() => {
   const routeApproval = (
     message: Message,
     sender: chrome.runtime.MessageSender,
-    sendResponse: ResponseHandler
+    sendResponse: ResponseHandler,
+    boundAddress?: string
   ): void => {
     // dApp approvals always open in a dedicated popup window: it is predictable
     // (one window) and auto-closes on response. The side panel is reserved for
@@ -262,7 +321,7 @@ export default defineBackground(() => {
     // triggered from a message relayed by the content script (the user gesture
     // does not survive the hop), which previously raced this popup window and
     // sometimes left both the panel and the window open.
-    launchPopupWindow(message, sender, sendResponse);
+    launchPopupWindow(message, sender, sendResponse, boundAddress);
   };
 
   /**
@@ -290,15 +349,23 @@ export default defineBackground(() => {
   };
 
   /**
-   * Has the user ever approved this origin?
+   * Did the user approve this origin for the account that is active now?
    *
    * Any network counts, unlike `getConnection`, which answers for the network
-   * in use. Switching networks after connecting does not un-approve the site,
-   * and this is only used to tell an approved origin from a page the user has
-   * never seen a prompt for.
+   * in use: switching networks after connecting does not un-approve the site.
+   * Switching accounts does. A signature comes from the active account, so a
+   * grant for another one would show the site an account it was never given.
    */
-  const isApprovedOrigin = (origin: string, { trustedApps }: StorageData): boolean =>
-    !!origin && Object.values(trustedApps ?? {}).some((perNetwork) => !!perNetwork?.[origin]);
+  const isApprovedForActiveAccount = (
+    origin: string,
+    { connection, trustedApps }: StorageData
+  ): boolean =>
+    !!origin &&
+    connection?.blockchain?.toLowerCase() === 'solana' &&
+    !!connection.address &&
+    Object.values(trustedApps ?? {}).some(
+      (perNetwork) => perNetwork?.[origin]?.address === connection.address
+    );
 
   /** A concrete web origin — not "null", not an extension page, not empty. */
   const isWebOrigin = (origin: string | undefined): origin is string =>
@@ -428,23 +495,26 @@ export default defineBackground(() => {
   const CONNECTIONLESS_METHODS = new Set(['signIn']);
 
   /**
-   * A signing request from an origin the user never approved — or whose
-   * approval they revoked — is refused before any window opens.
+   * A signing request from an origin the user never approved, whose approval
+   * they revoked, or that was approved for another account than the active
+   * one is refused before any window opens. As with connect after an account
+   * switch, the site has to connect again.
    */
   const handleApprovalMethod = async (
     message: Message,
     sender: chrome.runtime.MessageSender,
     sendResponse: ResponseHandler
   ): Promise<void> => {
-    if (!CONNECTIONLESS_METHODS.has(message.data.method)) {
-      const data = await readStorageData();
-      if (!isApprovedOrigin(sender.origin || '', data)) {
-        await sendResponse({ error: 'Not connected', id: message.data.id });
-        return;
-      }
+    if (CONNECTIONLESS_METHODS.has(message.data.method)) {
+      routeApproval(message, sender, sendResponse);
+      return;
     }
-
-    routeApproval(message, sender, sendResponse);
+    const data = await readStorageData();
+    if (!isApprovedForActiveAccount(sender.origin || '', data)) {
+      await sendResponse({ error: 'Not connected', id: message.data.id });
+      return;
+    }
+    routeApproval(message, sender, sendResponse, data.connection?.address);
   };
 
   // Main message listener
@@ -511,7 +581,11 @@ export default defineBackground(() => {
         responseHandlers.delete(msg.data.id);
         if (responseHandler) {
           responseHandler(toPageResponse(msg.data), msg.data.id);
+          // Only the user's own rejection cools the site down: a failed
+          // signature or a request the screen could not take is not that.
+          if (msg.data.error === USER_REJECTED_ERROR) startCoolDown(msg.data.id);
         }
+        requestSources.delete(msg.data.id);
         // Request answered — close its approval popup window. The onRemoved
         // listener is now a no-op (the response handler is already deleted), so
         // closing here does not emit a spurious cancellation.

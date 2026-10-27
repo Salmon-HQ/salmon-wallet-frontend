@@ -235,11 +235,10 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
       height={height}
       testID={testID}
       style={style}
-      headerContent={
-        <View style={styles.header}>
-          <SheetTitle>{t('powerups.browse_title')}</SheetTitle>
-          <Text style={styles.subtitle}>{t('powerups.browse_subtitle')}</Text>
-        </View>
+      title={
+        <SheetTitle subtitle={t('powerups.browse_subtitle')}>
+          {t('powerups.browse_title')}
+        </SheetTitle>
       }
     >
       <ScrollView
@@ -294,19 +293,6 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
 
 const stylesFor = (t: Semantic) =>
   StyleSheet.create({
-    header: {
-      alignItems: 'center',
-      gap: vs(spacing.xs),
-      paddingHorizontal: s(spacing.screenGutter),
-    },
-    // The screen header's subtitle, centred under the sheet's title.
-    subtitle: {
-      fontFamily: fontFamilyNative.medium,
-      fontSize: s(fontSize.subtitle),
-      lineHeight: s(fontSize.subtitle) * lineHeight.snug,
-      color: t.text.secondary,
-      textAlign: 'center',
-    },
     scroll: {
       flexGrow: 0,
     },

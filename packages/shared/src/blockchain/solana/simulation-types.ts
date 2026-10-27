@@ -52,7 +52,30 @@ export type UndeterminedReason =
    * independently would report numbers that are wrong for every transaction but
    * the first — worse than reporting nothing.
    */
-  | 'batch-not-previewable';
+  | 'batch-not-previewable'
+  /**
+   * Strict mode only. The transaction runs a program outside the set this
+   * preview can read in full (System, Compute Budget, SPL Token, Token-2022,
+   * Associated Token, Memo v1/v3). Its simulation shows what that program did
+   * once, not what it will do when the transaction lands, and what it moves —
+   * staked SOL, compressed or Core NFTs — is not a balance this preview diffs.
+   */
+  | 'unanalysed-program'
+  /**
+   * The previewed account has data written into it (System Allocate), or, in
+   * strict mode, another account changes in a way the diff does not show and
+   * no other signer answers for: it loses lamports or tokens, changes owner,
+   * or has its data rewritten (a nonce or mint authority, a close authority,
+   * a mint's supply raised for someone else).
+   */
+  | 'unanalysed-account'
+  /**
+   * The transaction opens with System `AdvanceNonceAccount`: a durable nonce
+   * stands in for the blockhash, so the signature never expires. The site can
+   * keep it and submit it whenever it chooses, against whatever the chain
+   * holds by then, which a preview of today cannot speak for.
+   */
+  | 'durable-nonce';
 
 /** The signer's native SOL movement, in lamports. */
 export interface SolChange {
@@ -156,6 +179,22 @@ export interface Effects extends EffectDetails {
   readonly kind: 'effects';
   /** The account these effects are reported for. */
   readonly account: Address;
+  /**
+   * Every account the transaction names, decoded, before and after it runs:
+   * what a caller holding the transaction to a narrower rule (the swap check)
+   * reads beyond the balance rows. Absent when the effects were not read from
+   * a simulation.
+   */
+  readonly accounts?: readonly AccountChange[];
+}
+
+/** One account of a simulated transaction, before and after it runs. */
+export interface AccountChange {
+  readonly address: Address;
+  /** `null` when the account does not exist yet. */
+  readonly before: AccountState | null;
+  /** A closed account comes back with zero lamports, or `null`. */
+  readonly after: AccountState | null;
 }
 
 /**
@@ -183,6 +222,16 @@ export interface UndeterminedEffects {
   readonly reason: UndeterminedReason;
   /** Human-readable cause, for logs and a details drawer. */
   readonly detail: string;
+  /**
+   * `unanalysed-program` and `unanalysed-account` only, when the simulation
+   * ran: the movements the simulation showed for the account. Under
+   * `unanalysed-program` they are the unreadable program's own account of
+   * itself, which it can fake, so the screen shows them as a simulation with
+   * no colour or direction labels. Under `unanalysed-account` every program
+   * is readable and they are what moves, beside a change the preview cannot
+   * show. Either way the screen keeps the reason and the hold.
+   */
+  readonly known?: EffectDetails;
 }
 
 // ============================================================================
@@ -198,6 +247,10 @@ export interface TokenAccountState {
   readonly delegate: Address | null;
   /** Amount the delegate may move. Meaningless when `delegate` is `null`. */
   readonly delegatedAmount: bigint;
+  /** Who may close the account besides its owner, or `null`. */
+  readonly closeAuthority?: Address | null;
+  /** Wrapped SOL: the account's lamports above rent are its balance. */
+  readonly isNative?: boolean;
 }
 
 /** The parts of a mint this layer needs. */
@@ -247,6 +300,13 @@ export interface PreviewOptions {
    * preview never blocks on, or fails because of, a token-list request.
    */
   readonly resolveSymbol?: ResolveSymbolFn;
+  /**
+   * Report `undetermined` unless the preview accounts for everything the
+   * transaction does. dApp approvals set it: the transaction is the site's,
+   * and a partial picture reads as a complete one. The swap check leaves it
+   * off, because it holds an unknown router to the route itself.
+   */
+  readonly strict?: boolean;
 }
 
 // ============================================================================

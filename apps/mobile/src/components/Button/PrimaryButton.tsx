@@ -35,6 +35,8 @@ export function PrimaryButton({
   loading,
   style,
   testID,
+  accessibilityActions,
+  onAccessibilityAction,
 }: PrimaryButtonProps) {
   const isDisabled = disabled || loading;
   const styles = useThemedStyles(stylesFor);
@@ -47,6 +49,8 @@ export function PrimaryButton({
       accessibilityRole="button"
       accessibilityLabel={children}
       accessibilityState={{ disabled: !!isDisabled, busy: !!loading }}
+      accessibilityActions={accessibilityActions}
+      onAccessibilityAction={onAccessibilityAction}
       onPress={onPress}
       disabled={isDisabled}
       activeOpacity={0.8}

@@ -34,6 +34,7 @@ vi.mock('@salmon/ui', () => ({
       data-app-name={String(props.appName ?? '')}
       data-app-icon={String(props.appIcon ?? '')}
       data-message={String(props.messageText ?? '')}
+      data-signing-account={JSON.stringify(props.signingAccount)}
       data-disabled={String(props.disabled ?? '')}
       data-data={props.data === undefined ? 'undefined' : JSON.stringify(props.data)}
       data-required-signers={
@@ -56,14 +57,17 @@ const baseRequest: DAppSignMessageRequest = {
   params: { data: messageBytes },
 } as unknown as DAppSignMessageRequest;
 
-const fakeAccount = { kind: 'solana' } as unknown as Parameters<
-  typeof DAppSignMessageApprovalPage
->[0]['account'];
+const fakeAccount = {
+  kind: 'solana',
+  getReceiveAddress: () => 'Signer1111111111111111111111111111111111111',
+} as unknown as Parameters<typeof DAppSignMessageApprovalPage>[0]['account'];
 
 const baseProps = {
   origin: 'https://dapp.example',
   request: baseRequest,
   account: fakeAccount,
+  accountName: 'Savings',
+  approvedAddress: 'Signer1111111111111111111111111111111111111',
   onDismiss: vi.fn(),
 };
 
@@ -73,6 +77,41 @@ describe('DAppSignMessageApprovalPage', () => {
     mockDecodeDAppMessage.mockReturnValue({ text: 'Hello' });
   });
 
+  // The background checked the site's grant against the account active
+  // then; another account active by the time this window loads must not sign.
+  it('refuses without showing the request when another account is active', () => {
+    mockUseDAppMetadata.mockReturnValue({ metadata: null });
+    const sendMessage = vi.fn();
+    vi.stubGlobal('chrome', { runtime: { sendMessage } });
+    const onDismiss = vi.fn();
+
+    const { queryByTestId } = render(
+      <DAppSignMessageApprovalPage
+        {...baseProps}
+        approvedAddress="Other11111111111111111111111111111111111111"
+        onDismiss={onDismiss}
+      />
+    );
+
+    expect(queryByTestId('sign-message-view')).toBeNull();
+    expect(sendMessage).toHaveBeenCalledWith({
+      channel: 'salmon_extension_background_channel',
+      data: { error: 'Not connected', id: 'req-msg-1' },
+    });
+    expect(onDismiss).toHaveBeenCalledWith(false);
+    vi.unstubAllGlobals();
+  });
+
+  it('tells the view which account signs', () => {
+    mockUseDAppMetadata.mockReturnValue({ metadata: null });
+
+    const { getByTestId } = render(<DAppSignMessageApprovalPage {...baseProps} />);
+
+    expect(JSON.parse(getByTestId('sign-message-view').dataset.signingAccount ?? 'null')).toEqual({
+      name: 'Savings',
+      address: 'Signer1111111111111111111111111111111111111',
+    });
+  });
   it('renders sign-message view with metadata and decoded message', () => {
     mockUseDAppMetadata.mockReturnValue({
       metadata: { name: 'Signer dApp', icon: 'https://dapp.example/icon.png' },

@@ -11,6 +11,8 @@ export interface PrimaryButtonProps extends ButtonPropsBase {
   fullWidth?: boolean;
   style?: CSSProperties;
   className?: string;
+  /** Id of an element that describes the button, e.g. why it is disabled. */
+  ariaDescribedBy?: string;
 }
 
 export interface SecondaryButtonProps extends SecondaryButtonPropsBase {

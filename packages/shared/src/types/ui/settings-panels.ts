@@ -103,6 +103,12 @@ export interface AccountNamePanelPropsBase {
 export interface ConfirmSheetPropsBase {
   visible: boolean;
   onClose: () => void;
+  /**
+   * The arrival: the sheet has actually left the screen. A second sheet that
+   * follows this one opens here, never on `onClose` — iOS presents one sheet
+   * at a time.
+   */
+  onClosed?: () => void;
   title: string;
   message: string;
   confirmText?: string;
@@ -110,10 +116,23 @@ export interface ConfirmSheetPropsBase {
   /** A destructive action. */
   isDanger?: boolean;
   /**
-   * One dismiss button instead of the cancel/confirm pair — for a sheet that
-   * only reports something the user can do nothing about here.
+   * No buttons at all — for a sheet that only reports something the user can
+   * do nothing about here. It leaves the way every sheet does (handle,
+   * backdrop, back gesture or Escape), all of which call `onClose`; a sheet
+   * has no Close button (DESIGN.md §Sheets).
    */
   acknowledgeOnly?: boolean;
+  /**
+   * What the confirmation is about, drawn above the message as kit blocks
+   * (cards, rows, a notice) — never a joined string. The message under it
+   * says what confirming does.
+   */
+  children?: ReactNode;
+  /**
+   * The sheet stands on opaque `surface.bedrock` instead of the translucent
+   * thermocline — The Bedrock Rule, for a dApp approval.
+   */
+  bedrock?: boolean;
   /** The confirm control is not ready yet (e.g. a dApp's identity still being checked). */
   confirmDisabled?: boolean;
   requirePassword?: boolean;

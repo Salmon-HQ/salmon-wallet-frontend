@@ -98,6 +98,12 @@ describe('ReceiveSheet environment and mode', () => {
       />
     );
     expect(screen.getByTestId('receive-network-label').textContent).toBe('Devnet');
+    // Inside the chain's own badge, never a loose line (DESIGN.md §Sheets).
+    expect(
+      screen
+        .getByTestId('receive-chain-badge')
+        .contains(screen.getByTestId('receive-network-label'))
+    ).toBe(true);
   });
 
   it('frames the code in the live primary ink — dark in light mode', () => {

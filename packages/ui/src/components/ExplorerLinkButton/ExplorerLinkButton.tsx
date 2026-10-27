@@ -93,7 +93,8 @@ export function ExplorerLinkButton({
             paddingBottom: spacing['2xl'],
             display: 'flex',
             flexDirection: 'column',
-            gap: spacing.md,
+            // The component gap (DESIGN.md §Layout): 20 between sibling rows.
+            gap: spacing.xl,
           }}
         >
           {rows.map(({ key, ...row }) => (

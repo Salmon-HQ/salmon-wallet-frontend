@@ -17,6 +17,9 @@ import type { TransferRequest } from '../blockchain/solana/transfer-request';
 import type { BlockchainAccount, BlockchainType } from '../types/blockchain';
 import type { SendRecipient, SendRequest, SendToken } from '../types/ui/send-sheet';
 import { SOL_CONSTANTS } from '../utils/balance';
+import { withinDecimals } from '../utils/decimals';
+import type { AmountShortcutKey } from './useAmountShortcuts';
+import { useRecipientWarning } from './useRecipientWarning';
 import { useSendTransaction } from './useSendTransaction';
 
 /** Where a request-started Send lands, or why it could not start. */
@@ -49,13 +52,25 @@ export function useSendFlowState({
 }: UseSendFlowStateParams) {
   const [token, setToken] = useState<SendToken | null>(null);
   const [recipient, setRecipient] = useState<SendRecipient | null>(null);
-  const [amount, setAmount] = useState('');
+  const [amount, setAmountState] = useState('');
+  // The token whose whole balance the amount is: set by the Max fill, dropped
+  // by any other edit. The transfer then sends the raw balance itself, which
+  // on a mint with a display multiplier the shown amount cannot reproduce.
+  const [maxFor, setMaxFor] = useState<string | null>(null);
   const [txId, setTxId] = useState<string | null>(null);
   // Set when Send was started from a scanned or pasted Solana Pay request:
   // the review locks what the request fixed and the transfer carries its keys.
   const [request, setRequest] = useState<SendRequest | null>(null);
 
   const sendHook = useSendTransaction({ account, blockchain });
+
+  const setAmount = useCallback(
+    (next: string, shortcut?: AmountShortcutKey) => {
+      setAmountState(next);
+      setMaxFor(shortcut === 'max' ? (token?.address ?? null) : null);
+    },
+    [token]
+  );
 
   // The flow opens on the token the host named, else on the chain's own
   // asset, which is what the Send control on Home means; the picker is how
@@ -116,12 +131,20 @@ export function useSendFlowState({
     })();
   }, [feeKey, token, recipient, sendHook]);
 
+  // Judged on whatever recipient the flow holds, so a scanned or pasted
+  // request reaches the review with the same verdict as a typed address.
+  const recipientWarning = useRecipientWarning(
+    account,
+    recipient ? (recipient.resolvedAddress ?? recipient.address) : null
+  );
+
   const reset = useCallback(() => {
     setFee(null);
     feeRequestedFor.current = null;
     setToken(null);
     setRecipient(null);
-    setAmount('');
+    setAmountState('');
+    setMaxFor(null);
     setTxId(null);
     setRequest(null);
     sendHook.reset();
@@ -142,8 +165,10 @@ export function useSendFlowState({
       const held = holdings.find((tok) => tok.address === mint);
       if (!held) return { ok: false, reason: 'tokenNotHeld' };
 
-      const fraction = transferRequest.amount?.split('.')[1] ?? '';
-      if (fraction.length > (held.decimals ?? SOL_CONSTANTS.DECIMALS)) {
+      if (
+        transferRequest.amount !== undefined &&
+        !withinDecimals(transferRequest.amount, held.decimals ?? SOL_CONSTANTS.DECIMALS)
+      ) {
         return { ok: false, reason: 'amountDecimals' };
       }
 
@@ -155,7 +180,8 @@ export function useSendFlowState({
       // as a payment to a saved contact.
       setRecipient({ address: transferRequest.recipient });
       setToken(held);
-      setAmount(transferRequest.amount ?? '');
+      setAmountState(transferRequest.amount ?? '');
+      setMaxFor(null);
       setRequest({
         request: transferRequest,
         token: held,
@@ -177,13 +203,15 @@ export function useSendFlowState({
         recipientAddress: recipient.address,
         resolvedRecipientAddress: recipient.resolvedAddress,
         amount: parseFloat(amount),
+        amountText: amount,
+        ...(maxFor === token.address ? { max: true } : {}),
         ...(request ? { memo: request.request.memo, references: request.request.references } : {}),
       });
       setTxId(result.txId);
     } catch {
       // The hook's `failed` status is the report; the failure surface renders it.
     }
-  }, [sendHook, token, recipient, amount, request]);
+  }, [sendHook, token, recipient, amount, maxFor, request]);
 
   return {
     token,
@@ -203,6 +231,8 @@ export function useSendFlowState({
     request,
     startFromRequest,
     clearRequest,
+    /** Translation key of the warning about an off-curve recipient, or null. */
+    recipientWarning,
   };
 }
 
