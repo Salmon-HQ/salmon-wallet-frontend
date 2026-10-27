@@ -39,6 +39,7 @@ import {
   type FocusModePhase,
   useNetworkPowerups,
   allowlistForDevice,
+  EMPTY_POWERUP_ALLOWLIST,
   type DeviceCapability,
   useHomeSubTabContent,
   isSignableAccount,
@@ -434,11 +435,16 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   // 029 §5.2): fail closed, so until the catalogue answers no Powerup is
   // offered, and a switched-off one keeps its tab only to show why.
   // A Powerup that needs more than a network (SKR: Seed Vault, a Solana
-  // Mobile phone) is never offered here (spec 040).
+  // Mobile phone) is never offered here (spec 040). A watch-only account
+  // holds no key, so it sees its assets and NFTs and no Powerup: no tab, no
+  // catalogue entry.
   const networkAllowlist = useNetworkPowerups(state.networkId ?? null);
   const powerupAllowlist = useMemo(
-    () => allowlistForDevice(networkAllowlist, POWERUPS, NO_DEVICE_CAPABILITIES),
-    [networkAllowlist]
+    () =>
+      isWatchOnly
+        ? EMPTY_POWERUP_ALLOWLIST
+        : allowlistForDevice(networkAllowlist, POWERUPS, NO_DEVICE_CAPABILITIES),
+    [isWatchOnly, networkAllowlist]
   );
   const powerupTabs = useHomePowerupTabs({
     installed,
@@ -1034,7 +1040,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             turning into the close mark on press so the turn plays before the
             push takes the FAB off screen. It leaves with the content when a
             task takes the screen. */}
-        {POWERUPS_ENABLED && !isTaskEngaged && !flowLocked && (
+        {POWERUPS_ENABLED && !isTaskEngaged && !flowLocked && !isWatchOnly && (
           <PowerupsFab open={fabPressed} onPress={openPowerups} />
         )}
       </div>

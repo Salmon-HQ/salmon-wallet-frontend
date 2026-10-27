@@ -20,6 +20,7 @@ import { TaskChromeProvider } from '../src/contexts/TaskChromeContext';
 const mockChangeNetwork = jest.fn(() => Promise.resolve());
 const mockSetTabOrder = jest.fn();
 let mockStoredTabOrder: string[] | null = null;
+const mockAccount = { watchOnly: false, installed: [] as string[] };
 const mockRouter = { push: jest.fn(), back: jest.fn(), replace: jest.fn() };
 
 // Mock the data source (`useCoinMarketData`'s own dependency), not the hook
@@ -239,7 +240,7 @@ jest.mock('@salmon/shared', () => ({
     loadMore: jest.fn(),
     refresh: jest.fn(),
   }),
-  isWatchOnlyAccount: () => false,
+  isWatchOnlyAccount: () => mockAccount.watchOnly,
   // The arrangement is the shared hook's business (its own suite covers the
   // reconciliation); Home only has to render whatever order it hands back.
   useHomeTabOrder: (defaults: string[]) => ({
@@ -261,12 +262,13 @@ jest.mock('@salmon/shared', () => ({
     .useHomePowerupTabs,
   useHomePowerupsCatalog: jest.requireActual('@salmon/shared/src/hooks/useHomePowerups')
     .useHomePowerupsCatalog,
-  // Nothing installed: the Powerup tabs are their own suite.
+  // Nothing is installed unless a test installs Memo.
   useNetworkPowerups: () => ({ enabled: ['memo'], disabled: {}, providers: {} }),
   allowlistForDevice: (allowlist: unknown) => allowlist,
+  EMPTY_POWERUP_ALLOWLIST: { enabled: [], disabled: {}, providers: {} },
   useInstalledPowerups: () => ({
-    installed: [],
-    isInstalled: () => false,
+    installed: mockAccount.installed,
+    isInstalled: (id: string) => mockAccount.installed.includes(id),
     install: jest.fn(),
     uninstall: jest.fn(),
   }),
@@ -287,7 +289,9 @@ jest.mock('@salmon/shared/src/hooks/useHomeTabOrder', () => ({
 // for the catalogue, the tab bodies and the flag; the real module pulls in the
 // sheet and its motion, which is not what any of this is about.
 jest.mock('../src/powerups', () => ({
-  POWERUPS: [],
+  POWERUPS: [
+    { id: 'memo', nameKey: 'Memo', networks: ['solana-mainnet'], entries: { tab: 'MemoPage' } },
+  ],
   POWERUPS_ENABLED: true,
   PowerupsCatalog: null,
   getPowerupCatalog: () => [],
@@ -339,7 +343,7 @@ jest.mock('../src/components', () => {
     NftsTab: () => <View testID="nfts-tab" />,
     DerivedAccountsSheet: () => null,
     HomeTabOrderSheet: () => null,
-    PowerupsFab: () => null,
+    PowerupsFab: () => <View testID="powerups-fab" />,
     PortfolioSubTabs: ({
       tabs,
       onChange,
@@ -693,5 +697,29 @@ describe('home surfacing', () => {
     expect(screen.getByTestId('portfolio-tabs-region').props.entering).toBeUndefined();
     // The identity line surfaces WITH the content, as its sibling.
     expect(screen.getByTestId('wallet-header')).not.toBe(headerBefore);
+  });
+});
+
+describe('home for a watch-only account', () => {
+  afterEach(() => {
+    Object.assign(mockAccount, { watchOnly: false, installed: [] });
+  });
+
+  it('shows an installed Powerup and the + to a signing account', () => {
+    mockAccount.installed = ['memo'];
+    renderScreen(<HomeScreen />);
+
+    expect(screen.getByTestId('portfolio-tab-memo')).toBeTruthy();
+    expect(screen.getByTestId('powerups-fab')).toBeTruthy();
+  });
+
+  it('sees only its assets and NFTs: no Powerup tab, no +', () => {
+    Object.assign(mockAccount, { watchOnly: true, installed: ['memo'] });
+    renderScreen(<HomeScreen />);
+
+    expect(screen.getByTestId('portfolio-tab-portfolio')).toBeTruthy();
+    expect(screen.getByTestId('portfolio-tab-nfts')).toBeTruthy();
+    expect(screen.queryByTestId('portfolio-tab-memo')).toBeNull();
+    expect(screen.queryByTestId('powerups-fab')).toBeNull();
   });
 });
