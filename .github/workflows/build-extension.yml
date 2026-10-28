@@ -176,7 +176,7 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           VERSION="${TAG#extension/v}"
-          awk -v v="$VERSION" '/^## extension / { on = ($3 == v); next } on' CHANGELOG.md > release/NOTES.md
+          awk -v v="$VERSION" '/^## / { on = ($2 == "extension" && $3 == v); next } on' CHANGELOG.md > release/NOTES.md
           if [ -s release/NOTES.md ]; then echo "notes from CHANGELOG.md"; else echo "no CHANGELOG section for $VERSION, using generated notes"; fi
 
       # --verify-tag refuses to create a release for a tag that is not on the
