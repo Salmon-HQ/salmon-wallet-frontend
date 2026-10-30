@@ -1,147 +1,264 @@
 # Feature Specification: Dagon Powerup (devnet preview)
 
-**Feature Branch**: `feat/dev-93-dagon-powerup` (spec dir `043-dagon-powerup`; backend branch of the same name)
+**Feature Branch**: `feat/dev-93-dagon-powerup` (never merged; the backend half lives on the branch of the same name in `salmon-wallet-backend`)
 
-**Created**: 2026-10-27
+**Created**: 2026-10-27 (research) · **Rewritten**: 2026-10-30 (owner decisions)
 
-**Status**: Draft. Research done; blocked on the owner decisions listed under "Decisions the owner owes" (AGENTS.md, "Starting a new Powerup", step 2). No code is written until they are answered.
+**Status**: Draft, ready for planning. Research and spike in [research.md](./research.md).
 
-**Input**: Owner (Linear DEV-93, 2026-10-21 and 2026-10-27): "Breakpoint demo only, iOS via TestFlight, every flow Dagon has (wrap, reveal, unwrap, send, swap), devnet.json read from Dagon's GitHub at runtime with the program ids pinned, no TestFlight until the iOS 1.4.0 review (OPS-42) closes. Test everything; see it working locally first."
+**Input**: Owner (Linear DEV-93; decisions 2026-10-30): a Breakpoint demo (Solana Breakpoint, Nov 15-17, 2026) of every Dagon flow on devnet, as one Home sub-tab of the mobile app, distributed only through the EAS `staging` profile, with core generating the extra keys Dagon's programs need.
 
-## What the capability is
+## Context
 
-Dagon (Inkwell Finance) publishes `pc-token` and `pc-swap`, two Solana programs built on Encrypt (dWallet Labs), a network that does arithmetic on encrypted numbers (FHE). A pc-token is a copy of an ordinary SPL token whose balance is stored as a ciphertext account instead of a number. The flows:
+Dagon (Inkwell Finance) publishes two Solana programs, pc-token and pc-swap, built on Encrypt (dWallet Labs), a network meant to do arithmetic on encrypted numbers. A pc-token is a copy of an ordinary token whose balance is stored as a ciphertext account. On devnet today Encrypt is pre-alpha: nothing is actually encrypted, the tokens are worthless mocks, and failures are silent (an insufficient balance or a missed swap minimum succeeds on chain and moves nothing). [research.md](./research.md) has the full protocol facts and the spike.
 
-| Flow                  | What the user does                                                                                                   | Transactions                                                                                  | Extra signers (fresh keypairs)                                      | Encrypt executor calls                |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------- |
-| Setup (once per mint) | nothing visible                                                                                                      | `create_deposit` + `InitializeAccount`                                                        | `balanceCt`                                                         | none                                  |
-| Wrap                  | moves SPL into the vault, gets the same amount as pc-token; the amount is public                                     | `Wrap` (30)                                                                                   | `amountCt` (epoch 2: the program creates it from the SPL amount)    | none                                  |
-| Reveal                | sees their own balance                                                                                               | `ViewBalance` (40)                                                                            | `viewCt`; plus a `viewer` key that signs the read message off chain | `ReadCiphertext` (signed by `viewer`) |
-| Send                  | moves pc-token to another wallet; recipient, sender and time are public, the amount is not (once encryption is real) | `Transfer` (3), plus `InitializeAccount` for a first-time recipient                           | recipient `balanceCt` when new                                      | `CreateInput(amount)`                 |
-| Swap                  | pc-token for pc-token against an encrypted pool, with a minimum output                                               | `Swap` (pc-swap 1)                                                                            | `receiptCt`, plus `outBalanceCt` when new                           | 3× `CreateInput` (in, min out, 0)     |
-| Unwrap                | burns pc-token, gets the SPL back                                                                                    | `UnwrapBurn` (31), `UnwrapDecrypt` (32), `UnwrapComplete` (33), with a wait between 32 and 33 | `burnedCt`, then `requestAcct` (persisted until step 33)            | `CreateInput(amount)`                 |
+Dagon's programs require brand-new keypairs ("fresh signers") to co-sign every transaction except send and the last withdraw step. Salmon's Powerup contract forbids a Powerup from touching keys, and core replaces the blockhash right before signing, so any earlier co-signature would be invalidated. This spec therefore adds one narrow, security-sensitive core capability (FR-040..FR-046) alongside the Powerup itself.
 
-Sources: Dagon's integration guide (`GUIDE.md` §1–§9 and "What changed in epoch 2") and `devnet.json` at https://github.com/inkwell-finance/pc-wallet-kit (main `941a65a`, epoch 2); the vendored program sources there (`vendor/encrypt/examples/pc-token/lib.rs`, `pc-swap/lib.rs`), built from `inkwell-finance/encrypt-pre-alpha` branch `inkwell/epoch-2-hardening` commit `0055f80`.
+## Owner decisions (2026-10-30)
 
-### Facts that shape the design
+Recorded as decided; the requirements below implement them.
 
-- **Nothing is encrypted today.** Encrypt is pre-alpha: values are plaintext on chain and the executor returns plaintext. The network key is a constant (32 × `0x55`). Every surface must say so; no copy may say "private" or "hidden" while this holds.
-- **Every flow except send needs fresh co-signers.** pc-token and pc-swap refuse a ciphertext account that is not a fresh, empty, system-owned signer (`require_fresh`). This is a property of the programs, not of Dagon's client.
-- **Failures are silent by design.** An insufficient balance, a swap below its floor or an unwrap larger than the balance succeeds on chain and moves nothing. The outcome is known only after a reveal.
-- **Settled is two signals.** A ciphertext has settled when its digest (`data[2..34]`) changed against a snapshot taken before sending AND its status byte (`data[99]`) is 1. The digest alone fires before the executor commits.
-- **The executor drops some transactions** (Dagon measured 5 of 50 in one run). A dropped write leaves its ciphertexts pending forever; on a pool it stalls the pool for everyone, and Dagon publishes a replacement pool under a new `devnet.json` epoch.
-- **Known issues on devnet today** (from `devnet.json`): the swap floor is not enforced by the executor, so a swap can fill below its minimum; `transfer()` is not verified end to end.
-- **Unwrap has no refund path.** If the executor never answers the decryption request, the burned amount stays stuck. Dagon advises keeping unwrap out of a live demo.
-- **A reveal costs a transaction** and about 0.002 SOL of rent for the copy, which is not reclaimed.
-- **Mock tokens use 2 decimals**; their mint authority is Dagon's faucet. Test tokens are funded by Dagon on request (QA wallet addresses).
-- **Anyone can overwrite any ciphertext on devnet** by calling the Encrypt program directly (reported by Dagon 2026-10-03, no fix date). Balances on devnet are therefore not trustworthy, which is acceptable for a preview with worthless tokens.
-
-### Spike (2026-10-27, read-only, scratch code)
-
-- `devnet.json` fetched from `raw.githubusercontent.com`: epoch 2, status `deployed`. Every program, mint, vault, vault ATA, pool and reserve ciphertext exists on devnet with the expected owner; the USDC mint reports 2 decimals; a reserve ciphertext has a non-zero digest and status byte 1.
-- One unary gRPC-web call to the executor (`ReadCiphertext`) written by hand: protobuf fields encoded inline, the response read with `fetch` + `arrayBuffer()` (no streaming body). The executor answered in ~1.4 s with grpc-status 7, "signer is not authorized to read this ciphertext": the transport works and the executor enforces read authorization.
-- `@protobuf-ts/grpcweb-transport`, which Dagon's client uses, requires `response.body` as a stream and fails on React Native's default `fetch`. The hand-written unary call needs neither that package nor streaming, so it runs on Hermes and in the extension alike. Both executor calls are unary.
-
-### How other wallets present hidden balances
-
-No shipped Solana wallet (Phantom, Solflare, Backpack) shows Token-2022 confidential balances yet, so the references are the protocol's own model and two analogues from other chains:
-
-- **Solana Token-2022 confidential transfer** ([docs](https://solana.com/docs/tokens/extensions/confidential-transfer)): incoming amounts land in a "pending" balance that is not spendable until the owner applies it; withdrawing back to a public balance takes several transactions; "only transfer amounts and token balances are private", addresses stay public.
-- **Zcash wallet UX checklist** ([Zcash docs](https://zcash.readthedocs.io/en/master/rtd_pages/ux_wallet_checklist.html)): warn only when moving funds from shielded to public, and say it reveals the amount; show the total next to what is spendable; list pending sends in their own section with the time left.
-- **Keplr viewing keys on Secret Network** ([Keplr guide](https://blog.keplr.app/enable-mint-secret-scrt-with-keplr/)): reading a hidden balance needs an on-chain step that costs gas, and the surprise fee and failed retries are the reported pain points.
-
-Questions borrowed (behaviour, not look): say what a reveal costs before it happens; show the last revealed value with its time and a "may be out of date" label; treat a multi-transaction flow (unwrap) as one flow with visible, resumable steps; put the privacy limits in plain words at wrap time ("amounts hidden once encryption is live; your address, the recipient and the token are public"); warn at unwrap that the amount becomes public; mark the whole surface as a devnet preview.
-
-## The conflict with the Powerup architecture
-
-Salmon's Powerup contract assumes the user is the only signer:
-
-- Backend: `/powerups/:id/build` refuses a compiled message that needs more than the payer's signature (`assertSingleSigner`, `src/services/solana/powerups/powerup-build-service.js`).
-- Frontend: a Powerup cannot import `core/signing`; it asks core for one signature through `core/confirmation`, and `signProposal` signs with the user's key only.
-
-Dagon's programs need fresh co-signers on five of the six transaction kinds. Integrating them changes the signing path, which `AGENTS.md` marks security-sensitive and which needs the owner's explicit sign-off.
-
-### Proposed design (for the owner's decision)
-
-**Core-generated fresh signers.** Core gains one narrow capability: a proposal may declare that it needs N fresh accounts.
-
-1. Core generates N keypairs on the device and passes only their public keys to the backend build request.
-2. The backend adapter builds the instructions naming those public keys; the build service accepts exactly `1 + N` signatures for a registry entry that declares `freshSigners`, and checks that the extra signer slots are the public keys it was given.
-3. Core verifies the returned message: the extra signers are exactly the keys it generated, every program is in the manifest, the fee payer is the user. It partially signs with the fresh keys, the user confirms on the core screen, and core signs and broadcasts. The fresh keys are discarded after sending, except `requestAcct` during an unwrap, which core keeps until step 33.
-4. The `viewer` key for a reveal is generated and kept on the device; the read request to the executor is signed there, so neither the backend nor a Powerup ever holds it.
-
-Why this shape: no private key leaves the device and the backend still signs nothing; the Powerup still never touches a signer; the extra signatures are bounded to keys core created a moment earlier, so a malicious build cannot smuggle in a signer it controls.
-
-Rejected alternatives: building transactions in the client (contradicts "a Powerup consumes the backend's build endpoint, it is never designed in the client"); the backend generating and partially signing the fresh keys (the backend would sign, and for a reveal it would hold the key that reads the user's balance); asking Dagon to use PDAs instead of fresh keypairs (the ciphertext accounts are created by Encrypt, outside Dagon's control, and nothing could ship before Breakpoint).
-
-`CreateInput` sends the plaintext amount to the executor whoever calls it. The proposal is that the backend adapter calls it during the build (it already holds every other build input), which keeps the executor out of the device's endpoints except for `ReadCiphertext`.
-
-## Decisions the owner owes
-
-Each has a recommendation; none is taken until the owner answers.
-
-1. **Signing design.** Approve "core-generated fresh signers" above, or choose another. _Recommended: approve._
-2. **What core owes.** pc-token balances and vault deposits exist on chain whether or not the Powerup is installed. AGENTS.md step 3 says core must show such a position either way. _Recommended: waive it for this devnet-only preview, record the waiver in this spec, and revisit before any mainnet discussion._
-3. **Surface.** A Home sub-tab (it holds a balance the user returns to) or an action inside an existing screen. _Recommended: a sub-tab, like SKR and Payments._
-4. **Platforms and twins.** DOM parity requires a DOM twin or a `MOBILE_ONLY` entry with a reason. _Recommended: mobile only for the demo, listed in `MOBILE_ONLY` with the reason "devnet preview for the Breakpoint demo"; the availability table offers it on iOS only._
-5. **Flows in the demo build.** The owner asked for all of them. _Recommended: wrap, reveal and swap on; send behind a switch until Dagon verifies `transfer()`; unwrap built and tested but off in the demo, because an executor drop strands the burned amount with no refund._
-6. **Swap floor.** The executor does not enforce it today. _Recommended: keep the floor input and say under it that devnet does not enforce it yet._
-7. **Disclosure.** `permissions` is `balances` (the executor receives every amount in plaintext and the caller's IP); `endpoints` are the executor and `raw.githubusercontent.com`. _Recommended: approve as written._
-8. **Copy.** English is drafted from Dagon's own wording and the runbook; the Spanish must come from the owner (`i18n-authoring`).
-9. **Fee.** None. _Recommended: no Salmon fee on a devnet preview._
-10. **Name.** User-facing name and id. _Recommended: id `dagon`, name "Dagon (devnet preview)", which names the counterparty and avoids the word "private"._
+| # | Decision | Reason |
+| --- | --- | --- |
+| D1 | A demo build for Solana Breakpoint (Nov 15-17, 2026). It lives on `feat/dev-93-dagon-powerup`, which is **never merged**. | A devnet preview of a pre-alpha protocol is not a product release. |
+| D2 | Distributed only through the EAS `staging` profile (`apps/mobile/eas.json`: internal distribution, update channel `staging`, staging backend). Never the production channel, never TestFlight, never a store. | Apple guideline 2.2 (demos and betas do not belong on the App Store); the iOS 1.4.0 review in progress; EU AMLR art. 79 risk for a store feature. |
+| D3 | Surface: one Home sub-tab (`entries.tab`, the only Powerup surface the manifest supports). Mobile only, iOS demo. The missing DOM twin is recorded as a `MOBILE_ONLY` entry in `scripts/check-dom-parity.mjs` with its reason. | Holds state the user returns to (balances, in-progress operations). |
+| D4 | Powerup id `dagon`; display name "Dagon (devnet preview)"; the word "private" never appears; `networks: ['solana-devnet']` only. | Names the counterparty; no claim the protocol cannot back today. |
+| D5 | Flows, all built: Activate (setup), Hide (wrap), Reveal, Send, Swap, Withdraw (unwrap, 3 steps). Withdraw is built and tested but OFF in the demo behind a switch. Send is behind a switch until Dagon verifies transfer. | An executor drop during withdraw strands the burned amount with no refund; Dagon has not verified transfer end to end. |
+| D6 | Copy: the agent proposes EN and ES strings; the owner approves them before the build. | Repo i18n rule: Spanish is never guessed. |
+| D7 | Tab layout: see User Story 1-6 and FR-020..FR-032 (usage line, devnet notice, balances card per token, actions as sheets, "In progress" card, first visit shows only "Activate"). Receipts say "submitted, Encrypt is processing", never "done". The pending-activity banner is not used. | A confirmed signature does not mean anything moved. |
+| D8 | Test tokens: no public faucet (`faucetUrl` is null). Dagon funds wallet addresses we send them (1000 mock-USDC + 1000 mock-DOGE, 4 h cooldown). The demo uses pre-funded team wallets. When `faucetUrl` becomes non-null, a "Get test tokens" action appears. | |
+| D9 | Signing: core-generated fresh signers and an ephemeral viewer key, as specified in FR-040..FR-046. | No key leaves the device, the backend signs nothing, the Powerup never holds a key. |
+| D10 | Cross-repo build contract as in FR-050..FR-053, shared word for word with the backend spec. | |
 
 ## User Scenarios & Testing _(mandatory)_
 
-### User Story 1 - Wrap and reveal (Priority: P1)
+All scenarios run on iOS against Solana devnet, in a build from the EAS `staging` profile, with a team wallet Dagon has pre-funded with mock-USDC, mock-DOGE and devnet SOL.
 
-On devnet, the user turns on the Dagon Powerup, wraps mock USDC into pc-USDC and reveals their pc-USDC balance. The tab shows the last revealed amount with the time it was read; revealing again is an explicit action that says it costs a transaction.
+### User Story 1 - Activate and see the tab (Priority: P1)
 
-**Independent Test**: a QA wallet funded by Dagon wraps 10.00 mock USDC; after settlement a reveal shows 10.00 pc-USDC; the SPL balance dropped by 10.00.
+A demo visitor opens the Dagon tab for the first time. Above everything is the usage line and a notice that this is a devnet preview whose amounts are not actually encrypted yet. The only action offered is "Activate". After activating (one confirmation per mock token on the core screen), the tab shows a balances card for each Dagon mock token and the actions Hide, Send, Swap and Withdraw (the latter two only when their switches are on).
 
-### User Story 2 - Swap (Priority: P1)
+**Why this priority**: every other flow needs an activated account; the devnet notice is the honesty floor of the whole demo.
 
-The user swaps pc-USDC for pc-DOGE with a minimum output. The result is "submitted", then "settled", then "filled" or "nothing moved" after a reveal; it is never shown as a plain success from the signature alone.
+**Independent Test**: on a fresh devnet wallet, open the tab, tap Activate, confirm; the balances cards appear with the public balance and "not revealed yet" for the hidden balance.
 
-**Independent Test**: a 1.00 pc-USDC swap on the epoch 2 pool settles and a reveal of pc-DOGE shows the increase.
+**Acceptance Scenarios**:
 
-### User Story 3 - Send (Priority: P2, behind a switch)
+1. **Given** a wallet on devnet that never activated Dagon, **When** the user opens the tab, **Then** the usage line, the devnet notice and a single "Activate" action are shown, and no balances card or other action.
+2. **Given** the first visit, **When** the user taps Activate and confirms on the core screen, **Then** core signs with the user key plus the fresh keys it generated, the receipt says the activation was submitted and Encrypt is processing, and the item appears in "In progress".
+3. **Given** activation settled, **When** the tab re-renders, **Then** each mock token shows its public balance and its hidden balance as "not revealed yet", and no reveal is triggered automatically.
+4. **Given** any state of the tab, **When** it is on screen, **Then** the devnet notice is visible without scrolling or dismissing.
 
-The user sends pc-USDC to another devnet address; a first-time recipient is onboarded in the same transaction.
+---
 
-**Independent Test**: once Dagon verifies `transfer()`, a 1.00 send between two QA wallets is revealed on both sides.
+### User Story 2 - Hide tokens (Priority: P1)
 
-### User Story 4 - Unwrap (Priority: P2, off in the demo build)
+The user moves an amount of a mock token from its public balance into its hidden balance. A sheet asks for the amount and token (amount entry and token picker), core shows the confirmation, and the receipt says the hide was submitted and Encrypt is processing. The wrap amount is public on chain, and the sheet says so.
 
-The user burns pc-USDC and gets mock USDC back after three transactions and a wait. The screen says the wait can take minutes and that an executor failure can leave the amount stuck on devnet.
+**Why this priority**: it is the first thing a demo shows and the source of every hidden balance.
+
+**Independent Test**: hide 10.00 mock-USDC; the public balance drops by 10.00; the item moves from "processing" to "done" once Encrypt settles; a later reveal shows 10.00 more.
+
+**Acceptance Scenarios**:
+
+1. **Given** an activated wallet with 1000.00 mock-USDC, **When** the user hides 10.00, **Then** the confirmation shows the amount, token and network fee, and after confirming the receipt never says "done".
+2. **Given** the hide was submitted, **When** Encrypt settles the balance ciphertext, **Then** the "In progress" item turns "done" and the hidden balance card is marked "may be out of date" until the next reveal.
+3. **Given** an amount with more than 2 decimals, **When** the user types it, **Then** the input refuses the extra digits (mock tokens have 2 decimals).
+
+---
+
+### User Story 3 - Reveal a hidden balance (Priority: P1)
+
+The user taps "Reveal" on a token's card. Before anything happens, the user sees that a reveal sends a transaction and costs about 0.0023 devnet SOL of rent that is not returned. After confirming, the card shows the revealed amount and the time it was read.
+
+**Why this priority**: without it the user cannot learn the outcome of any operation, because failures are silent.
+
+**Independent Test**: after a settled hide of 10.00, tap Reveal; the card shows the hidden balance with the read time; closing and reopening the tab shows the same value and time without a new transaction.
+
+**Acceptance Scenarios**:
+
+1. **Given** a card with a last revealed value, **When** the tab renders, **Then** it shows that value and its time, and sends no transaction.
+2. **Given** the user taps Reveal, **When** core shows the confirmation, **Then** the cost of the reveal is stated before the user confirms.
+3. **Given** the reveal transaction confirmed and its copy settled, **When** the device reads it from Encrypt, **Then** the value is signed for with an ephemeral viewer key core generated, the user's key signs no message, and the card shows the value and the time of the read.
+4. **Given** the read returns fewer than 8 bytes, **When** it is decoded, **Then** the card shows an error with retry, never 0.
+
+---
+
+### User Story 4 - Swap between mock tokens (Priority: P1)
+
+The user swaps hidden mock-USDC for hidden mock-DOGE with a minimum to receive. The sheet says the result is "at least this amount, or nothing moves", and that devnet does not enforce the minimum yet. The receipt says submitted; the outcome is known only after a reveal.
+
+**Why this priority**: the swap against an encrypted pool is the headline of the demo.
+
+**Independent Test**: swap 1.00 mock-USDC to mock-DOGE; the item turns "done" when both balance ciphertexts settle; revealing mock-DOGE shows the increase.
+
+**Acceptance Scenarios**:
+
+1. **Given** a settled hidden balance, **When** the user swaps, **Then** core's confirmation shows the amount in, the minimum out, the devnet-floor caveat and the network fee.
+2. **Given** the user has no Dagon account for the output token, **When** the build answers `setup_required`, **Then** the wallet offers the setup transaction for that token first and then builds the swap.
+3. **Given** the input token's hidden balance was never settled by Encrypt, **When** the user opens Swap, **Then** the swap is refused with "your earlier hide is still being processed".
+4. **Given** the swap confirmed, **When** both balances settle, **Then** the item reads "done" and both cards are marked "may be out of date"; the screen never claims the swap filled.
+
+---
+
+### User Story 5 - Follow operations in progress (Priority: P2)
+
+Every submitted operation appears in an "In progress" card in one of three states: processing, done, or outcome unknown. The card survives closing the app.
+
+**Why this priority**: the honest answer to silent failures and to executor drops.
+
+**Independent Test**: submit a hide, kill the app, reopen: the item is still there and resolves to "done" or "outcome unknown".
+
+**Acceptance Scenarios**:
+
+1. **Given** an operation confirmed on chain, **When** Encrypt has not settled it, **Then** it shows "processing".
+2. **Given** settlement observed (the watched balance ciphertext changed and is marked settled), **When** the watcher sees it, **Then** it shows "done", meaning Encrypt finished, not that funds moved.
+3. **Given** no settlement within the time cap, **When** the cap passes, **Then** it shows "outcome unknown" with a suggestion to reveal later, never an error that implies nothing happened.
+4. **Given** core reported the transaction outcome as unknown, **When** the Powerup receives that, **Then** the form is cleared, the item is "outcome unknown", and nothing is resubmitted.
+
+---
+
+### User Story 6 - Send hidden tokens (Priority: P2, behind a switch)
+
+The user sends a hidden mock-token amount to another devnet address. A recipient without a Dagon account is first set up by a separate transaction the sender pays for, then the send is built.
+
+**Why this priority**: Dagon has not verified transfer end to end; the switch keeps it out of the demo until they do.
+
+**Independent Test**: with the switch on, send 1.00 between two team wallets; both reveal the change.
+
+**Acceptance Scenarios**:
+
+1. **Given** the switch is off, **When** the tab renders, **Then** Send is not shown.
+2. **Given** the switch is on and the recipient has no Dagon account, **When** the user sends, **Then** the backend answers `recipient_setup_required`, the wallet offers a separate setup transaction for the recipient (one fresh key, paid by the sender) and, once it is confirmed and settled, builds the send.
+3. **Given** the send confirmed, **When** the sender's balance ciphertext settles, **Then** the item reads "done" and the copy says a reveal is needed to know whether the amount moved.
+
+---
+
+### User Story 7 - Withdraw back to public tokens (Priority: P3, built, OFF in the demo)
+
+The user turns hidden tokens back into public ones in three steps (burn, request decryption, complete), with a wait of up to minutes between the second and third. The sheet warns the amount becomes public and that an Encrypt failure can leave it stuck on devnet. The flow resumes where it stopped if the app closes.
+
+**Why this priority**: required for completeness, unsafe for a live demo.
+
+**Independent Test**: with the switch on, withdraw 5.00 mock-USDC; close the app after step 1; reopen; the flow offers step 2; after step 3 the public balance rises by 5.00.
+
+**Acceptance Scenarios**:
+
+1. **Given** the switch is off, **When** the tab renders, **Then** Withdraw is not shown, and any withdraw already in progress is still listed with a way to continue it.
+2. **Given** step 1 confirmed, **When** the app is killed and reopened, **Then** the stored public addresses let the flow continue at step 2; no private key was stored.
+3. **Given** step 2 confirmed, **When** Encrypt has not posted the decryption within 180 s, **Then** the item reads "outcome unknown" and offers step 3 again later.
 
 ### Edge Cases
 
-- `devnet.json` unreachable, malformed, or its epoch or program ids differ from the ones pinned in the manifest: the Powerup shows a "not available" state and builds nothing.
-- The executor is unreachable or times out after a transaction confirmed: "settling" with a later re-check; never an error that hides a real transaction, never a zero.
-- A reveal read returns fewer than 8 bytes: an error, never zero.
-- A pool stalled by a dropped executor write: swap shows "temporarily unavailable" until `devnet.json` names a new pool.
-- The user's input ciphertext has an all-zero digest (never committed): swap refuses and says the deposit is still settling.
-- The wallet is on mainnet: the Powerup does not appear.
+- **Executor drop**: a transaction confirms but Encrypt never settles it. The item reaches "outcome unknown" at the cap (90 s; 180 s for the withdraw decryption) and stays listed; no automatic retry. On a pool, the swap may stall until Dagon publishes a new pool in a new `devnet.json`; the swap sheet then reports it as unavailable.
+- **Outcome unknown from core** (the network cannot say whether the transaction landed): the form clears, the item is "outcome unknown", nothing is resubmitted.
+- **`devnet.json` unreachable, malformed, or with program ids that differ from the pinned ones**: the tab shows an unavailable state with retry and builds nothing; no cached or default config is used in its place.
+- **Recipient or output token without a Dagon account**: the build answers `recipient_setup_required` (send) or `setup_required` (swap); the wallet offers the setup as its own transaction with its own confirmation, never folded silently into the send or swap.
+- **Insufficient devnet SOL for rent and fees** (activation, reveal at ~0.0023 SOL, swap, onboarding a recipient): the action is refused before the build with a message naming the shortfall; the team wallets are pre-funded, so the message is the only handling.
+- **App closed mid-withdraw**: the public addresses stored per step let it resume (User Story 7); a step already requested on chain is never requested twice.
+- **App closed with operations in progress**: the "In progress" card restores them and resumes watching each one until its cap measured from submission.
+- **Wallet switched to mainnet**: the tab disappears (Home hides Powerups not declared for the active network); the fresh-signer and viewer capability refuse to run off devnet; stored in-progress items are kept and reappear on devnet.
+- **Wallet switched to another account**: balances, last revealed values and in-progress items are per account; nothing from one account shows on another.
+- **Watch-only account**: core refuses to sign as for any Powerup; no keys are generated.
+- **Executor read shorter than 8 bytes**: an error with retry, never 0.
+- **User cancels on the confirmation screen**: the fresh keys and any viewer key generated for that proposal are discarded; nothing is stored.
+- **A build that names signers other than the user and the fresh keys core generated, or a different count**: core refuses before showing the confirmation.
+- **Several reveals in a row**: each costs a transaction; the button is disabled while one is in progress, and the tab never reveals on render, on focus, or on a timer.
 
 ## Requirements _(mandatory)_
 
-Written for the recommended answers above; they change if the owner answers differently.
+### Functional Requirements
 
-- **FR-001**: Backend registry entry `dagon` (core, `solana-devnet`, `freshSigners`, `programIds` = Encrypt, pc-token, pc-swap, SPL Token, Associated Token, System, Compute Budget), stage config on devnet only, analytics enum, and an availability row offering it on iOS only. The backend reads `devnet.json` with the same pinning rule as the client.
-- **FR-002**: Backend adapter building each transaction kind from the caller's address, amounts and the fresh public keys; it calls `CreateInput` where the flow needs it. Build service accepts `1 + N` signatures only for entries that declare `freshSigners`, and only for the keys passed in.
-- **FR-003**: Core "fresh signers" capability as described above, with unit tests for: wrong extra signer refused, extra signer count different from requested refused, undeclared program refused, fresh keys never persisted except `requestAcct`.
-- **FR-004**: Powerup folder `packages/shared/src/powerups/dagon` (manifest: id `dagon`, core, `solana-devnet`, permissions `balances`, endpoints executor + `raw.githubusercontent.com`, programs pinned, tab `dagon`), its locales (EN/ES), the config loader, the executor read client (unary gRPC-web over `fetch` + `arrayBuffer`), the settlement watcher (digest change AND status byte), and `useDagonScreenLogic`.
-- **FR-005**: Mobile screen composed only of runbook blocks (`docs/POWERUPS-UI.md`); registered in the entries, `check-i18n`, `check-powerups-bundle`, `check-dom-parity` (`MOBILE_ONLY`).
-- **FR-006**: Every result is modelled as `submitted | settled` × `filled | no_op | unknown`, never a boolean.
+**Distribution and scope**
+
+- **FR-001**: The feature MUST ship only in builds from the EAS `staging` profile (internal distribution, `staging` update channel, staging backend); it MUST NOT reach the production update channel, TestFlight, or any store, and its branch MUST NOT be merged.
+- **FR-002**: The Powerup MUST be id `dagon`, tier core, display name "Dagon (devnet preview)", `networks: ['solana-devnet']`, with exactly one surface, a Home sub-tab.
+- **FR-003**: The Powerup MUST be mobile only; the absent DOM twin MUST be recorded as a `MOBILE_ONLY` entry with the reason "devnet preview for the Breakpoint demo", so the parity check stays green.
+- **FR-004**: The manifest's `endpoints` MUST be exactly the Encrypt executor host and `raw.githubusercontent.com`; its `programs` MUST list Encrypt, pc-token, pc-swap, SPL Token, Associated Token, System and Compute Budget; it MUST declare the fresh-signer capability (FR-040).
+- **FR-005**: No user-facing string MAY contain the word "private" (or its Spanish equivalents); every EN and ES string MUST be approved by the owner before the demo build.
+
+**Configuration**
+
+- **FR-010**: The Powerup MUST fetch `devnet.json` at runtime from `https://raw.githubusercontent.com/inkwell-finance/pc-wallet-kit/main/devnet.json` and MUST refuse it if its Encrypt program id is not `4ebfzWdKnrnGseuQpezXdG8yCdHqwQ1SSBHD3bWArND8`, its pc-token program id is not `3kjJEx6G1XdrtixFg9f8eGRAyzW5QmhsJQq6qCUZYhXZ` or its pc-swap program id is not `BqJMtWQYiis1264KqBN3wssNqTofK5RuP67hkZYvb4SD`, or if it is malformed.
+- **FR-011**: When `devnet.json`'s `faucetUrl` is non-null, the tab MUST offer a "Get test tokens" action; while it is null, it MUST NOT.
+- **FR-012**: Amounts MUST use 2 decimals for the mock tokens.
+
+**The tab**
+
+- **FR-020**: The tab MUST show, in order: the usage line; an always-visible devnet notice ("devnet preview, amounts are not actually encrypted yet"); one balances card per Dagon mock token; the actions; the "In progress" card.
+- **FR-021**: On a wallet that has not activated Dagon, the tab MUST show only the usage line, the devnet notice and "Activate".
+- **FR-022**: Each balances card MUST show the public balance and the hidden balance as the last revealed value with the time it was read (or "not revealed yet"), plus a "Reveal" action; a value older than any later settled operation on that token MUST be marked "may be out of date".
+- **FR-023**: The tab MUST NOT reveal on render, focus, or timer; a reveal happens only when the user taps Reveal and confirms, and the confirmation MUST state its cost (a transaction and about 0.0023 devnet SOL of rent).
+- **FR-024**: Hide, Send, Swap and Withdraw MUST each open a sheet composed only of the runbook blocks (`docs/POWERUPS-UI.md`: amount entry, token picker, core confirmation, receipt); Send and Withdraw MUST each be behind a switch, Withdraw off and Send off by default in the demo build.
+- **FR-025**: Every receipt MUST say the operation was submitted and Encrypt is processing; no receipt, row or card MAY say an operation succeeded or "done" on the strength of a confirmed signature.
+- **FR-026**: The "In progress" card MUST list each operation Encrypt has not settled, in one of: processing, done, outcome unknown; items MUST persist per account and network across app restarts through `usePowerupState`.
+- **FR-027**: An operation MUST be "done" only when the watched balance ciphertext's digest changed against a snapshot taken before sending AND its status byte reads settled; it MUST become "outcome unknown" after 90 s without that (180 s for the withdraw decryption step).
+- **FR-028**: The Powerup MUST NOT use the pending-activity banner for any Dagon operation.
+- **FR-029**: Withdraw MUST persist between steps through `usePowerupState` only public addresses (the request account's address, and whatever public address step 2 needs from step 1); no private key MAY be persisted.
+- **FR-030**: Swap MUST refuse when the input token's balance ciphertext has never been settled (all-zero digest), and MUST state that devnet does not enforce the minimum yet.
+- **FR-031**: An executor read shorter than 8 bytes MUST be an error, never a zero balance.
+- **FR-032**: Every build failure MUST map to a translated state through `describePowerupBuildError`; a `SolanaOutcomeUnknownError` MUST clear the form, mark the item "outcome unknown", and never resubmit.
+
+**Fresh signers (core, security-sensitive)**
+
+- **FR-040**: Core MUST offer a capability that only a Powerup whose manifest declares it can use, and only on `solana-devnet`; on any other network or for an undeclaring Powerup it MUST refuse before generating any key.
+- **FR-041**: For a proposal that needs N fresh signers (N ≥ 0), core MUST generate N keypairs on the device and give the Powerup only their public keys; the Powerup passes them to the backend build as `freshSigners`.
+- **FR-042**: Before showing the confirmation, core MUST refuse a built transaction whose required signers are not exactly the user's key plus the N fresh public keys it generated for that proposal, whose fee payer is not the user, or that invokes a program outside the manifest.
+- **FR-043**: After the user confirms, core MUST put the fresh blockhash on the message and sign with the fresh keys and the user key in the same step, then broadcast; it MUST discard the fresh keys after broadcast, on cancel, on refusal, and on any error. Fresh private keys MUST never be persisted, logged, returned to the Powerup, or sent anywhere.
+- **FR-044**: For a reveal, core MUST generate an ephemeral viewer keypair, give the Powerup its public key for the build, and after the reveal transaction confirms sign the Encrypt read message with it, returning only the signature and the public key; core MUST sign only a message of the read-message shape (chain 0, a 32-byte ciphertext id, empty re-encryption key, epoch 0), MUST keep the viewer key in memory only, and MUST discard it after the read, on cancel, or on error. The user's key MUST never sign a message in this feature.
+- **FR-045**: The existing send, swap and dApp signing paths MUST behave unchanged: their existing tests MUST pass untouched, and a new test MUST prove the capability refuses on mainnet.
+- **FR-046**: The Powerup boundary lint MUST block key generation and raw signing from `powerups/**` — at least `@solana/kit`'s `generateKeyPairSigner`, `generateKeyPair` and `signBytes` (and their sources in `@solana/keys` / `@solana/signers`) — and `boundary.test.ts` MUST assert it on a fixture.
+
+**Cross-repo contract**
+
+- **FR-050**: The Powerup MUST build every transaction through the existing generic route `GET /v1/{networkId}/powerups/{id}/build` with id `dagon`, network `solana-devnet` and the params in the query: `{ action, ...actionParams, freshSigners }`, where `freshSigners` is a comma-separated list of base58 public keys (empty for N = 0) and `action` ∈ `setup | wrap | reveal | send | swap | unwrapBurn | unwrapDecrypt | unwrapComplete`.
+- **FR-051**: The backend returns an unsigned v0 transaction whose signers are exactly the owner plus `freshSigners`, and performs the Encrypt `CreateInput` calls itself; the device MUST NOT call `CreateInput`. Fresh-signer count per action: setup 1, wrap 1, reveal 1 (plus the off-chain viewer key), send 0, swap 1, unwrapBurn 1, unwrapDecrypt 1, unwrapComplete 0. Setup takes the account owner as a param, so the sender can set up a recipient (owner = recipient).
+- **FR-053**: The client MUST handle the build's `409 recipient_setup_required` (send) and `409 setup_required` (swap into an output token with no Dagon account) by offering the setup transaction first, and MUST honour the response `display` flag that the outcome is known only after a reveal by using the "submitted, Encrypt is processing" receipt.
+- **FR-052**: The device MUST perform the reveal read itself (`ReadCiphertext`, one unary gRPC-web call over plain `fetch` with an `arrayBuffer` body, because React Native's `fetch` has no streaming body) and the settlement watching (account-change subscription plus a ~1.5 s poll).
+
+### Key Entities
+
+- **Dagon config**: the runtime `devnet.json` (epoch, program ids, mints, pool, executor URL, faucet URL, account layout offsets); accepted only when its program ids match the pinned ones.
+- **Token position**: per account and mock token, the public balance (read from chain) and the last revealed hidden balance with its read time.
+- **Operation in progress**: per account and network, the action kind, token(s), amount, submission time, transaction signature, the ciphertext(s) being watched with their pre-send digest snapshot, and the state (processing, done, outcome unknown).
+- **Withdraw progress**: per account and network, the current step (1-3) and the public addresses each next step needs; never a private key.
+- **Fresh signer set**: N keypairs core generates for one proposal; only the public keys leave core; lives from proposal to broadcast or cancel.
+- **Viewer key**: one ephemeral keypair per reveal; only its public key and one read-message signature leave core; lives from the reveal build to the read.
 
 ## Success Criteria _(mandatory)_
 
-- **SC-001**: Unit tests cover the config loader (epoch, pinned programs, malformed file), the settlement predicate, the read-message encoding and the strict u64 decode, and the fresh-signer checks on both sides.
-- **SC-002**: On the iPhone simulator against devnet, a QA wallet completes wrap → reveal → swap → reveal (recorded with Maestro).
-- **SC-003**: The Powerup is absent on mainnet and in a Powerups-off build (bundle check).
-- **SC-004**: No screen says "private", "hidden" or "encrypted" without the pre-alpha qualifier.
+### Measurable Outcomes
+
+- **SC-001**: On the iOS demo build against devnet, a pre-funded team wallet completes Activate → Hide → Reveal → Swap → Reveal with every operation reaching "done" or "outcome unknown" within 90 s of confirmation.
+- **SC-002**: 100% of receipts and in-progress items reviewed in the demo walkthrough avoid claiming an operation succeeded; zero strings contain "private".
+- **SC-003**: The tab sends zero reveal transactions without an explicit user confirmation (verified by test).
+- **SC-004**: The fresh-signer capability refuses on mainnet, for an undeclaring Powerup, and for a build with a wrong or extra signer (verified by tests), and the existing send, swap and dApp signing tests pass without modification.
+- **SC-005**: No private key generated by this feature is found in persisted storage, logs, or anything returned to the Powerup (verified by tests and review).
+- **SC-006**: The boundary lint fails on a fixture that imports key generation or raw signing inside `powerups/**`.
+- **SC-007**: A withdraw interrupted after any step resumes at the next step after an app restart (verified with the switch on, outside the demo).
+- **SC-008**: The Powerup is absent on mainnet and in a Powerups-off build (bundle check).
+
+## Assumptions
+
+- The backend half (registry entry `dagon`, the adapter for the eight actions, the build service accepting `1 + N` signers only for an entry that declares fresh signers and only for the keys passed in) lands on its own branch before the client consumes it, and is deployed to the staging backend.
+- The staging backend can build for `solana-devnet`, and the staging availability table offers `dagon` on iOS only.
+- Devnet SOL for fees and rent comes from the public devnet airdrop; the team wallets are funded before the event.
+- Encrypt stays pre-alpha through the event; `devnet.json` epoch 2 stays current unless Dagon publishes a new pool, which the runtime fetch picks up.
+- Spanish copy is proposed by the agent and approved by the owner (D6); English is drafted from Dagon's wording and the runbook.
+
+## Open questions (with recommended defaults)
+
+- **Q1 - What core owes** (AGENTS.md "Starting a new Powerup", step 3). Hidden balances exist on chain whether or not the Powerup is on. **Default**: waive the core surface for this never-merged devnet branch and revisit before any mainnet discussion.
+- **Q2 - Manifest `permissions`.** **Default**: `['address', 'balances']`: the address and amounts reach Encrypt (through the backend's `CreateInput` and the device's read), and the read returns a balance.
+- **Q3 - Withdraw state between step 1 and step 2.** Step 2 needs the receipt created in step 1, which is derived from the burned-amount ciphertext's public address, not from the request account. **Default**: also store that public address after step 1; it is public data, so it keeps the "no private key stored" rule.
+- **Q4 - Switch mechanism.** **Default**: build-time constants in the Powerup folder (Withdraw off, Send off), flipped on the branch, since the demo build is the only consumer.
 
 ## Out of scope
 
-Mainnet (needs an external audit of the programs and an Encrypt mainnet), the extension and Android, TestFlight or store builds (after OPS-42 closes), and a Salmon fee.
+- Mainnet, Android, the browser extension (no DOM twin), TestFlight and store builds, the production update channel.
+- A Salmon fee.
+- Any core surface for Dagon positions when the Powerup is off (Q2).
+- Refunds for a withdraw stranded by Encrypt (the protocol has none).
+- A public faucet integration beyond showing "Get test tokens" when `faucetUrl` is set.
+- Merging this branch.
