@@ -46,6 +46,15 @@ UK_DECK = [
     ("03-powerups-uk", None, "Switch Powerups on\nwhen you need them", "coral"),
     *PHONE_DECK[3:],
 ]
+# Play has no capture of the catalogue with Swap switched off, so its U.K. deck
+# drops that frame and keeps the backgrounds alternating.
+PLAY_UK_DECK = [
+    HOME,
+    ("07-token-info", None, "Live prices\nfor every token", "navy"),
+    ("04-payments", None, "Get paid\nwith a QR code", "coral"),
+    ("05-send", None, "Send to any wallet\nor .sns name", "navy"),
+    ("06-nfts", None, "Your NFTs,\nfront and center", "coral"),
+]
 SEEKER_DECK = [
     HOME,
     ("02-seed-vault", None, "Your keys stay\nin Seed Vault", "navy"),
@@ -66,6 +75,7 @@ CWS_DECK = [
 STORES = {
     # name:          (canvas,       source dir,       output dir,              deck)
     "play":          ((1080, 1920), "android-staged", "play/phone",            PHONE_DECK),
+    "play-uk":       ((1080, 1920), "android-staged", "play/phone-uk",         PLAY_UK_DECK),
     "app-store":     ((1320, 2868), "ios-staged",     "app-store/iphone-6.9",  PHONE_DECK),
     "app-store-uk":  ((1320, 2868), "ios-staged",     "app-store/iphone-6.9-uk", UK_DECK),
     "dapp-store":    ((1080, 1920), "seeker-staged",  "dapp-store/screenshots", SEEKER_DECK),
