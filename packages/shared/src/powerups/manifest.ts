@@ -80,6 +80,12 @@ export interface PowerupManifest {
    * 040). Absent: any device on its networks.
    */
   requires?: readonly DeviceCapability[];
+  /**
+   * Whether the Powerup may ask core for fresh co-signers through
+   * `requestFreshSignature` (spec 043 FR-040). Absent: every such request is
+   * refused before a key exists.
+   */
+  freshSigners?: boolean;
 }
 
 /** The name the rest of the app has always read the registry's records by. */

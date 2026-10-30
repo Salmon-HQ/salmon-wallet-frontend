@@ -143,6 +143,44 @@ export interface ReadAuthorization {
 export interface SignedResult {
   /** The confirmed signature. */
   signature: string;
+  /** Present only for a fresh request with `viewer: true` whose transaction confirmed. */
+  readAuthorization?: ReadAuthorization;
+}
+
+/** What a Powerup receives from core's fresh co-signers: public keys only, base58. */
+export interface FreshSignerKeys {
+  /** The co-signers core generated for this request, in order. */
+  freshSigners: readonly string[];
+  /** The off-chain reader's public key, when the request asked for one. */
+  viewer?: string;
+}
+
+/**
+ * A proposal whose transaction needs co-signers the Powerup must never hold
+ * (spec 043 FR-040). Core generates them, hands `build` their public keys,
+ * signs with them after the user confirms, and discards them.
+ */
+export interface FreshSignatureRequest {
+  /** The calling Powerup's manifest id; its manifest must declare `freshSigners: true`. */
+  powerupId: string;
+  /** Must be 'solana-devnet'. */
+  networkId: SolanaNetworkId;
+  /** How many co-signers: 0..MAX_FRESH_SIGNERS. */
+  count: number;
+  /** Also generate a viewer key; requires `count === 1` (the read names `freshSigners[0]`). */
+  viewer?: boolean;
+  /** Build the transaction naming these keys; core calls it again on refresh, same keys. */
+  build: (keys: FreshSignerKeys) => Promise<TransactionProposal>;
+}
+
+export type FreshSignersRefusal = 'undeclared' | 'network' | 'count';
+
+/** Core refused a fresh-signer request before generating any key, or at confirm. */
+export class FreshSignersRefusedError extends Error {
+  constructor(readonly reason: FreshSignersRefusal) {
+    super('transaction.errors.buildFailed');
+    this.name = 'FreshSignersRefusedError';
+  }
 }
 
 /** The user backed out of the confirmation. */

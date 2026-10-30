@@ -72,6 +72,8 @@ jest.mock('@salmon/shared/src/contexts/AccountsContext', () => ({
   useAccountsContext: () => [accountState, {}],
 }));
 
+jest.mock('@salmon/shared/powerups', () => ({ POWERUPS: [] }));
+
 jest.mock('@salmon/shared', () => ({
   // The confirmation provider and host are core's own (their own suites);
   // the layout only has to mount them.

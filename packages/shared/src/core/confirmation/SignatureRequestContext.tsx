@@ -16,6 +16,14 @@
  *
  * The account is a prop of the provider, not of the request: the Powerup does
  * not choose who signs.
+ *
+ * `requestFreshSignature` (spec 043) is the same request for a transaction
+ * that needs co-signers the Powerup must never hold: core generates them,
+ * hands the Powerup's build their public keys only, refuses a build whose
+ * signers are not exactly the user and those keys, signs with them after the
+ * user confirms, and drops them on every way out. It refuses before any key
+ * exists unless the provider's `freshSigning` declares the Powerup and the
+ * wallet is on devnet.
  */
 import React, {
   createContext,
@@ -27,16 +35,26 @@ import React, {
   useState,
 } from 'react';
 import type { ReactNode } from 'react';
+import type { KeyPairSigner } from '@solana/kit';
 import { SolanaOutcomeUnknownError } from '../../blockchain/solana/confirm';
 import { usePendingTransactionsOptional } from '../../contexts/PendingTransactionsContext';
 import { signProposal as defaultSignProposal, type SignProposalFn } from '../signing';
 import type { SolanaBroadcaster } from '../broadcast';
+import { generateFreshSigners, MAX_FRESH_SIGNERS, signReadMessage } from '../signing/fresh-signers';
+import { assertSolanaTransactionMatches, SolanaTransactionMismatchError } from '../verify';
 import {
+  FreshSignersRefusedError,
   NoSigningAccountError,
   SignatureRequestCancelledError,
+  type FreshSignatureRequest,
+  type FreshSignerKeys,
+  type ReadAuthorization,
   type SignedResult,
   type TransactionProposal,
 } from './types';
+
+/** The one network fresh co-signers exist on (spec 043 FR-040). */
+const FRESH_SIGNING_NETWORK = 'solana-devnet';
 
 export type SignatureRequestPhase = 'review' | 'signing';
 
@@ -69,6 +87,12 @@ export interface SignatureRequestContextValue {
    * they back out of the confirmation.
    */
   requestSignature: (proposal: TransactionProposal) => Promise<SignedResult>;
+  /**
+   * The same request, for a transaction core co-signs with keys it generates
+   * for it and discards (spec 043). Refused unless the provider declares the
+   * Powerup and the wallet is on devnet.
+   */
+  requestFreshSignature: (request: FreshSignatureRequest) => Promise<SignedResult>;
   /** The host's side. Each is a no-op without a parked request. */
   confirm: () => Promise<void>;
   cancel: () => void;
@@ -100,6 +124,18 @@ interface ParkedRequest {
    * and closing hands the Powerup this error instead of a plain cancel.
    */
   unresolved?: SolanaOutcomeUnknownError;
+  /**
+   * Core's fresh keys for this request. Never leaves this record; cleared on
+   * success, on an unknown outcome and when the request settles.
+   */
+  fresh?: ParkedFresh;
+}
+
+interface ParkedFresh {
+  signers: readonly KeyPairSigner[];
+  /** Dropped as soon as it has signed the read message. */
+  viewer?: KeyPairSigner;
+  readAuthorization?: ReadAuthorization;
 }
 
 export interface SignatureRequestProviderProps {
@@ -111,12 +147,18 @@ export interface SignatureRequestProviderProps {
   account: SolanaBroadcaster | null;
   /** Test seam: the signing function. Defaults to core's. */
   signProposal?: SignProposalFn;
+  /**
+   * Which Powerups may ask for fresh co-signers, and the wallet's active
+   * network. Absent: every `requestFreshSignature` is refused.
+   */
+  freshSigning?: { powerupIds: readonly string[]; networkId: string | null };
   children: ReactNode;
 }
 
 export function SignatureRequestProvider({
   account,
   signProposal = defaultSignProposal,
+  freshSigning,
   children,
 }: SignatureRequestProviderProps) {
   const [pending, setPending] = useState<PendingSignatureRequest | null>(null);
@@ -127,8 +169,13 @@ export function SignatureRequestProvider({
   useEffect(() => {
     accountRef.current = account;
   }, [account]);
+  const freshSigningRef = useRef(freshSigning);
+  useEffect(() => {
+    freshSigningRef.current = freshSigning;
+  }, [freshSigning]);
 
   const settle = useCallback(() => {
+    if (parkedRef.current) parkedRef.current.fresh = undefined;
     parkedRef.current = null;
     setPending(null);
     setReceipt(null);
@@ -147,6 +194,81 @@ export function SignatureRequestProvider({
     []
   );
 
+  const requestFreshSignature = useCallback(
+    async (request: FreshSignatureRequest): Promise<SignedResult> => {
+      if (parkedRef.current) throw new Error('transaction.errors.confirmationBusy');
+      const capability = freshSigningRef.current;
+      if (!capability?.powerupIds.includes(request.powerupId)) {
+        throw new FreshSignersRefusedError('undeclared');
+      }
+      if (
+        request.networkId !== FRESH_SIGNING_NETWORK ||
+        capability.networkId !== FRESH_SIGNING_NETWORK
+      ) {
+        throw new FreshSignersRefusedError('network');
+      }
+      const { count, viewer: wantsViewer = false } = request;
+      if (
+        !Number.isInteger(count) ||
+        count < 0 ||
+        count > MAX_FRESH_SIGNERS ||
+        (wantsViewer && count !== 1)
+      ) {
+        throw new FreshSignersRefusedError('count');
+      }
+      const account = accountRef.current;
+      if (!account) throw new NoSigningAccountError();
+
+      // From here on the keys exist: every way out of this function either
+      // parks them or lets them go with the local.
+      let fresh: ParkedFresh | undefined = {
+        signers: await generateFreshSigners(count),
+        viewer: wantsViewer ? (await generateFreshSigners(1))[0] : undefined,
+      };
+      const keys: FreshSignerKeys = Object.freeze({
+        freshSigners: Object.freeze(fresh.signers.map((signer) => String(signer.address))),
+        ...(fresh.viewer ? { viewer: String(fresh.viewer.address) } : {}),
+      });
+      const feePayer = String(account.signer.address);
+      // Core's own refresh: the same keys, the same check, so a rebuilt
+      // proposal cannot name other signers than the first one did.
+      const build = async (): Promise<TransactionProposal> => {
+        const proposal = await request.build(keys);
+        if (proposal.networkId !== request.networkId) {
+          throw new SolanaTransactionMismatchError(
+            `Transaction is built for ${proposal.networkId}, not ${request.networkId}`
+          );
+        }
+        assertSolanaTransactionMatches(proposal.transaction, {
+          feePayer,
+          ...proposal.expect,
+          coSigners: keys.freshSigners,
+        });
+        return { ...proposal, refresh: build };
+      };
+
+      let proposal: TransactionProposal;
+      try {
+        proposal = await build();
+      } catch (error) {
+        fresh = undefined;
+        throw error;
+      }
+      // Another request may have parked while the build was in flight.
+      if (parkedRef.current) {
+        fresh = undefined;
+        throw new Error('transaction.errors.confirmationBusy');
+      }
+      const parkedFresh = fresh;
+      fresh = undefined;
+      return new Promise<SignedResult>((resolve, reject) => {
+        parkedRef.current = { proposal, resolve, reject, fresh: parkedFresh };
+        setPending({ proposal, phase: 'review', error: null });
+      });
+    },
+    []
+  );
+
   const confirm = useCallback(async () => {
     const parked = parkedRef.current;
     if (!parked || parked.unresolved) return;
@@ -158,10 +280,31 @@ export function SignatureRequestProvider({
       parked.reject(new NoSigningAccountError());
       return;
     }
+    const { fresh } = parked;
+    // The wallet may have left devnet while the user was reading.
+    if (fresh && freshSigningRef.current?.networkId !== FRESH_SIGNING_NETWORK) {
+      settle();
+      parked.reject(new FreshSignersRefusedError('network'));
+      return;
+    }
 
     let signed = false;
     try {
-      const result = await signProposal(signer, parked.proposal);
+      let result: SignedResult;
+      if (fresh) {
+        // The viewer signs the one read message, after the user confirmed,
+        // and is dropped at once (plan O3).
+        if (fresh.viewer) {
+          fresh.readAuthorization = await signReadMessage(fresh.viewer, fresh.signers[0].address);
+          fresh.viewer = undefined;
+        }
+        const { signature } = await signProposal(signer, parked.proposal, fresh.signers);
+        const { readAuthorization } = fresh;
+        parked.fresh = undefined;
+        result = readAuthorization ? { signature, readAuthorization } : { signature };
+      } else {
+        result = await signProposal(signer, parked.proposal);
+      }
       signed = true;
       reportOutcome(parked.proposal, true);
       // Signing waited for the chain, so the banner reports the transaction as
@@ -189,6 +332,7 @@ export function SignatureRequestProvider({
         // chain answers, and the host offers only a way out. Analytics hears
         // nothing, because neither outcome is known.
         parked.unresolved = error;
+        parked.fresh = undefined;
         const { pending: report, networkId } = parked.proposal;
         if (report) {
           pendingTransactions?.trackPendingTransaction({
@@ -247,8 +391,26 @@ export function SignatureRequestProvider({
   }, []);
 
   const value = useMemo(
-    () => ({ pending, receipt, requestSignature, confirm, cancel, dismissReceipt, refresh }),
-    [pending, receipt, requestSignature, confirm, cancel, dismissReceipt, refresh]
+    () => ({
+      pending,
+      receipt,
+      requestSignature,
+      requestFreshSignature,
+      confirm,
+      cancel,
+      dismissReceipt,
+      refresh,
+    }),
+    [
+      pending,
+      receipt,
+      requestSignature,
+      requestFreshSignature,
+      confirm,
+      cancel,
+      dismissReceipt,
+      refresh,
+    ]
   );
 
   return (
@@ -268,4 +430,12 @@ export function useSignatureRequestContext(): SignatureRequestContextValue {
 /** The Powerup's entry point: the one way to a signature. */
 export function useRequestSignature(): SignatureRequestContextValue['requestSignature'] {
   return useSignatureRequestContext().requestSignature;
+}
+
+/**
+ * A Powerup's entry point for a transaction that needs co-signers it must
+ * never hold (spec 043): core generates, signs with and discards them.
+ */
+export function useRequestFreshSignature(): SignatureRequestContextValue['requestFreshSignature'] {
+  return useSignatureRequestContext().requestFreshSignature;
 }

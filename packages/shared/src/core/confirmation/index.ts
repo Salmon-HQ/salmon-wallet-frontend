@@ -1,5 +1,6 @@
 export {
   SignatureRequestProvider,
+  useRequestFreshSignature,
   useRequestSignature,
   useSignatureRequestContext,
 } from './SignatureRequestContext';
@@ -14,12 +15,20 @@ export type {
 } from './SignatureRequestContext';
 export { useSignatureRequestHost } from './useSignatureRequestHost';
 export type { SignatureRequestHost } from './useSignatureRequestHost';
-export { NoSigningAccountError, SignatureRequestCancelledError } from './types';
+export {
+  FreshSignersRefusedError,
+  NoSigningAccountError,
+  SignatureRequestCancelledError,
+} from './types';
 export type {
   ConfirmationRow,
   ConfirmationWarning,
   ExchangeSide,
+  FreshSignatureRequest,
+  FreshSignerKeys,
+  FreshSignersRefusal,
   ProposalDisplay,
+  ReadAuthorization,
   SignedResult,
   TransactionProposal,
 } from './types';

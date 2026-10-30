@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useReducedMotion } from 'react-native-reanimated';
 import { Stack, useRouter } from 'expo-router';
 
@@ -7,6 +7,7 @@ import {
   isSignableSolanaAccount,
   useAccountsContext,
 } from '@salmon/shared';
+import { POWERUPS } from '@salmon/shared/powerups';
 import { ConfirmationHost, LockOverlay, LockContent } from '../../src/components';
 import { useBiometric } from '../../src/contexts/BiometricContext';
 import { TaskChromeProvider } from '../../src/contexts/TaskChromeContext';
@@ -14,6 +15,9 @@ import { DerivedAccountsProvider } from '../../src/contexts/DerivedAccountsConte
 import { DeveloperModeProvider } from '../../src/contexts/DeveloperModeContext';
 import { useMwaSessionOpen } from '../../src/mwa/sessionOpen';
 import { FLOAT_DELAY_MS } from '../../src/utils/sinkAndFloat';
+
+/** The Powerups whose manifest declares fresh co-signers; none in a Powerups-off build. */
+const FRESH_SIGNING_POWERUP_IDS = POWERUPS.filter((m) => m.freshSigners).map((m) => m.id);
 
 /**
  * App shell for the whole `(app)` stack.
@@ -145,6 +149,10 @@ export default function AppLayout() {
     isSignableSolanaAccount(accountState.activeBlockchainAccount)
       ? accountState.activeBlockchainAccount
       : null;
+  const freshSigning = useMemo(
+    () => ({ powerupIds: FRESH_SIGNING_POWERUP_IDS, networkId: accountState.networkId }),
+    [accountState.networkId]
+  );
 
   // A wallet with no password belongs on the password screen the root layout
   // sends it to; no app screen paints a frame before it gets there.
@@ -153,7 +161,7 @@ export default function AppLayout() {
   return (
     <TaskChromeProvider covered={isLocked}>
       <DerivedAccountsProvider>
-        <SignatureRequestProvider account={signingAccount}>
+        <SignatureRequestProvider account={signingAccount} freshSigning={freshSigning}>
           {/* The developer-mode settings belong to the unlocked session, not to
           a screen. Mounted inside the tabs layout (where they used to live)
           every screen this stack pushes — Activity, Send, NFT detail,

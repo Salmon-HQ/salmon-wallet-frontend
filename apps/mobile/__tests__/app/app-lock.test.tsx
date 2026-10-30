@@ -46,6 +46,8 @@ jest.mock('../../src/contexts/DerivedAccountsContext', () => ({
   useDerivedAccounts: () => ({ status: { scanningAccountId: null }, rescan: jest.fn() }),
 }));
 
+jest.mock('@salmon/shared/powerups', () => ({ POWERUPS: [] }));
+
 jest.mock('@salmon/shared', () => ({
   // The confirmation provider and host are core's own (their own suites);
   // the layout only has to mount them.
