@@ -18,7 +18,12 @@ import {
   getSignatureFromTransaction,
   getTransactionDecoder,
 } from '@solana/kit';
-import type { Commitment, Signature, TransactionMessageBytes } from '@solana/kit';
+import type {
+  Commitment,
+  Signature,
+  TransactionMessageBytes,
+  TransactionPartialSigner,
+} from '@solana/kit';
 import { signTransactionWith, type SolanaSigner } from '../../blockchain/solana/signing';
 import { confirmSolanaSignature, sendExpectingOutcome } from '../../blockchain/solana/confirm';
 import type { SolanaRpc, SolanaRpcSubscriptions } from '../../blockchain/solana/networks';
@@ -45,6 +50,12 @@ export interface SolanaBroadcastOptions {
    * transaction that would fail is refused before it costs a fee.
    */
   skipPreflight?: boolean;
+  /**
+   * Keys core generated to co-sign this one transaction (spec 043 FR-043).
+   * Each signs the message carrying the fresh blockhash, before the wallet's
+   * own signer. Left out, only the wallet signs.
+   */
+  coSigners?: readonly TransactionPartialSigner[];
 }
 
 /**
@@ -55,9 +66,10 @@ export interface SolanaBroadcastOptions {
  * and lookup-table indices, which does not reproduce the input bytes.
  * Replacing the one field is the only transformation that round-trips exactly.
  *
- * `signTransactionWith` preserves signatures already in the map, so a
- * co-signer's signature on a prepared transaction survives; this wallet only
- * ever fills its own slot.
+ * Every signature is made after that swap, over the patched message: one made
+ * over the backend's blockhash would no longer verify. So a co-signer cannot
+ * sign ahead of time; core's own co-signers (`options.coSigners`) sign here,
+ * after the swap and before the wallet, each filling only its own slot.
  *
  * The signature is returned to the caller only once the cluster reports it at
  * `commitment`. Every verdict the subscription cannot settle goes to an HTTP
@@ -109,10 +121,11 @@ export async function signAndSendSolanaTransaction(
     lifetimeToken: value.blockhash,
   }) as TransactionMessageBytes;
 
-  const signed = await signTransactionWith(account.signer, {
-    messageBytes,
-    signatures: decoded.signatures,
-  });
+  let coSigned = { messageBytes, signatures: decoded.signatures };
+  for (const coSigner of options.coSigners ?? []) {
+    coSigned = await signTransactionWith(coSigner, coSigned);
+  }
+  const signed = await signTransactionWith(account.signer, coSigned);
 
   // A lost answer can follow a broadcast the node accepted: the wait below
   // settles it by this signature rather than reporting a retryable failure.

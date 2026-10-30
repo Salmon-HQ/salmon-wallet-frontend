@@ -43,10 +43,10 @@
 
 ## Phase 3: Broadcast, one signing step after the blockhash swap (FR-043)
 
-- [ ] T013 Byte-identical test first, in `packages/shared/src/core/broadcast/solana.cosigners.test.ts` (new), written and passing BEFORE any change to `solana.ts`: a two-signer transaction (payer + an unsigned co-signer slot) through the existing `signAndSendSolanaTransaction` without `coSigners`, stub RPC with a fixed blockhash; snapshot the exact bytes sent (co-signer slot stays empty). This snapshot is the proof that the existing path is unchanged (FR-045, SC-004)
-- [ ] T014 Failing tests in the same file: with `coSigners: [k1]`, the message carries the fresh blockhash from the stub, both signatures verify over the patched message, the user signer is called after the blockhash swap and never before, a legacy message works the same (FR-043)
-- [ ] T015 Implement in `packages/shared/src/core/broadcast/solana.ts`: `SolanaBroadcastOptions.coSigners?: readonly TransactionPartialSigner[]` (line 40); after the blockhash swap (104-110) fold `signTransactionWith` (`blockchain/solana/signing.ts:33`) over `options.coSigners ?? []`, then sign with `account.signer` exactly as line 112; rewrite the comment at 58-60 to say a co-signer signs after the swap. T013's snapshot still matches (FR-043, FR-045)
-- [ ] T016 Run `solana.test.ts`, `solana-swap.test.ts`, `blockchain/solana/signing.test.ts` and the three `prepared-transactions*.test.ts` untouched; shared tests green (FR-045)
+- [X] T013 Byte-identical test first, in `packages/shared/src/core/broadcast/solana.cosigners.test.ts` (new), written and passing BEFORE any change to `solana.ts`: a two-signer transaction (payer + an unsigned co-signer slot) through the existing `signAndSendSolanaTransaction` without `coSigners`, stub RPC with a fixed blockhash; snapshot the exact bytes sent (co-signer slot stays empty). This snapshot is the proof that the existing path is unchanged (FR-045, SC-004)
+- [X] T014 Failing tests in the same file: with `coSigners: [k1]`, the message carries the fresh blockhash from the stub, both signatures verify over the patched message, the user signer is called after the blockhash swap and never before, a legacy message works the same (FR-043)
+- [X] T015 Implement in `packages/shared/src/core/broadcast/solana.ts`: `SolanaBroadcastOptions.coSigners?: readonly TransactionPartialSigner[]` (line 40); after the blockhash swap (104-110) fold `signTransactionWith` (`blockchain/solana/signing.ts:33`) over `options.coSigners ?? []`, then sign with `account.signer` exactly as line 112; rewrite the comment at 58-60 to say a co-signer signs after the swap. T013's snapshot still matches (FR-043, FR-045)
+- [X] T016 Run `solana.test.ts`, `solana-swap.test.ts`, `blockchain/solana/signing.test.ts` and the three `prepared-transactions*.test.ts` untouched; shared tests green (FR-045)
 
 ## Phase 4: Signing, keys and read message (FR-041, FR-044)
 
