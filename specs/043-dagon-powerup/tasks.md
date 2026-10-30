@@ -30,10 +30,10 @@
 
 ## Phase 1: Boundary lint (FR-046, SC-006)
 
-- [ ] T006 Failing fixtures in `packages/shared/src/powerups/boundary.test.ts`: a file under `powerups/**` importing each of `generateKeyPairSigner`, `generateKeyPair`, `signBytes` from `@solana/kit`; `generateKeyPair`, `signBytes`, `createKeyPairFromBytes`, `createKeyPairFromPrivateKeyBytes` from `@solana/keys`; `generateKeyPairSigner`, `createKeyPairSignerFromBytes`, `createKeyPairSignerFromPrivateKeyBytes` from `@solana/signers` fails `no-restricted-imports`. Run it and see it fail (FR-046, SC-006)
-- [ ] T007 Add the names to the restricted `@solana/kit` list and two `paths` entries for `@solana/keys` and `@solana/signers` in `eslint.config.js` (lines 248-266) until T006 passes (FR-046)
-- [ ] T008 One `eslint-disable-next-line no-restricted-imports` with its reason (Solana Pay reference key, private half discarded; plan O11) above the `generateKeyPair` import in `packages/shared/src/powerups/payments/usePaymentsScreenLogic.ts:15`; no behaviour change (FR-046)
-- [ ] T009 `pnpm turbo run lint test --filter=@salmon/shared`: zero errors, zero warnings; Payments tests unchanged and green
+- [X] T006 Failing fixtures in `packages/shared/src/powerups/boundary.test.ts`: a file under `powerups/**` importing each of `generateKeyPairSigner`, `generateKeyPair`, `signBytes` from `@solana/kit`; `generateKeyPair`, `signBytes`, `createKeyPairFromBytes`, `createKeyPairFromPrivateKeyBytes` from `@solana/keys`; `generateKeyPairSigner`, `createKeyPairSignerFromBytes`, `createKeyPairSignerFromPrivateKeyBytes` from `@solana/signers` fails `no-restricted-imports`. Run it and see it fail (FR-046, SC-006)
+- [X] T007 Add the names to the restricted `@solana/kit` list and two `paths` entries for `@solana/keys` and `@solana/signers` in `eslint.config.js` (lines 248-266) until T006 passes (FR-046)
+- [X] T008 One `eslint-disable-next-line no-restricted-imports` with its reason (Solana Pay reference key, private half discarded; plan O11) above the `generateKeyPair` import in `packages/shared/src/powerups/payments/usePaymentsScreenLogic.ts:15`; no behaviour change (FR-046)
+- [X] T009 `pnpm turbo run lint test --filter=@salmon/shared`: zero errors, zero warnings; Payments tests unchanged and green
 
 ## Phase 2: Verify, exact signer set (FR-042)
 

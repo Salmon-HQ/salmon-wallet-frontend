@@ -32,6 +32,20 @@ describe('powerups boundary', () => {
       'no-restricted-imports',
     ],
     ["import { partiallySignTransaction } from '@solana/kit';", 'no-restricted-imports'],
+    // Key generation and raw signing (spec 043 FR-046): fresh co-signers are core's alone.
+    ["import { generateKeyPairSigner } from '@solana/kit';", 'no-restricted-imports'],
+    ["import { generateKeyPair } from '@solana/kit';", 'no-restricted-imports'],
+    ["import { signBytes } from '@solana/kit';", 'no-restricted-imports'],
+    ["import { generateKeyPair } from '@solana/keys';", 'no-restricted-imports'],
+    ["import { signBytes } from '@solana/keys';", 'no-restricted-imports'],
+    ["import { createKeyPairFromBytes } from '@solana/keys';", 'no-restricted-imports'],
+    ["import { createKeyPairFromPrivateKeyBytes } from '@solana/keys';", 'no-restricted-imports'],
+    ["import { generateKeyPairSigner } from '@solana/signers';", 'no-restricted-imports'],
+    ["import { createKeyPairSignerFromBytes } from '@solana/signers';", 'no-restricted-imports'],
+    [
+      "import { createKeyPairSignerFromPrivateKeyBytes } from '@solana/signers';",
+      'no-restricted-imports',
+    ],
     [
       "import { createRecentSignatureConfirmationPromiseFactory } from '@solana/transaction-confirmation';",
       'no-restricted-imports',

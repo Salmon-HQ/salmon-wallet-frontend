@@ -12,6 +12,7 @@ import type { PaymentRequestRow } from '../../types/ui/payments-screen';
 export type { PaymentRequestRow };
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import i18n from 'i18next';
+// eslint-disable-next-line no-restricted-imports -- Solana Pay reference: only the public half is kept, the private half is discarded and never signs (spec 043 O11).
 import { generateKeyPair, getAddressFromPublicKey } from '@solana/kit';
 
 import { trackEvent } from '../../analytics';

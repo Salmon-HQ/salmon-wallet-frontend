@@ -259,9 +259,33 @@ export default [
                 'createKeyPairFromPrivateKeyBytes',
                 'sendAndConfirmTransactionFactory',
                 'sendTransactionWithoutConfirmingFactory',
+                'generateKeyPairSigner',
+                'generateKeyPair',
+                'signBytes',
               ],
               message:
                 'A Powerup never signs or sends: propose through requestSignature() from core/confirmation (spec 027 §2).',
+            },
+            {
+              name: '@solana/keys',
+              importNames: [
+                'generateKeyPair',
+                'signBytes',
+                'createKeyPairFromBytes',
+                'createKeyPairFromPrivateKeyBytes',
+              ],
+              message:
+                'A Powerup never holds a key: core generates fresh co-signers through requestFreshSignature() (spec 043 FR-046).',
+            },
+            {
+              name: '@solana/signers',
+              importNames: [
+                'generateKeyPairSigner',
+                'createKeyPairSignerFromBytes',
+                'createKeyPairSignerFromPrivateKeyBytes',
+              ],
+              message:
+                'A Powerup never holds a key: core generates fresh co-signers through requestFreshSignature() (spec 043 FR-046).',
             },
           ],
         },
