@@ -577,3 +577,142 @@ describe('useDagonScreenLogic — withdraw (US7, O8)', () => {
     expect(keys).toContain('continueWithdraw');
   });
 });
+
+describe('useDagonScreenLogic — robustness', () => {
+  function switchable() {
+    return renderHook(
+      ({ publicKey }: { publicKey: string }) =>
+        useDagonScreenLogic({
+          publicKey,
+          networkId: 'solana-devnet',
+          buildPowerup: build as never,
+          fetchConfig: fetchConfig as never,
+          readPositions: readPositions as never,
+          readAccounts: readAccounts as never,
+          readBalance: readBalance as never,
+        }),
+      { initialProps: { publicKey: OWNER } }
+    );
+  }
+
+  it('drops a positions read that answers after the account changed', async () => {
+    let answerOld: (value: Positions) => void = () => undefined;
+    readPositions.mockImplementation((_config: unknown, owner: string) =>
+      owner === OWNER
+        ? new Promise<Positions>((resolve) => (answerOld = resolve))
+        : Promise.resolve(positions({ activated: false }))
+    );
+    const view = switchable();
+    await waitFor(() => expect(readPositions).toHaveBeenCalledWith(CONFIG, OWNER));
+    view.rerender({ publicKey: RECIPIENT });
+    await waitFor(() => expect(view.result.current.status).toBe('ready'));
+    await act(async () => answerOld(positions()));
+    expect(view.result.current.cards).toEqual([]);
+    expect(view.result.current.activate).not.toBeNull();
+  });
+
+  it('clears a failed positions read when the account changes', async () => {
+    readPositions.mockImplementation((_config: unknown, owner: string) =>
+      owner === OWNER
+        ? Promise.reject(new Error('rpc down'))
+        : new Promise<Positions>(() => undefined)
+    );
+    const view = switchable();
+    await waitFor(() => expect(view.result.current.status).toBe('unavailable'));
+    view.rerender({ publicKey: RECIPIENT });
+    await waitFor(() => expect(view.result.current.status).toBe('loading'));
+  });
+
+  it('keeps the tab when a refresh fails after positions loaded', async () => {
+    confirmingCore();
+    readPositions
+      .mockResolvedValueOnce(positions({ activated: false }))
+      .mockRejectedValue(new Error('rpc down'));
+    const view = setup();
+    await ready(view);
+    await act(async () => view.result.current.activate!.onPress());
+    await waitFor(() => expect(readPositions).toHaveBeenCalledTimes(2));
+    expect(view.result.current.status).toBe('ready');
+  });
+
+  it('swaps into a side it just set up, reading the refreshed account at once', async () => {
+    confirmingCore();
+    const half = positions();
+    half.sides.DOGE = { ...half.sides.DOGE, activated: false, balanceCt: null };
+    readPositions.mockResolvedValueOnce(half).mockResolvedValue(positions());
+    const view = setup();
+    await ready(view);
+    act(() => view.result.current.actions.find((a) => a.key === 'swap')!.onPress());
+    act(() => view.result.current.sheet.onChangeAmount('1'));
+    await act(async () => view.result.current.sheet.submit.onPress());
+    expect(view.result.current.sheet.error).toBeNull();
+    expect(build.mock.calls.map((call) => call[2].action)).toEqual(['setup', 'swap']);
+  });
+
+  it('does not rebuild a send when the recipient account never settled', async () => {
+    confirmingCore();
+    build.mockRejectedValueOnce(new ApiError('x', 409, 'recipient_setup_required'));
+    readAccounts.mockImplementation(async (addresses: string[]) =>
+      addresses.map((each) => (each === FRESH ? null : settled()))
+    );
+    let clock = 0;
+    const view = setup({
+      switches: { send: true, withdraw: false },
+      // Every reading is a settle window later: the wait times out at once.
+      now: () => (clock += 100_000),
+    });
+    await ready(view);
+    act(() => view.result.current.actions.find((a) => a.key === 'send')!.onPress());
+    act(() => view.result.current.sheet.onChangeAmount('1'));
+    act(() => view.result.current.sheet.recipient!.onChangeText(RECIPIENT));
+    await act(async () => view.result.current.sheet.submit.onPress());
+    expect(build.mock.calls.map((call) => call[2].action)).toEqual(['send', 'setup']);
+    expect(view.result.current.sheet.error).toBe('dagon.errors.busy');
+  });
+
+  it('stops waiting for the recipient account once the tab is gone', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    confirmingCore();
+    build.mockRejectedValueOnce(new ApiError('x', 409, 'recipient_setup_required'));
+    readAccounts.mockImplementation(async (addresses: string[]) =>
+      addresses.map((each) => (each === FRESH ? null : settled()))
+    );
+    const view = setup({ switches: { send: true, withdraw: false } });
+    await ready(view);
+    act(() => view.result.current.actions.find((a) => a.key === 'send')!.onPress());
+    act(() => view.result.current.sheet.onChangeAmount('1'));
+    act(() => view.result.current.sheet.recipient!.onChangeText(RECIPIENT));
+    act(() => {
+      void view.result.current.sheet.submit.onPress();
+    });
+    await waitFor(() => expect(build).toHaveBeenCalledTimes(2));
+    view.unmount();
+    const reads = readAccounts.mock.calls.length;
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(POLL_MS * 5);
+    });
+    expect(readAccounts.mock.calls.length).toBeLessThanOrEqual(reads + 1);
+    expect(build).toHaveBeenCalledTimes(2);
+  });
+
+  it('refuses a new operation on a token with one still processing', async () => {
+    confirmingCore();
+    const view = setup();
+    await ready(view);
+    act(() => view.result.current.actions[0].onPress());
+    act(() => view.result.current.sheet.onChangeAmount('1'));
+    await act(async () => view.result.current.sheet.submit.onPress());
+    expect(view.result.current.progress.items[0].stateLabel).toBe('dagon.progress.processing');
+
+    act(() => view.result.current.actions.find((a) => a.key === 'swap')!.onPress());
+    act(() => view.result.current.sheet.onChangeAmount('1'));
+    await act(async () => view.result.current.sheet.submit.onPress());
+    expect(core.request).toHaveBeenCalledTimes(1);
+    expect(view.result.current.sheet.error).toBe('dagon.errors.sideBusy');
+
+    act(() => view.result.current.sheet.onClose());
+    await act(async () => view.result.current.cards[0].reveal.onPress());
+    expect(core.request).toHaveBeenCalledTimes(1);
+    expect(view.result.current.error).toBe('dagon.errors.sideBusy');
+  });
+});

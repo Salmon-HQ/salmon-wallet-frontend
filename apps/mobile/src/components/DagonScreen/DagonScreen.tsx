@@ -103,7 +103,7 @@ export function DagonScreen({
           {logic.faucet && (
             <SecondaryButton
               testID="dagon-faucet"
-              onPress={() => void Linking.openURL(logic.faucet!.url)}
+              onPress={() => void Linking.openURL(logic.faucet!.url).catch(() => undefined)}
             >
               {logic.faucet.label}
             </SecondaryButton>

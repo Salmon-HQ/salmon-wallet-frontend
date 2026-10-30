@@ -261,6 +261,16 @@ describe('DagonScreen', () => {
     expect(open).toHaveBeenCalledWith('https://faucet.example.com');
   });
 
+  it('swallows a faucet link the device cannot open', () => {
+    activated();
+    mockLogic.faucet = { label: 'dagon.actions.faucet', url: 'https://faucet.example.com' };
+    const opened = { catch: jest.fn() };
+    jest.spyOn(Linking, 'openURL').mockReturnValue(opened as never);
+    renderScreen();
+    fireEvent.press(screen.getByTestId('dagon-faucet'));
+    expect(opened.catch).toHaveBeenCalled();
+  });
+
   it('draws the sheet from the runbook blocks when an action is open', () => {
     activated();
     mockLogic.sheet = {

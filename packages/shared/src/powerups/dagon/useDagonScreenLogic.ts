@@ -93,6 +93,8 @@ const DAGON_CODES: Record<string, string> = {
   invalid_fresh_signers: 'dagon.errors.buildFailed',
 };
 
+const SIDE_BUSY = { key: 'dagon.errors.sideBusy' };
+
 const UNAVAILABLE_KEYS = {
   region: 'powerups.unavailable.region',
   wallet: 'powerups.unavailable.wallet',
@@ -249,6 +251,22 @@ export function useDagonScreenLogic({
   const account = (key && state[key]) || EMPTY_ACCOUNT;
   const accountRef = useRef(account);
   accountRef.current = account;
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
+  /** A side with an operation still processing takes no new one (its ciphertexts are moving). */
+  const sideBusy = useCallback(
+    (sides: readonly Side[]): boolean =>
+      accountRef.current.operations.some(
+        (each) => each.state === 'processing' && each.sides.some((of) => sides.includes(of))
+      ),
+    []
+  );
   const update = useCallback(
     (change: (previous: DagonAccountState) => DagonAccountState) => {
       if (!key) return;
@@ -287,12 +305,19 @@ export function useDagonScreenLogic({
     []
   );
 
+  // Bumped on every positions read and on every account change: a read
+  // answers only if no later one started, so another account's positions
+  // never land on this one.
+  const positionsRequest = useRef(0);
+
   // devnet.json on mount and on retry; a refusal leaves the tab unavailable.
   useEffect(() => {
     let live = true;
+    positionsRequest.current += 1;
     setConfigFailed(false);
     setConfig(null);
     setPositions(null);
+    setPositionsFailed(false);
     seams.current
       .fetchConfig()
       .then((next) => live && setConfig(next))
@@ -310,11 +335,21 @@ export function useDagonScreenLogic({
   const refreshPositions = useCallback(async () => {
     const current = configRef.current;
     if (!current) return;
+    positionsRequest.current += 1;
+    const request = positionsRequest.current;
     try {
-      setPositions(await chainReads().positions(current, publicKey));
+      const next = await chainReads().positions(current, publicKey);
+      if (request !== positionsRequest.current) return;
+      // The ref first: an intent awaiting this refresh reads it before the re-render.
+      positionsRef.current = next;
+      setPositions(next);
       setPositionsFailed(false);
     } catch {
-      setPositionsFailed(true);
+      // A failed refresh keeps the positions already shown; only a first read
+      // that fails leaves the tab unavailable.
+      if (request === positionsRequest.current && !positionsRef.current) {
+        setPositionsFailed(true);
+      }
     }
   }, [chainReads, publicKey]);
 
@@ -576,7 +611,8 @@ export function useDagonScreenLogic({
     void refreshPositions();
   }, [attemptIntent, positions, setupSide, refreshPositions]);
 
-  // Read through the ref: a setup inside the same intent refreshes it.
+  // Read through the ref: `refreshPositions` writes it before the state, so a
+  // setup and refresh inside the same intent are seen at once.
   const balanceCtOf = useCallback((of: Side): string => {
     const balanceCt = positionsRef.current?.sides[of].balanceCt;
     if (!balanceCt) throw new ApiError('setup', 409, 'setup_required');
@@ -604,6 +640,10 @@ export function useDagonScreenLogic({
       );
       // The same signature again: no key, no transaction (O4).
       if (owed) return readReveal(owed);
+      if (sideBusy([of])) {
+        setError(SIDE_BUSY);
+        return;
+      }
       const operationId = `reveal:${seams.current.now()}:${of}`;
       await attemptIntent(async () => {
         const result = await run(
@@ -621,7 +661,7 @@ export function useDagonScreenLogic({
         }
       });
     },
-    [attemptIntent, run, update, readReveal]
+    [attemptIntent, run, update, readReveal, sideBusy]
   );
 
   const hide = useCallback(
@@ -671,14 +711,16 @@ export function useDagonScreenLogic({
     [side, positions, snapshot, balanceCtOf, run, setupSide, refreshPositions]
   );
 
+  /** True once `address` settled; false on the cap or when the tab is gone. */
   const waitSettled = useCallback(
-    async (address: string) => {
+    async (address: string): Promise<boolean> => {
       const deadline = seams.current.now() + SETTLE_CAP_MS;
-      while (seams.current.now() < deadline) {
+      while (mounted.current && seams.current.now() < deadline) {
         const [data] = await chainReads().accounts([address]);
-        if (isSettled(null, data ?? null)) return;
+        if (isSettled(null, data ?? null)) return true;
         await delay(POLL_MS);
       }
+      return false;
     },
     [chainReads]
   );
@@ -702,7 +744,10 @@ export function useDagonScreenLogic({
         // The sender pays for the recipient's account, as its own transaction,
         // and the send waits for Encrypt to write it (contracts/dagon-build.md).
         const created = await setupSide(side, to);
-        if (created) await waitSettled(created);
+        // Built on an account Encrypt has not written, the send would fail on chain.
+        if (created && !(await waitSettled(created))) {
+          throw new ApiError('settling', 503, 'executor_pending');
+        }
         await once();
       }
     },
@@ -833,6 +878,10 @@ export function useDagonScreenLogic({
   const submit = useCallback(async () => {
     if (!mode || units === null) return;
     if (mode === 'send' && !recipientValid) return;
+    if (sideBusy(mode === 'swap' ? [side, otherSide(side)] : [side])) {
+      setError(SIDE_BUSY);
+      return;
+    }
     const intents: Record<DagonSheetMode, () => Promise<void>> = {
       hide: () => hide(units),
       send: () => send(units, recipient),
@@ -847,6 +896,8 @@ export function useDagonScreenLogic({
     units,
     recipientValid,
     recipient,
+    side,
+    sideBusy,
     hide,
     send,
     swap,

@@ -118,6 +118,7 @@
     "wrapFailed": "Couldn't hide that amount. Check that this wallet holds enough of the test token.",
     "solShortfall": "You need at least {{needed}} devnet SOL for fees and rent; this wallet has {{have}}.",
     "readFailed": "Could not read the hidden balance. Try again.",
-    "positionsFailed": "Could not read this wallet's Dagon accounts. Try again."
+    "positionsFailed": "Could not read this wallet's Dagon accounts. Try again.",
+    "sideBusy": "An earlier operation on this token is still being processed. Try again when it finishes."
   }
 }

@@ -118,6 +118,7 @@
     "wrapFailed": "No se pudo ocultar ese monto. Revisá que esta billetera tenga suficiente del token de prueba.",
     "solShortfall": "Necesitás al menos {{needed}} SOL de devnet para comisiones y renta; esta billetera tiene {{have}}.",
     "readFailed": "No se pudo leer el saldo oculto. Probá de nuevo.",
-    "positionsFailed": "No se pudieron leer las cuentas de Dagon de esta billetera. Probá de nuevo."
+    "positionsFailed": "No se pudieron leer las cuentas de Dagon de esta billetera. Probá de nuevo.",
+    "sideBusy": "Una operación anterior con este token todavía se está procesando. Probá de nuevo cuando termine."
   }
 }
