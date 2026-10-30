@@ -10,6 +10,7 @@ import MemoTabImpl from '../screens/MemoTab';
 import PaymentsTabImpl from '../screens/PaymentsTab';
 import SwapTabImpl from '../screens/SwapTab';
 import SkrTabImpl from '../screens/SkrTab';
+import DagonTabImpl from '../screens/DagonTab';
 
 export {
   POWERUPS_ENABLED,
@@ -50,5 +51,6 @@ export function getPowerupTab(id: string): ComponentType<PowerupTabProps> | null
   if (id === 'payments') return PaymentsTabImpl;
   if (id === 'swap') return SwapTabImpl;
   if (id === 'skr') return SkrTabImpl;
+  if (id === 'dagon') return DagonTabImpl;
   return null;
 }

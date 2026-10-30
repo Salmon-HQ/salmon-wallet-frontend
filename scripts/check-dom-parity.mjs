@@ -113,6 +113,7 @@ export const MOBILE_ONLY = {
   NetworkSelector: 'RN network switcher; the DOM side panel has no network-switch surface',
   UpdateRequiredScreen:
     'the store update gate; the browser store updates the extension itself, so the DOM has no screen to mirror',
+  DagonScreen: 'devnet preview for the Breakpoint demo',
 };
 
 /** DOM-only components, with the reason (spec 028 "DOM alternatives" or extension runtime). */

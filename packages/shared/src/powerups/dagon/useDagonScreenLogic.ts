@@ -1006,7 +1006,9 @@ export function useDagonScreenLogic({
     progress: { title: t('dagon.progress.title'), empty: t('dagon.progress.empty'), items },
     error: mode ? null : say(error),
     sheet: {
-      visible: mode !== null,
+      // Out of the way while core's confirmation (its own RN Modal) is up;
+      // back, as typed, when the user backs out of it.
+      visible: mode !== null && !busy,
       onClose: closeSheet,
       mode,
       title: mode ? t(`dagon.sheet.${mode}`) : '',

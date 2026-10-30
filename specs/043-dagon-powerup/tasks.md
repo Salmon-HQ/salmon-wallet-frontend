@@ -94,12 +94,12 @@ Tests first (T034-T038), then the code (T039-T043).
 
 ## Phase 8: Mobile surface (FR-003, FR-020..FR-025, SC-002)
 
-- [ ] T045 Failing test in `apps/mobile/src/components/DagonScreen/DagonScreen.test.tsx` (new): first visit renders the devnet notice and Activate only; the notice renders in every state (loading, unavailable, activated, with items); cards show public balance, "not revealed yet" / value with read time / "may be out of date"; actions in FR-020 order; Send and Withdraw absent with switches off; Reveal disabled while one is in flight; "Get test tokens" only with a non-null `faucetUrl`; no string in `dagon/locales/en.json` or `es.json` matches `/privad|privacidad|private/i` (FR-005, FR-011, FR-020, FR-021, FR-022, FR-024, SC-002, SC-003)
-- [ ] T046 Create `apps/mobile/src/components/DagonScreen/types.ts`, `apps/mobile/src/components/DagonScreen/index.ts` and `apps/mobile/src/components/DagonScreen/DagonScreen.tsx` from kit components only (`WarningNotice`, `FactsCard`, `Pill`, `PrimaryButton`, `SecondaryButton`, `SkeletonRow`, `StateBlock`) until T045 passes (FR-020..FR-023)
-- [ ] T047 Create `apps/mobile/src/components/DagonScreen/DagonActionSheet.tsx` from the runbook blocks only (`BottomSheetContainer`, `AmountEntryCard` with `useAmountShortcuts` at 2 decimals, `TokenPickerSheet` over the two mock tokens, `TextField` for the recipient, `FactsCard`, `PrimaryButton`); no spinner, confirm button or receipt of its own (FR-012, FR-024)
-- [ ] T048 Create `apps/mobile/src/screens/DagonTab.tsx` mirroring `PaymentsTab.tsx`, and return it from `getPowerupTab('dagon')` in `apps/mobile/src/powerups/index.ts:48-54` (FR-002)
-- [ ] T049 [P] Add `DagonScreen` to `MOBILE_ONLY` in `scripts/check-dom-parity.mjs` (line 108) with the reason "devnet preview for the Breakpoint demo" (FR-003)
-- [ ] T050 `pnpm turbo run typecheck lint test --filter=@salmon/mobile` and `pnpm check:parity` green
+- [X] T045 Failing test in `apps/mobile/src/components/DagonScreen/DagonScreen.test.tsx` (new): first visit renders the devnet notice and Activate only; the notice renders in every state (loading, unavailable, activated, with items); cards show public balance, "not revealed yet" / value with read time / "may be out of date"; actions in FR-020 order; Send and Withdraw absent with switches off; Reveal disabled while one is in flight; "Get test tokens" only with a non-null `faucetUrl`; no string in `dagon/locales/en.json` or `es.json` matches `/privad|privacidad|private/i` (FR-005, FR-011, FR-020, FR-021, FR-022, FR-024, SC-002, SC-003)
+- [X] T046 Create `apps/mobile/src/components/DagonScreen/types.ts`, `apps/mobile/src/components/DagonScreen/index.ts` and `apps/mobile/src/components/DagonScreen/DagonScreen.tsx` from kit components only (`WarningNotice`, `FactsCard`, `Pill`, `PrimaryButton`, `SecondaryButton`, `SkeletonRow`, `StateBlock`) until T045 passes (FR-020..FR-023)
+- [X] T047 Create `apps/mobile/src/components/DagonScreen/DagonActionSheet.tsx` from the runbook blocks only (`BottomSheetContainer`, `AmountEntryCard` with `useAmountShortcuts` at 2 decimals, `TokenPickerSheet` over the two mock tokens, `TextField` for the recipient, `FactsCard`, `PrimaryButton`); no spinner, confirm button or receipt of its own (FR-012, FR-024)
+- [X] T048 Create `apps/mobile/src/screens/DagonTab.tsx` mirroring `PaymentsTab.tsx`, and return it from `getPowerupTab('dagon')` in `apps/mobile/src/powerups/index.ts:48-54` (FR-002)
+- [X] T049 [P] Add `DagonScreen` to `MOBILE_ONLY` in `scripts/check-dom-parity.mjs` (line 108) with the reason "devnet preview for the Breakpoint demo" (FR-003)
+- [X] T050 `pnpm turbo run typecheck lint test --filter=@salmon/mobile` and `pnpm check:parity` green
 
 ## Phase 9: Gates
 
