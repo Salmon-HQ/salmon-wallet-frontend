@@ -83,6 +83,13 @@ export interface SolanaTransactionExpectation {
    * carry the amounts the screen shows. See `assertJupiterRoute`.
    */
   swapRoute?: SwapRouteExpectation;
+  /**
+   * The keys core generated to co-sign this transaction (spec 043 FR-042).
+   * When set, the signers must be the fee payer first and then exactly these
+   * keys: none missing, none extra, none repeated. Left out, the signer set
+   * is not checked, as for every flow that existed before it.
+   */
+  coSigners?: readonly string[];
 }
 
 /** What a Jupiter router call must say, all taken from the build the screen draws. */
@@ -112,10 +119,14 @@ export interface NftActionExpectation {
 /**
  * What a flow declares about its own transaction.
  *
- * The fee payer is not here: core fills it from the key that is about to sign,
- * because a flow saying who pays would be a flow saying whose key this is.
+ * The fee payer and the co-signers are not here: core fills them from the keys
+ * that are about to sign, because a flow saying who signs would be a flow
+ * saying whose key this is.
  */
-export type DeclaredTransactionEffects = Omit<SolanaTransactionExpectation, 'feePayer'>;
+export type DeclaredTransactionEffects = Omit<
+  SolanaTransactionExpectation,
+  'feePayer' | 'coSigners'
+>;
 
 /**
  * A flow that has not declared what its transaction may do.
@@ -716,6 +727,27 @@ function assertSwapWrapsOnlyInput(
   }
 }
 
+/** The signers after the fee payer are exactly `coSigners`, each once. */
+function assertExactSigners(
+  message: CompiledMessage,
+  accounts: readonly string[],
+  coSigners: readonly string[]
+): void {
+  const expected = new Set(coSigners);
+  const signers = accounts.slice(1, message.header.numSignerAccounts);
+  const exact =
+    expected.size === coSigners.length &&
+    message.header.numSignerAccounts === 1 + coSigners.length &&
+    signers.length === coSigners.length &&
+    new Set(signers).size === signers.length &&
+    signers.every((signer) => expected.has(signer));
+  if (!exact) {
+    throw new SolanaTransactionMismatchError(
+      'Transaction is not signed by exactly the fee payer and the keys this wallet generated'
+    );
+  }
+}
+
 /**
  * Refuses a transaction that disagrees with what the flow declared.
  *
@@ -738,6 +770,10 @@ export function assertSolanaTransactionMatches(
     throw new SolanaTransactionMismatchError(
       `Transaction pays from ${feePayer ?? 'no account'}, not from ${expectation.feePayer}`
     );
+  }
+
+  if (expectation.coSigners !== undefined) {
+    assertExactSigners(message, accounts, expectation.coSigners);
   }
 
   const allowed = new Set(expectation.allowedPrograms);

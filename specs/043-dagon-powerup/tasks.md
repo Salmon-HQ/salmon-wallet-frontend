@@ -37,9 +37,9 @@
 
 ## Phase 2: Verify, exact signer set (FR-042)
 
-- [ ] T010 Failing tests in `packages/shared/src/core/verify/solana-transaction.cosigners.test.ts` (new): with `coSigners: [k1]` accepts {payer, k1}; refuses k1 missing, an extra signer, k1 swapped for another key, a duplicate key, payer not first, `numSignerAccounts` off by one in either direction; a legacy message gets the same answers; an expectation without `coSigners` accepts the same two-signer transaction it accepts today; a `@ts-expect-error` proves `DeclaredTransactionEffects` cannot state `coSigners` or `feePayer` (FR-042, SC-004)
-- [ ] T011 Implement in `packages/shared/src/core/verify/solana-transaction.ts`: `SolanaTransactionExpectation.coSigners?: readonly string[]`; in `assertSolanaTransactionMatches` (line 728), right after the fee-payer check (736-741), the exact-set check that runs only when `coSigners !== undefined`; `DeclaredTransactionEffects` (line 118) becomes `Omit<…, 'feePayer' | 'coSigners'>` (FR-042)
-- [ ] T012 Run `solana-transaction.test.ts` and `swap-effects.test.ts` untouched; `pnpm turbo run typecheck test --filter=@salmon/shared` green (FR-045)
+- [X] T010 Failing tests in `packages/shared/src/core/verify/solana-transaction.cosigners.test.ts` (new): with `coSigners: [k1]` accepts {payer, k1}; refuses k1 missing, an extra signer, k1 swapped for another key, a duplicate key, payer not first, `numSignerAccounts` off by one in either direction; a legacy message gets the same answers; an expectation without `coSigners` accepts the same two-signer transaction it accepts today; a `@ts-expect-error` proves `DeclaredTransactionEffects` cannot state `coSigners` or `feePayer` (FR-042, SC-004)
+- [X] T011 Implement in `packages/shared/src/core/verify/solana-transaction.ts`: `SolanaTransactionExpectation.coSigners?: readonly string[]`; in `assertSolanaTransactionMatches` (line 728), right after the fee-payer check (736-741), the exact-set check that runs only when `coSigners !== undefined`; `DeclaredTransactionEffects` (line 118) becomes `Omit<…, 'feePayer' | 'coSigners'>` (FR-042)
+- [X] T012 Run `solana-transaction.test.ts` and `swap-effects.test.ts` untouched; `pnpm turbo run typecheck test --filter=@salmon/shared` green (FR-045)
 
 ## Phase 3: Broadcast, one signing step after the blockhash swap (FR-043)
 
