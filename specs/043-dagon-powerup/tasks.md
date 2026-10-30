@@ -103,12 +103,12 @@ Tests first (T034-T038), then the code (T039-T043).
 
 ## Phase 9: Gates
 
-- [ ] T051 `pnpm turbo run typecheck lint test --filter=@salmon/shared --filter=@salmon/mobile`: zero errors, zero warnings
-- [ ] T052 [P] `pnpm check:parity`, `pnpm check:i18n`, `pnpm check:no-secrets` green (FR-003, FR-005)
-- [ ] T053 [P] `pnpm test:coverage`: thresholds unchanged or raised
-- [ ] T054 [P] Powerups-off bundle: `EXPO_PUBLIC_POWERUPS=off npx expo export --platform all --output-dir "$TMPDIR/dagon-off"` from `apps/mobile`, then `pnpm check:powerups-bundle "$TMPDIR/dagon-off"`; `dagon.catalog` absent (SC-008)
-- [ ] T055 Unchanged-path proof: `git diff --stat $(git merge-base HEAD origin/staging) -- <the 13 files of the unchanged-path rule>` prints nothing, and the T013 snapshot test passes (FR-045, SC-004)
-- [ ] T056 Key-leak review: grep the branch diff for `console.`, storage writes and serialisation near `fresh`, `viewer`, `signer`; none touches key material (SC-005)
+- [X] T051 `pnpm turbo run typecheck lint test --filter=@salmon/shared --filter=@salmon/mobile`: zero errors, zero warnings
+- [X] T052 [P] `pnpm check:parity`, `pnpm check:i18n`, `pnpm check:no-secrets` green (FR-003, FR-005)
+- [X] T053 [P] `pnpm test:coverage`: thresholds unchanged or raised
+- [X] T054 [P] Powerups-off bundle: `EXPO_PUBLIC_POWERUPS=off npx expo export --platform all --output-dir "$TMPDIR/dagon-off"` from `apps/mobile`, then `pnpm check:powerups-bundle "$TMPDIR/dagon-off"`; `dagon.catalog` absent (SC-008)
+- [X] T055 Unchanged-path proof: `git diff --stat $(git merge-base HEAD origin/staging) -- <the 13 files of the unchanged-path rule>` prints nothing, and the T013 snapshot test passes (FR-045, SC-004)
+- [X] T056 Key-leak review: grep the branch diff for `console.`, storage writes and serialisation near `fresh`, `viewer`, `signer`; none touches key material (SC-005)
 - [ ] T057 `security-reviewer` agent on the core diff (`packages/shared/src/core/**`, `eslint.config.js`, `apps/mobile/app/(app)/_layout.tsx`) and the Powerup's use of `requestFreshSignature`; every finding fixed or answered in writing (FR-040..FR-046, SC-004, SC-005)
 - [ ] T058 `web3-security-review` skill on the same diff (signer set, fee payer, blockhash swap, key lifetime, read-message shape); findings fixed, then T051-T055 re-run green (FR-042, FR-043, FR-044)
 
