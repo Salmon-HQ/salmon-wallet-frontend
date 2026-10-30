@@ -1,7 +1,7 @@
 /**
  * Dagon's `devnet.json`, read on the device to find this epoch's mints and
  * the executor (contracts/encrypt-executor-and-config.md §1). A copy is used
- * only when it names the pinned programs, the known executor host and the
+ * only when it names the pinned programs, the exact executor URL and the
  * byte layout this code reads; anything else leaves the tab unavailable,
  * with no cached or default copy standing in (spec edge cases).
  */
@@ -10,7 +10,8 @@ import {
   CONFIG_URL,
   DAGON_DECIMALS,
   ENCRYPT_PROGRAM,
-  EXECUTOR_HOST,
+  EXECUTOR_URLS,
+  FAUCET_URL,
   PC_SWAP_PROGRAM,
   PC_TOKEN_PROGRAM,
   SIDES,
@@ -63,7 +64,7 @@ const isHttps = (value: unknown): value is string => {
 };
 
 const isExecutor = (value: unknown): value is string =>
-  isHttps(value) && new URL(value).hostname === EXECUTOR_HOST;
+  typeof value === 'string' && EXECUTOR_URLS.includes(value);
 
 function sideOf(value: unknown): DagonSideConfig | null {
   if (!isObject(value) || value.decimals !== DAGON_DECIMALS) return null;
@@ -94,8 +95,10 @@ export function parseDagonConfig(doc: unknown): DagonConfig | null {
     return null;
   }
   if (!isExecutor(doc.encryptGrpcUrl) || !sameLayout(doc.layout)) return null;
-  const faucetUrl = doc.faucetUrl ?? null;
-  if (faucetUrl !== null && !isHttps(faucetUrl)) return null;
+  const remoteFaucet = doc.faucetUrl ?? null;
+  if (remoteFaucet !== null && !isHttps(remoteFaucet)) return null;
+  // Only the pinned faucet opens behind a wallet button; any other is ignored.
+  const faucetUrl = remoteFaucet !== null && remoteFaucet === FAUCET_URL ? FAUCET_URL : null;
   if (!isObject(doc.sides) || typeof doc.epoch !== 'number') return null;
   const sides = {} as Record<Side, DagonSideConfig>;
   for (const name of SIDES) {

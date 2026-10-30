@@ -39,7 +39,7 @@ import {
   readPositions as readPositionsOnChain,
   type Positions,
 } from './chain';
-import { fetchDagonConfig, type DagonConfig } from './config';
+import { DagonConfigError, fetchDagonConfig, type DagonConfig } from './config';
 import {
   DAGON_DECIMALS,
   DAGON_ID,
@@ -54,7 +54,7 @@ import {
   type Side,
 } from './constants';
 import { readHiddenBalance } from './executor';
-import { dagonManifest } from './manifest';
+import { dagonExpectation } from './expectation';
 import {
   EMPTY_ACCOUNT,
   EMPTY_STATE,
@@ -463,9 +463,16 @@ export function useDagonScreenLogic({
               ...(keys.viewer ? { viewer: keys.viewer } : {}),
               freshSigners: keys.freshSigners.join(','),
             });
+            const current = configRef.current;
+            if (!current) throw new DagonConfigError();
             return toPowerupProposal(envelope, {
               networkId: NETWORK,
-              expect: { allowedPrograms: dagonManifest.programs },
+              expect: await dagonExpectation(action, {
+                config: current,
+                wallet: publicKey,
+                sides: options.sides,
+                counterparty: params.to ?? params.owner,
+              }),
               display: reviewDisplay(action, { envelope, ...options }),
               // No `pending`: a confirmed signature says nothing moved (FR-028).
               onOutcome: (success) => {

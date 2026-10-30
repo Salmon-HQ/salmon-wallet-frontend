@@ -100,6 +100,22 @@ describe('readHiddenBalance', () => {
     expect([...new Uint8Array(init.body as ArrayBuffer)]).toEqual([...encodeReadRequest(auth)]);
   });
 
+  it('never posts anywhere but the pinned executor, whatever URL it is handed', async () => {
+    const fetchFn = vi.fn(async () => new Response('', { status: 503 }));
+    await expect(
+      readHiddenBalance(
+        'https://evil.example/@pre-alpha-dev-1.encrypt.ika-network.net',
+        auth,
+        fetchFn as unknown as typeof fetch
+      )
+    ).rejects.toBeInstanceOf(ExecutorReadError);
+    for (const [url] of fetchFn.mock.calls as unknown as [string][]) {
+      expect(url).toBe(
+        'https://pre-alpha-dev-1.encrypt.ika-network.net/encrypt.v1.EncryptService/ReadCiphertext'
+      );
+    }
+  });
+
   it('is an error on a non-2xx answer or a transport failure', async () => {
     const notOk = vi.fn(async () => new Response('', { status: 503 }));
     await expect(

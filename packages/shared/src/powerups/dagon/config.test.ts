@@ -35,6 +35,11 @@ describe('parseDagonConfig — spec 043 FR-010, research R8', () => {
     'https://evil.example.com:443',
     'http://pre-alpha-dev-1.encrypt.ika-network.net',
     'https://pre-alpha-dev-1.encrypt.ika-network.net.evil.com',
+    // React Native's URL polyfill reads this hostname as the pinned host.
+    'https://evil.example/@pre-alpha-dev-1.encrypt.ika-network.net',
+    'https://user@pre-alpha-dev-1.encrypt.ika-network.net',
+    'https://pre-alpha-dev-1.encrypt.ika-network.net/other',
+    'https://pre-alpha-dev-1.encrypt.ika-network.net:8443',
     'not a url',
   ])('refuses an executor on another host (%s)', (url) => {
     const doc = copy();
@@ -82,10 +87,13 @@ describe('parseDagonConfig — spec 043 FR-010, research R8', () => {
     expect(parseDagonConfig(doc)).toBeNull();
   });
 
-  it('keeps an https faucet, refuses any other faucet value', () => {
+  it('ignores an https faucet that is not the pinned one, refuses any other faucet value', () => {
     const doc = copy();
+    // No faucet is pinned (research: Dagon funds on request), so no remote
+    // URL can put a link behind a wallet button.
     doc.faucetUrl = 'https://faucet.example.com/faucet';
-    expect(parseDagonConfig(doc)?.faucetUrl).toBe('https://faucet.example.com/faucet');
+    expect(parseDagonConfig(doc)).not.toBeNull();
+    expect(parseDagonConfig(doc)?.faucetUrl).toBeNull();
     doc.faucetUrl = 'http://faucet.example.com';
     expect(parseDagonConfig(doc)).toBeNull();
     doc.faucetUrl = 7;

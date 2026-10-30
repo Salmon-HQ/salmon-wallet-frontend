@@ -50,6 +50,11 @@ describe('powerups boundary', () => {
       "import { createRecentSignatureConfirmationPromiseFactory } from '@solana/transaction-confirmation';",
       'no-restricted-imports',
     ],
+    ["import { createSignerFromKeyPair } from '@solana/kit';", 'no-restricted-imports'],
+    ["import { createSignerFromKeyPair } from '@solana/signers';", 'no-restricted-imports'],
+    ["import nacl from 'tweetnacl';", 'no-restricted-imports'],
+    ['export const k = () => crypto.subtle;', 'no-restricted-syntax'],
+    ['export const k = () => globalThis.crypto.subtle.sign;', 'no-restricted-syntax'],
     ['export const k = (account: { signer: unknown }) => account.signer;', 'no-restricted-syntax'],
     [
       'export const k = (account: { keyPair: unknown }) => account.keyPair;',

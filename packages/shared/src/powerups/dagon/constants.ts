@@ -13,6 +13,21 @@ export const PC_SWAP_PROGRAM = 'BqJMtWQYiis1264KqBN3wssNqTofK5RuP67hkZYvb4SD';
 export const CONFIG_URL =
   'https://raw.githubusercontent.com/inkwell-finance/pc-wallet-kit/main/devnet.json';
 export const EXECUTOR_HOST = 'pre-alpha-dev-1.encrypt.ika-network.net';
+/**
+ * The only `encryptGrpcUrl` values accepted, as exact strings: a URL parser
+ * is not trusted to agree on the host (React Native's polyfill reads
+ * `https://evil.example/@<host>` as `<host>`).
+ */
+export const EXECUTOR_URLS: readonly string[] = [
+  `https://${EXECUTOR_HOST}`,
+  `https://${EXECUTOR_HOST}:443`,
+];
+/**
+ * The one faucet a remote `devnet.json` may point "Get test tokens" at. None
+ * is published (Dagon funds wallets on request), so the action stays hidden
+ * until a host is pinned here.
+ */
+export const FAUCET_URL: string | null = null;
 
 /** The mock tokens, in the order the tab shows them. */
 export const SIDES = ['USDC', 'DOGE'] as const;

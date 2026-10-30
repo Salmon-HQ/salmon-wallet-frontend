@@ -5,6 +5,7 @@
  * with a viewer key it already discarded; this file only carries it.
  */
 import type { ReadAuthorization } from '../../core/confirmation';
+import { EXECUTOR_HOST, EXECUTOR_URLS } from './constants';
 
 const PATH = '/encrypt.v1.EncryptService/ReadCiphertext';
 const HEADERS = {
@@ -123,11 +124,12 @@ export async function readHiddenBalance(
   auth: ReadAuthorization,
   fetchFn: typeof fetch = fetch
 ): Promise<bigint> {
+  // The URL is built from the pinned host, never parsed out of the config.
+  if (!EXECUTOR_URLS.includes(encryptGrpcUrl)) throw new ExecutorReadError('executor');
   let response: Response;
   let body: Uint8Array;
   try {
-    // `origin` drops the default :443 the config carries.
-    response = await fetchFn(`${new URL(encryptGrpcUrl).origin}${PATH}`, {
+    response = await fetchFn(`https://${EXECUTOR_HOST}${PATH}`, {
       method: 'POST',
       headers: HEADERS,
       // A plain ArrayBuffer: the body type React Native's fetch sends as is.

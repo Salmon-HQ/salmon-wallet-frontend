@@ -258,6 +258,24 @@ describe('useDagonScreenLogic — building through core', () => {
     expect(view.result.current.sheet.visible).toBe(false);
   });
 
+  it("binds each proposal to its action's instructions and the side's accounts (not the program list alone)", async () => {
+    const proposals = confirmingCore();
+    const view = setup();
+    await ready(view);
+    act(() => view.result.current.actions[0].onPress());
+    act(() => view.result.current.sheet.onChangeAmount('1'));
+    await act(async () => view.result.current.sheet.submit.onPress());
+    const effects = proposals[0].expect;
+    expect(
+      effects.allowedInstructions?.['3kjJEx6G1XdrtixFg9f8eGRAyzW5QmhsJQq6qCUZYhXZ']?.codes
+    ).toEqual([30]);
+    expect(effects.allowedInstructions?.['11111111111111111111111111111111']?.codes).toEqual([]);
+    expect(effects.allowedInstructions?.TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA?.codes).toEqual(
+      []
+    );
+    expect(effects.requiredAccounts).toContain(CONFIG.sides.USDC.vaultAta);
+  });
+
   it('swaps with sideIn, sideOut, amountIn and the 99% minimum', async () => {
     confirmingCore();
     const view = setup();

@@ -262,6 +262,7 @@ export default [
                 'generateKeyPairSigner',
                 'generateKeyPair',
                 'signBytes',
+                'createSignerFromKeyPair',
               ],
               message:
                 'A Powerup never signs or sends: propose through requestSignature() from core/confirmation (spec 027 §2).',
@@ -283,7 +284,13 @@ export default [
                 'generateKeyPairSigner',
                 'createKeyPairSignerFromBytes',
                 'createKeyPairSignerFromPrivateKeyBytes',
+                'createSignerFromKeyPair',
               ],
+              message:
+                'A Powerup never holds a key: core generates fresh co-signers through requestFreshSignature() (spec 043 FR-046).',
+            },
+            {
+              name: 'tweetnacl',
               message:
                 'A Powerup never holds a key: core generates fresh co-signers through requestFreshSignature() (spec 043 FR-046).',
             },
@@ -297,6 +304,11 @@ export default [
             'MemberExpression[property.name=/^(signer|keyPair|seed|retrieveSecurePrivateKey|getAccountMnemonic|signTransaction|signMessage|signAllTransactions)$/]',
           message:
             'A Powerup never touches key material or signs: propose through requestSignature() (spec 027 §2).',
+        },
+        {
+          selector: 'MemberExpression[property.name="subtle"]',
+          message:
+            'A Powerup never generates keys or signs: core generates fresh co-signers through requestFreshSignature() (spec 043 FR-046).',
         },
       ],
     },
