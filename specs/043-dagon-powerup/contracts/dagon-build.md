@@ -1,6 +1,6 @@
 # Contract: Dagon build (consumed, not designed here)
 
-The backend half is `../salmon-wallet-backend/specs/023-dagon-powerup/spec.md` (commit `46fda57`); its plan is written in parallel. This file states what the client sends and what it relies on. Where a name below is not fixed by the backend spec, it is marked and follows the backend plan once written.
+The backend half is `../salmon-wallet-backend/specs/023-dagon-powerup/spec.md` (commit `46fda57`); its plan is written in parallel. This file states what the client sends and what it relies on. Every name below, the swap's `sideIn` and `sideOut` included, matches the backend contract (`../salmon-wallet-backend/specs/023-dagon-powerup/contracts/dagon-build.md`).
 
 ## Request
 

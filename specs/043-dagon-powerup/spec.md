@@ -22,7 +22,7 @@ Recorded as decided; the requirements below implement them.
 | --- | --- | --- |
 | D1 | A demo build for Solana Breakpoint (Nov 15-17, 2026). It lives on `feat/dev-93-dagon-powerup`, which is **never merged**. | A devnet preview of a pre-alpha protocol is not a product release. |
 | D2 | Distributed only through the EAS `staging` profile (`apps/mobile/eas.json`: internal distribution, update channel `staging`, staging backend). Never the production channel, never TestFlight, never a store. | Apple guideline 2.2 (demos and betas do not belong on the App Store); the iOS 1.4.0 review in progress; EU AMLR art. 79 risk for a store feature. |
-| D3 | Surface: one Home sub-tab (`entries.tab`, the only Powerup surface the manifest supports). Mobile only, iOS demo. The missing DOM twin is recorded as a `MOBILE_ONLY` entry in `scripts/check-dom-parity.mjs` with its reason. | Holds state the user returns to (balances, in-progress operations). |
+| D3 | Surface: one Home sub-tab (`entries.tab`, the only Powerup surface the manifest supports). Mobile only (iOS and Android): local QA by hand on the Android emulator against the backend in Docker (owner, 2026-10-30); an iOS build only if the owner asks. The missing DOM twin is recorded as a `MOBILE_ONLY` entry in `scripts/check-dom-parity.mjs` with its reason. | Holds state the user returns to (balances, in-progress operations). |
 | D4 | Powerup id `dagon`; display name "Dagon (devnet preview)"; the word "private" never appears; `networks: ['solana-devnet']` only. | Names the counterparty; no claim the protocol cannot back today. |
 | D5 | Flows, all built: Activate (setup), Hide (wrap), Reveal, Send, Swap, Withdraw (unwrap, 3 steps). Withdraw is built and tested but OFF in the demo behind a switch. Send is behind a switch until Dagon verifies transfer. | An executor drop during withdraw strands the burned amount with no refund; Dagon has not verified transfer end to end. |
 | D6 | Copy: the agent proposes EN and ES strings; the owner approves them before the build. | Repo i18n rule: Spanish is never guessed. |
@@ -230,7 +230,7 @@ The user turns hidden tokens back into public ones in three steps (burn, request
 
 ### Measurable Outcomes
 
-- **SC-001**: On the iOS demo build against devnet, a pre-funded team wallet completes Activate → Hide → Reveal → Swap → Reveal with every operation reaching "done" or "outcome unknown" within 90 s of confirmation.
+- **SC-001**: On the Android emulator against devnet and the local backend, a pre-funded team wallet completes Activate → Hide → Reveal → Swap → Reveal with every operation reaching "done" or "outcome unknown" within 90 s of confirmation.
 - **SC-002**: 100% of receipts and in-progress items reviewed in the demo walkthrough avoid claiming an operation succeeded; zero strings contain "private".
 - **SC-003**: The tab sends zero reveal transactions without an explicit user confirmation (verified by test).
 - **SC-004**: The fresh-signer capability refuses on mainnet, for an undeclaring Powerup, and for a build with a wrong or extra signer (verified by tests), and the existing send, swap and dApp signing tests pass without modification.

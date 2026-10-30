@@ -18,9 +18,9 @@ The core work is additive: every new behaviour sits behind an argument or an opt
 
 **Storage**: `usePowerupState('dagon', …)` only (`packages/shared/src/hooks/usePowerupState.ts:85`), keyed per `${publicKey}:${networkId}` inside the slice (the Payments convention, `docs/POWERUPS-UI.md` §2). Public addresses and revealed mock balances only; never a private key.
 
-**Testing**: Vitest for `packages/shared` (core + Powerup logic), Jest for `apps/mobile` (screen), ESLint fixture test `packages/shared/src/powerups/boundary.test.ts`. Manual iPhone-simulator walkthrough against devnet and an EAS `staging` build last (not run in this phase).
+**Testing**: Vitest for `packages/shared` (core + Powerup logic), Jest for `apps/mobile` (screen), ESLint fixture test `packages/shared/src/powerups/boundary.test.ts`. Manual QA on the Android emulator against the local backend and devnet (the owner taps, from the written checklist in [quickstart.md](./quickstart.md) §3; no Maestro), then, only if the owner asks for it, an iOS EAS `staging` build (neither run in this phase).
 
-**Target Platform**: iOS, EAS `staging` profile only (`apps/mobile/eas.json`: `distribution: internal`, `channel: staging`, `EXPO_PUBLIC_SALMON_ENV=staging`, `EXPO_PUBLIC_POWERUPS=on`). Solana devnet only.
+**Target Platform**: mobile (iOS and Android). Local QA on the Android emulator with an app built locally (`EXPO_PUBLIC_SALMON_ENV=local`) against the backend in Docker. No staging for now; an iOS build, if the owner asks for one later, uses the EAS `staging` profile only (`apps/mobile/eas.json`: `distribution: internal`, `channel: staging`, `EXPO_PUBLIC_SALMON_ENV=staging`, `EXPO_PUBLIC_POWERUPS=on`). Solana devnet only.
 
 **Project Type**: pnpm + turbo monorepo; shared logic in `packages/shared`, RN surface in `apps/mobile`. No DOM twin (recorded exception).
 
@@ -38,9 +38,9 @@ _GATE: evaluated before Phase 0 and again after Phase 1._
 | --- | --- | --- |
 | I. Ownership boundaries | Pass | Logic in `packages/shared/src/powerups/dagon/` and `packages/shared/src/core/`; RN surface in `apps/mobile`; nothing in `packages/ui`. |
 | II. Shared code has consumers | Pass | Consumers of every touched core export listed in §Core changes (grep of `assertSolanaTransactionMatches`, `signAndSendSolanaTransaction`, `signProposal`, `SignatureRequestProvider`, `SignedResult`). Barrels keep every existing name; additions only. Backend contract checked against `../salmon-wallet-backend/specs/023-dagon-powerup/spec.md`. |
-| III. Wallet safety (NON-NEGOTIABLE) | Pass with sign-off | Touches the signing path (`core/broadcast`, `core/signing`, `core/verify`, `core/confirmation`). The owner signed off on the design (spec D9, research "Adopted design", 2026-10-30). Mitigations: additive branches only, unchanged existing tests, new refusal tests (FR-045, SC-004/005), `security-reviewer` + `web3-security-review` before the demo build. No key is logged, persisted or returned. No irreversible on-chain action runs autonomously: devnet transactions in the walkthrough are confirmed by a human. |
+| III. Wallet safety (NON-NEGOTIABLE) | Pass with sign-off | Touches the signing path (`core/broadcast`, `core/signing`, `core/verify`, `core/confirmation`). The owner signed off on the design (spec D9, research "Adopted design", 2026-10-30). Mitigations: additive branches only, unchanged existing tests, new refusal tests (FR-045, SC-004/005), `security-reviewer` + `web3-security-review` before the demo build. No key is logged, persisted or returned. No irreversible on-chain action runs autonomously: devnet transactions in the manual QA and the demo are confirmed by a human. |
 | IV. Bilingual strings | Pass, gated | Every string under `dagon.*` in `locales/en.json` + `locales/es.json`; the agent proposes ES, the owner approves EN and ES before the build (D6, FR-005). `pnpm check:i18n` covers the folder once registered in `scripts/check-i18n.mjs` `POWERUP_LOCALES`. |
-| V. Functional before visual | Pass | Every phase is test-first in the owning package; one Jest test for the screen; the device walkthrough is manual and last. |
+| V. Functional before visual | Pass | Every phase is test-first in the owning package; one Jest test for the screen; the Android emulator QA is manual and last. |
 | VI. Ask rather than guess | Pass | Spec Q1-Q4 answered by the supervisor (recorded below); remaining points carry defaults in §Open points. |
 | Platform constraints | Pass | JS-only; no `app.json`, plugin or native change. |
 | Quality gates | Pass, planned | typecheck, lint (0 errors / 0 warnings), tests, parity, i18n, no-secrets, Powerups-off bundle check in Phase 9. |
@@ -178,7 +178,7 @@ scripts/
 
 Each phase starts with the failing test named, then the smallest code that passes it, then the package's tests. Core before the Powerup.
 
-0. **Prerequisites (no code).** Backend `dagon` adapter on `feat/dev-93-dagon-powerup` in `salmon-wallet-backend`, deployed to staging, availability row iOS-only (backend spec FR-003/FR-004). The client is built against it; nothing here waits on it until Phase 7's hook test against a fake `buildPowerup`.
+0. **Prerequisites (no code).** Backend `dagon` adapter on `feat/dev-93-dagon-powerup` in `salmon-wallet-backend`, running in Docker for the Android QA (`docker compose up` in `salmon-wallet-backend`: serverless-offline, stage `local`, host port 3000, which the emulator reaches at `http://10.0.2.2:3000/local`); a staging deploy, availability row iOS-only there, only for the optional Phase 12 (backend spec FR-003/FR-004). The backend plan's `dagon` row makes Android `maintenance` (the gate answers 404), so the local stage must offer `dagon` on Android for Phase 11; that is the backend session's call. The client is built against it; nothing here waits on it until Phase 7's hook test against a fake `buildPowerup`.
 1. **Boundary lint (FR-046).** Fixtures in `boundary.test.ts` for each new name from `@solana/kit`, `@solana/keys`, `@solana/signers` fail first; add the `eslint.config.js` entries; add the Payments disable line; `pnpm turbo run lint test --filter=@salmon/shared`.
 2. **Verify: exact signers (FR-042).** `solana-transaction.cosigners.test.ts`: accepts {payer, k1}; refuses missing, extra, swapped, duplicate key, payer not first, `numSignerAccounts` off by one; a transaction without `coSigners` behaves as before. Then the `coSigners` branch and the `DeclaredTransactionEffects` omission.
 3. **Broadcast: one signing step after the blockhash swap (FR-043).** `solana.cosigners.test.ts` with a stub RPC: both signatures verify over the patched message; the fresh blockhash is on the message; no-`coSigners` path produces the same signed bytes as before. Then the options field, the fold, the comment fix (solana.ts:58-60).
@@ -189,10 +189,12 @@ Each phase starts with the failing test named, then the smallest code that passe
 8. **Mobile surface.** `DagonScreen.test.tsx` (first visit shows notice + Activate only; notice present in every state; Reveal disabled while one is in flight; no "private" string in either locale, SC-002). Then `DagonTab.tsx`, `DagonScreen/*`, `getPowerupTab('dagon')` (`apps/mobile/src/powerups/index.ts:48-54`), `MOBILE_ONLY.DagonScreen`.
 9. **Gates.** `pnpm turbo run typecheck lint test --filter=@salmon/shared --filter=@salmon/mobile`, `pnpm check:parity`, `pnpm check:i18n`, `pnpm check:no-secrets`, a Powerups-off mobile export plus `pnpm check:powerups-bundle <dist>` (marker `dagon.catalog` absent, SC-008), coverage thresholds unchanged or raised. Then `security-reviewer` and the `web3-security-review` skill on the core diff.
 10. **Copy approval.** The owner approves the EN and ES strings (D6, FR-005).
-11. **iPhone simulator against devnet (manual, not run in this phase).** Steps in [quickstart.md](./quickstart.md) §3; SC-001's path Activate → Hide → Reveal → Swap → Reveal with a pre-funded team wallet, a human confirming every transaction.
-12. **EAS `staging` build (not run in this phase).** `eas build --profile staging --platform ios` from `apps/mobile`, internal distribution to the team's registered iPhones; never `production`, never `eas submit` (FR-001, D2).
+11. **Android emulator against the local backend (manual, not run in this phase).** The agent starts the backend in Docker, builds the app locally for the Android emulator (`EXPO_PUBLIC_SALMON_ENV=local npx expo run:android`) and launches it, and hands the owner the checklist in [quickstart.md](./quickstart.md) §3; the owner taps every step, no Maestro. SC-001's path Activate → Hide → Reveal → Swap → Reveal with a pre-funded team wallet, a human confirming every transaction.
+12. **Optional: iOS EAS `staging` build, only if the owner asks for it (not run in this phase).** No staging for now. `eas build --profile staging --platform ios` from `apps/mobile`, internal distribution to the team's registered iPhones; never `production`, never `eas submit` (FR-001, D2).
 
-## Open points with defaults
+## Open points (decided by the supervisor, 2026-10-30)
+
+O1, O2 and O3 accepted as written; O4-O7, O9, O10, O12-O14 accepted with their defaults; O8 decided below; O15 is a main-line follow-up with no task on this branch.
 
 | # | Point | Default |
 | --- | --- | --- |
@@ -203,21 +205,21 @@ Each phase starts with the failing test named, then the smallest code that passe
 | O5 | Swap minimum. | `minAmountOut = amountIn × 0.99` at the 1:1 indicative price GUIDE §7 prescribes for the toy pool; shown as a row with the "not enforced on devnet yet" caveat; no user input for the tolerance. |
 | O6 | SOL shortfall threshold. | Refuse below 0.01 devnet SOL with a message naming the shortfall; rent per action is not documented beyond the reveal's ~0.0023. |
 | O7 | Catalogue icon. | `Stack` from `PowerupIconName` (`types/ui/powerup-icon.ts:14-27`): no privacy connotation, so no kit PR. |
-| O8 | Withdraw step 3 readiness. The decryption-request layout lives in the Encrypt SDK, not in the vendored sources (`pc-token/lib.rs:760-761` reads it through `accounts::read_decrypted_verified`). | No on-chain watch for step 2. "Complete" is offered once step 2 confirms; a build that fails simulation reads "decryption not posted yet, try again"; after 180 s the item is "outcome unknown" and Complete stays offered. Ask the backend for a `409 decryption_pending` if the walkthrough needs it. |
+| O8 | Withdraw step 3 readiness. The decryption-request layout lives in the Encrypt SDK, not in the vendored sources (`pc-token/lib.rs:760-761` reads it through `accounts::read_decrypted_verified`). | No on-chain watch for step 2. "Complete" is offered once step 2 confirms; a build that fails simulation reads "decryption not posted yet, try again"; after 180 s the item is "outcome unknown" and Complete stays offered. No backend change: the client relies on the backend contract's `422 simulation_failed` for `unwrapComplete` before the decryption is posted; cap 180 s. |
 | O9 | Network fee row. | Computed client-side from the envelope (R10); omitted when the envelope lacks the priority fields. |
 | O10 | The backend's "outcome known only after a reveal" flag has no fixed name yet (backend FR-024). | The client does not branch on it: every Dagon receipt already uses the "submitted, Encrypt is processing" copy (FR-025), which honours the flag whatever its name. |
 | O11 | Payments imports `generateKeyPair` (`usePaymentsScreenLogic.ts:15`), which FR-046 blocks. | One `eslint-disable-next-line` with the reason; no behaviour change. Moving the reference generation into core is the cleaner fix if this branch ever merges. |
 | O12 | `types/ui/dagon-screen.ts` contract. | None: no DOM twin to share it with; props live in `apps/mobile/src/components/DagonScreen/types.ts`. |
 | O13 | How long finished items stay in "In progress". | Keep the newest 10 per account and network; "done" and "outcome unknown" items stay until pushed out. |
 | O14 | Analytics. | No event. Backend FR-005 accepts `dagon` should one be added later. |
-| O15 | `signProposal` puts `feePayer` before the `expect` spread (`core/signing/index.ts:29-32`), so a runtime `expect.feePayer` could override it (types forbid it). Existing behaviour, out of scope. | Left as is on this branch; the new `coSigners` field is placed after the spread. Flag for the main line. |
+| O15 | `signProposal` puts `feePayer` before the `expect` spread (`core/signing/index.ts:29-32`), so a runtime `expect.feePayer` could override it (types forbid it). Existing behaviour, out of scope. | Left as is on this branch; the new `coSigners` field is placed after the spread. Main-line follow-up; no task on this branch. |
 
 ## Risks
 
 | Risk | Mitigation |
 | --- | --- |
 | A change on the signing path loses funds or signs something unintended. | Additive branches only; existing tests untouched; exact-signer check before the screen and again at broadcast; devnet-only and declared-id gates before any key exists; security review in Phase 9; branch never merged. |
-| Ed25519 key generation and signing with a non-extractable key on Hermes. Payments already generates keys on mobile (`usePaymentsScreenLogic.ts:154`) through the polyfill (`apps/mobile/index.js:113`), but nothing signs with a generated key on device today. | The first simulator step (Phase 11) is an Activate, which exercises it; fallback is `generateKeyPairSigner(true)` only if the polyfill refuses non-extractable signing, recorded as a finding. |
+| Ed25519 key generation and signing with a non-extractable key on Hermes. Payments already generates keys on mobile (`usePaymentsScreenLogic.ts:154`) through the polyfill (`apps/mobile/index.js:113`), but nothing signs with a generated key on device today. | The first emulator step (Phase 11) is an Activate, which exercises it; fallback is `generateKeyPairSigner(true)` only if the polyfill refuses non-extractable signing, recorded as a finding. |
 | Backend emits legacy instead of v0 (backend FR-028). | The kit compiled-message decoder and encoder used at `solana.ts:101-110` handle both versions; the cosigners test covers a legacy message too. |
 | Executor drops (5 in 50 measured), floor not enforced, transfer unverified. | "Outcome unknown" at the cap, never "failed" or "succeeded"; Send and Withdraw off; copy states the floor caveat. |
 | `devnet.json` changes pool or epoch mid-event. | Runtime fetch on mount; refusal only on pinned-id or executor-host mismatch. |
