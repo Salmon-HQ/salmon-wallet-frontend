@@ -9,5 +9,115 @@
       "reveal": "Reveal a hidden balance, for a small devnet fee",
       "swap": "Swap one hidden test token for the other"
     }
+  },
+  "notice": {
+    "title": "Devnet preview",
+    "body": "Amounts are not actually encrypted yet, and these test tokens have no value."
+  },
+  "unavailable": {
+    "title": "Dagon is unavailable right now",
+    "body": "Its devnet setup could not be read or did not match what this wallet expects.",
+    "retry": "Try again"
+  },
+  "activate": {
+    "label": "Activate",
+    "body": "Activating sets up one Dagon account per test token: one confirmation each."
+  },
+  "card": {
+    "public": "Public balance",
+    "hidden": "Hidden balance",
+    "notRevealed": "Not revealed yet",
+    "revealedAt": "Read at {{time}}",
+    "outOfDate": "May be out of date",
+    "reveal": "Reveal",
+    "readFailed": "Could not read the balance. Tap Reveal to try again."
+  },
+  "tokens": {
+    "USDC": "Mock USDC",
+    "DOGE": "Mock DOGE"
+  },
+  "actions": {
+    "hide": "Hide",
+    "send": "Send",
+    "swap": "Swap",
+    "withdraw": "Withdraw",
+    "continueWithdraw": "Continue withdrawal",
+    "faucet": "Get test tokens"
+  },
+  "sheet": {
+    "hide": "Hide tokens",
+    "send": "Send hidden tokens",
+    "swap": "Swap hidden tokens",
+    "withdraw": "Withdraw to public tokens",
+    "amount": "Amount",
+    "token": "Token",
+    "changeToken": "Tap to change",
+    "recipient": "Recipient",
+    "recipientPlaceholder": "Devnet address",
+    "recipientInvalid": "Enter another devnet address.",
+    "amountInvalid": "Enter an amount with up to 2 decimals.",
+    "available": "Available",
+    "lastRevealed": "Last revealed",
+    "continue": "Continue"
+  },
+  "warnings": {
+    "publicAmount": "The amount is public on Solana. Only the balance it joins is hidden.",
+    "withdrawPublic": "The amount becomes public. If Encrypt fails, it can stay stuck on devnet with no refund.",
+    "minimumCaveat": "You receive at least the minimum, or nothing moves. Devnet does not enforce the minimum yet.",
+    "revealCost": "A reveal is a transaction and costs about 0.0023 devnet SOL of rent that is not returned.",
+    "sendOutcome": "Only a reveal tells you whether the amount moved."
+  },
+  "review": {
+    "setup": "Activate {{token}}",
+    "wrap": "Hide {{token}}",
+    "reveal": "Reveal {{token}}",
+    "send": "Send {{token}}",
+    "swap": "Swap {{tokenIn}} for {{tokenOut}}",
+    "unwrapBurn": "Withdraw {{token}}, step 1 of 3",
+    "unwrapDecrypt": "Withdraw {{token}}, step 2 of 3",
+    "unwrapComplete": "Withdraw {{token}}, step 3 of 3",
+    "amount": "Amount",
+    "owner": "Account for",
+    "recipient": "Recipient",
+    "minimum": "Minimum to receive",
+    "cost": "Cost",
+    "costValue": "1 transaction + about 0.0023 SOL rent",
+    "networkFee": "Network fee"
+  },
+  "receipt": {
+    "submitted": "Submitted. Encrypt is processing it."
+  },
+  "pending": {
+    "title": "Submitting to Solana devnet"
+  },
+  "progress": {
+    "title": "In progress",
+    "empty": "Nothing in progress",
+    "processing": "Processing",
+    "done": "Encrypt finished",
+    "unknown": "Outcome unknown",
+    "unknownHint": "Reveal the balance later to see what happened.",
+    "item": {
+      "setup": "Activate {{token}}",
+      "wrap": "Hide {{amount}} {{token}}",
+      "reveal": "Reveal {{token}}",
+      "send": "Send {{amount}} {{token}}",
+      "swap": "Swap {{amount}} {{token}} for {{tokenOut}}",
+      "unwrapBurn": "Withdraw {{amount}} {{token}}, step 1",
+      "unwrapDecrypt": "Withdraw {{token}}, step 2",
+      "unwrapComplete": "Withdraw {{token}}, step 3"
+    }
+  },
+  "errors": {
+    "buildFailed": "Couldn't prepare the transaction. Try again.",
+    "busy": "Encrypt is busy right now. Try again in a moment.",
+    "setupRequired": "This token is not activated on this wallet yet.",
+    "balanceSettling": "Your earlier hide is still being processed. Try again in a moment.",
+    "receiptNotFound": "This withdrawal cannot continue.",
+    "decryptionNotPosted": "The decryption is not posted yet. Try again in a moment.",
+    "wrapFailed": "Couldn't hide that amount. Check that this wallet holds enough of the test token.",
+    "solShortfall": "You need at least {{needed}} devnet SOL for fees and rent; this wallet has {{have}}.",
+    "readFailed": "Could not read the hidden balance. Try again.",
+    "positionsFailed": "Could not read this wallet's Dagon accounts. Try again."
   }
 }

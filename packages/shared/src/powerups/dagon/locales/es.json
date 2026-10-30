@@ -9,5 +9,115 @@
       "reveal": "Revelar un saldo oculto, con una pequeña comisión de devnet",
       "swap": "Intercambiar un token de prueba oculto por el otro"
     }
+  },
+  "notice": {
+    "title": "Vista previa en devnet",
+    "body": "Los montos todavía no se cifran de verdad, y estos tokens de prueba no tienen valor."
+  },
+  "unavailable": {
+    "title": "Dagon no está disponible ahora",
+    "body": "No se pudo leer su configuración de devnet o no coincide con lo que espera esta billetera.",
+    "retry": "Reintentar"
+  },
+  "activate": {
+    "label": "Activar",
+    "body": "Activar crea una cuenta de Dagon por cada token de prueba: una confirmación por cada una."
+  },
+  "card": {
+    "public": "Saldo público",
+    "hidden": "Saldo oculto",
+    "notRevealed": "Todavía sin revelar",
+    "revealedAt": "Leído a las {{time}}",
+    "outOfDate": "Puede estar desactualizado",
+    "reveal": "Revelar",
+    "readFailed": "No se pudo leer el saldo. Tocá Revelar para reintentar."
+  },
+  "tokens": {
+    "USDC": "USDC de prueba",
+    "DOGE": "DOGE de prueba"
+  },
+  "actions": {
+    "hide": "Ocultar",
+    "send": "Enviar",
+    "swap": "Intercambiar",
+    "withdraw": "Retirar",
+    "continueWithdraw": "Seguir con el retiro",
+    "faucet": "Conseguir tokens de prueba"
+  },
+  "sheet": {
+    "hide": "Ocultar tokens",
+    "send": "Enviar tokens ocultos",
+    "swap": "Intercambiar tokens ocultos",
+    "withdraw": "Retirar a tokens públicos",
+    "amount": "Monto",
+    "token": "Token",
+    "changeToken": "Tocá para cambiar",
+    "recipient": "Destinatario",
+    "recipientPlaceholder": "Dirección de devnet",
+    "recipientInvalid": "Ingresá otra dirección de devnet.",
+    "amountInvalid": "Ingresá un monto con hasta 2 decimales.",
+    "available": "Disponible",
+    "lastRevealed": "Último revelado",
+    "continue": "Continuar"
+  },
+  "warnings": {
+    "publicAmount": "El monto es público en Solana. Solo el saldo al que se suma queda oculto.",
+    "withdrawPublic": "El monto pasa a ser público. Si Encrypt falla, puede quedar trabado en devnet sin reembolso.",
+    "minimumCaveat": "Recibís al menos el mínimo, o no se mueve nada. Devnet todavía no hace cumplir el mínimo.",
+    "revealCost": "Revelar es una transacción y cuesta unos 0,0023 SOL de devnet de renta que no se devuelven.",
+    "sendOutcome": "Solo una revelación te dice si el monto se movió."
+  },
+  "review": {
+    "setup": "Activar {{token}}",
+    "wrap": "Ocultar {{token}}",
+    "reveal": "Revelar {{token}}",
+    "send": "Enviar {{token}}",
+    "swap": "Intercambiar {{tokenIn}} por {{tokenOut}}",
+    "unwrapBurn": "Retirar {{token}}, paso 1 de 3",
+    "unwrapDecrypt": "Retirar {{token}}, paso 2 de 3",
+    "unwrapComplete": "Retirar {{token}}, paso 3 de 3",
+    "amount": "Monto",
+    "owner": "Cuenta para",
+    "recipient": "Destinatario",
+    "minimum": "Mínimo a recibir",
+    "cost": "Costo",
+    "costValue": "1 transacción + unos 0,0023 SOL de renta",
+    "networkFee": "Comisión de red"
+  },
+  "receipt": {
+    "submitted": "Enviada. Encrypt la está procesando."
+  },
+  "pending": {
+    "title": "Enviando a la devnet de Solana"
+  },
+  "progress": {
+    "title": "En curso",
+    "empty": "Nada en curso",
+    "processing": "Procesando",
+    "done": "Encrypt terminó",
+    "unknown": "Resultado desconocido",
+    "unknownHint": "Revelá el saldo más tarde para ver qué pasó.",
+    "item": {
+      "setup": "Activar {{token}}",
+      "wrap": "Ocultar {{amount}} {{token}}",
+      "reveal": "Revelar {{token}}",
+      "send": "Enviar {{amount}} {{token}}",
+      "swap": "Intercambiar {{amount}} {{token}} por {{tokenOut}}",
+      "unwrapBurn": "Retirar {{amount}} {{token}}, paso 1",
+      "unwrapDecrypt": "Retirar {{token}}, paso 2",
+      "unwrapComplete": "Retirar {{token}}, paso 3"
+    }
+  },
+  "errors": {
+    "buildFailed": "No se pudo preparar la transacción. Probá de nuevo.",
+    "busy": "Encrypt está ocupado ahora. Probá de nuevo en un momento.",
+    "setupRequired": "Este token todavía no está activado en esta billetera.",
+    "balanceSettling": "Tu ocultamiento anterior todavía se está procesando. Probá de nuevo en un momento.",
+    "receiptNotFound": "Este retiro no puede continuar.",
+    "decryptionNotPosted": "El descifrado todavía no está publicado. Probá de nuevo en un momento.",
+    "wrapFailed": "No se pudo ocultar ese monto. Revisá que esta billetera tenga suficiente del token de prueba.",
+    "solShortfall": "Necesitás al menos {{needed}} SOL de devnet para comisiones y renta; esta billetera tiene {{have}}.",
+    "readFailed": "No se pudo leer el saldo oculto. Probá de nuevo.",
+    "positionsFailed": "No se pudieron leer las cuentas de Dagon de esta billetera. Probá de nuevo."
   }
 }
