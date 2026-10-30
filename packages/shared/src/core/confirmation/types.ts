@@ -127,6 +127,19 @@ export interface TransactionProposal {
   onOutcome?: (success: boolean) => void;
 }
 
+/**
+ * The Encrypt read authorization for one ciphertext, signed by a viewer key
+ * core generated and already discarded (spec 043 FR-044).
+ */
+export interface ReadAuthorization {
+  /** 43 bytes: chain, the ciphertext id, an empty key, the epoch (research R6). */
+  message: Uint8Array;
+  /** 64 bytes, ed25519 over `message`. */
+  signature: Uint8Array;
+  /** 32 bytes, the viewer's public key. */
+  signer: Uint8Array;
+}
+
 export interface SignedResult {
   /** The confirmed signature. */
   signature: string;

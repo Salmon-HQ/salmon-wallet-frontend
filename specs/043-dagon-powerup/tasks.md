@@ -50,10 +50,10 @@
 
 ## Phase 4: Signing, keys and read message (FR-041, FR-044)
 
-- [ ] T017 Failing tests in `packages/shared/src/core/signing/fresh-signers.test.ts` (new): `MAX_FRESH_SIGNERS === 1`; `generateFreshSigners(n)` returns `n` distinct signers whose private keys are non-extractable (`crypto.subtle.exportKey` rejects); `encodeReadMessage(ct)` equals the 43-byte layout `[0, 32, …32-byte id, 0, 0×8]` of `reference/encryptRead.ts:35-62` and `spike/probe.mjs:87`; `signReadMessage(viewer, ct)` returns `{ message, signature, signer }` whose signature verifies under `signer`; `signProposal(account, proposal, [k1])` passes `coSigners: [k1.address]` after the `expect` spread (an `expect` carrying `coSigners` at runtime cannot override it) and passes the signers to `signAndSendSolanaTransaction` (FR-041, FR-044)
-- [ ] T018 Implement `packages/shared/src/core/signing/fresh-signers.ts` (new): `MAX_FRESH_SIGNERS`, `generateFreshSigners`, `encodeReadMessage`, `signReadMessage` through `signBytesWith` (`blockchain/solana/signing.ts:90`) (FR-041, FR-044)
-- [ ] T019 Implement the optional third parameter `coSigners?` of `signProposal` in `packages/shared/src/core/signing/index.ts`; without it the object and call are identical to lines 29-32; `SignProposalFn` keeps its first two parameters (FR-043, FR-045)
-- [ ] T020 Run `core/signing/index.test.ts` untouched; shared tests green (FR-045)
+- [X] T017 Failing tests in `packages/shared/src/core/signing/fresh-signers.test.ts` (new): `MAX_FRESH_SIGNERS === 1`; `generateFreshSigners(n)` returns `n` distinct signers whose private keys are non-extractable (`crypto.subtle.exportKey` rejects); `encodeReadMessage(ct)` equals the 43-byte layout `[0, 32, …32-byte id, 0, 0×8]` of `reference/encryptRead.ts:35-62` and `spike/probe.mjs:87`; `signReadMessage(viewer, ct)` returns `{ message, signature, signer }` whose signature verifies under `signer`; `signProposal(account, proposal, [k1])` passes `coSigners: [k1.address]` after the `expect` spread (an `expect` carrying `coSigners` at runtime cannot override it) and passes the signers to `signAndSendSolanaTransaction` (FR-041, FR-044)
+- [X] T018 Implement `packages/shared/src/core/signing/fresh-signers.ts` (new): `MAX_FRESH_SIGNERS`, `generateFreshSigners`, `encodeReadMessage`, `signReadMessage` through `signBytesWith` (`blockchain/solana/signing.ts:90`) (FR-041, FR-044)
+- [X] T019 Implement the optional third parameter `coSigners?` of `signProposal` in `packages/shared/src/core/signing/index.ts`; without it the object and call are identical to lines 29-32; `SignProposalFn` keeps its first two parameters (FR-043, FR-045)
+- [X] T020 Run `core/signing/index.test.ts` untouched; shared tests green (FR-045)
 
 ## Phase 5: Confirmation, `requestFreshSignature` (FR-040..FR-045, SC-004, SC-005)
 

@@ -8,6 +8,7 @@
  */
 import { signAndSendSolanaTransaction } from '../broadcast';
 import type { SolanaBroadcaster } from '../broadcast';
+import type { TransactionPartialSigner } from '@solana/kit';
 
 import type { SignedResult, TransactionProposal } from '../confirmation/types';
 
@@ -20,16 +21,34 @@ import type { SignedResult, TransactionProposal } from '../confirmation/types';
  *
  * @param account - The signing account for the proposal's network.
  * @param proposal - The proposal the user confirmed.
+ * @param coSigners - Fresh keys core generated for this proposal (spec 043
+ *   FR-043). Their addresses are declared after the proposal's own `expect`,
+ *   so the transaction must be signed by exactly the payer and these keys,
+ *   and each signs after the blockhash swap, before the account.
  * @returns The confirmed signature.
  */
 export async function signProposal(
   account: SolanaBroadcaster,
-  proposal: TransactionProposal
+  proposal: TransactionProposal,
+  coSigners?: readonly TransactionPartialSigner[]
 ): Promise<SignedResult> {
-  const signature = await signAndSendSolanaTransaction(account, proposal.transaction, {
-    feePayer: String(account.signer.address),
-    ...proposal.expect,
-  });
+  if (coSigners === undefined) {
+    const signature = await signAndSendSolanaTransaction(account, proposal.transaction, {
+      feePayer: String(account.signer.address),
+      ...proposal.expect,
+    });
+    return { signature: String(signature) };
+  }
+  const signature = await signAndSendSolanaTransaction(
+    account,
+    proposal.transaction,
+    {
+      feePayer: String(account.signer.address),
+      ...proposal.expect,
+      coSigners: coSigners.map((signer) => String(signer.address)),
+    },
+    { coSigners }
+  );
   return { signature: String(signature) };
 }
 
