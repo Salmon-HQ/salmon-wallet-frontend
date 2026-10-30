@@ -28,6 +28,7 @@ const POWERUP_LOCALES = [
   ['payments', 'packages/shared/src/powerups/payments/locales'],
   ['swap', 'packages/shared/src/powerups/swap/locales'],
   ['skr', 'packages/shared/src/powerups/skr/locales'],
+  ['dagon', 'packages/shared/src/powerups/dagon/locales'],
 ];
 function loadLocale(lang) {
   const base = readJson(`packages/shared/src/locales/${lang}/translation.json`);

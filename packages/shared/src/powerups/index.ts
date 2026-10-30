@@ -28,3 +28,4 @@ export * from './memo';
 export * from './payments';
 export * from './swap';
 export * from './skr';
+export * from './dagon';

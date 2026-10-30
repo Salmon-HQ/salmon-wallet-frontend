@@ -1,0 +1,13 @@
+{
+  "catalog": {
+    "name": "Dagon (devnet preview)",
+    "description": "Hide, reveal and swap Dagon's test tokens on devnet",
+    "about": "A preview of Dagon, by Inkwell Finance, on Solana devnet. It moves Dagon's test tokens into a hidden balance kept by the Encrypt network, reveals that balance when you ask, and swaps one test token for the other. On devnet nothing is actually encrypted yet, and the tokens have no value.",
+    "usage": "Activate once, then hide test tokens, reveal a hidden balance or swap. Every operation is listed under In progress until Encrypt finishes it.",
+    "actions": {
+      "hide": "Move test tokens into a hidden balance",
+      "reveal": "Reveal a hidden balance, for a small devnet fee",
+      "swap": "Swap one hidden test token for the other"
+    }
+  }
+}

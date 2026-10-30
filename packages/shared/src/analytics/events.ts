@@ -93,7 +93,7 @@ export type Chain = (typeof CHAINS)[number];
  * stay closed and identical on the backend, and a build with Powerups compiled
  * out would derive an empty one. `events.test.ts` checks the registry against it.
  */
-export const POWERUP_IDS = ['swap', 'payments', 'memo', 'skr'] as const;
+export const POWERUP_IDS = ['swap', 'payments', 'memo', 'skr', 'dagon'] as const;
 
 /**
  * The only prop keys any event may carry. Values are further constrained by

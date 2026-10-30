@@ -1,0 +1,13 @@
+{
+  "catalog": {
+    "name": "Dagon (vista previa en devnet)",
+    "description": "Ocultá, revelá e intercambiá los tokens de prueba de Dagon en devnet",
+    "about": "Una vista previa de Dagon, de Inkwell Finance, en la devnet de Solana. Pasa los tokens de prueba de Dagon a un saldo oculto que guarda la red Encrypt, revela ese saldo cuando lo pedís e intercambia un token de prueba por el otro. En devnet todavía no se cifra nada de verdad y los tokens no tienen valor.",
+    "usage": "Activalo una vez y después ocultá tokens de prueba, revelá un saldo oculto o intercambiá. Cada operación queda en En curso hasta que Encrypt la termina.",
+    "actions": {
+      "hide": "Pasar tokens de prueba a un saldo oculto",
+      "reveal": "Revelar un saldo oculto, con una pequeña comisión de devnet",
+      "swap": "Intercambiar un token de prueba oculto por el otro"
+    }
+  }
+}

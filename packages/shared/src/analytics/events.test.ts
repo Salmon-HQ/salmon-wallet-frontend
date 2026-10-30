@@ -46,7 +46,7 @@ describe('analytics catalog', () => {
   });
 
   it('lists the Powerup ids the powerup prop may hold', () => {
-    expect(POWERUP_IDS).toEqual(['swap', 'payments', 'memo', 'skr']);
+    expect(POWERUP_IDS).toEqual(['swap', 'payments', 'memo', 'skr', 'dagon']);
   });
 
   // A new Powerup that forgets this list would throw in development and be

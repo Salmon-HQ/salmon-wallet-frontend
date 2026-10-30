@@ -35,6 +35,15 @@ describe('describeDisclosure — generated from the manifest, never written', ()
     );
   });
 
+  // Spec 043 FR-004: the device reads devnet.json and the Encrypt executor, nothing else.
+  it('dagon declares exactly the executor host and raw.githubusercontent.com', () => {
+    const dagon = POWERUPS.find((manifest) => manifest.id === 'dagon');
+    expect(dagon?.endpoints).toEqual([
+      'https://pre-alpha-dev-1.encrypt.ika-network.net',
+      'https://raw.githubusercontent.com',
+    ]);
+  });
+
   it('every registered manifest yields at least one line', () => {
     for (const manifest of POWERUPS) {
       expect(describeDisclosure(manifest).length).toBeGreaterThan(0);
