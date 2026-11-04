@@ -72,7 +72,11 @@ jest.mock('../../../hooks/useKeyboardHeight', () => ({ useKeyboardLift: () => ({
 jest.mock('../../icons', () => ({
   CaretRightIcon: () => null,
   LockIcon: () => null,
-  iconSize: { sm: 12, md: 16 },
+  ArrowDownIcon: () => null,
+  ArrowUpIcon: () => null,
+  ArrowUpRightIcon: () => null,
+  ArrowsLeftRightIcon: () => null,
+  iconSize: { sm: 12, md: 16, lg: 20 },
 }));
 jest.mock('../WarningNotice', () => ({
   WarningNotice: ({
@@ -153,7 +157,9 @@ import { DagonScreen } from './DagonScreen';
 
 const card = (side: string, disabled = false) => ({
   side,
-  title: `dagon.tokens.${side}`,
+  title: side,
+  name: `dagon.tokens.${side}`,
+  privateName: 'dagon.card.privateName',
   publicBalance: '1000.00',
   hidden: { value: 'dagon.card.sealed', sealed: true },
   handle: '82e8·9fab',

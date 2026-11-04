@@ -20,9 +20,17 @@ import {
 } from '@salmon/shared';
 import { useDagonScreenLogic } from '@salmon/shared/powerups';
 
-import { LockIcon, iconSize } from '../../icons';
+import {
+  ArrowDownIcon,
+  ArrowUpIcon,
+  ArrowUpRightIcon,
+  ArrowsLeftRightIcon,
+  LockIcon,
+  iconSize,
+} from '../../icons';
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { PrimaryButton, SecondaryButton, TextButton } from '../Button';
+import { Card } from '../Card';
 import { FactsCard } from '../FactsCard';
 import { IconBubble } from '../IconBubble';
 import { ListRow } from '../ListRow';
@@ -36,6 +44,14 @@ import type { DagonScreenProps } from './types';
 
 const GLYPH = { USDC: '$', DOGE: 'Ð' } as const;
 
+const ACTION_ICON = {
+  hide: ArrowDownIcon,
+  send: ArrowUpRightIcon,
+  swap: ArrowsLeftRightIcon,
+  withdraw: ArrowUpIcon,
+  continueWithdraw: ArrowUpIcon,
+} as const;
+
 export function DagonScreen({
   style,
   sheetHeight,
@@ -45,7 +61,7 @@ export function DagonScreen({
   const logic = useDagonScreenLogic(logicParams);
   const { progress } = logic;
   const styles = useThemedStyles(stylesFor);
-  const { text } = useSemantic();
+  const { text, accent } = useSemantic();
 
   return (
     <ScrollView
@@ -90,7 +106,7 @@ export function DagonScreen({
           )}
 
           {logic.summary && (
-            <View style={styles.summary} testID="dagon-summary">
+            <View style={styles.inline} testID="dagon-summary">
               <LockIcon size={iconSize.sm} color={text.secondary} />
               <Text style={styles.caption}>{logic.summary}</Text>
             </View>
@@ -98,17 +114,24 @@ export function DagonScreen({
 
           {logic.actions.length > 0 && (
             <View style={styles.actions} testID="dagon-actions">
-              {logic.actions.map((action, index) => {
-                const Button = index === 0 ? PrimaryButton : SecondaryButton;
+              {logic.actions.map((action) => {
+                const Glyph = ACTION_ICON[action.key];
                 return (
-                  <View key={action.key} style={styles.action}>
-                    <Button
-                      testID={`dagon-action-${action.key}`}
-                      onPress={() => void action.onPress()}
-                    >
+                  <Card
+                    key={action.key}
+                    testID={`dagon-action-${action.key}`}
+                    onPress={() => void action.onPress()}
+                    accessibilityRole="button"
+                    accessibilityLabel={action.label}
+                    padding="md"
+                    radius="xl"
+                    style={styles.action}
+                  >
+                    <Glyph size={iconSize.lg} color={accent.ink} />
+                    <Text style={styles.actionLabel} numberOfLines={1} adjustsFontSizeToFit>
                       {action.label}
-                    </Button>
-                  </View>
+                    </Text>
+                  </Card>
                 );
               })}
             </View>
@@ -136,6 +159,7 @@ export function DagonScreen({
                     </IconBubble>
                   }
                   title={card.title}
+                  subtitle={card.name}
                   trailing={<Text style={styles.amount}>{card.publicBalance}</Text>}
                 />
               ))}
@@ -144,26 +168,38 @@ export function DagonScreen({
 
           {logic.cards.length > 0 && (
             <View style={styles.group}>
-              <SectionLabel variant="caps">{logic.sections.private}</SectionLabel>
+              <View style={styles.inline}>
+                <LockIcon size={iconSize.sm} color={accent.ink} />
+                <SectionLabel variant="caps" style={styles.privateLabel}>
+                  {logic.sections.private}
+                </SectionLabel>
+              </View>
               {logic.cards.map((card) => (
                 <View key={card.side} style={styles.group} testID={`dagon-card-${card.side}`}>
                   <ListRow
                     leading={
                       <IconBubble size={40} tone="accent-tint">
-                        <Text style={[styles.glyph, styles.glyphPrivate]}>{GLYPH[card.side]}</Text>
+                        <Text style={[styles.glyph, styles.accentText]}>{GLYPH[card.side]}</Text>
                       </IconBubble>
                     }
                     title={card.title}
                     subtitle={
-                      [card.handle, card.detail?.tone === 'secondary' ? card.detail.text : null]
-                        .filter(Boolean)
-                        .join(' · ') || undefined
+                      card.detail?.tone === 'secondary'
+                        ? `${card.privateName} · ${card.detail.text}`
+                        : card.privateName
                     }
                     trailing={
-                      <View style={styles.privateTrailing}>
-                        <Text style={card.hidden.sealed ? styles.sealed : styles.amount}>
-                          {card.hidden.value}
-                        </Text>
+                      <View style={styles.inline}>
+                        <View style={styles.sealedColumn}>
+                          {card.handle && (
+                            <Text style={styles.handle} numberOfLines={1}>
+                              {card.handle}
+                            </Text>
+                          )}
+                          <Text style={card.hidden.sealed ? styles.caption : styles.amount}>
+                            {card.hidden.value}
+                          </Text>
+                        </View>
                         <TextButton
                           testID={`dagon-reveal-${card.side}`}
                           onPress={() => void card.reveal.onPress()}
@@ -224,7 +260,7 @@ const stylesFor = (t: Semantic) =>
     group: {
       gap: vs(spacing.md),
     },
-    summary: {
+    inline: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: s(spacing.sm),
@@ -235,6 +271,28 @@ const stylesFor = (t: Semantic) =>
     },
     action: {
       flex: 1,
+      alignItems: 'center',
+      gap: vs(spacing.sm),
+    },
+    actionLabel: {
+      fontFamily: fontFamilyNative.bold,
+      fontSize: s(fontSize.body),
+      color: t.text.primary,
+    },
+    privateLabel: {
+      color: t.accent.ink,
+    },
+    accentText: {
+      color: t.accent.ink,
+    },
+    handle: {
+      fontFamily: fontFamilyNative.bold,
+      fontSize: s(fontSize.body),
+      color: t.accent.ink,
+    },
+    sealedColumn: {
+      alignItems: 'flex-end',
+      gap: vs(spacing.xxs),
     },
     caption: {
       fontFamily: fontFamilyNative.medium,
@@ -247,22 +305,10 @@ const stylesFor = (t: Semantic) =>
       fontSize: s(fontSize.bodyLg),
       color: t.text.primary,
     },
-    glyphPrivate: {
-      color: t.accent.ink,
-    },
     amount: {
       fontFamily: fontFamilyNative.bold,
       fontSize: s(fontSize.bodyLg),
       color: t.text.primary,
-    },
-    sealed: {
-      fontFamily: fontFamilyNative.medium,
-      fontSize: s(fontSize.body),
-      color: t.text.secondary,
-    },
-    privateTrailing: {
-      alignItems: 'flex-end',
-      gap: vs(spacing.xxs),
     },
   });
 

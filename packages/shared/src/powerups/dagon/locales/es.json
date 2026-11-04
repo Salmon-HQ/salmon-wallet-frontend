@@ -28,7 +28,8 @@
     "outOfDate": "Puede estar desactualizado",
     "reveal": "Revelar",
     "readFailed": "No se pudo leer el saldo. Tocá Revelar para reintentar.",
-    "sealed": "Sellado"
+    "sealed": "Sellado",
+    "privateName": "{{token}} privado"
   },
   "summary_one": "{{count}} saldo privado sellado",
   "summary_other": "{{count}} saldos privados sellados",

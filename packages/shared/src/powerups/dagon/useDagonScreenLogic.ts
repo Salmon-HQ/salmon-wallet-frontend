@@ -123,12 +123,17 @@ export interface UseDagonScreenLogicParams {
 
 export interface DagonCardView {
   side: Side;
+  /** The token symbol, as the row title. */
   title: string;
+  /** The mock token's name, under a public row's title. */
+  name: string;
+  /** The same token as a private balance, under a private row's title. */
+  privateName: string;
   /** Mock tokens in the wallet's plain token account, ready to hide. */
   publicBalance: string;
   /** The last revealed amount, or "sealed" until a reveal reads one. */
   hidden: { value: string; sealed: boolean };
-  /** Short form of the balance ciphertext's digest; null before the first write. */
+  /** Short form of the balance ciphertext's account address; null before activation. */
   handle: string | null;
   detail: { text: string; tone: 'secondary' | 'danger' } | null;
   reveal: { label: string; onPress: () => Promise<void>; disabled: boolean };
@@ -934,7 +939,7 @@ export function useDagonScreenLogic({
         const revealed = account.revealed[each];
         const owed = owedRead(each);
         const ciphertext = positions?.sides[each];
-        const digest = ciphertext && !ciphertext.zeroDigest ? ciphertext.digest : null;
+        const handle = ciphertext?.balanceCt ?? null;
         let detail: DagonCardView['detail'] = null;
         if (owed?.readFailed) {
           detail = { text: t('dagon.card.readFailed'), tone: 'danger' };
@@ -949,12 +954,14 @@ export function useDagonScreenLogic({
         }
         return {
           side: each,
-          title: tokenName(each),
+          title: each,
+          name: tokenName(each),
+          privateName: t('dagon.card.privateName', { token: tokenName(each) }),
           publicBalance: formatDagonAmount(ciphertext?.publicBalance ?? 0n),
           hidden: revealed
             ? { value: formatDagonAmount(revealed.amount), sealed: false }
             : { value: t('dagon.card.sealed'), sealed: true },
-          handle: digest ? `${digest.slice(0, 4)}·${digest.slice(-4)}` : null,
+          handle: handle ? `${handle.slice(0, 4)}·${handle.slice(-4)}` : null,
           detail,
           reveal: {
             label: t('dagon.card.reveal'),

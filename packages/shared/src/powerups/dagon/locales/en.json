@@ -28,7 +28,8 @@
     "outOfDate": "May be out of date",
     "reveal": "Reveal",
     "readFailed": "Could not read the balance. Tap Reveal to try again.",
-    "sealed": "Sealed"
+    "sealed": "Sealed",
+    "privateName": "Private {{token}}"
   },
   "summary_one": "{{count}} private balance sealed",
   "summary_other": "{{count}} private balances sealed",

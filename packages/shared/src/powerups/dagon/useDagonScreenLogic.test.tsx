@@ -434,7 +434,8 @@ describe('useDagonScreenLogic — reveal (SC-003, US3)', () => {
       sealed: true,
     });
     expect(view.result.current.summary).toBe('dagon.summary');
-    expect(view.result.current.cards[0].handle).toBe('0101·0101');
+    expect(view.result.current.cards[0].handle).toBe(`${CT_USDC.slice(0, 4)}·${CT_USDC.slice(-4)}`);
+    expect(view.result.current.cards[1].handle).not.toBe(view.result.current.cards[0].handle);
     await act(async () => view.result.current.cards[0].reveal.onPress());
     expect(core.request.mock.calls[0][0]).toMatchObject({ count: 1, viewer: true });
     expect(build.mock.calls[0][2]).toEqual({
