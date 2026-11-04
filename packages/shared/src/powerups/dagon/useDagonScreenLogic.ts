@@ -124,7 +124,13 @@ export interface UseDagonScreenLogicParams {
 export interface DagonCardView {
   side: Side;
   title: string;
-  rows: FactsCardRow[];
+  /** Mock tokens in the wallet's plain token account, ready to hide. */
+  publicBalance: string;
+  /** The last revealed amount, or "sealed" until a reveal reads one. */
+  hidden: { value: string; sealed: boolean };
+  /** Short form of the balance ciphertext's digest; null before the first write. */
+  handle: string | null;
+  detail: { text: string; tone: 'secondary' | 'danger' } | null;
   reveal: { label: string; onPress: () => Promise<void>; disabled: boolean };
 }
 
@@ -180,6 +186,9 @@ export interface UseDagonScreenLogicResult {
   /** First visit: the one action offered (FR-021); null once activated. */
   activate: { label: string; body: string; onPress: () => Promise<void>; loading: boolean } | null;
   cards: DagonCardView[];
+  /** "2 private balances sealed"; null once every balance is revealed. */
+  summary: string | null;
+  sections: { public: string; private: string; footer: string };
   actions: DagonActionView[];
   faucet: { label: string; url: string } | null;
   progress: { title: string; empty: string; items: DagonProgressItem[] };
@@ -924,41 +933,29 @@ export function useDagonScreenLogic({
     ? SIDES.map((each) => {
         const revealed = account.revealed[each];
         const owed = owedRead(each);
-        const rows: FactsCardRow[] = [
-          {
-            key: 'public',
-            label: t('dagon.card.public'),
-            value: formatDagonAmount(positions?.sides[each].publicBalance ?? 0n),
-          },
-          {
-            key: 'hidden',
-            label: t('dagon.card.hidden'),
-            value: revealed ? formatDagonAmount(revealed.amount) : t('dagon.card.notRevealed'),
-            valueTone: revealed ? 'primary' : 'secondary',
-          },
-        ];
-        if (revealed) {
-          rows.push({
-            key: 'readAt',
-            label: t('dagon.card.revealedAt', {
-              time: new Date(revealed.readAt).toLocaleTimeString(),
-            }),
-            value: isOutOfDate(account, each) ? t('dagon.card.outOfDate') : '',
-            valueTone: 'secondary',
-          });
-        }
+        const ciphertext = positions?.sides[each];
+        const digest = ciphertext && !ciphertext.zeroDigest ? ciphertext.digest : null;
+        let detail: DagonCardView['detail'] = null;
         if (owed?.readFailed) {
-          rows.push({
-            key: 'readFailed',
-            label: '',
-            value: t('dagon.card.readFailed'),
-            valueTone: 'danger',
+          detail = { text: t('dagon.card.readFailed'), tone: 'danger' };
+        } else if (revealed) {
+          const readAt = t('dagon.card.revealedAt', {
+            time: new Date(revealed.readAt).toLocaleTimeString(),
           });
+          detail = {
+            text: isOutOfDate(account, each) ? `${readAt} · ${t('dagon.card.outOfDate')}` : readAt,
+            tone: 'secondary',
+          };
         }
         return {
           side: each,
           title: tokenName(each),
-          rows,
+          publicBalance: formatDagonAmount(ciphertext?.publicBalance ?? 0n),
+          hidden: revealed
+            ? { value: formatDagonAmount(revealed.amount), sealed: false }
+            : { value: t('dagon.card.sealed'), sealed: true },
+          handle: digest ? `${digest.slice(0, 4)}·${digest.slice(-4)}` : null,
+          detail,
           reveal: {
             label: t('dagon.card.reveal'),
             onPress: () => reveal(each),
@@ -967,6 +964,8 @@ export function useDagonScreenLogic({
         };
       })
     : [];
+  const sealedCount = cards.filter((each) => each.hidden.sealed).length;
+  const summary = sealedCount > 0 ? t('dagon.summary', { count: sealedCount }) : null;
 
   const actions: DagonActionView[] = [];
   if (activated) {
@@ -1059,6 +1058,12 @@ export function useDagonScreenLogic({
           }
         : null,
     cards,
+    summary,
+    sections: {
+      public: t('dagon.sections.public'),
+      private: t('dagon.sections.private'),
+      footer: t('dagon.sections.footer'),
+    },
     actions,
     faucet: config?.faucetUrl ? { label: t('dagon.actions.faucet'), url: config.faucetUrl } : null,
     progress: { title: t('dagon.progress.title'), empty: t('dagon.progress.empty'), items },

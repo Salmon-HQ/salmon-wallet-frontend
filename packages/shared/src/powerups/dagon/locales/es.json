@@ -1,6 +1,6 @@
 {
   "catalog": {
-    "name": "Dagon (vista previa en devnet)",
+    "name": "Saldo privado",
     "description": "Ocultá, revelá e intercambiá los tokens de prueba de Dagon en devnet",
     "about": "Una vista previa de Dagon, de Inkwell Finance, en la devnet de Solana. Pasa los tokens de prueba de Dagon a un saldo oculto que guarda la red Encrypt, revela ese saldo cuando lo pedís e intercambia un token de prueba por el otro. En devnet todavía no se cifra nada de verdad y los tokens no tienen valor.",
     "usage": "Activalo una vez y después ocultá tokens de prueba, revelá un saldo oculto o intercambiá. Cada operación queda en En curso hasta que Encrypt la termina.",
@@ -12,7 +12,7 @@
   },
   "notice": {
     "title": "Vista previa en devnet",
-    "body": "Los montos todavía no se cifran de verdad, y estos tokens de prueba no tienen valor."
+    "body": "Los tokens son de prueba y no tienen valor. La red de Encrypt todavía no cifra los saldos de verdad."
   },
   "unavailable": {
     "title": "Dagon no está disponible ahora",
@@ -24,13 +24,18 @@
     "body": "Activar crea una cuenta de Dagon por cada token de prueba: una confirmación por cada una."
   },
   "card": {
-    "public": "Saldo público",
-    "hidden": "Saldo oculto",
-    "notRevealed": "Todavía sin revelar",
     "revealedAt": "Leído a las {{time}}",
     "outOfDate": "Puede estar desactualizado",
     "reveal": "Revelar",
-    "readFailed": "No se pudo leer el saldo. Tocá Revelar para reintentar."
+    "readFailed": "No se pudo leer el saldo. Tocá Revelar para reintentar.",
+    "sealed": "Sellado"
+  },
+  "summary_one": "{{count}} saldo privado sellado",
+  "summary_other": "{{count}} saldos privados sellados",
+  "sections": {
+    "public": "Públicos",
+    "private": "Saldos privados",
+    "footer": "Para revelar un saldo, tu billetera firma una transacción en devnet y el servidor de Encrypt te devuelve el monto."
   },
   "tokens": {
     "USDC": "USDC de prueba",

@@ -69,7 +69,11 @@ jest.mock('../../../hooks/useBottomSheetChrome', () => ({
   useBottomSheetChrome: () => ({ actionRowBottomPadding: 0, spaciousContentBottomPadding: 0 }),
 }));
 jest.mock('../../../hooks/useKeyboardHeight', () => ({ useKeyboardLift: () => ({}) }));
-jest.mock('../../icons', () => ({ CaretRightIcon: () => null, iconSize: { md: 16 } }));
+jest.mock('../../icons', () => ({
+  CaretRightIcon: () => null,
+  LockIcon: () => null,
+  iconSize: { sm: 12, md: 16 },
+}));
 jest.mock('../WarningNotice', () => ({
   WarningNotice: ({
     title,
@@ -101,6 +105,12 @@ const fresh = () => ({
   },
   activate: null as null | { label: string; body: string; onPress: jest.Mock; loading: boolean },
   cards: [] as unknown[],
+  summary: null as string | null,
+  sections: {
+    public: 'dagon.sections.public',
+    private: 'dagon.sections.private',
+    footer: 'dagon.sections.footer',
+  },
   actions: [] as { key: string; label: string; onPress: jest.Mock }[],
   faucet: null as null | { label: string; url: string },
   progress: {
@@ -144,15 +154,16 @@ import { DagonScreen } from './DagonScreen';
 const card = (side: string, disabled = false) => ({
   side,
   title: `dagon.tokens.${side}`,
-  rows: [
-    { key: 'public', label: 'dagon.card.public', value: '1000.00' },
-    { key: 'hidden', label: 'dagon.card.hidden', value: 'dagon.card.notRevealed' },
-  ],
+  publicBalance: '1000.00',
+  hidden: { value: 'dagon.card.sealed', sealed: true },
+  handle: '82e8·9fab',
+  detail: null as null | { text: string; tone: 'secondary' | 'danger' },
   reveal: { label: 'dagon.card.reveal', onPress: jest.fn(), disabled },
 });
 
 const activated = () => {
   mockLogic.cards = [card('USDC'), card('DOGE')];
+  mockLogic.summary = 'dagon.summary';
   mockLogic.actions = [
     { key: 'hide', label: 'dagon.actions.hide', onPress: jest.fn() },
     { key: 'swap', label: 'dagon.actions.swap', onPress: jest.fn() },
@@ -203,7 +214,7 @@ describe('DagonScreen', () => {
     expect(mockLogic.unavailable.onRetry).toHaveBeenCalled();
   });
 
-  it('draws the cards, the actions and In progress, in that order (FR-020)', () => {
+  it('draws the summary, the actions, the public and private balances and In progress, in that order (FR-020)', () => {
     activated();
     mockLogic.progress.items = [
       {
@@ -214,14 +225,19 @@ describe('DagonScreen', () => {
       },
     ];
     renderScreen();
-    expect(screen.getAllByText('dagon.card.notRevealed')).toHaveLength(2);
+    expect(screen.getAllByText('dagon.card.sealed')).toHaveLength(2);
     expect(screen.getAllByText('1000.00')).toHaveLength(2);
+    expect(screen.getAllByText('82e8·9fab')).toHaveLength(2);
+    expect(screen.getByText('dagon.sections.footer')).toBeTruthy();
     expect(screen.getByText('dagon.progress.processing')).toBeTruthy();
     const order = [
       'dagon-notice',
+      'dagon-summary',
+      'dagon-actions',
+      'dagon-public-USDC',
+      'dagon-public-DOGE',
       'dagon-card-USDC',
       'dagon-card-DOGE',
-      'dagon-actions',
       'dagon-progress',
     ];
     const json = JSON.stringify(screen.toJSON());
@@ -290,14 +306,12 @@ describe('DagonScreen', () => {
     expect(mockLogic.sheet.submit.onPress).toHaveBeenCalled();
   });
 
-  // FR-005, SC-002: the owner's rule, checked on both locales.
-  it('never says "private" in either language', () => {
-    const strings = (node: unknown): string[] =>
-      typeof node === 'string'
-        ? [node]
-        : Object.values(node as Record<string, unknown>).flatMap(strings);
-    for (const text of [...strings(en), ...strings(es)]) {
-      expect(text).not.toMatch(/privad|privacidad|private/i);
-    }
+  // FR-005, SC-002: the tab is called "Private Balance" (owner, 2026-11-04), so
+  // the devnet notice has to say, in both languages, that nothing is encrypted yet.
+  it('names the tab Private Balance and keeps the not-encrypted notice', () => {
+    expect(en.catalog.name).toBe('Private Balance');
+    expect(es.catalog.name).toBe('Saldo privado');
+    expect(en.notice.body).toMatch(/does not actually encrypt/);
+    expect(es.notice.body).toMatch(/todavía no cifra/);
   });
 });

@@ -1,6 +1,6 @@
 {
   "catalog": {
-    "name": "Dagon (devnet preview)",
+    "name": "Private Balance",
     "description": "Hide, reveal and swap Dagon's test tokens on devnet",
     "about": "A preview of Dagon, by Inkwell Finance, on Solana devnet. It moves Dagon's test tokens into a hidden balance kept by the Encrypt network, reveals that balance when you ask, and swaps one test token for the other. On devnet nothing is actually encrypted yet, and the tokens have no value.",
     "usage": "Activate once, then hide test tokens, reveal a hidden balance or swap. Every operation is listed under In progress until Encrypt finishes it.",
@@ -12,7 +12,7 @@
   },
   "notice": {
     "title": "Devnet preview",
-    "body": "Amounts are not actually encrypted yet, and these test tokens have no value."
+    "body": "These are test tokens with no value. Encrypt's network does not actually encrypt balances yet."
   },
   "unavailable": {
     "title": "Dagon is unavailable right now",
@@ -24,13 +24,18 @@
     "body": "Activating sets up one Dagon account per test token: one confirmation each."
   },
   "card": {
-    "public": "Public balance",
-    "hidden": "Hidden balance",
-    "notRevealed": "Not revealed yet",
     "revealedAt": "Read at {{time}}",
     "outOfDate": "May be out of date",
     "reveal": "Reveal",
-    "readFailed": "Could not read the balance. Tap Reveal to try again."
+    "readFailed": "Could not read the balance. Tap Reveal to try again.",
+    "sealed": "Sealed"
+  },
+  "summary_one": "{{count}} private balance sealed",
+  "summary_other": "{{count}} private balances sealed",
+  "sections": {
+    "public": "Public",
+    "private": "Private balances",
+    "footer": "To reveal a balance, your wallet signs a devnet transaction and Encrypt's server returns the amount."
   },
   "tokens": {
     "USDC": "Mock USDC",

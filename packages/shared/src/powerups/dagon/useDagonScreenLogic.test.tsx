@@ -429,9 +429,12 @@ describe('useDagonScreenLogic — reveal (SC-003, US3)', () => {
     const proposals = confirmingCore({ readAuthorization: AUTH });
     const view = setup();
     await ready(view);
-    expect(view.result.current.cards[0].rows.find((row) => row.key === 'hidden')?.value).toBe(
-      'dagon.card.notRevealed'
-    );
+    expect(view.result.current.cards[0].hidden).toEqual({
+      value: 'dagon.card.sealed',
+      sealed: true,
+    });
+    expect(view.result.current.summary).toBe('dagon.summary');
+    expect(view.result.current.cards[0].handle).toBe('0101·0101');
     await act(async () => view.result.current.cards[0].reveal.onPress());
     expect(core.request.mock.calls[0][0]).toMatchObject({ count: 1, viewer: true });
     expect(build.mock.calls[0][2]).toEqual({
@@ -449,9 +452,7 @@ describe('useDagonScreenLogic — reveal (SC-003, US3)', () => {
     await waitFor(() => expect(readBalance).toHaveBeenCalledTimes(1), { timeout: POLL_MS * 3 });
     expect(readBalance).toHaveBeenCalledWith(CONFIG.encryptGrpcUrl, AUTH);
     await waitFor(() =>
-      expect(view.result.current.cards[0].rows.find((row) => row.key === 'hidden')?.value).toBe(
-        '42.00'
-      )
+      expect(view.result.current.cards[0].hidden).toEqual({ value: '42.00', sealed: false })
     );
   });
 
@@ -478,7 +479,7 @@ describe('useDagonScreenLogic — reveal (SC-003, US3)', () => {
     await act(async () => view.result.current.cards[0].reveal.onPress());
     await waitFor(() => expect(readBalance).toHaveBeenCalledTimes(1), { timeout: POLL_MS * 3 });
     await waitFor(() =>
-      expect(view.result.current.cards[0].rows.some((row) => row.key === 'readFailed')).toBe(true)
+      expect(view.result.current.cards[0].detail?.tone).toBe('danger')
     );
     await act(async () => view.result.current.cards[0].reveal.onPress());
     expect(core.request).toHaveBeenCalledTimes(1);
