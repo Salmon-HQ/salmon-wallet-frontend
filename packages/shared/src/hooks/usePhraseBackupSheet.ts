@@ -19,6 +19,7 @@ import type { PhraseBackupSheetPropsBase } from '../types/ui/phrase-backup-sheet
 import { getAccountMnemonic } from '../utils/account-secret';
 import { buildPhraseQuiz, type PhraseQuizQuestion } from '../utils/phrase-quiz';
 import { usePasswordConfirm, type PasswordConfirmState } from './usePasswordConfirm';
+import { useSecretCopied } from './useSecretCopied';
 
 export type PhraseBackupStep = 'intro' | 'password' | 'phrase' | 'quiz';
 
@@ -39,6 +40,12 @@ export interface UsePhraseBackupSheetResult {
   questionIndex: number;
   questionCount: number;
   password: PasswordConfirmState;
+  /** The phrase step's copy button: "Hold to copy", or the countdown to the clear. */
+  copyLabel: string;
+  /** A copy is on the clipboard; no second one until it is cleared. */
+  copyLocked: boolean;
+  /** Copies the phrase with the platform's clearing clipboard, then counts down. */
+  copyPhrase: (write: (phrase: string) => Promise<unknown>) => Promise<void>;
   /** Intro's continue: biometrics when the device has them, else the password. */
   start: () => Promise<void>;
   /** "I wrote it down": on to the questions. */
@@ -59,6 +66,7 @@ export function usePhraseBackupSheet({
   const [quiz, setQuiz] = useState<PhraseQuizQuestion[]>([]);
   const [questionIndex, setQuestionIndex] = useState(0);
   const visible = sheet !== null;
+  const { secondsLeft, markCopied } = useSecretCopied();
 
   useEffect(() => {
     if (visible) {
@@ -145,6 +153,15 @@ export function usePhraseBackupSheet({
     questionIndex,
     questionCount: quiz.length,
     password,
+    copyLabel:
+      secondsLeft === null
+        ? t('wallet.create.hold_to_copy')
+        : t('wallet.create.copied_clears', { seconds: secondsLeft }),
+    copyLocked: secondsLeft !== null,
+    copyPhrase: async (write) => {
+      await write(words.join(' '));
+      markCopied();
+    },
     start,
     phraseSeen,
     choose,

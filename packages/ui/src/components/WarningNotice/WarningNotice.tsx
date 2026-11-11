@@ -25,6 +25,7 @@ export function WarningNotice({
   title,
   children,
   action,
+  actionPlacement = 'below',
   style,
   className,
   testID,
@@ -63,8 +64,13 @@ export function WarningNotice({
       <div style={{ flex: 1, minWidth: 0 }}>
         <span style={titleStyle(accent)}>{title}</span>
         {children != null && <div style={bodyStyle(t)}>{children}</div>}
-        {action != null && <div style={{ marginTop: 6, alignSelf: 'flex-start' }}>{action}</div>}
+        {action != null && actionPlacement === 'below' && (
+          <div style={{ marginTop: 6, alignSelf: 'flex-start' }}>{action}</div>
+        )}
       </div>
+      {action != null && actionPlacement === 'trailing' && (
+        <div style={{ flexShrink: 0, alignSelf: 'center' }}>{action}</div>
+      )}
     </div>
   );
 }

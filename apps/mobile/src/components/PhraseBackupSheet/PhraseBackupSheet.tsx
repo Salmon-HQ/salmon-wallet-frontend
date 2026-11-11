@@ -24,8 +24,9 @@ import {
   type Semantic,
 } from '@salmon/shared';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
+import { secretClipboard } from '../../../hooks/useSecretClipboard';
 import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
-import { PrimaryButton, SecondaryButton } from '../Button';
+import { HoldToCopyButton, PrimaryButton, SecondaryButton } from '../Button';
 import { Card } from '../Card';
 import { PasswordInput } from '../PasswordInput';
 import { SeedWordGrid } from '../SeedPhrase';
@@ -107,6 +108,15 @@ export function PhraseBackupSheet(props: PhraseBackupSheetProps) {
             >
               {t('actions.continue')}
             </PrimaryButton>
+          )}
+          {step === 'phrase' && (
+            <HoldToCopyButton
+              onCopy={() => sheet.copyPhrase((phrase) => secretClipboard.copy(phrase))}
+              disabled={sheet.copyLocked}
+              testID="phrase-check-copy"
+            >
+              {sheet.copyLabel}
+            </HoldToCopyButton>
           )}
           {step === 'phrase' && (
             <PrimaryButton onPress={sheet.phraseSeen} testID="phrase-check-phrase-seen">

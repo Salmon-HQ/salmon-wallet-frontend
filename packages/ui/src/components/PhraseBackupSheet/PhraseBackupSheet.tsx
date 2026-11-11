@@ -15,7 +15,9 @@ import { fontFamily, fontSize, lineHeight, spacing, usePhraseBackupSheet } from 
 
 import { useSemantic } from '../../theme/ThemeProvider';
 import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
+import { secretClipboard } from '../../hooks/useSecretClipboard';
 import { PrimaryButton, SecondaryButton } from '../Button';
+import { HoldToApproveButton } from '../HoldToApproveButton';
 import { Card } from '../Card';
 import { PasswordInput } from '../PasswordInput';
 import { SeedWordGrid } from '../SeedPhrase';
@@ -117,6 +119,16 @@ export function PhraseBackupSheet(props: PhraseBackupSheetProps): React.ReactEle
             >
               {t('actions.continue')}
             </PrimaryButton>
+          )}
+          {step === 'phrase' && (
+            <HoldToApproveButton
+              onApprove={() => sheet.copyPhrase((phrase) => secretClipboard.copy(phrase))}
+              disabled={sheet.copyLocked}
+              variant="secondary"
+              testID="phrase-check-copy"
+            >
+              {sheet.copyLabel}
+            </HoldToApproveButton>
           )}
           {step === 'phrase' && (
             <PrimaryButton onPress={sheet.phraseSeen} testID="phrase-check-phrase-seen">

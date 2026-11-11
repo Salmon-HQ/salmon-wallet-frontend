@@ -82,6 +82,7 @@ export function PortfolioColumn({
           <WarningNotice
             tone="warning"
             title={t('phrase_check.reminder_title')}
+            actionPlacement="trailing"
             action={
               <TextButton onPress={phraseBackup.openBackup} testID="phrase-reminder-open">
                 {t('phrase_check.reminder_action')}

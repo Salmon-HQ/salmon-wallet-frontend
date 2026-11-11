@@ -43,6 +43,9 @@ function sheetAt(step: UsePhraseBackupSheetResult['step'], extra = {}): UsePhras
       setPassword: vi.fn(),
       confirm: vi.fn(),
     },
+    copyLabel: 'wallet.create.hold_to_copy',
+    copyLocked: false,
+    copyPhrase: vi.fn(async () => {}),
     start: vi.fn(async () => {}),
     phraseSeen: vi.fn(),
     choose: vi.fn(async () => {}),
@@ -93,6 +96,13 @@ describe('PhraseBackupSheet (DOM)', () => {
     expect(screen.getByText('message-phrase')).toBeTruthy();
     fireEvent.click(screen.getByTestId('phrase-check-phrase-seen'));
     expect(sheet.phraseSeen).toHaveBeenCalled();
+  });
+
+  it('offers the copy on the phrase step, held while the countdown runs', () => {
+    render(sheetAt('phrase', { copyLocked: true, copyLabel: 'counting' }));
+    const copy = screen.getByTestId('phrase-check-copy') as HTMLButtonElement;
+    expect(copy.disabled).toBe(true);
+    expect(screen.getAllByText('counting').length).toBeGreaterThan(0);
   });
 
   it('offers the four words of a question and answers with the one chosen', () => {

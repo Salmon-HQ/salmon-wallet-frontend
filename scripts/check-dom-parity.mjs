@@ -92,7 +92,10 @@ import { fileURLToPath } from 'node:url';
 // panels: rendering only. The steps, the copy each step shows and when the
 // check is due live once in shared (`usePhraseBackupSheet`,
 // `PhraseBackupContext`); measured after hoisting the copy out of the twins.
-export const CROSS_PLATFORM_CLONE_LINES_MAX = 2438;
+// 2026-11-11, later: 2438 → 2442. The phrase step's copy button on both
+// `PhraseBackupSheet` twins: the same JSX, no logic — the copy and its
+// countdown are `copyPhrase` / `copyLabel` in `usePhraseBackupSheet`.
+export const CROSS_PLATFORM_CLONE_LINES_MAX = 2442;
 
 /** Twins whose folders are not named the same. mobile folder → DOM folder(s). */
 export const MAP = {

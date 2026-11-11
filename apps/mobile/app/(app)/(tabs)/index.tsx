@@ -892,6 +892,7 @@ export default function HomeScreen() {
                       <WarningNotice
                         tone="warning"
                         title={t('phrase_check.reminder_title')}
+                        actionPlacement="trailing"
                         action={
                           <TextButton
                             onPress={phraseBackup.openBackup}
