@@ -75,6 +75,7 @@ import {
   spacing,
   type OnboardingLayoutPropsBase,
 } from '@salmon/shared';
+import { OnboardingActionContext } from '../Button/actionHandover';
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 
 import { useSemantic } from '../../theme/ThemeProvider';
@@ -412,7 +413,7 @@ export function OnboardingLayout({
             }}
             data-testid="onboarding-slot-action"
           >
-            {action}
+            <OnboardingActionContext.Provider value>{action}</OnboardingActionContext.Provider>
           </div>
         </div>
       </Column>

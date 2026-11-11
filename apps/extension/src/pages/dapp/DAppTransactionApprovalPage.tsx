@@ -4,6 +4,7 @@ import {
   approveSolanaTransactionRequest,
   getDAppTransactionRequestSummary,
   useDAppMetadata,
+  usePhraseBackup,
   useSolanaTransactionApproval,
   type BlockchainAccount,
   type DAppTransactionRequest,
@@ -53,6 +54,7 @@ export function DAppTransactionApprovalPage({
   onDismiss,
 }: Props): React.ReactElement | null {
   const { metadata } = useDAppMetadata(origin);
+  const { requireBackup } = usePhraseBackup();
   const {
     loading,
     reject: handleReject,
@@ -85,26 +87,26 @@ export function DAppTransactionApprovalPage({
     [networkId, requestedNetwork]
   );
 
-  const handleApprove = useCallback(
-    () =>
-      approve(
-        () =>
-          approveSolanaTransactionRequest(
-            account as Parameters<typeof approveSolanaTransactionRequest>[0],
-            request
-          ),
-        {
-          guardError: networkMismatch
-            ? `Network mismatch: the request targets ${networkMismatch.requested} but the wallet is on ${networkMismatch.active}`
-            : !account || !isSignableSolanaAccount(account)
-              ? 'Solana account not available'
-              : null,
-          failureError: 'Transaction approval failed',
-          event: 'dapp_transaction_signed',
-        }
-      ),
-    [account, approve, networkMismatch, request]
-  );
+  const handleApprove = useCallback(async () => {
+    // A new wallet's first transaction waits on the phrase check (DEV-208).
+    if (!(await requireBackup())) return;
+    return approve(
+      () =>
+        approveSolanaTransactionRequest(
+          account as Parameters<typeof approveSolanaTransactionRequest>[0],
+          request
+        ),
+      {
+        guardError: networkMismatch
+          ? `Network mismatch: the request targets ${networkMismatch.requested} but the wallet is on ${networkMismatch.active}`
+          : !account || !isSignableSolanaAccount(account)
+            ? 'Solana account not available'
+            : null,
+        failureError: 'Transaction approval failed',
+        event: 'dapp_transaction_signed',
+      }
+    );
+  }, [account, approve, networkMismatch, request, requireBackup]);
 
   if (refused) return null;
 

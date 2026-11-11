@@ -87,7 +87,18 @@ import { fileURLToPath } from 'node:url';
 // itself into shared (`createBlockList`) and the tone, size and percent
 // tables into the contracts (`pillColorsFor`, `statInkFor`, `STAT_SIZES`,
 // `progressPercent`), which took the new twins from 2488 to 2420.
-export const CROSS_PLATFORM_CLONE_LINES_MAX = 2420;
+// 2026-11-11: 2420 → 2438. One new twin pair (`PhraseBackupSheet`, DEV-208)
+// and the same reminder and Backup notice JSX on both Homes and both Backup
+// panels: rendering only. The steps, the copy each step shows and when the
+// check is due live once in shared (`usePhraseBackupSheet`,
+// `PhraseBackupContext`); measured after hoisting the copy out of the twins.
+// 2026-11-11, later: 2438 → 2442. The phrase step's copy button on both
+// `PhraseBackupSheet` twins: the same JSX, no logic — the copy and its
+// countdown are `copyPhrase` / `copyLabel` in `usePhraseBackupSheet`.
+// 2026-11-11, with DEV-206 merged: 2442 → 2458. The currency selector's search
+// field and empty state on both `CurrencySelector` twins: the same JSX, no
+// logic — the filtering is `filterCurrencyItems` in shared.
+export const CROSS_PLATFORM_CLONE_LINES_MAX = 2458;
 
 /** Twins whose folders are not named the same. mobile folder → DOM folder(s). */
 export const MAP = {

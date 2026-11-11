@@ -154,8 +154,13 @@ vi.mock('@salmon/shared', async () => {
   const focusMode = await vi.importActual<typeof import('@salmon/shared/motion/useFocusModePhase')>(
     '@salmon/shared/motion/useFocusModePhase'
   );
+  // Outside its provider the phrase check is never due: no reminder on Home.
+  const phraseBackup = await vi.importActual<
+    typeof import('@salmon/shared/contexts/PhraseBackupContext')
+  >('@salmon/shared/contexts/PhraseBackupContext');
   return {
     useAccountActivity: vi.fn(),
+    usePhraseBackup: phraseBackup.usePhraseBackup,
     ...focusMode,
     // The settle clock is identity here: the content follows the tap at once.
     useSettledSubTab: ({ target }: { target: string }) => target,

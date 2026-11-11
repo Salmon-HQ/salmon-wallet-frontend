@@ -53,6 +53,7 @@ import {
   STASH_KEYS,
   trackOnboardingEvent,
   useAccountsContext,
+  usePhraseBackup,
   validatePassword,
   getPasswordIssue,
   componentSizes,
@@ -93,7 +94,7 @@ import {
 } from '../../src/components';
 
 /** Warning, phrase, confirmation, password. */
-const CREATE_FLOW_STEPS = 4;
+const CREATE_FLOW_STEPS = 3;
 /** Phrase, password. */
 const RECOVER_FLOW_STEPS = 2;
 
@@ -108,6 +109,7 @@ export default function PasswordScreen() {
   const mode = useThemeMode();
   const params = useLocalSearchParams<{ type?: string }>();
   const [state, actions] = useAccountsContext();
+  const { markUnconfirmed } = usePhraseBackup();
   const [mnemonic, setMnemonic] = useState<string | null>(null);
 
   useEffect(() => {
@@ -327,6 +329,8 @@ export default function PasswordScreen() {
 
       // Add account with password encryption
       const t1 = Date.now();
+      // Created here without the phrase check: the first send asks for it.
+      if (flowType === 'create' && !seedVault) await markUnconfirmed(account.id);
       await actions.addAccount(account, password);
       setPendingSeedVaultSelection(null);
       console.log(`[perf] recovery: addAccount (encrypt + storage) ${Date.now() - t1}ms`);
@@ -379,6 +383,7 @@ export default function PasswordScreen() {
   }, [
     isFormValid,
     hasSecret,
+    markUnconfirmed,
     seedVault,
     mnemonic,
     password,

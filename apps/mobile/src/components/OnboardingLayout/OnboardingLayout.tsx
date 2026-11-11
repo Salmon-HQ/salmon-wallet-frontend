@@ -75,6 +75,7 @@ import {
   resolveOnboardingGrid,
   spacing,
 } from '@salmon/shared';
+import { OnboardingActionContext } from '../Button/actionHandover';
 import type { OnboardingLayoutPropsBase } from '@salmon/shared';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState, type ReactNode } from 'react';
@@ -432,7 +433,9 @@ export function OnboardingLayout({
             {float ? <FloatRegion>{slots}</FloatRegion> : slots}
 
             <View style={[styles.action, { height: grid.action }]} testID="onboarding-slot-action">
-              {action}
+              <OnboardingActionContext.Provider value={float}>
+                {action}
+              </OnboardingActionContext.Provider>
             </View>
           </View>
         </View>

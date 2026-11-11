@@ -28,4 +28,10 @@ export interface WarningNoticePropsBase {
    * Each platform provides its own pressable element.
    */
   action?: ReactNode;
+  /**
+   * Where `action` sits: under the body (default), or `trailing`, to the
+   * right of the title and body, centred on the two — for one short action
+   * that the notice exists to offer, like Home's "Save it now".
+   */
+  actionPlacement?: 'below' | 'trailing';
 }

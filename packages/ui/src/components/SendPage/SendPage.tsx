@@ -25,6 +25,7 @@ import {
   classifyTransactionError,
   getShortAddress,
   useNftTransfer,
+  usePhraseBackup,
   useSendCommitState,
   useSendFlowState,
   useWaitExit,
@@ -85,12 +86,15 @@ export function SendPage({
   // Mobile's `NftFlowContext`, the send half: the same `useNftTransfer`, the
   // same NFT object, paid at the resolved address.
   const { sendNft, settling: nftSettling } = useNftTransfer({ account });
+  const { requireBackup } = usePhraseBackup();
   const [nftSending, setNftSending] = useState(false);
   const [nftError, setNftError] = useState<string | null>(null);
   const [nftTxId, setNftTxId] = useState<string | null>(null);
 
   const submitNft = useCallback(async () => {
     if (!nft || !recipient || nftSending) return;
+    // A new wallet's first transaction waits on the phrase check (DEV-208).
+    if (!(await requireBackup())) return;
     setNftSending(true);
     setNftError(null);
     try {
@@ -102,7 +106,7 @@ export function SendPage({
     } finally {
       setNftSending(false);
     }
-  }, [nft, recipient, nftSending, sendNft]);
+  }, [nft, recipient, nftSending, sendNft, requireBackup]);
 
   // ---------------------------------------------------------------- token ---
   // The commit state — the wait's hold, the failure's words — decided once

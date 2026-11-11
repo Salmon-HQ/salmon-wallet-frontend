@@ -98,7 +98,7 @@ export default function SeedWarningScreen() {
       backgroundColor={semantic.surface.bedrock}
       float
       chrome={
-        <ScreenHeader onBack={router.back} stepIndicator={{ totalSteps: 4, currentStep: 1 }} />
+        <ScreenHeader onBack={router.back} stepIndicator={{ totalSteps: 3, currentStep: 1 }} />
       }
       /*
         The warning glyph, in the mark slot the fish used to hold — the fish

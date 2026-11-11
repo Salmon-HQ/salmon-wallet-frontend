@@ -20,11 +20,12 @@ import {
   spacing,
   useAccountsContext,
   useBackupPanelLogic,
+  usePhraseBackup,
 } from '@salmon/shared';
 
 import { secretClipboard } from '../../hooks/useSecretClipboard';
 import { useSemantic } from '../../theme/ThemeProvider';
-import { PrimaryButton, SecondaryButton } from '../Button';
+import { PrimaryButton, SecondaryButton, TextButton } from '../Button';
 import { ConfirmDialog } from '../ConfirmDialog';
 import { RevealCover } from '../RevealCover';
 import { SeedWordGrid } from '../SeedPhrase';
@@ -37,6 +38,7 @@ export function BackupPanel({ onBack }: BackupPanelProps): React.ReactElement {
   const { text } = useSemantic();
   const [state, actions] = useAccountsContext();
   const { activeAccount } = state;
+  const { needsBackup, openBackup } = usePhraseBackup();
 
   // The DOM twin never passes biometric options, so `handleReveal` always
   // falls through to the password gate — the same behavior this had before
@@ -68,6 +70,22 @@ export function BackupPanel({ onBack }: BackupPanelProps): React.ReactElement {
       <WarningNotice tone="warning" title={t('wallet.create.messageTitle')}>
         {t('wallet.create.messageBody')}
       </WarningNotice>
+
+      {needsBackup && (
+        <div data-testid="backup-phrase-unconfirmed">
+          <WarningNotice
+            tone="warning"
+            title={t('phrase_check.settings_pending')}
+            action={
+              <TextButton onPress={openBackup} testID="backup-confirm-phrase-button">
+                {t('phrase_check.settings_action')}
+              </TextButton>
+            }
+          >
+            {t('phrase_check.manual_body')}
+          </WarningNotice>
+        </div>
+      )}
 
       {hasNoMnemonic ? (
         <p

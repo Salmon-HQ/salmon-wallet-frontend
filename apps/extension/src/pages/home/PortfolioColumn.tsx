@@ -4,13 +4,21 @@ import {
   getBlockchainFromNetworkId,
   spacing,
   stakingSectionBlocks,
+  usePhraseBackup,
   type BalanceLoadState,
   type BlockchainId,
   type PriceChartPeriod,
   type Token,
 } from '@salmon/shared';
 
-import { DataAttribution, BlockList, StateBlock, TokenList, WarningNotice } from '../../components';
+import {
+  DataAttribution,
+  BlockList,
+  StateBlock,
+  TextButton,
+  TokenList,
+  WarningNotice,
+} from '../../components';
 
 import { scrollColumnStyle } from './homeStyles';
 import { BitcoinColumn } from './BitcoinColumn';
@@ -59,6 +67,7 @@ export function PortfolioColumn({
   onScroll,
 }: PortfolioColumnProps): React.ReactElement {
   const { t } = useTranslation();
+  const phraseBackup = usePhraseBackup();
   const stakingBlocks = stakingSectionBlocks(
     { tokens: stakingTokens, onPress: onStakingPress, canPress: canStakingPress, hiddenBalance },
     t
@@ -66,9 +75,25 @@ export function PortfolioColumn({
 
   return (
     <div style={scrollColumnStyle} onScroll={onScroll}>
-      {/* Partial-load failure: keep whatever data loaded visible. Only 'ready'
-          carries data, so a total failure is left to the list's own error
-          state rather than told "shown data may be incomplete". */}
+      {/* A wallet created without the phrase check (DEV-208): it stays until
+          the phrase is confirmed. */}
+      {phraseBackup.needsBackup && (
+        <div style={{ marginBottom: spacing.xl }} data-testid="phrase-reminder">
+          <WarningNotice
+            tone="warning"
+            title={t('phrase_check.reminder_title')}
+            actionPlacement="trailing"
+            action={
+              <TextButton onPress={phraseBackup.openBackup} testID="phrase-reminder-open">
+                {t('phrase_check.reminder_action')}
+              </TextButton>
+            }
+          >
+            {t('phrase_check.reminder_body')}
+          </WarningNotice>
+        </div>
+      )}
+
       {balanceError && balanceState === 'ready' && (
         <div style={{ marginBottom: spacing.xl }} data-testid="balance-load-error">
           <WarningNotice

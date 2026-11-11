@@ -275,11 +275,17 @@ describe('SendPage — four steps, and the verb between them', () => {
   });
 
   it('sends the collectible through useNftTransfer, waits on the wave, then lands on the receipt', async () => {
+    // A real send takes a round trip; one that settles in the same tick as
+    // the phrase check would never show the wait at all.
+    sendNft.mockImplementationOnce(
+      () => new Promise((resolve) => setTimeout(() => resolve({ txId: 'nft-tx-1' }), 0))
+    );
     renderPage({ nft: { name: 'Fish #1', blockchain: 'solana', mint: 'm' } });
     fireEvent.click(screen.getByTestId('step-recipient-nft'));
     fireEvent.click(screen.getByTestId('step-review'));
 
-    expect(sendNft).toHaveBeenCalledTimes(1);
+    // The phrase check is awaited first, so the send starts a tick later.
+    await vi.waitFor(() => expect(sendNft).toHaveBeenCalledTimes(1));
     // The wait covers the send; the receipt comes only once its last wave leaves.
     const wave = await screen.findByTestId('send-wave-screen');
     await vi.waitFor(() => expect(wave.getAttribute('data-visible')).toBe('false'));
@@ -317,7 +323,7 @@ describe('SendPage — the passage', () => {
 
     // The transaction lands: the flow holds a txId, but the water is not calm.
     fireEvent.click(screen.getByTestId('step-review'));
-    expect(sendTransaction).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() => expect(sendTransaction).toHaveBeenCalledTimes(1));
     await Promise.resolve();
     expect(screen.queryByTestId('step-success')).toBeNull();
 

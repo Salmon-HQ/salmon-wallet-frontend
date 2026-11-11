@@ -66,6 +66,7 @@ vi.mock('@salmon/shared/utils/account', () => ({
 vi.mock('@salmon/ui', () => ({
   WalletInitErrorScreen: () => null,
   ConfirmationHost: () => null,
+  PhraseBackupSheet: () => null,
   // The popup's first frame names the water column itself, so the mock has to
   // carry the host class the real barrel exports.
   waterColumnHost: 'water-column-host',

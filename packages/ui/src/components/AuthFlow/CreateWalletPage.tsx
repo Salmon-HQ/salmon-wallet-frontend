@@ -1,9 +1,11 @@
 /**
- * The create path, on the onboarding slot grid: warning, phrase, confirm.
+ * The create path, on the onboarding slot grid: warning, then phrase. The
+ * phrase check waits for the wallet's first send (DEV-208,
+ * `PhraseBackupContext`).
  *
  * The mobile twins are `apps/mobile/app/(auth)/seed-warning.tsx` (the
  * warning, a route of its own there) and `apps/mobile/app/(auth)/create.tsx`
- * (phrase and confirm). Same anatomy, same glyphs, same copy.
+ * (the phrase). Same anatomy, same glyphs, same copy.
  *
  * ## The warning is a step, not a preamble
  *
@@ -25,56 +27,37 @@
  * security decision, not a stylistic one.
  */
 import {
-  borderRadius,
   componentSizes,
   fontFamily,
   fontSize,
   generateMnemonic,
-  generateValidationPositions,
   lineHeight,
-  motionMs,
   spacing,
-  validateMnemonicWords,
+  useSecretCopied,
 } from '@salmon/shared';
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type CSSProperties,
-  type UIEvent,
-} from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type UIEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { CheckCircleIcon, iconSize, SparkleIcon, WarningIcon } from '../../icons';
+import { SparkleIcon, WarningIcon } from '../../icons';
 import { secretClipboard } from '../../hooks/useSecretClipboard';
 import { useSemantic } from '../../theme/ThemeProvider';
 import { PrimaryButton } from '../Button';
 import { HoldToApproveButton } from '../HoldToApproveButton';
 import { OnboardingDescription, OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
 import { ScreenHeader } from '../ScreenHeader';
-import { SeedWordGrid, SeedWordInput } from '../SeedPhrase';
-import { Toggle } from '../Toggle';
-import { WarningNotice } from '../WarningNotice';
+import { SeedWordGrid } from '../SeedPhrase';
 import type { CreateWalletPageProps } from './types';
 
-type Step = 'message' | 'seedPhrase' | 'validate';
+type Step = 'message' | 'seedPhrase';
 
-/** Warning, phrase, confirm, password — the password screen is the fourth. */
-export const CREATE_FLOW_STEPS = 4;
+/** Warning, phrase, password — the password screen is the third. */
+export const CREATE_FLOW_STEPS = 3;
 
 /** Slop, in px, so a scroll that stops a hair short of the end still counts. */
 const END_SLOP = 8;
 
 /** The step glyph fills the top slot: the grid's own mark size for `content`. */
 const ICON_SIZE = componentSizes.logoSizeSmall;
-
-interface ValidationWord {
-  position: number;
-  expectedWord: string;
-  userInput: string;
-}
 
 function MessageStep({
   onNext,
@@ -163,52 +146,6 @@ function MessageStep({
   );
 }
 
-/**
- * The copy confirmation — mobile's toast: the success glyph and the line, on
- * the backdrop scrim, floating over the action.
- */
-function Toast({ message }: { message: string }) {
-  const { overlay, status, text } = useSemantic();
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        bottom: 100,
-        left: 0,
-        right: 0,
-        display: 'flex',
-        justifyContent: 'center',
-        zIndex: 1000,
-        pointerEvents: 'none',
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: spacing.sm,
-          backgroundColor: overlay.backdrop,
-          padding: `${spacing.md}px ${spacing.lg}px`,
-          borderRadius: borderRadius['2xl'],
-        }}
-      >
-        <CheckCircleIcon size={iconSize.md} color={status.success} />
-        <span
-          style={{
-            color: text.primary,
-            fontFamily: fontFamily.sans,
-            fontSize: fontSize.body,
-            lineHeight: `${Math.round(fontSize.body * lineHeight.snug)}px`,
-          }}
-        >
-          {message}
-        </span>
-      </div>
-    </div>
-  );
-}
-
 function SeedPhraseStep({
   mnemonic,
   onNext,
@@ -218,233 +155,93 @@ function SeedPhraseStep({
   mnemonic: string;
   onNext: () => void;
   onBack: () => void;
-  t: (key: string) => string;
+  t: (key: string, options?: Record<string, unknown>) => string;
 }) {
   const { surface, text } = useSemantic();
-  const [showToast, setShowToast] = useState(false);
-  // Gates "Guardé mi seed-phrase": advancing costs a deliberate statement that
-  // the phrase is written down, not just having scrolled past it. The copy
-  // used to be that gate, which made the clipboard — readable by any other
-  // app, kept by clipboard histories — the one mandatory step. It is optional
-  // now, with its warning.
-  const [acknowledged, setAcknowledged] = useState(false);
-  const [secretCopied, setSecretCopied] = useState(false);
+  // The button counts down to the clipboard's clear and cannot copy again
+  // until it ends (owner, 2026-11-11).
+  const { secondsLeft, markCopied } = useSecretCopied();
   const words = mnemonic.split(' ');
 
   const handleCopy = useCallback(async () => {
     try {
       // Cleared 60 s later, or on the return to the panel (useSecretClipboard).
       await secretClipboard.copy(mnemonic);
-      setSecretCopied(true);
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), motionMs.feedbackHold);
+      markCopied();
     } catch {
       // Clipboard API may not be available
     }
-  }, [mnemonic]);
+  }, [mnemonic, markCopied]);
 
   return (
-    <>
-      <OnboardingLayout
-        testID="create-seed-screen"
-        variant="content"
-        backgroundColor={surface.bedrock}
-        scrollBody
-        // The sparkle: something new coming into being. See the warning
-        // phase's mark note above.
-        mark={<SparkleIcon size={ICON_SIZE} color={text.primary} />}
-        chrome={
-          <ScreenHeader
-            onBack={onBack}
-            stepIndicator={{ totalSteps: CREATE_FLOW_STEPS, currentStep: 2 }}
-          />
-        }
-        title={<OnboardingTitle>{t('wallet.create.your_seed_phrase')}</OnboardingTitle>}
-        description={
-          <OnboardingDescription>{t('wallet.create.your_seed_phrase_body')}</OnboardingDescription>
-        }
-        body={
-          // The component gap (`spacing.xl`) between the description and the
-          // grid — the "content" variant's compact rung reserves only one
-          // description line plus its own buffer, and this screen's copy can
-          // wrap to two lines at the extension side panel's narrow widths,
-          // eating that buffer and leaving the grid flush under the text.
-          <div style={{ paddingTop: spacing.xl }}>
-            <SeedWordGrid words={words} columns={3} />
-            {/*
-              The same standing warning BackupPanel and PrivateKeyPanel show
-              before either of them lets a secret reach the clipboard.
+    <OnboardingLayout
+      testID="create-seed-screen"
+      variant="content"
+      backgroundColor={surface.bedrock}
+      scrollBody
+      // The sparkle: something new coming into being. See the warning
+      // phase's mark note above.
+      mark={<SparkleIcon size={ICON_SIZE} color={text.primary} />}
+      chrome={
+        <ScreenHeader
+          onBack={onBack}
+          stepIndicator={{ totalSteps: CREATE_FLOW_STEPS, currentStep: 2 }}
+        />
+      }
+      title={<OnboardingTitle>{t('wallet.create.your_seed_phrase')}</OnboardingTitle>}
+      description={
+        <OnboardingDescription>{t('wallet.create.your_seed_phrase_body')}</OnboardingDescription>
+      }
+      body={
+        // The component gap (`spacing.xl`) between the description and the
+        // grid — the "content" variant's compact rung reserves only one
+        // description line plus its own buffer, and this screen's copy can
+        // wrap to two lines at the extension side panel's narrow widths,
+        // eating that buffer and leaving the grid flush under the text.
+        <div style={{ paddingTop: spacing.xl }}>
+          <SeedWordGrid words={words} columns={3} />
+          {/*
+              The clipboard warning BackupPanel shows as a card, as one line
+              here: the screen must hold the phrase and its three actions
+              without scrolling (owner, 2026-11-11).
             */}
-            <div style={{ paddingTop: spacing.lg }} data-testid="create-seed-clipboard-warning">
-              <WarningNotice tone="warning" title={t('settings.clipboard_warning_title')}>
-                {t('settings.clipboard_warning_description')}
-              </WarningNotice>
-            </div>
-            {secretCopied && (
-              <div style={{ paddingTop: spacing.md }} data-testid="create-seed-clipboard-clears">
-                <WarningNotice tone="info" title={t('settings.secret_copied')} />
-              </div>
-            )}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: spacing.md,
-                paddingTop: spacing.lg,
-              }}
-            >
-              <span
-                style={{
-                  color: text.primary,
-                  fontFamily: fontFamily.sans,
-                  fontSize: fontSize.body,
-                  lineHeight: `${fontSize.body * lineHeight.snug}px`,
-                }}
-              >
-                {t('wallet.create.acknowledge_written_down')}
-              </span>
-              <Toggle
-                value={acknowledged}
-                onValueChange={setAcknowledged}
-                accessibilityLabel={t('wallet.create.acknowledge_written_down')}
-                testID="create-seed-acknowledge"
-              />
-            </div>
-          </div>
-        }
-        secondary={
-          /*
+          <p
+            data-testid="create-seed-clipboard-warning"
+            style={{
+              margin: 0,
+              paddingTop: spacing.md,
+              color: text.secondary,
+              fontFamily: fontFamily.sans,
+              fontSize: fontSize.body,
+              lineHeight: `${fontSize.body * lineHeight.snug}px`,
+              textAlign: 'center',
+            }}
+          >
+            {t('wallet.create.clipboard_hint')}
+          </p>
+        </div>
+      }
+      secondary={
+        /*
             Held, not tapped: the phrase lands on the clipboard, where anything
             can read it, so the copy costs the same deliberate half-second as
             signing does. The keyboard path commits immediately per WCAG, as
             the hold control already provides.
           */
-          <HoldToApproveButton
-            onApprove={handleCopy}
-            variant="secondary"
-            testID="create-copy-seed-button"
-          >
-            {t('wallet.create.hold_to_copy')}
-          </HoldToApproveButton>
-        }
-        action={
-          <PrimaryButton
-            onPress={onNext}
-            disabled={!acknowledged}
-            fullWidth
-            testID="create-backed-up-button"
-          >
-            {t('wallet.create.ive_backed_up_seed_phrase')}
-          </PrimaryButton>
-        }
-      />
-      {showToast && <Toast message={t('wallet.copied')} />}
-    </>
-  );
-}
-
-function ValidateStep({
-  mnemonic,
-  onComplete,
-  onBack,
-  t,
-}: {
-  mnemonic: string;
-  onComplete: () => void;
-  onBack: () => void;
-  t: (key: string, params?: Record<string, unknown>) => string;
-}) {
-  const { surface, text } = useSemantic();
-  const words = useMemo(() => mnemonic.split(' '), [mnemonic]);
-  const [validationWords, setValidationWords] = useState<ValidationWord[]>([]);
-
-  useEffect(() => {
-    const positions = generateValidationPositions(words.length, 3);
-    setValidationWords(
-      positions.map((position) => ({
-        position,
-        expectedWord: words[position - 1],
-        userInput: '',
-      }))
-    );
-  }, [words]);
-
-  const validationResult = useMemo(() => {
-    if (validationWords.length === 0) return { isValid: false, results: [] };
-    return validateMnemonicWords(
-      mnemonic,
-      validationWords.map((word) => word.position),
-      validationWords.map((word) => word.userInput)
-    );
-  }, [mnemonic, validationWords]);
-
-  const handleInputChange = useCallback((index: number, value: string) => {
-    setValidationWords((prev) =>
-      prev.map((word, currentIndex) =>
-        currentIndex === index ? { ...word, userInput: value } : word
-      )
-    );
-  }, []);
-
-  const getValidationState = useCallback(
-    (index: number): 'idle' | 'correct' | 'incorrect' => {
-      const word = validationWords[index];
-      if (!word || !word.userInput) return 'idle';
-      const result = validationResult.results[index];
-      if (!result) return 'idle';
-      return result.isCorrect ? 'correct' : 'incorrect';
-    },
-    [validationResult, validationWords]
-  );
-
-  return (
-    <OnboardingLayout
-      testID="create-validate-screen"
-      variant="content"
-      backgroundColor={surface.bedrock}
-      scrollBody
-      // Same glyph as the phrase it confirms — the step dots carry which half
-      // of the creation this is.
-      mark={<SparkleIcon size={ICON_SIZE} color={text.primary} />}
-      chrome={
-        <ScreenHeader
-          onBack={onBack}
-          stepIndicator={{ totalSteps: CREATE_FLOW_STEPS, currentStep: 3 }}
-        />
-      }
-      title={<OnboardingTitle>{t('wallet.create.confirm_seed_phrase')}</OnboardingTitle>}
-      description={
-        <OnboardingDescription>{t('wallet.create.confirm_seed_phrase_body')}</OnboardingDescription>
-      }
-      body={
-        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: spacing.lg }}>
-          {validationWords.map((word, index) => (
-            <SeedWordInput
-              key={`word-${word.position}`}
-              testID={`create-confirm-word-input-${word.position}`}
-              position={word.position}
-              value={word.userInput}
-              onChangeText={(value) => handleInputChange(index, value)}
-              validationState={getValidationState(index)}
-              autoFocus={index === 0}
-              onSubmitEditing={() => {
-                if (index === validationWords.length - 1 && validationResult.isValid) {
-                  onComplete();
-                }
-              }}
-            />
-          ))}
-        </div>
+        <HoldToApproveButton
+          onApprove={handleCopy}
+          disabled={secondsLeft !== null}
+          variant="secondary"
+          testID="create-copy-seed-button"
+        >
+          {secondsLeft === null
+            ? t('wallet.create.hold_to_copy')
+            : t('wallet.create.copied_clears', { seconds: secondsLeft })}
+        </HoldToApproveButton>
       }
       action={
-        <PrimaryButton
-          onPress={onComplete}
-          disabled={!validationResult.isValid}
-          fullWidth
-          testID="create-next-button"
-        >
-          {t('actions.next')}
+        <PrimaryButton onPress={onNext} fullWidth testID="create-backed-up-button">
+          {t('wallet.create.saved_it')}
         </PrimaryButton>
       }
     />
@@ -470,9 +267,6 @@ export function CreateWalletPage({
       case 'seedPhrase':
         setStep('message');
         break;
-      case 'validate':
-        setStep('seedPhrase');
-        break;
     }
   }, [onBack, step]);
 
@@ -480,21 +274,10 @@ export function CreateWalletPage({
     return <MessageStep onNext={() => setStep('seedPhrase')} onBack={handleBack} t={t} />;
   }
 
-  if (step === 'seedPhrase') {
-    return (
-      <SeedPhraseStep
-        mnemonic={mnemonic}
-        onNext={() => setStep('validate')}
-        onBack={handleBack}
-        t={t}
-      />
-    );
-  }
-
   return (
-    <ValidateStep
+    <SeedPhraseStep
       mnemonic={mnemonic}
-      onComplete={() => onComplete(mnemonic)}
+      onNext={() => onComplete(mnemonic)}
       onBack={handleBack}
       t={t}
     />

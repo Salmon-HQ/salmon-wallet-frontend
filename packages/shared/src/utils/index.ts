@@ -94,6 +94,10 @@ export {
 } from './account-secret';
 export type { StoredSecret, SecretVault } from './account-secret';
 
+// Recovery-phrase check
+export { buildPhraseQuiz, PHRASE_QUIZ_OPTIONS, PHRASE_QUIZ_QUESTIONS } from './phrase-quiz';
+export type { PhraseQuizQuestion } from './phrase-quiz';
+
 // Native-fee requirements
 export {
   getRequiredSol,

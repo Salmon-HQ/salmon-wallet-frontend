@@ -26,6 +26,7 @@ import type { BlockchainAccount, SolanaNetworkId } from '../types/blockchain';
 import type { PreparedNftTransactionResponse } from '../types/nft';
 import type { NftData } from '../utils/nft';
 import { classifyTransactionError } from '../utils/transaction-errors';
+import { usePhraseBackup } from '../contexts/PhraseBackupContext';
 import { useNftBurn } from './useNftBurn';
 import { useNftTransfer } from './useNftTransfer';
 
@@ -82,6 +83,7 @@ export function useNftFlowState({
   }, []);
 
   const { sendNft, settling: sendSettling } = useNftTransfer({ account });
+  const { requireBackup } = usePhraseBackup();
 
   // ---------------------------------------------------------------- burn ---
 
@@ -128,6 +130,8 @@ export function useNftFlowState({
   /** Commit the transfer to the recipient the review screen showed. */
   const submitSend = useCallback(async () => {
     if (!nft || sending) return;
+    // A new wallet's first transaction waits on the phrase check (DEV-208).
+    if (!(await requireBackup())) return;
 
     setSending(true);
     setSendError(null);
@@ -143,7 +147,7 @@ export function useNftFlowState({
     } finally {
       setSending(false);
     }
-  }, [nft, recipient, resolvedRecipient, sendNft, sending]);
+  }, [nft, recipient, resolvedRecipient, sendNft, sending, requireBackup]);
 
   /** Build the burn preview. The detail screen fires it on the way to review. */
   const prepareBurn = useCallback(async () => {
@@ -198,6 +202,8 @@ export function useNftFlowState({
   /** Sign and send the prepared burn. */
   const confirmBurn = useCallback(async () => {
     if (!nft?.mint || !account || !burnPreview) return;
+    // A new wallet's first transaction waits on the phrase check (DEV-208).
+    if (!(await requireBackup())) return;
 
     setBurnExecuting(true);
     setBurnError(null);
@@ -211,7 +217,7 @@ export function useNftFlowState({
     } finally {
       setBurnExecuting(false);
     }
-  }, [account, burnPreview, nft, nftBurn]);
+  }, [account, burnPreview, nft, nftBurn, requireBackup]);
 
   const explorerUrl = useMemo(() => {
     if (!successTxId || !nft || !account) return null;

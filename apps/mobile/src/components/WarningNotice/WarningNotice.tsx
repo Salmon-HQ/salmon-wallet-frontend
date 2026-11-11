@@ -26,6 +26,7 @@ export function WarningNotice({
   title,
   children,
   action,
+  actionPlacement = 'below',
   style,
   testID,
 }: WarningNoticeProps): React.ReactElement {
@@ -51,8 +52,13 @@ export function WarningNotice({
       <View style={styles.textColumn}>
         <Text style={[styles.title, { color: accent }]}>{title}</Text>
         {children != null && <Text style={styles.body}>{children}</Text>}
-        {action != null && <View style={styles.action}>{action}</View>}
+        {action != null && actionPlacement === 'below' && (
+          <View style={styles.action}>{action}</View>
+        )}
       </View>
+      {action != null && actionPlacement === 'trailing' && (
+        <View style={styles.trailingAction}>{action}</View>
+      )}
     </View>
   );
 }
@@ -86,6 +92,10 @@ const stylesFor = (t: Semantic) =>
     action: {
       marginTop: 6,
       alignSelf: 'flex-start',
+    },
+    trailingAction: {
+      flexShrink: 0,
+      alignSelf: 'center',
     },
     body: {
       color: t.text.primary,

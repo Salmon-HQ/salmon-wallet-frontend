@@ -7,16 +7,27 @@
  * ink sat on a muddy red and read as neither alive nor disabled. The salmon
  * is either alive or absent — and so is the flesh inside it.
  */
+import { useContext, useEffect, useState } from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
-import Animated from 'react-native-reanimated';
+import Animated, {
+  FadeIn,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import {
   componentSizes,
   fontFamilyNative,
   fontSize,
   letterSpacing,
+  motionMs,
+  previousActionLit,
+  recordActionLit,
   shadowsCSS,
   type Semantic,
 } from '@salmon/shared';
+import { OnboardingActionContext } from './actionHandover';
 
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { FleshBackground } from '../FleshBackground';
@@ -42,6 +53,21 @@ export function PrimaryButton({
   const styles = useThemedStyles(stylesFor);
   const { text, accent } = useSemantic();
   const { pressStyle, pressHandlers, specular } = usePressMotion();
+  const handover = useContext(OnboardingActionContext);
+  const reduceMotion = useReducedMotion();
+  // In onboarding the fill eases in and out instead of switching, starting
+  // from the previous step's button (see `actionHandover`).
+  const [startLit] = useState(() => (handover ? previousActionLit() : null) ?? !isDisabled);
+  const lit = useSharedValue(startLit ? 1 : 0);
+  useEffect(() => {
+    if (!handover) return;
+    recordActionLit(!isDisabled);
+    lit.value = withTiming(isDisabled ? 0 : 1, {
+      duration: reduceMotion ? 0 : motionMs.contentChange,
+    });
+  }, [handover, isDisabled, lit, reduceMotion]);
+  const fillStyle = useAnimatedStyle(() => ({ opacity: lit.value }));
+  const Label = handover ? Animated.Text : Text;
 
   return (
     <AnimatedTouchable
@@ -55,24 +81,35 @@ export function PrimaryButton({
       disabled={isDisabled}
       activeOpacity={0.8}
       {...pressHandlers}
-      style={[styles.button, isDisabled && styles.disabled, style, pressStyle]}
+      style={[styles.button, (isDisabled || handover) && styles.disabled, style, pressStyle]}
     >
       {/* The flesh: the myosepta of a cut fillet, pressed into the salmon
           fill. A filled button is mass, not surface, so the material it shows
           is the inside of the fish rather than its skin. Every band is paler
           than the fill, so the 6.50:1 ink composite is a floor here, not a
           budget. Absent when the fill is absent. */}
-      {!isDisabled && <FleshBackground scale={componentSizes.buttonFleshScale} />}
+      {handover ? (
+        <Animated.View style={[StyleSheet.absoluteFill, styles.fill, fillStyle]}>
+          <FleshBackground scale={componentSizes.buttonFleshScale} />
+        </Animated.View>
+      ) : (
+        !isDisabled && <FleshBackground scale={componentSizes.buttonFleshScale} />
+      )}
       {loading ? (
         <Spinner color={isDisabled ? text.disabled : accent.onFill} />
       ) : (
-        <Text
+        <Label
+          // In onboarding a new label fades in where the last one was.
+          key={handover ? children : undefined}
+          {...(handover && !reduceMotion
+            ? { entering: FadeIn.duration(motionMs.contentChange) }
+            : {})}
           style={[styles.text, isDisabled && styles.textDisabled]}
           numberOfLines={1}
           adjustsFontSizeToFit
         >
           {children}
-        </Text>
+        </Label>
       )}
       {/* The specular is drawn last so it sits over the flesh, and the pill's
           `overflow: 'hidden'` clips it to the control's own radius. */}
@@ -101,6 +138,9 @@ const stylesFor = (t: Semantic) =>
     },
     disabled: {
       backgroundColor: t.surface.crest,
+    },
+    fill: {
+      backgroundColor: t.accent.fill,
     },
     textDisabled: {
       color: t.text.disabled,

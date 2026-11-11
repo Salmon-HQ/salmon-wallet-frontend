@@ -19,6 +19,7 @@ import { getActiveSolanaApprovalAccount } from '@salmon/shared/utils/account';
 import {
   ConfirmationHost,
   LoadingScreen,
+  PhraseBackupSheet,
   WalletInitErrorScreen,
   useSecretClipboardResume,
   useTaskChrome,
@@ -568,15 +569,19 @@ function App() {
   // dApp transaction approval
   if (pendingDAppTxRequest && !locked && accounts.length > 0 && solanaApprovalAccount) {
     return (
-      <DAppTransactionApprovalPage
-        origin={pendingDAppTxRequest.origin}
-        request={pendingDAppTxRequest.request}
-        account={solanaApprovalAccount}
-        accountName={activeAccount?.name}
-        approvedAddress={pendingDAppTxRequest.approvedAddress}
-        networkId={solanaApprovalNetworkId}
-        onDismiss={dismissApprovalWithRefresh}
-      />
+      <>
+        <DAppTransactionApprovalPage
+          origin={pendingDAppTxRequest.origin}
+          request={pendingDAppTxRequest.request}
+          account={solanaApprovalAccount}
+          accountName={activeAccount?.name}
+          approvedAddress={pendingDAppTxRequest.approvedAddress}
+          networkId={solanaApprovalNetworkId}
+          onDismiss={dismissApprovalWithRefresh}
+        />
+        {/* Approving waits on the recovery-phrase check (DEV-208). */}
+        <PhraseBackupSheet />
+      </>
     );
   }
 
@@ -611,6 +616,7 @@ function App() {
     <SignatureRequestProvider account={signingAccount}>
       <HomePage onAddAccount={handleAddAccountFromHome} />
       <ConfirmationHost />
+      <PhraseBackupSheet />
     </SignatureRequestProvider>
   );
 }

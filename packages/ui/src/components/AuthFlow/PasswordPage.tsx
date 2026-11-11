@@ -20,6 +20,7 @@ import {
   spacing,
   trackOnboardingEvent,
   useAccountsContext,
+  usePhraseBackup,
   validatePassword,
   getPasswordIssue,
   componentSizes,
@@ -79,6 +80,7 @@ export function PasswordPage(props: PasswordPageProps): React.ReactElement {
   const { t } = useTranslation();
   const { status, step, text } = useSemantic();
   const [state, actions] = useAccountsContext();
+  const { markUnconfirmed } = usePhraseBackup();
 
   const errorText: CSSProperties = {
     color: status.danger,
@@ -217,6 +219,8 @@ export function PasswordPage(props: PasswordPageProps): React.ReactElement {
       });
 
       onCreating?.();
+      // Created here without the phrase check: the first send asks for it.
+      if (flowType === 'create') await markUnconfirmed(account.id);
       await actions.addAccount(account, password);
       // Pseudonymous funnel event: a wallet was created or recovered. No seed,
       // address or key material — just which flow completed. The consent prompt
@@ -243,6 +247,7 @@ export function PasswordPage(props: PasswordPageProps): React.ReactElement {
       setIsLoading(false);
     }
   }, [
+    markUnconfirmed,
     actions,
     flowType,
     isFormValid,

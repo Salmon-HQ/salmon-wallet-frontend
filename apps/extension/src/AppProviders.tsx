@@ -6,6 +6,7 @@ import {
   DeveloperModeProvider,
   CurrencyProvider,
   createQueryClient,
+  PhraseBackupProvider,
   QueryClientProvider,
 } from '@salmon/shared';
 
@@ -33,7 +34,9 @@ export function AppProviders({ children }: { children: React.ReactNode }): React
                       the first time the flag asks (spec 026 D2). */}
                   <DeveloperModeProvider>
                     <CurrencyProvider>
-                      <PendingActivityLayer>{children}</PendingActivityLayer>
+                      <PhraseBackupProvider>
+                        <PendingActivityLayer>{children}</PendingActivityLayer>
+                      </PhraseBackupProvider>
                     </CurrencyProvider>
                   </DeveloperModeProvider>
                 </AccountsProvider>

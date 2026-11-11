@@ -398,6 +398,7 @@ export { PrivateKeyPanel } from './PrivateKeyPanel';
 export type { PrivateKeyPanelProps } from './PrivateKeyPanel';
 
 export { BackupPanel } from './BackupPanel';
+export { PhraseBackupSheet } from './PhraseBackupSheet';
 export { AboutPanel } from './AboutPanel';
 
 export { PendingActivityBanner } from './PendingActivityBanner';

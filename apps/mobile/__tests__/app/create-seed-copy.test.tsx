@@ -1,6 +1,6 @@
 /**
  * Creating a wallet: the optional copy of the new phrase goes through the
- * clipboard Salmon clears, and the screen says when it is cleared.
+ * clipboard Salmon clears, and the copy button says when it is cleared.
  */
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
@@ -26,6 +26,7 @@ jest.mock('@salmon/shared', () => ({
   generateValidationPositions: () => [1, 2, 3],
   validateMnemonicWords: () => ({ isValid: false, results: [] }),
   setStashItem: jest.fn(),
+  useSecretCopied: jest.requireActual('@salmon/shared/src/hooks/useSecretCopied').useSecretCopied,
   STASH_KEYS: { PENDING_MNEMONIC: 'pending-mnemonic' },
 }));
 
@@ -50,8 +51,21 @@ jest.mock('../../src/components', () => {
     SeedWordInput: () => null,
     Toggle: () => null,
     PrimaryButton: Passthrough,
-    HoldToCopyButton: ({ onCopy, testID }: { onCopy: () => void; testID?: string }) =>
-      React.createElement(TouchableOpacity, { onPress: onCopy, testID }),
+    TextButton: Passthrough,
+    HoldToCopyButton: ({
+      onCopy,
+      testID,
+      children,
+    }: {
+      onCopy: () => void;
+      testID?: string;
+      children: string;
+    }) =>
+      React.createElement(
+        TouchableOpacity,
+        { onPress: onCopy, testID },
+        React.createElement(Text, null, children)
+      ),
     WarningNotice: ({ title }: { title: string }) => React.createElement(Text, null, title),
   };
 });
@@ -59,14 +73,13 @@ jest.mock('../../src/components', () => {
 import CreateWalletScreen from '../../app/(auth)/create';
 
 describe('the create flow seed-phrase copy', () => {
-  it('copies through the clearing clipboard and says when it is cleared', async () => {
+  it('copies through the clearing clipboard and the button says when it is cleared', async () => {
     render(<CreateWalletScreen />);
-    expect(screen.queryByTestId('create-seed-clipboard-clears')).toBeNull();
+    expect(screen.getByText('wallet.create.hold_to_copy')).toBeTruthy();
 
     fireEvent.press(screen.getByTestId('create-copy-seed-button'));
 
-    await waitFor(() => expect(screen.getByTestId('create-seed-clipboard-clears')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('wallet.create.copied_clears')).toBeTruthy());
     expect(mockSecretCopy).toHaveBeenCalledWith(PHRASE);
-    expect(screen.getByText('settings.secret_copied')).toBeTruthy();
   });
 });

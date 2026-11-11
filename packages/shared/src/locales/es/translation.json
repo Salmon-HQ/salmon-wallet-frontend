@@ -518,7 +518,10 @@
       "biometric_setup_error": "Error al habilitar biometría. Podés configurarlo después en Ajustes.",
       "creating_account": "Creando Cuenta",
       "securing_wallet": "Esperá mientras aseguramos tu billetera",
-      "acknowledge_written_down": "Anoté mi frase de recuperación en un lugar seguro"
+      "acknowledge_written_down": "Anoté mi frase de recuperación en un lugar seguro",
+      "saved_it": "Ya la guardé",
+      "clipboard_hint": "Otras apps pueden leer el portapapeles: anotala en papel.",
+      "copied_clears": "Copiada · se borra en {{seconds}} s"
     },
     "recover": {
       "messageTitle": "Recuperar Cuenta existente",
@@ -994,5 +997,25 @@
       "deactivating": "Desactivándose",
       "inactive": "Inactiva"
     }
+  },
+  "phrase_check": {
+    "send_title": "Antes de tu primer envío",
+    "send_body": "Confirmá que guardaste tu frase de recuperación. Es la única forma de recuperar tus fondos si perdés este dispositivo.",
+    "manual_title": "Confirmá tu frase de recuperación",
+    "manual_body": "Respondé tres preguntas sobre tu frase para confirmar que la guardaste.",
+    "start": "Confirmar ahora",
+    "password_title": "Ingresá tu contraseña",
+    "password_body": "A continuación se muestra tu frase de recuperación. Asegurate de que nadie esté mirando.",
+    "phrase_title": "Tu frase de recuperación",
+    "phrase_body": "Comparala con la copia que guardaste.",
+    "missed": "Esa no era la palabra. Revisá tu frase y probá de nuevo.",
+    "phrase_seen": "Continuar",
+    "question_title": "Pregunta {{current}} de {{total}}",
+    "question": "¿Cuál es la palabra #{{position}}?",
+    "reminder_title": "Guardá tu frase de recuperación",
+    "reminder_body": "Es la única forma de recuperar tus fondos si perdés este dispositivo. Confirmala antes de tu primer envío.",
+    "reminder_action": "Guardar ahora",
+    "settings_action": "Confirmar frase",
+    "settings_pending": "Sin confirmar"
   }
 }

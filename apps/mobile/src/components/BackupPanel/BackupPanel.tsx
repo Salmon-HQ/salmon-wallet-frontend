@@ -22,11 +22,12 @@ import {
   spacing,
   useAccountsContext,
   useBackupPanelLogic,
+  usePhraseBackup,
   type BackupPanelPropsBase,
   type Semantic,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
-import { PrimaryButton, SecondaryButton } from '../Button';
+import { PrimaryButton, SecondaryButton, TextButton } from '../Button';
 import { ConfirmSheet } from '../ConfirmSheet';
 import { RevealCover } from '../RevealCover';
 import { SeedWordGrid } from '../SeedPhrase';
@@ -52,6 +53,7 @@ export function BackupPanel({ onBack, biometricAvailable, verifyBiometric }: Bac
 
   const [accountState, accountActions] = useAccountsContext();
   const { activeAccount } = accountState;
+  const { needsBackup, openBackup } = usePhraseBackup();
 
   // An account imported from a private key has no phrase behind it: without
   // `hasNoMnemonic` the screen renders an empty grid under a "tap to reveal"
@@ -87,6 +89,22 @@ export function BackupPanel({ onBack, biometricAvailable, verifyBiometric }: Bac
       <WarningNotice tone="warning" title={t('wallet.create.messageTitle')}>
         {t('wallet.create.messageBody')}
       </WarningNotice>
+
+      {needsBackup && (
+        <View testID="backup-phrase-unconfirmed">
+          <WarningNotice
+            tone="warning"
+            title={t('phrase_check.settings_pending')}
+            action={
+              <TextButton onPress={openBackup} testID="backup-confirm-phrase-button">
+                {t('phrase_check.settings_action')}
+              </TextButton>
+            }
+          >
+            {t('phrase_check.manual_body')}
+          </WarningNotice>
+        </View>
+      )}
 
       {hasNoMnemonic ? (
         <Text style={styles.emptyText} testID="backup-no-seed-phrase">

@@ -15,6 +15,8 @@ const mockApproveTransactionRequest = vi.fn();
 vi.mock('@salmon/shared', async () => ({
   // The real analytics client: the test reads what leaves the window.
   ...(await vi.importActual<object>('@salmon/shared/analytics')),
+  // Outside its provider the phrase check is never due: approval goes through.
+  ...(await vi.importActual<object>('@salmon/shared/contexts/PhraseBackupContext')),
   useDAppMetadata: (origin: string) => mockUseDAppMetadata(origin),
   approveSolanaTransactionRequest: (...args: unknown[]) => mockApproveTransactionRequest(...args),
   getDAppTransactionRequestSummary: (method: string) => mockGetSummary(method),
@@ -342,8 +344,9 @@ describe('DAppTransactionApprovalPage analytics', () => {
     );
     fireEvent.click(getByTestId('approve-button'));
 
+    // The phrase check is awaited first, so the refusal lands a tick later.
+    await vi.waitFor(() => expect(atAnswer).toEqual([[]]));
     expect(mockApproveTransactionRequest).not.toHaveBeenCalled();
-    expect(atAnswer).toEqual([[]]);
     expect(await analytics.sent()).toEqual([]);
   });
 

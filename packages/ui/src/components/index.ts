@@ -343,6 +343,10 @@ export type { SecurityPanelProps } from './SecurityPanel';
 export { BackupPanel } from './BackupPanel';
 export type { BackupPanelProps } from './BackupPanel';
 
+// PhraseBackupSheet - the recovery-phrase check (DEV-208)
+export { PhraseBackupSheet } from './PhraseBackupSheet';
+export type { PhraseBackupSheetProps } from './PhraseBackupSheet';
+
 // PrivateKeyPanel - Private key reveal per network
 export { PrivateKeyPanel } from './PrivateKeyPanel';
 export type { PrivateKeyPanelProps } from './PrivateKeyPanel';

@@ -27,7 +27,7 @@ vi.mock('@salmon/shared', async (importOriginal) => ({
 afterEach(cleanup);
 
 describe('CreateWalletPage seed-phrase copy', () => {
-  it('copies the phrase and says when Salmon clears the clipboard', async () => {
+  it('copies the phrase, counts down to the clear and holds the button until then', async () => {
     const writeText = vi.fn(() => Promise.resolve());
     Object.defineProperty(window.navigator, 'clipboard', {
       value: { writeText },
@@ -38,15 +38,18 @@ describe('CreateWalletPage seed-phrase copy', () => {
     // The warning step unlocks once its copy has been scrolled to the end.
     fireEvent.scroll(screen.getByText('wallet.create.messageBody').parentElement!);
     fireEvent.click(screen.getByTestId('seed-warning-continue-button'));
-    expect(screen.queryByTestId('create-seed-clipboard-clears')).toBeNull();
+    expect(screen.getAllByText('wallet.create.hold_to_copy').length).toBeGreaterThan(0);
 
     // A keyboard activation commits the hold at once (detail 0).
     fireEvent.click(screen.getByTestId('create-copy-seed-button'), { detail: 0 });
 
     await waitFor(() => {
-      expect(screen.getByTestId('create-seed-clipboard-clears')).toBeTruthy();
+      expect(screen.getAllByText('wallet.create.copied_clears').length).toBeGreaterThan(0);
     });
     expect(writeText).toHaveBeenCalledWith(PHRASE);
-    expect(screen.getByText('settings.secret_copied')).toBeTruthy();
+    // No second copy until the countdown ends.
+    expect((screen.getByTestId('create-copy-seed-button') as HTMLButtonElement).disabled).toBe(
+      true
+    );
   });
 });

@@ -5,6 +5,7 @@ import {
   CurrencyProvider,
   focusManager,
   PendingTransactionsProvider,
+  PhraseBackupProvider,
   QueryClientProvider,
   registerSeedVault,
   setApiPlatform,
@@ -81,7 +82,9 @@ export function AppProviders({ children }: { children: ReactNode }) {
                   shell unlocks with them, and Settings toggles them. Three
                   copies of that state is how the toggle and the lock screen
                   came to disagree. */}
-              <BiometricProvider>{children}</BiometricProvider>
+              <BiometricProvider>
+                <PhraseBackupProvider>{children}</PhraseBackupProvider>
+              </BiometricProvider>
             </ThemeProvider>
           </CurrencyProvider>
         </AccountsProvider>
