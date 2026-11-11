@@ -17,6 +17,15 @@ const mockVerifiedOrigins: unknown[] = [];
 // the signing functions, which this host never reaches.
 jest.mock('@solana/kit', () => ({}));
 jest.mock('@salmon/shared', () => ({
+  // The phrase check (DEV-208) is never due here.
+  usePhraseBackup: () => ({
+    needsBackup: false,
+    reminderVisible: false,
+    requireBackup: async () => true,
+    openBackup: () => {},
+    markUnconfirmed: async () => {},
+    dismissReminder: async () => {},
+  }),
   // The detail cards are the kit's, drawn for real.
   ...jest.requireActual('../../test-utils/themeTokens'),
   ...jest.requireActual('@salmon/shared/src/utils/mwa'),
@@ -114,6 +123,10 @@ jest.mock('../components/IconBubble', () => ({ IconBubble: () => null }));
 jest.mock('../i18n', () => ({
   I18nProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
+jest.mock('../components/PhraseBackupSheet', () => ({
+  PhraseBackupSheet: () => null,
+}));
+
 jest.mock('../providers/AppProviders', () => ({
   AppProviders: ({ children }: { children: React.ReactNode }) => children,
   useAppFonts: () => [true, null],

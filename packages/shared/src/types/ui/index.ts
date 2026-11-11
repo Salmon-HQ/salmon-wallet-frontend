@@ -143,6 +143,7 @@ export type { SecurityPanelPropsBase } from './security-panel';
 
 // Backup Panel
 export type { BackupPanelPropsBase } from './backup-panel';
+export type { PhraseBackupSheetPropsBase } from './phrase-backup-sheet';
 
 // Private Key Panel
 export type { PrivateKeyPanelPropsBase } from './private-key-panel';

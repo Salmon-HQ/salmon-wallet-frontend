@@ -119,14 +119,20 @@ export function PhraseBackupProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const requireBackup = useCallback(async () => {
-    if (!needsBackup) return true;
+    if (!wallet || !getAccountMnemonic(activeAccount)) return true;
+    // Read again rather than trust state: Android's dApp sheet is a second
+    // React root with its own provider, and the check may have passed there.
+    const stored = await getStorageItem<string[]>(STORAGE_KEYS.UNCONFIRMED_PHRASES);
+    const ids = Array.isArray(stored) ? stored : [];
+    setUnconfirmed(ids);
+    if (!ids.includes(wallet)) return true;
     // One sheet at a time: a second request answers the first as not confirmed.
     waiting.current?.(false);
     return new Promise<boolean>((resolve) => {
       waiting.current = resolve;
       setSheet({ reason: 'send' });
     });
-  }, [needsBackup]);
+  }, [wallet, activeAccount]);
 
   const openBackup = useCallback(() => setSheet({ reason: 'manual' }), []);
 
@@ -138,8 +144,7 @@ export function PhraseBackupProvider({ children }: { children: ReactNode }) {
   const cancelBackup = useCallback(() => settle(false), [settle]);
 
   const markUnconfirmed = useCallback(
-    (walletId: string) =>
-      update((ids) => (ids.includes(walletId) ? ids : [...ids, walletId])),
+    (walletId: string) => update((ids) => (ids.includes(walletId) ? ids : [...ids, walletId])),
     [update]
   );
 

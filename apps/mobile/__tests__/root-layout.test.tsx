@@ -127,6 +127,16 @@ jest.mock('@salmon/shared', () => {
   };
 
   return {
+    PhraseBackupProvider: ({ children }: { children: React.ReactNode }) => children,
+    // The phrase check (DEV-208) is never due here.
+    usePhraseBackup: () => ({
+      needsBackup: false,
+      reminderVisible: false,
+      requireBackup: async () => true,
+      openBackup: () => {},
+      markUnconfirmed: async () => {},
+      dismissReminder: async () => {},
+    }),
     focusManager: { setEventListener: jest.fn() },
     setApiPlatform: jest.fn(),
     initAnalytics: jest.fn(),

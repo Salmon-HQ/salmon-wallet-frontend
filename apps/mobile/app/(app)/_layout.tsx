@@ -7,7 +7,12 @@ import {
   isSignableSolanaAccount,
   useAccountsContext,
 } from '@salmon/shared';
-import { ConfirmationHost, LockOverlay, LockContent } from '../../src/components';
+import {
+  ConfirmationHost,
+  LockOverlay,
+  LockContent,
+  PhraseBackupSheet,
+} from '../../src/components';
 import { useBiometric } from '../../src/contexts/BiometricContext';
 import { TaskChromeProvider } from '../../src/contexts/TaskChromeContext';
 import { DerivedAccountsProvider } from '../../src/contexts/DerivedAccountsContext';
@@ -46,6 +51,12 @@ export default function AppLayout() {
     disarm: disarmBiometric,
     refresh: refreshBiometricState,
   } = useBiometric();
+
+  // The phrase check reads only the verdict; the recovered password is dropped.
+  const verifyBiometric = useCallback(
+    async () => (await biometricUnlock()).status === 'ok',
+    [biometricUnlock]
+  );
 
   // The parked unlock release. A password unlock flips `locked` the instant the
   // crypto resolves, and unmounting the overlay takes the unlock wait with it,
@@ -206,6 +217,15 @@ export default function AppLayout() {
           signed and broadcast from above the lock screen. Unmounting holds the
           request in context; it is presented again once the wallet is open. */}
             {!isLocked && <ConfirmationHost />}
+
+            {/* The recovery-phrase check (DEV-208): a send waits on it, so it
+          sits with the confirmation window, and not over the lock either. */}
+            {!isLocked && (
+              <PhraseBackupSheet
+                biometricAvailable={biometricAvailable && biometricArmed}
+                verifyBiometric={verifyBiometric}
+              />
+            )}
 
             {/* The lock screen. It covers every screen this stack can push and
           takes every touch. */}

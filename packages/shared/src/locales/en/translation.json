@@ -516,7 +516,9 @@
       "biometric_setup_error": "Failed to enable biometrics. You can set it up later in Settings.",
       "creating_account": "Creating Account",
       "securing_wallet": "Please wait while we secure your wallet",
-      "acknowledge_written_down": "I wrote my recovery phrase down somewhere safe"
+      "acknowledge_written_down": "I wrote my recovery phrase down somewhere safe",
+      "saved_it": "I saved it",
+      "save_later": "Save it later"
     },
     "recover": {
       "messageTitle": "Recover Existing Account",
@@ -992,5 +994,26 @@
       "deactivating": "Deactivating",
       "inactive": "Inactive"
     }
+  },
+  "phrase_check": {
+    "send_title": "Before your first send",
+    "send_body": "Confirm you saved your recovery phrase. It is the only way to get your funds back if you lose this device.",
+    "manual_title": "Confirm your recovery phrase",
+    "manual_body": "Answer three questions about your phrase to confirm you saved it.",
+    "start": "Confirm now",
+    "password_title": "Enter your password",
+    "password_body": "Your recovery phrase shows next. Make sure no one is looking.",
+    "phrase_title": "Your recovery phrase",
+    "phrase_body": "Check it against the copy you saved.",
+    "missed": "That was not the right word. Check your phrase and try again.",
+    "phrase_seen": "Continue",
+    "question_title": "Question {{current}} of {{total}}",
+    "question": "Which is word #{{position}}?",
+    "reminder_title": "Save your recovery phrase",
+    "reminder_body": "It is the only way to get your funds back if you lose this device. We will ask you to confirm it before your first send.",
+    "reminder_action": "Save it now",
+    "reminder_dismiss": "Not now",
+    "settings_action": "Confirm phrase",
+    "settings_pending": "Not confirmed yet"
   }
 }

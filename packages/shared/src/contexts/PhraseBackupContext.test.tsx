@@ -66,7 +66,7 @@ describe('PhraseBackupProvider', () => {
     act(() => {
       signed = result.current.requireBackup();
     });
-    expect(result.current.sheet).toEqual({ reason: 'send' });
+    await waitFor(() => expect(result.current.sheet).toEqual({ reason: 'send' }));
 
     await act(() => result.current.confirmBackup());
 
@@ -85,6 +85,7 @@ describe('PhraseBackupProvider', () => {
     act(() => {
       signed = result.current.requireBackup();
     });
+    await waitFor(() => expect(result.current.sheet).not.toBeNull());
     act(() => result.current.cancelBackup());
 
     await expect(signed).resolves.toBe(false);

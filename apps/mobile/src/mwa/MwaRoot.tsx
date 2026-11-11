@@ -22,6 +22,7 @@ import { setMwaOnScreen } from '../analytics/appAnalytics';
 import { ConfirmSheet } from '../components/ConfirmSheet';
 import { LockContent } from '../components/LockOverlay';
 import { DepthBackground } from '../components/DepthBackground';
+import { PhraseBackupSheet } from '../components/PhraseBackupSheet';
 import { useBiometric } from '../contexts/BiometricContext';
 import { I18nProvider } from '../i18n';
 import { AppProviders, useAppFonts } from '../providers/AppProviders';
@@ -199,12 +200,19 @@ export function MwaHost() {
 
   const account = state.activeBlockchainAccount;
   return (
-    <MwaRequest
-      key={current.requestId}
-      request={current}
-      respond={respond}
-      account={account && isSignableSolanaAccount(account) ? account : null}
-    />
+    <>
+      <MwaRequest
+        key={current.requestId}
+        request={current}
+        respond={respond}
+        account={account && isSignableSolanaAccount(account) ? account : null}
+      />
+      {/* A new wallet's first transaction waits on the phrase check (DEV-208). */}
+      <PhraseBackupSheet
+        biometricAvailable={biometric.available && biometric.armed}
+        verifyBiometric={async () => (await biometric.unlock()).status === 'ok'}
+      />
+    </>
   );
 }
 

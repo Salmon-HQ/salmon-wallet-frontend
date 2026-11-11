@@ -3,11 +3,8 @@ import { wordlist } from '@scure/bip39/wordlists/english.js';
 
 import { buildPhraseQuiz, PHRASE_QUIZ_OPTIONS, PHRASE_QUIZ_QUESTIONS } from './phrase-quiz';
 
-// The public test vector: never a real wallet's phrase.
-const WORDS =
-  'abandon ability able about above absent absorb abstract absurd abuse access accident'.split(
-    ' '
-  );
+// The first twelve words of the BIP39 list: a test phrase, never a wallet's.
+const WORDS = wordlist.slice(0, 12);
 
 /** A deterministic stand-in for Math.random, cycling through `values`. */
 function sequence(...values: number[]) {

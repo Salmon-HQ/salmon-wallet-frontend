@@ -245,6 +245,8 @@ export type { DerivedFindRow, UseDerivedFindRowsResult } from './useDerivedFindR
 
 // Form state the kit renders on both platforms; the vault calls are injected
 export { usePasswordConfirm } from './usePasswordConfirm';
+export { usePhraseBackupSheet } from './usePhraseBackupSheet';
+export type { PhraseBackupStep, UsePhraseBackupSheetResult } from './usePhraseBackupSheet';
 export type { PasswordConfirmState, UsePasswordConfirmParams } from './usePasswordConfirm';
 export { useChangePassword } from './useChangePassword';
 export type { UseChangePasswordParams } from './useChangePassword';

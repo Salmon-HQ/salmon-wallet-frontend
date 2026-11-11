@@ -47,6 +47,15 @@ jest.mock('../../src/contexts/DerivedAccountsContext', () => ({
 }));
 
 jest.mock('@salmon/shared', () => ({
+  // The phrase check (DEV-208) is never due here.
+  usePhraseBackup: () => ({
+    needsBackup: false,
+    reminderVisible: false,
+    requireBackup: async () => true,
+    openBackup: () => {},
+    markUnconfirmed: async () => {},
+    dismissReminder: async () => {},
+  }),
   // The confirmation provider and host are core's own (their own suites);
   // the layout only has to mount them.
   SignatureRequestProvider: ({ children }: { children: React.ReactNode }) => children,
@@ -124,6 +133,7 @@ jest.mock('../../src/components', () => {
   const { View } = require('react-native');
   const ReactActual = require('react');
   return {
+    PhraseBackupSheet: () => null,
     ConfirmationHost: () => null,
     LockOverlay: ({ children }: { children: React.ReactNode }) =>
       ReactActual.createElement(
