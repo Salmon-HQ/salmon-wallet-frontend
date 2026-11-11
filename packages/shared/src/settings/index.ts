@@ -15,6 +15,7 @@ export {
 } from './registry';
 export {
   CURRENCY_ITEMS,
+  filterCurrencyItems,
   toAddressBookItems,
   toExplorerItems,
   toLanguageItems,

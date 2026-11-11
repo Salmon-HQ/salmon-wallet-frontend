@@ -5,13 +5,15 @@
  * to select their preferred display currency.
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { type CurrencySelectorItem } from '@salmon/shared';
+import { type CurrencySelectorItem, filterCurrencyItems } from '@salmon/shared';
 import { IconBubble } from '../IconBubble';
+import { SearchField } from '../SearchField';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { SettingsSelectorList } from '../SettingsSelectorList';
+import { StateBlock } from '../StateBlock';
 import type { CurrencySelectorProps } from './types';
 
 // ============================================================================
@@ -25,6 +27,8 @@ export function CurrencySelector({
   onBack,
 }: CurrencySelectorProps) {
   const { t } = useTranslation();
+  const [query, setQuery] = useState('');
+  const shown = useMemo(() => filterCurrencyItems(currencies, query), [currencies, query]);
 
   const handleSelect = useCallback(
     (item: CurrencySelectorItem) => onSelectCurrency(item.code),
@@ -46,16 +50,30 @@ export function CurrencySelector({
       subtitle={t('settings.currency_subtitle', 'Choose the currency balances show in.')}
       onBack={onBack}
     >
-      <SettingsSelectorList
-        items={currencies}
-        getKey={(item) => item.code}
-        isSelected={(item) => activeCurrencyCode === item.code}
-        onSelect={handleSelect}
-        getPrimaryText={(item) => item.name}
-        getSecondaryText={(item) => item.code.toUpperCase()}
-        renderLeadingElement={renderSymbol}
-        testIdPrefix="currency-option"
+      <SearchField
+        testID="currency-search-input"
+        value={query}
+        onChangeText={setQuery}
+        placeholder={t('settings.currency_search', 'Search currency')}
       />
+      {shown.length === 0 ? (
+        <StateBlock
+          testID="currency-no-match"
+          tone="empty"
+          title={t('settings.currency_no_match', 'No currencies match')}
+        />
+      ) : (
+        <SettingsSelectorList
+          items={shown}
+          getKey={(item) => item.code}
+          isSelected={(item) => activeCurrencyCode === item.code}
+          onSelect={handleSelect}
+          getPrimaryText={(item) => item.name}
+          getSecondaryText={(item) => item.code.toUpperCase()}
+          renderLeadingElement={renderSymbol}
+          testIdPrefix="currency-option"
+        />
+      )}
     </SettingsScreenLayout>
   );
 }

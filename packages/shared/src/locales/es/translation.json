@@ -213,6 +213,8 @@
     "security_notice_title": "Nunca compartas tus claves",
     "currency": "Moneda de visualización",
     "currency_subtitle": "Elegí en qué moneda se muestran tus saldos.",
+    "currency_search": "Buscar moneda",
+    "currency_no_match": "Ninguna moneda coincide",
     "appearance": "Apariencia",
     "appearance_subtitle": "Elegí modo claro, oscuro o automático.",
     "appearance_options": {
