@@ -12,7 +12,19 @@
  * mobile draws with `react-native-svg`, already serialised for the DOM there
  * (spec 028's DOM-alternatives table); this component does not redraw it.
  */
-import { componentSizes, fontFamily, fontSize, fontWeight, letterSpacing } from '@salmon/shared';
+import { useContext, useEffect, useState } from 'react';
+import {
+  componentSizes,
+  fontFamily,
+  fontSize,
+  fontWeight,
+  letterSpacing,
+  motionEasing,
+  motionMs,
+  previousActionLit,
+  recordActionLit,
+} from '@salmon/shared';
+import { OnboardingActionContext } from './actionHandover';
 
 import { useSemantic } from '../../theme/ThemeProvider';
 import { useReducedMotion } from '../../motion';
@@ -40,6 +52,27 @@ export function PrimaryButton({
   const { text, accent, surface } = useSemantic();
   const { pressed, handlers } = usePressed();
   const reducedMotion = useReducedMotion();
+  const handover = useContext(OnboardingActionContext);
+  // In onboarding the fill eases in and out instead of switching, starting
+  // from the previous step's button (see `actionHandover`), and a new label
+  // fades in where the last one was.
+  const [lit, setLit] = useState(() => (handover ? previousActionLit() : null) ?? !isDisabled);
+  const [labelShown, setLabelShown] = useState(!handover);
+  useEffect(() => {
+    if (!handover) return;
+    recordActionLit(!isDisabled);
+    const frame = requestAnimationFrame(() => setLit(!isDisabled));
+    return () => cancelAnimationFrame(frame);
+  }, [handover, isDisabled]);
+  useEffect(() => {
+    if (!handover) return;
+    setLabelShown(false);
+    const frame = requestAnimationFrame(() => setLabelShown(true));
+    return () => cancelAnimationFrame(frame);
+  }, [handover, children]);
+  const ease = reducedMotion
+    ? 'none'
+    : `opacity ${motionMs.contentChange}ms ${motionEasing.current.css}`;
 
   return (
     <button
@@ -65,7 +98,7 @@ export function PrimaryButton({
         boxSizing: 'border-box',
         width: fullWidth === false ? 'auto' : '100%',
         height: componentSizes.buttonHeight,
-        backgroundColor: isDisabled ? surface.crest : accent.fill,
+        backgroundColor: isDisabled || handover ? surface.crest : accent.fill,
         border: 'none',
         borderRadius: componentSizes.buttonRadius,
         display: 'flex',
@@ -86,7 +119,22 @@ export function PrimaryButton({
           fill. A filled button is mass, not surface, so the material it
           shows is the inside of the fish rather than its skin. Absent when
           the fill is absent. */}
-      {!isDisabled && <FleshBackground scale={componentSizes.buttonFleshScale} />}
+      {handover ? (
+        <span
+          aria-hidden
+          style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundColor: accent.fill,
+            opacity: lit ? 1 : 0,
+            transition: ease,
+          }}
+        >
+          <FleshBackground scale={componentSizes.buttonFleshScale} />
+        </span>
+      ) : (
+        !isDisabled && <FleshBackground scale={componentSizes.buttonFleshScale} />
+      )}
       {loading ? (
         <Spinner color={isDisabled ? text.disabled : accent.onFill} size={24} />
       ) : (
@@ -96,6 +144,8 @@ export function PrimaryButton({
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
+            opacity: labelShown ? 1 : 0,
+            transition: labelShown ? ease : 'none',
           }}
         >
           {children}
