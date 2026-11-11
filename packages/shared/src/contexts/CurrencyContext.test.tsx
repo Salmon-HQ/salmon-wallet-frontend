@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
 
@@ -108,6 +108,34 @@ describe('CurrencyProvider', () => {
 
     await waitFor(() => expect(result.current[0].isFallback).toBe(true));
     expect(result.current[0].isLoading).toBe(false);
+  });
+
+  it('shows US dollars, never a dollar figure under another symbol, when the chosen currency has no rate', async () => {
+    // An older backend, or its long-term cache, rates only the original 15.
+    mockGetExchangeRates.mockResolvedValue(REAL_RATES);
+    const { result } = setup({ ready: true, locked: false });
+    await waitFor(() => expect(result.current[0].rates).toEqual(REAL_RATES));
+
+    await act(() => result.current[1].changeCurrency('czk'));
+
+    expect(result.current[0].currency).toBe('czk');
+    expect(result.current[0].isFallback).toBe(true);
+    expect(result.current[1].formatValue(10)).toBe('$10.00');
+    expect(result.current[1].convert(10)).toBe(10);
+  });
+
+  it('converts into the chosen currency when it has a rate', async () => {
+    mockGetExchangeRates.mockResolvedValue({
+      ...REAL_RATES,
+      rates: { usd: 1, eur: 0.92, czk: 22 },
+    } as unknown as ExchangeRates);
+    const { result } = setup({ ready: true, locked: false });
+    await waitFor(() => expect(result.current[0].rates).not.toBeNull());
+
+    await act(() => result.current[1].changeCurrency('czk'));
+
+    expect(result.current[0].isFallback).toBe(false);
+    expect(result.current[1].formatValue(10)).toBe('220.00 Kč');
   });
 
   it('still surfaces an unexpected failure as a console error', async () => {

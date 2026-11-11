@@ -13,7 +13,13 @@ import {
   formatTokenBalance,
   showPercentage,
 } from './formatting';
-import { formatFiatChange, formatFiatPrice, formatFiatValue } from './currencyFormatting';
+import {
+  formatFiatChange,
+  formatFiatIntl,
+  formatFiatLarge,
+  formatFiatPrice,
+  formatFiatValue,
+} from './currencyFormatting';
 
 /** U+2212, the typographic minus the number contract renders negatives with. */
 const MINUS = '\u2212';
@@ -262,5 +268,41 @@ describe('fiat renderers', () => {
     expect(formatFiatChange(10.5, 'usd', 1, 'en')).toBe('+$10.50');
     expect(formatFiatChange(-5.25, 'usd', 1, 'en')).toBe(`${MINUS}$5.25`);
     expect(formatFiatChange(-5.25, 'usd', 1, 'es')).toBe(`${MINUS}$5,25`);
+  });
+});
+
+describe('fiat symbol placement', () => {
+  const NBSP = ' ';
+
+  it("puts the symbol where the currency's own country does", () => {
+    expect(formatFiatValue(1234.5, 'czk', 1, 'en')).toBe(`1,234.50${NBSP}Kč`);
+    expect(formatFiatValue(1234.5, 'pln', 1, 'es')).toBe(`1.234,50${NBSP}zł`);
+    expect(formatFiatValue(1234.5, 'chf', 1, 'en')).toBe(`CHF${NBSP}1,234.50`);
+    expect(formatFiatValue(1234.5, 'eur', 1, 'en')).toBe('€1,234.50');
+    expect(formatFiatValue(1234.5, 'ars', 1, 'en')).toBe('AR$1,234.50');
+  });
+
+  it("uses the currency's own decimals", () => {
+    expect(formatFiatValue(1234.5, 'huf', 1, 'en')).toBe(`1,235${NBSP}Ft`);
+    expect(formatFiatValue(1234.5, 'kwd', 1, 'en')).toBe(`KWD${NBSP}1,234.500`);
+  });
+
+  it('converts at the rate before placing the symbol', () => {
+    expect(formatFiatValue(100, 'czk', 22, 'en')).toBe(`2,200.00${NBSP}Kč`);
+  });
+
+  it('keeps the sign ahead of the whole figure', () => {
+    expect(formatFiatChange(10.5, 'czk', 1, 'en')).toBe(`+10.50${NBSP}Kč`);
+    expect(formatFiatChange(-10.5, 'czk', 1, 'en')).toBe(`${MINUS}10.50${NBSP}Kč`);
+  });
+
+  it('places the symbol after a large-number suffix', () => {
+    expect(formatFiatLarge(1_500_000, 'czk', 1, 'en')).toBe(`1.50M${NBSP}Kč`);
+    expect(formatFiatLarge(1_500_000, 'usd', 1, 'en')).toBe('$1.50M');
+  });
+
+  it('formats a price and a chart tooltip the same way', () => {
+    expect(formatFiatPrice(0.5, 'czk', 1, 'en')).toBe(`0.5${NBSP}Kč`);
+    expect(formatFiatIntl(1234.5, 'czk', 'en')).toBe(`1,234.50${NBSP}Kč`);
   });
 });

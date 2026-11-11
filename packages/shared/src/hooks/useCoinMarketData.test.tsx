@@ -44,7 +44,7 @@ describe('useCoinMarketData', () => {
     });
 
     const { result } = renderWithClient(
-      () => useCoinMarketData({ coinId: 'bitcoin', currency: 'usd', days: 7 }),
+      () => useCoinMarketData({ coinId: 'bitcoin', days: 7 }),
       undefined as void
     );
 
@@ -77,8 +77,7 @@ describe('useCoinMarketData', () => {
     });
 
     const { result, rerender } = renderWithClient(
-      ({ days }: { days: 1 | 7 | 30 | 90 | 365 }) =>
-        useCoinMarketData({ coinId: 'solana', currency: 'usd', days }),
+      ({ days }: { days: 1 | 7 | 30 | 90 | 365 }) => useCoinMarketData({ coinId: 'solana', days }),
       { days: 7 } as { days: 1 | 7 | 30 | 90 | 365 }
     );
 
@@ -115,7 +114,7 @@ describe('useCoinMarketData', () => {
 
   it('skips fetching when coinId and contractAddress are undefined', () => {
     const { result } = renderWithClient(
-      () => useCoinMarketData({ coinId: undefined, currency: 'usd', days: 7 }),
+      () => useCoinMarketData({ coinId: undefined, days: 7 }),
       undefined as void
     );
     expect(mockGetTokenCoinInfo).not.toHaveBeenCalled();
@@ -141,7 +140,6 @@ describe('useCoinMarketData', () => {
         useCoinMarketData({
           coinId: undefined,
           contractAddress: USDC_MINT,
-          currency: 'usd',
           days: 7,
         }),
       undefined as void
@@ -174,7 +172,6 @@ describe('useCoinMarketData', () => {
         useCoinMarketData({
           coinId: undefined,
           contractAddress: 'mockJUPmintNotListedOnCoinGecko111111111111',
-          currency: 'usd',
           days: 7,
         }),
       undefined as void
@@ -194,7 +191,7 @@ describe('useCoinMarketData', () => {
     mockGetTokenMarketChart.mockResolvedValue({ prices: [], marketCaps: [], totalVolumes: [] });
 
     const { result } = renderWithClient(
-      () => useCoinMarketData({ coinId: 'bitcoin', currency: 'usd', days: 7 }),
+      () => useCoinMarketData({ coinId: 'bitcoin', days: 7 }),
       undefined as void
     );
 
@@ -212,7 +209,6 @@ describe('useCoinMarketData', () => {
         useCoinMarketData({
           coinId: undefined,
           contractAddress: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-          currency: 'usd',
           days: 7,
         }),
       undefined as void
@@ -234,7 +230,6 @@ describe('useCoinMarketData off mainnet', () => {
       () =>
         useCoinMarketData({
           coinId: 'solana',
-          currency: 'usd',
           days: 7,
           networkId: 'solana-devnet',
         }),
@@ -260,7 +255,6 @@ describe('useCoinMarketData off mainnet', () => {
       () =>
         useCoinMarketData({
           coinId: 'solana',
-          currency: 'usd',
           days: 7,
           networkId: 'solana-mainnet',
         }),

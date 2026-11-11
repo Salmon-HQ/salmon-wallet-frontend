@@ -33,6 +33,7 @@ import { AccountsContext } from './AccountsContext';
 import { getStorage, STORAGE_KEYS } from '../storage';
 import {
   formatFiatValue,
+  formatFiatPrice,
   formatFiatLarge,
   formatFiatChange,
   formatFiatPrecise,
@@ -55,9 +56,10 @@ export interface CurrencyState {
   /** Whether rates are being loaded */
   isLoading: boolean;
   /**
-   * True when the rates in use are the offline fallback (USD only) rather
-   * than real quotes. Every non-USD amount is then a USD number wearing the
-   * wrong symbol, so the UI should say so instead of passing it off as real.
+   * True when amounts are not in the chosen currency: the rates are the
+   * offline fallback, or they carry no rate for it (an older backend). The
+   * formatters then show US dollars with the dollar sign, never a dollar figure
+   * under another currency's symbol.
    */
   isFallback: boolean;
 }
@@ -69,6 +71,8 @@ export interface CurrencyActions {
   convert: (usdAmount: number) => number;
   /** Format a USD amount as a fiat value with symbol (replaces showAmount) */
   formatValue: (usdAmount: number | null | undefined) => string;
+  /** Format a USD amount as a token price: more digits below one unit */
+  formatPrice: (usdAmount: number | null | undefined) => string;
   /** Format a USD amount as a large-number string (replaces formatUSD) */
   formatLarge: (usdAmount: number | null | undefined) => string;
   /** Format an absolute change with sign and symbol (replaces showAbsoluteChange) */
@@ -121,9 +125,12 @@ export function CurrencyProvider({ children }: CurrencyProviderProps) {
   const shouldFetchRates = accountsState ? accountsState.ready && !accountsState.locked : true;
 
   // Derived values
-  const exchangeRate = rates?.rates?.[currency] ?? 1;
+  const chosenRate = rates?.rates?.[currency];
+  // Without a rate for the chosen currency, every figure stays in US dollars.
+  const shown: CurrencyCode = chosenRate === undefined ? 'usd' : currency;
+  const exchangeRate = chosenRate ?? 1;
   const currencyInfo = CURRENCY_MAP[currency];
-  const isFallback = rates === FALLBACK_RATES;
+  const isFallback = rates === FALLBACK_RATES || (rates !== null && chosenRate === undefined);
 
   // --------------------------------------------------
   // Load saved currency from storage
@@ -188,27 +195,32 @@ export function CurrencyProvider({ children }: CurrencyProviderProps) {
   const convert = useCallback((usdAmount: number) => usdAmount * exchangeRate, [exchangeRate]);
 
   const formatValue = useCallback(
-    (usdAmount: number | null | undefined) => formatFiatValue(usdAmount, currency, exchangeRate),
-    [currency, exchangeRate]
+    (usdAmount: number | null | undefined) => formatFiatValue(usdAmount, shown, exchangeRate),
+    [shown, exchangeRate]
+  );
+
+  const formatPrice = useCallback(
+    (usdAmount: number | null | undefined) => formatFiatPrice(usdAmount, shown, exchangeRate),
+    [shown, exchangeRate]
   );
 
   const formatLarge = useCallback(
-    (usdAmount: number | null | undefined) => formatFiatLarge(usdAmount, currency, exchangeRate),
-    [currency, exchangeRate]
+    (usdAmount: number | null | undefined) => formatFiatLarge(usdAmount, shown, exchangeRate),
+    [shown, exchangeRate]
   );
 
   const formatChange = useCallback(
-    (usdAmount: number | null | undefined) => formatFiatChange(usdAmount, currency, exchangeRate),
-    [currency, exchangeRate]
+    (usdAmount: number | null | undefined) => formatFiatChange(usdAmount, shown, exchangeRate),
+    [shown, exchangeRate]
   );
 
   const formatPrecise = useCallback(
     (usdAmount: number | null | undefined, dec?: number) =>
-      formatFiatPrecise(usdAmount, currency, exchangeRate, dec),
-    [currency, exchangeRate]
+      formatFiatPrecise(usdAmount, shown, exchangeRate, dec),
+    [shown, exchangeRate]
   );
 
-  const symbol = getCurrencySymbol(currency);
+  const symbol = getCurrencySymbol(shown);
 
   const refreshRates = useCallback(async () => {
     setIsLoading(true);
@@ -225,6 +237,7 @@ export function CurrencyProvider({ children }: CurrencyProviderProps) {
         changeCurrency,
         convert,
         formatValue,
+        formatPrice,
         formatLarge,
         formatChange,
         formatPrecise,
@@ -242,6 +255,7 @@ export function CurrencyProvider({ children }: CurrencyProviderProps) {
       changeCurrency,
       convert,
       formatValue,
+      formatPrice,
       formatLarge,
       formatChange,
       formatPrecise,

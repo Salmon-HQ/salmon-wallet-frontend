@@ -73,7 +73,7 @@ export default function TokenDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const styles = useThemedStyles(stylesFor);
-  const [{ currency }, { formatValue }] = useCurrencyContext();
+  const [, { formatValue }] = useCurrencyContext();
 
   const [accountState] = useAccountsContext();
   const { ready, activeAccount, activeBlockchainAccount, networkId } = accountState;
@@ -119,7 +119,6 @@ export default function TokenDetailScreen() {
   } = useCoinMarketData({
     coinId: token?.coingeckoId ?? undefined,
     contractAddress: token?.address,
-    currency,
     days: PERIOD_TO_DAYS[chartPeriod],
   });
   const chartData = useMemo(() => chartDataRaw ?? [], [chartDataRaw]);
