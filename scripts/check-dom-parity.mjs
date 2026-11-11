@@ -95,7 +95,10 @@ import { fileURLToPath } from 'node:url';
 // 2026-11-11, later: 2438 → 2442. The phrase step's copy button on both
 // `PhraseBackupSheet` twins: the same JSX, no logic — the copy and its
 // countdown are `copyPhrase` / `copyLabel` in `usePhraseBackupSheet`.
-export const CROSS_PLATFORM_CLONE_LINES_MAX = 2442;
+// 2026-11-11, with DEV-206 merged: 2442 → 2458. The currency selector's search
+// field and empty state on both `CurrencySelector` twins: the same JSX, no
+// logic — the filtering is `filterCurrencyItems` in shared.
+export const CROSS_PLATFORM_CLONE_LINES_MAX = 2458;
 
 /** Twins whose folders are not named the same. mobile folder → DOM folder(s). */
 export const MAP = {
