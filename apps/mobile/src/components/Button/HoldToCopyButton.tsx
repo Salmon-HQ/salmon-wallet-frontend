@@ -4,8 +4,9 @@
  * The React Native counterpart of the hold logic in
  * `packages/ui/src/components/HoldToApproveButton/HoldToApproveButton.tsx` (DOM-only,
  * so it cannot be imported here). Same contract: holding for half a second
- * commits, releasing early cancels, and progress is drawn as a line along the
- * bottom edge. Used for copying the seed phrase — the clipboard is readable by
+ * commits, releasing early cancels. On the copy, the primary button's salmon
+ * fill and texture sweep across the outline as it is held; on an approval,
+ * progress is a line along the bottom edge. Used for copying the seed phrase — the clipboard is readable by
  * anything, so the copy costs the same deliberate act as signing does.
  *
  * The hold is friction against a reflex, not a security control. With a screen
@@ -34,7 +35,7 @@ export interface HoldToCopyButtonProps extends Testable {
 
 export function HoldToCopyButton({ onCopy, children, disabled, testID }: HoldToCopyButtonProps) {
   return (
-    <HoldButton onCommit={onCopy} disabled={disabled} testID={testID} Button={SecondaryButton}>
+    <HoldButton onCommit={onCopy} disabled={disabled} testID={testID} Button={SecondaryButton} fill>
       {children}
     </HoldButton>
   );
@@ -84,11 +85,14 @@ interface HoldButtonProps extends Testable {
   children: string;
   disabled?: boolean;
   Button: typeof PrimaryButton | typeof SecondaryButton | typeof DangerFillButton;
+  /** Progress sweeps the primary button's fill across, instead of a bottom line. */
+  fill?: boolean;
 }
 
-function HoldButton({ onCommit, children, disabled, testID, Button }: HoldButtonProps) {
+function HoldButton({ onCommit, children, disabled, testID, Button, fill }: HoldButtonProps) {
   const styles = useThemedStyles(stylesFor);
   const [progress, setProgress] = useState(0);
+  const [width, setWidth] = useState(0);
   const frame = useRef<number | null>(null);
   const startedAt = useRef<number | null>(null);
   const [screenReaderOn, setScreenReaderOn] = useState(false);
@@ -136,6 +140,7 @@ function HoldButton({ onCommit, children, disabled, testID, Button }: HoldButton
   return (
     <View
       style={styles.wrapper}
+      onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
       onTouchStart={screenReaderOn ? undefined : start}
       onTouchEnd={stop}
       onTouchCancel={stop}
@@ -157,13 +162,28 @@ function HoldButton({ onCommit, children, disabled, testID, Button }: HoldButton
       >
         {children}
       </Button>
-      {progress > 0 && (
-        <View
-          testID="hold-progress"
-          pointerEvents="none"
-          style={[styles.progress, { width: `${Math.min(progress, 1) * 100}%` }]}
-        />
-      )}
+      {progress > 0 &&
+        (fill ? (
+          // The primary button itself, clipped to the progress: the salmon
+          // fill and its texture sweep in from the left under the finger.
+          <View
+            testID="hold-progress"
+            pointerEvents="none"
+            importantForAccessibility="no-hide-descendants"
+            accessibilityElementsHidden
+            style={[styles.fill, { width: `${Math.min(progress, 1) * 100}%` }]}
+          >
+            <PrimaryButton onPress={noop} style={{ width }}>
+              {children}
+            </PrimaryButton>
+          </View>
+        ) : (
+          <View
+            testID="hold-progress"
+            pointerEvents="none"
+            style={[styles.progress, { width: `${Math.min(progress, 1) * 100}%` }]}
+          />
+        ))}
     </View>
   );
 }
@@ -189,6 +209,13 @@ const stylesFor = (t: Semantic) =>
     wrapper: {
       position: 'relative',
       width: '100%',
+    },
+    fill: {
+      position: 'absolute',
+      left: 0,
+      top: 0,
+      bottom: 0,
+      overflow: 'hidden',
     },
     progress: {
       position: 'absolute',

@@ -27,19 +27,18 @@
  * security decision, not a stylistic one.
  */
 import {
-  borderRadius,
   componentSizes,
   fontFamily,
   fontSize,
   generateMnemonic,
   lineHeight,
-  motionMs,
   spacing,
+  useSecretCopied,
 } from '@salmon/shared';
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type UIEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { CheckCircleIcon, iconSize, SparkleIcon, WarningIcon } from '../../icons';
+import { SparkleIcon, WarningIcon } from '../../icons';
 import { secretClipboard } from '../../hooks/useSecretClipboard';
 import { useSemantic } from '../../theme/ThemeProvider';
 import { PrimaryButton, TextButton } from '../Button';
@@ -47,7 +46,6 @@ import { HoldToApproveButton } from '../HoldToApproveButton';
 import { OnboardingDescription, OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
 import { ScreenHeader } from '../ScreenHeader';
 import { SeedWordGrid } from '../SeedPhrase';
-import { WarningNotice } from '../WarningNotice';
 import type { CreateWalletPageProps } from './types';
 
 type Step = 'message' | 'seedPhrase';
@@ -148,52 +146,6 @@ function MessageStep({
   );
 }
 
-/**
- * The copy confirmation — mobile's toast: the success glyph and the line, on
- * the backdrop scrim, floating over the action.
- */
-function Toast({ message }: { message: string }) {
-  const { overlay, status, text } = useSemantic();
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        bottom: 100,
-        left: 0,
-        right: 0,
-        display: 'flex',
-        justifyContent: 'center',
-        zIndex: 1000,
-        pointerEvents: 'none',
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: spacing.sm,
-          backgroundColor: overlay.backdrop,
-          padding: `${spacing.md}px ${spacing.lg}px`,
-          borderRadius: borderRadius['2xl'],
-        }}
-      >
-        <CheckCircleIcon size={iconSize.md} color={status.success} />
-        <span
-          style={{
-            color: text.primary,
-            fontFamily: fontFamily.sans,
-            fontSize: fontSize.body,
-            lineHeight: `${Math.round(fontSize.body * lineHeight.snug)}px`,
-          }}
-        >
-          {message}
-        </span>
-      </div>
-    </div>
-  );
-}
-
 function SeedPhraseStep({
   mnemonic,
   onNext,
@@ -206,96 +158,97 @@ function SeedPhraseStep({
   t: (key: string) => string;
 }) {
   const { surface, text } = useSemantic();
-  const [showToast, setShowToast] = useState(false);
-  const [secretCopied, setSecretCopied] = useState(false);
+  // The button itself says the copy is there and for how long; it goes back
+  // to "Hold to copy" when the clipboard is cleared.
+  const { copied: secretCopied, markCopied } = useSecretCopied();
   const words = mnemonic.split(' ');
 
   const handleCopy = useCallback(async () => {
     try {
       // Cleared 60 s later, or on the return to the panel (useSecretClipboard).
       await secretClipboard.copy(mnemonic);
-      setSecretCopied(true);
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), motionMs.feedbackHold);
+      markCopied();
     } catch {
       // Clipboard API may not be available
     }
-  }, [mnemonic]);
+  }, [mnemonic, markCopied]);
 
   return (
-    <>
-      <OnboardingLayout
-        testID="create-seed-screen"
-        variant="content"
-        backgroundColor={surface.bedrock}
-        scrollBody
-        // The sparkle: something new coming into being. See the warning
-        // phase's mark note above.
-        mark={<SparkleIcon size={ICON_SIZE} color={text.primary} />}
-        chrome={
-          <ScreenHeader
-            onBack={onBack}
-            stepIndicator={{ totalSteps: CREATE_FLOW_STEPS, currentStep: 2 }}
-          />
-        }
-        title={<OnboardingTitle>{t('wallet.create.your_seed_phrase')}</OnboardingTitle>}
-        description={
-          <OnboardingDescription>{t('wallet.create.your_seed_phrase_body')}</OnboardingDescription>
-        }
-        body={
-          // The component gap (`spacing.xl`) between the description and the
-          // grid — the "content" variant's compact rung reserves only one
-          // description line plus its own buffer, and this screen's copy can
-          // wrap to two lines at the extension side panel's narrow widths,
-          // eating that buffer and leaving the grid flush under the text.
-          <div style={{ paddingTop: spacing.xl }}>
-            <SeedWordGrid words={words} columns={3} />
-            {/*
-              The same standing warning BackupPanel and PrivateKeyPanel show
-              before either of them lets a secret reach the clipboard.
+    <OnboardingLayout
+      testID="create-seed-screen"
+      variant="content"
+      backgroundColor={surface.bedrock}
+      scrollBody
+      // The sparkle: something new coming into being. See the warning
+      // phase's mark note above.
+      mark={<SparkleIcon size={ICON_SIZE} color={text.primary} />}
+      chrome={
+        <ScreenHeader
+          onBack={onBack}
+          stepIndicator={{ totalSteps: CREATE_FLOW_STEPS, currentStep: 2 }}
+        />
+      }
+      title={<OnboardingTitle>{t('wallet.create.your_seed_phrase')}</OnboardingTitle>}
+      description={
+        <OnboardingDescription>{t('wallet.create.your_seed_phrase_body')}</OnboardingDescription>
+      }
+      body={
+        // The component gap (`spacing.xl`) between the description and the
+        // grid — the "content" variant's compact rung reserves only one
+        // description line plus its own buffer, and this screen's copy can
+        // wrap to two lines at the extension side panel's narrow widths,
+        // eating that buffer and leaving the grid flush under the text.
+        <div style={{ paddingTop: spacing.xl }}>
+          <SeedWordGrid words={words} columns={3} />
+          {/*
+              The clipboard warning BackupPanel shows as a card, as one line
+              here: the screen must hold the phrase and its three actions
+              without scrolling (owner, 2026-11-11).
             */}
-            <div style={{ paddingTop: spacing.lg }} data-testid="create-seed-clipboard-warning">
-              <WarningNotice tone="warning" title={t('settings.clipboard_warning_title')}>
-                {t('settings.clipboard_warning_description')}
-              </WarningNotice>
-            </div>
-            {secretCopied && (
-              <div style={{ paddingTop: spacing.md }} data-testid="create-seed-clipboard-clears">
-                <WarningNotice tone="info" title={t('settings.secret_copied')} />
-              </div>
-            )}
-          </div>
-        }
-        assist={
-          // Same destination as the primary: the check waits for the first
-          // send either way. Saying "later" out loud is the honest choice.
-          <TextButton onPress={onNext} testID="create-save-later-button">
-            {t('wallet.create.save_later')}
-          </TextButton>
-        }
-        secondary={
-          /*
+          <p
+            data-testid="create-seed-clipboard-warning"
+            style={{
+              margin: 0,
+              paddingTop: spacing.md,
+              color: text.secondary,
+              fontFamily: fontFamily.sans,
+              fontSize: fontSize.body,
+              lineHeight: `${fontSize.body * lineHeight.snug}px`,
+              textAlign: 'center',
+            }}
+          >
+            {t('wallet.create.clipboard_hint')}
+          </p>
+        </div>
+      }
+      assist={
+        // Same destination as the primary: the check waits for the first
+        // send either way. Saying "later" out loud is the honest choice.
+        <TextButton onPress={onNext} testID="create-save-later-button">
+          {t('wallet.create.save_later')}
+        </TextButton>
+      }
+      secondary={
+        /*
             Held, not tapped: the phrase lands on the clipboard, where anything
             can read it, so the copy costs the same deliberate half-second as
             signing does. The keyboard path commits immediately per WCAG, as
             the hold control already provides.
           */
-          <HoldToApproveButton
-            onApprove={handleCopy}
-            variant="secondary"
-            testID="create-copy-seed-button"
-          >
-            {t('wallet.create.hold_to_copy')}
-          </HoldToApproveButton>
-        }
-        action={
-          <PrimaryButton onPress={onNext} fullWidth testID="create-backed-up-button">
-            {t('wallet.create.saved_it')}
-          </PrimaryButton>
-        }
-      />
-      {showToast && <Toast message={t('wallet.copied')} />}
-    </>
+        <HoldToApproveButton
+          onApprove={handleCopy}
+          variant="secondary"
+          testID="create-copy-seed-button"
+        >
+          {secretCopied ? t('wallet.create.copied_clears') : t('wallet.create.hold_to_copy')}
+        </HoldToApproveButton>
+      }
+      action={
+        <PrimaryButton onPress={onNext} fullWidth testID="create-backed-up-button">
+          {t('wallet.create.saved_it')}
+        </PrimaryButton>
+      }
+    />
   );
 }
 

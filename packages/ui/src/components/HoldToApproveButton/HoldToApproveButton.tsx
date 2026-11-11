@@ -24,7 +24,9 @@ const PROGRESS_HEIGHT = 2;
  * holding a key down, so Enter and Space commit immediately. A pointer click
  * that never became a hold does nothing at all.
  *
- * The progress line is `neutral-1000` on the salmon fill rather than the salmon
+ * On the secondary variant (copying the phrase) the primary button's salmon
+ * fill and texture sweep across the outline as it is held. On the primary,
+ * the progress line is `neutral-1000` on the salmon fill rather than the salmon
  * the design note names: salmon-on-salmon is invisible, and `text.onAccent` is
  * the ink this system already guarantees at 6.50:1 there.
  */
@@ -110,7 +112,25 @@ export function HoldToApproveButton({
       >
         {children}
       </ButtonControl>
-      {progress > 0 ? (
+      {progress > 0 && variant === 'secondary' ? (
+        // The primary button itself, clipped to the progress: the salmon fill
+        // and its texture sweep in from the left under the pointer.
+        <div
+          data-testid="hold-progress"
+          aria-hidden
+          style={{
+            position: 'absolute',
+            inset: 0,
+            pointerEvents: 'none',
+            zIndex: 2,
+            clipPath: `inset(0 ${(1 - Math.min(progress, 1)) * 100}% 0 0)`,
+          }}
+        >
+          <PrimaryButton onPress={() => {}} fullWidth>
+            {children}
+          </PrimaryButton>
+        </div>
+      ) : progress > 0 ? (
         <span
           data-testid="hold-progress"
           style={{
@@ -121,7 +141,7 @@ export function HoldToApproveButton({
             pointerEvents: 'none',
             zIndex: 2,
             width: `${Math.min(progress, 1) * 100}%`,
-            backgroundColor: variant === 'secondary' ? text.primary : text.onAccent,
+            backgroundColor: text.onAccent,
           }}
         />
       ) : null}

@@ -518,7 +518,9 @@
       "securing_wallet": "Esperá mientras aseguramos tu billetera",
       "acknowledge_written_down": "Anoté mi frase de recuperación en un lugar seguro",
       "saved_it": "Ya la guardé",
-      "save_later": "Guardarla después"
+      "save_later": "Guardarla después",
+      "clipboard_hint": "Otras apps pueden leer el portapapeles: anotala en papel.",
+      "copied_clears": "Copiada · se borra en 60 s"
     },
     "recover": {
       "messageTitle": "Recuperar Cuenta existente",
