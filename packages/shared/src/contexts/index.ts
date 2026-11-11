@@ -19,6 +19,11 @@ export type {
   CurrencyProviderProps,
 } from './CurrencyContext';
 
+// Recovery phrase backup (the first-send check)
+export { PhraseBackupContext, PhraseBackupProvider, usePhraseBackup } from './PhraseBackupContext';
+
+export type { PhraseBackupSheetReason, PhraseBackupValue } from './PhraseBackupContext';
+
 // Theme context (appearance preference → active mode → resolved tokens)
 export { ThemeContext, ThemeProvider, useTheme } from './ThemeContext';
 
