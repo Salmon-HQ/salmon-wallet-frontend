@@ -24,7 +24,11 @@ export const CURRENCY_ITEMS: CurrencySelectorItem[] = SUPPORTED_CURRENCIES.map((
 
 /** Lowercase, accents dropped, so `złoty` finds `Zloty`. */
 function fold(text: string): string {
-  return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ł/g, 'l').toLowerCase();
+  return text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/ł/g, 'l')
+    .toLowerCase();
 }
 
 /** The currencies whose name or code contains `query`, in list order. */
