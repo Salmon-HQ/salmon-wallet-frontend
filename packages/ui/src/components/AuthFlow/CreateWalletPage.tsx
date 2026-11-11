@@ -41,7 +41,7 @@ import { useTranslation } from 'react-i18next';
 import { SparkleIcon, WarningIcon } from '../../icons';
 import { secretClipboard } from '../../hooks/useSecretClipboard';
 import { useSemantic } from '../../theme/ThemeProvider';
-import { PrimaryButton, TextButton } from '../Button';
+import { PrimaryButton } from '../Button';
 import { HoldToApproveButton } from '../HoldToApproveButton';
 import { OnboardingDescription, OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
 import { ScreenHeader } from '../ScreenHeader';
@@ -155,12 +155,12 @@ function SeedPhraseStep({
   mnemonic: string;
   onNext: () => void;
   onBack: () => void;
-  t: (key: string) => string;
+  t: (key: string, options?: Record<string, unknown>) => string;
 }) {
   const { surface, text } = useSemantic();
-  // The button itself says the copy is there and for how long; it goes back
-  // to "Hold to copy" when the clipboard is cleared.
-  const { copied: secretCopied, markCopied } = useSecretCopied();
+  // The button counts down to the clipboard's clear and cannot copy again
+  // until it ends (owner, 2026-11-11).
+  const { secondsLeft, markCopied } = useSecretCopied();
   const words = mnemonic.split(' ');
 
   const handleCopy = useCallback(async () => {
@@ -221,13 +221,6 @@ function SeedPhraseStep({
           </p>
         </div>
       }
-      assist={
-        // Same destination as the primary: the check waits for the first
-        // send either way. Saying "later" out loud is the honest choice.
-        <TextButton onPress={onNext} testID="create-save-later-button">
-          {t('wallet.create.save_later')}
-        </TextButton>
-      }
       secondary={
         /*
             Held, not tapped: the phrase lands on the clipboard, where anything
@@ -237,10 +230,13 @@ function SeedPhraseStep({
           */
         <HoldToApproveButton
           onApprove={handleCopy}
+          disabled={secondsLeft !== null}
           variant="secondary"
           testID="create-copy-seed-button"
         >
-          {secretCopied ? t('wallet.create.copied_clears') : t('wallet.create.hold_to_copy')}
+          {secondsLeft === null
+            ? t('wallet.create.hold_to_copy')
+            : t('wallet.create.copied_clears', { seconds: secondsLeft })}
         </HoldToApproveButton>
       }
       action={

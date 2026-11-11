@@ -10,18 +10,18 @@ import { useSecretCopied } from './useSecretCopied';
 describe('useSecretCopied', () => {
   afterEach(() => vi.useRealTimers());
 
-  it('holds until the clipboard is cleared, and a new copy restarts the wait', () => {
+  it('counts down the seconds until the clipboard is cleared, then ends', () => {
     vi.useFakeTimers();
     const { result } = renderHook(() => useSecretCopied());
-    expect(result.current.copied).toBe(false);
+    expect(result.current.secondsLeft).toBeNull();
 
     act(() => result.current.markCopied());
-    act(() => vi.advanceTimersByTime(SECRET_CLIPBOARD_CLEAR_MS - 1000));
-    act(() => result.current.markCopied());
-    act(() => vi.advanceTimersByTime(SECRET_CLIPBOARD_CLEAR_MS - 1000));
-    expect(result.current.copied).toBe(true);
+    expect(result.current.secondsLeft).toBe(SECRET_CLIPBOARD_CLEAR_MS / 1000);
 
     act(() => vi.advanceTimersByTime(1000));
-    expect(result.current.copied).toBe(false);
+    expect(result.current.secondsLeft).toBe(SECRET_CLIPBOARD_CLEAR_MS / 1000 - 1);
+
+    act(() => vi.advanceTimersByTime(SECRET_CLIPBOARD_CLEAR_MS - 1000));
+    expect(result.current.secondsLeft).toBeNull();
   });
 });

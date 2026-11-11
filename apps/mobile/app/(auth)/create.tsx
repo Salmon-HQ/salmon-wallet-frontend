@@ -34,7 +34,6 @@ import {
   PrimaryButton,
   ScreenHeader,
   SeedWordGrid,
-  TextButton,
   WarningNotice,
 } from '../../src/components';
 import { useSemantic, useThemedStyles } from '../../src/theme/useThemedStyles';
@@ -59,7 +58,7 @@ interface SeedPhraseStepProps {
   mnemonic: string;
   onNext: () => void;
   onBack: () => void;
-  t: (key: string) => string;
+  t: (key: string, options?: Record<string, unknown>) => string;
 }
 
 function SeedPhraseStep({ mnemonic, onNext, onBack, t }: SeedPhraseStepProps) {
@@ -68,9 +67,9 @@ function SeedPhraseStep({ mnemonic, onNext, onBack, t }: SeedPhraseStepProps) {
   // A clipboard write can fail, and advancing depends on it here. Swallowing
   // the failure left the button dead with nothing on screen saying why.
   const [copyFailed, setCopyFailed] = useState(false);
-  // The button itself says the copy is there and for how long; it goes back
-  // to "Hold to copy" when the clipboard is cleared.
-  const { copied: secretCopied, markCopied } = useSecretCopied();
+  // The button counts down to the clipboard's clear and cannot copy again
+  // until it ends (owner, 2026-11-11).
+  const { secondsLeft, markCopied } = useSecretCopied();
   const words = mnemonic ? mnemonic.split(' ') : [];
 
   const handleCopy = useCallback(async () => {
@@ -136,21 +135,20 @@ function SeedPhraseStep({ mnemonic, onNext, onBack, t }: SeedPhraseStepProps) {
           clipboard notice pushed it below the fold, and the disabled button
           beneath gave no hint why (owner, 2026-10-06).
         */
-      assist={
-        // Same destination as the primary: the check waits for the first
-        // send either way. Saying "later" out loud is the honest choice.
-        <TextButton onPress={onNext} testID="create-save-later-button">
-          {t('wallet.create.save_later')}
-        </TextButton>
-      }
       secondary={
         /*
             Held, not tapped: the phrase lands on the clipboard, where anything
             can read it, so the copy costs the same deliberate half-second as
             signing does.
           */
-        <HoldToCopyButton onCopy={handleCopy} testID="create-copy-seed-button">
-          {secretCopied ? t('wallet.create.copied_clears') : t('wallet.create.hold_to_copy')}
+        <HoldToCopyButton
+          onCopy={handleCopy}
+          disabled={secondsLeft !== null}
+          testID="create-copy-seed-button"
+        >
+          {secondsLeft === null
+            ? t('wallet.create.hold_to_copy')
+            : t('wallet.create.copied_clears', { seconds: secondsLeft })}
         </HoldToCopyButton>
       }
       action={

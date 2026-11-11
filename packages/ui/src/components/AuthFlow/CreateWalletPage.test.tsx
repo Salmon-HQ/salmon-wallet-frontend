@@ -27,7 +27,7 @@ vi.mock('@salmon/shared', async (importOriginal) => ({
 afterEach(cleanup);
 
 describe('CreateWalletPage seed-phrase copy', () => {
-  it('copies the phrase and the button says when Salmon clears the clipboard', async () => {
+  it('copies the phrase, counts down to the clear and holds the button until then', async () => {
     const writeText = vi.fn(() => Promise.resolve());
     Object.defineProperty(window.navigator, 'clipboard', {
       value: { writeText },
@@ -47,5 +47,9 @@ describe('CreateWalletPage seed-phrase copy', () => {
       expect(screen.getAllByText('wallet.create.copied_clears').length).toBeGreaterThan(0);
     });
     expect(writeText).toHaveBeenCalledWith(PHRASE);
+    // No second copy until the countdown ends.
+    expect((screen.getByTestId('create-copy-seed-button') as HTMLButtonElement).disabled).toBe(
+      true
+    );
   });
 });

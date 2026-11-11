@@ -518,9 +518,8 @@
       "securing_wallet": "Please wait while we secure your wallet",
       "acknowledge_written_down": "I wrote my recovery phrase down somewhere safe",
       "saved_it": "I saved it",
-      "save_later": "Save it later",
       "clipboard_hint": "Other apps can read the clipboard: writing it on paper is safer.",
-      "copied_clears": "Copied · clears in 60 s"
+      "copied_clears": "Copied · clears in {{seconds}} s"
     },
     "recover": {
       "messageTitle": "Recover Existing Account",
