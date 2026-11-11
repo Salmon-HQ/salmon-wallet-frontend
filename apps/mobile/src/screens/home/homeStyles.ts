@@ -52,6 +52,10 @@ export const stylesFor = (_t: Semantic) =>
       marginHorizontal: s(spacing.screenGutter),
       marginBottom: vs(spacing.xl),
     },
+    reminderActions: {
+      flexDirection: 'row',
+      gap: s(spacing.lg),
+    },
     // Assets' Staking section, a block's gap under the tokens (spec 038).
     stakingSection: {
       marginTop: vs(spacing.xl),

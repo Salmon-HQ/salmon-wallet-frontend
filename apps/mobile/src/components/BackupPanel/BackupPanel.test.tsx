@@ -25,6 +25,15 @@ const mockActiveAccount: { secret: { kind: string; mnemonic?: string } } = {
 };
 
 jest.mock('@salmon/shared', () => ({
+  // The phrase check (DEV-208) is never due here.
+  usePhraseBackup: () => ({
+    needsBackup: false,
+    reminderVisible: false,
+    requireBackup: async () => true,
+    openBackup: () => {},
+    markUnconfirmed: async () => {},
+    dismissReminder: async () => {},
+  }),
   ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
   ...jest.requireActual('@salmon/shared/src/hooks/useBackupPanelLogic'),
   ...jest.requireActual('@salmon/shared/src/utils/account-secret'),

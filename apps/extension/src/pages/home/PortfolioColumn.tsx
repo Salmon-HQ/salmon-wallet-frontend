@@ -4,13 +4,21 @@ import {
   getBlockchainFromNetworkId,
   spacing,
   stakingSectionBlocks,
+  usePhraseBackup,
   type BalanceLoadState,
   type BlockchainId,
   type PriceChartPeriod,
   type Token,
 } from '@salmon/shared';
 
-import { DataAttribution, BlockList, StateBlock, TokenList, WarningNotice } from '../../components';
+import {
+  DataAttribution,
+  BlockList,
+  StateBlock,
+  TextButton,
+  TokenList,
+  WarningNotice,
+} from '../../components';
 
 import { scrollColumnStyle } from './homeStyles';
 import { BitcoinColumn } from './BitcoinColumn';
@@ -59,6 +67,7 @@ export function PortfolioColumn({
   onScroll,
 }: PortfolioColumnProps): React.ReactElement {
   const { t } = useTranslation();
+  const phraseBackup = usePhraseBackup();
   const stakingBlocks = stakingSectionBlocks(
     { tokens: stakingTokens, onPress: onStakingPress, canPress: canStakingPress, hiddenBalance },
     t
@@ -66,6 +75,32 @@ export function PortfolioColumn({
 
   return (
     <div style={scrollColumnStyle} onScroll={onScroll}>
+      {/* A wallet created without the phrase check (DEV-208). Closed, it does
+          not come back; the first send still asks. */}
+      {phraseBackup.reminderVisible && (
+        <div style={{ marginBottom: spacing.xl }} data-testid="phrase-reminder">
+          <WarningNotice
+            tone="warning"
+            title={t('phrase_check.reminder_title')}
+            action={
+              <div style={{ display: 'flex', gap: spacing.lg }}>
+                <TextButton onPress={phraseBackup.openBackup} testID="phrase-reminder-open">
+                  {t('phrase_check.reminder_action')}
+                </TextButton>
+                <TextButton
+                  onPress={() => void phraseBackup.dismissReminder()}
+                  testID="phrase-reminder-dismiss"
+                >
+                  {t('phrase_check.reminder_dismiss')}
+                </TextButton>
+              </div>
+            }
+          >
+            {t('phrase_check.reminder_body')}
+          </WarningNotice>
+        </div>
+      )}
+
       {/* Partial-load failure: keep whatever data loaded visible. Only 'ready'
           carries data, so a total failure is left to the list's own error
           state rather than told "shown data may be incomplete". */}

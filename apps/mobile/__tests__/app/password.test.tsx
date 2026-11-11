@@ -59,6 +59,15 @@ jest.mock('react-native-reanimated', () => {
 });
 
 jest.mock('@salmon/shared', () => ({
+  // The phrase check (DEV-208) is never due here.
+  usePhraseBackup: () => ({
+    needsBackup: false,
+    reminderVisible: false,
+    requireBackup: async () => true,
+    openBackup: () => {},
+    markUnconfirmed: async () => {},
+    dismissReminder: async () => {},
+  }),
   // Real tokens rather than a hand-listed subset — see test-utils/themeTokens.
   ...jest.requireActual('../../test-utils/themeTokens'),
   // The real wait-exit hook: the passage into the wait composes it.

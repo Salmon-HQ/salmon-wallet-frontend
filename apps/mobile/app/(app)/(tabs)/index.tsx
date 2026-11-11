@@ -54,6 +54,7 @@ import {
   STAKED_SOL_KEY,
   stakingSectionBlocks,
   useHomeStaking,
+  usePhraseBackup,
   type HomeSubTabKey,
   isWatchOnlyAccount,
   getNetworkLabel,
@@ -89,6 +90,7 @@ import {
   StateBlock,
   TokenList,
   WalletHeader,
+  TextButton,
   WarningNotice,
   type BlockchainId,
 } from '../../../src/components';
@@ -195,6 +197,7 @@ function PowerupTabBody({
 
 export default function HomeScreen() {
   const { t } = useTranslation();
+  const phraseBackup = usePhraseBackup();
   const router = useRouter();
   const styles = useThemedStyles(stylesFor);
   const semantic = useSemantic();
@@ -882,6 +885,35 @@ export default function HomeScreen() {
                   retry is pull-to-refresh on the token list. Only 'ready'
                   carries data, so a total failure is left to the list's own
                   error state rather than told "shown data may be incomplete". */}
+                  {/* A wallet created without the phrase check (DEV-208). Closed,
+                  it does not come back; the first send still asks. */}
+                  {phraseBackup.reminderVisible && (
+                    <View style={styles.balanceErrorBanner} testID="phrase-reminder">
+                      <WarningNotice
+                        tone="warning"
+                        title={t('phrase_check.reminder_title')}
+                        action={
+                          <View style={styles.reminderActions}>
+                            <TextButton
+                              onPress={phraseBackup.openBackup}
+                              testID="phrase-reminder-open"
+                            >
+                              {t('phrase_check.reminder_action')}
+                            </TextButton>
+                            <TextButton
+                              onPress={() => void phraseBackup.dismissReminder()}
+                              testID="phrase-reminder-dismiss"
+                            >
+                              {t('phrase_check.reminder_dismiss')}
+                            </TextButton>
+                          </View>
+                        }
+                      >
+                        {t('phrase_check.reminder_body')}
+                      </WarningNotice>
+                    </View>
+                  )}
+
                   {balanceError && balanceState === 'ready' && !switchingNetwork && (
                     <View style={styles.balanceErrorBanner} testID="balance-load-error">
                       <WarningNotice

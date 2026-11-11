@@ -2,6 +2,18 @@
 
 All notable, user-visible changes to the wallet apps are recorded here, newest first. Extension and mobile releases follow store submissions; the web wallet was retired on 2026-09-02. Each entry should list what a user or dApp developer can observe: new/changed flows, fixed bugs, behavior changes.
 
+## mobile 1.5.0 — unreleased
+
+- Creating a wallet no longer stops for a recovery-phrase test: after the phrase you choose "I saved it" or "Save it later", and go on to the password.
+- Before a new wallet's first transaction, Salmon asks you to confirm its recovery phrase: after your password or biometrics it shows the phrase, then asks for three of its words, each picked from four. A wrong pick shows the phrase again. Wallets you imported or created before this version are never asked.
+- Home reminds a new wallet to save its phrase until you confirm it or tap Not now; Settings → Seed Phrase offers the check at any time.
+
+## extension 0.19.0 — unreleased
+
+- Creating a wallet no longer stops for a recovery-phrase test: after the phrase you choose "I saved it" or "Save it later", and go on to the password.
+- Before a new wallet's first transaction, Salmon asks you to confirm its recovery phrase: after your password or biometrics it shows the phrase, then asks for three of its words, each picked from four. A wrong pick shows the phrase again. Wallets you imported or created before this version are never asked.
+- Home reminds a new wallet to save its phrase until you confirm it or tap Not now; Settings → Seed Phrase offers the check at any time.
+
 ## extension 0.18.0 — 2026-10-28
 
 - Sending a token whose shown balance carries a multiplier (Token-2022 Scaled UI Amount or Interest Bearing, such as tokenised shares) moves the amount on screen, converted at the multiplier in force at that moment, and Max sends the whole balance when the amount on screen is all of it. Within five minutes of a scheduled multiplier change the send stops, so the amount converted is the one the user saw. Max on any token now fills the balance to its last unit. Every Solana send moves the amount exactly as typed, and Review stays closed on an amount with more decimal places than the token has, which a send used to round to a different amount.
