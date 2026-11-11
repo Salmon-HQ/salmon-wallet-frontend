@@ -20,7 +20,6 @@ import type { BlockchainId, MarketData } from '../../components';
 interface UseHomeBitcoinMarketOptions {
   currentChain: BlockchainId;
   currentNetworkId: string;
-  currency: string;
   chartPeriod: PriceChartPeriod;
   /** The active chain's native amount and total, for the Bitcoin row. */
   nativeAmount: number | undefined;
@@ -30,7 +29,6 @@ interface UseHomeBitcoinMarketOptions {
 export function useHomeBitcoinMarket({
   currentChain,
   currentNetworkId,
-  currency,
   chartPeriod,
   nativeAmount,
   usdTotal,
@@ -43,7 +41,6 @@ export function useHomeBitcoinMarket({
     error: dataError,
   } = useCoinMarketData({
     coinId: bitcoinCoinId,
-    currency,
     days: PERIOD_TO_DAYS[chartPeriod],
     enabled: currentChain === 'bitcoin',
     // A test network's coin has no market: the hook returns nothing off

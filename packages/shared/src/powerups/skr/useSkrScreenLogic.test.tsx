@@ -15,7 +15,7 @@ vi.mock('../../hooks/useCoinMarketData', () => ({
 vi.mock('../../contexts/CurrencyContext', () => ({
   useCurrencyContext: () => [
     { currency: 'usd' },
-    { formatValue: (v: number) => `$${v.toFixed(2)}` },
+    { formatValue: (v: number) => `$${v.toFixed(2)}`, formatPrice: (v: number) => `$${v}` },
   ],
 }));
 vi.mock('react-i18next', () => ({

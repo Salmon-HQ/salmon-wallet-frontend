@@ -38,7 +38,7 @@ const MOCK_RATES: ExchangeRates = {
     sgd: 1.35,
     hkd: 7.81,
     try: 32.1,
-  },
+  } as ExchangeRates['rates'],
 };
 
 const FALLBACK_RATES: ExchangeRates = {

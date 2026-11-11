@@ -28,7 +28,6 @@ import {
   type PriceChartPeriod,
   type Token,
   type SendToken,
-  useCurrencyContext,
   usePrefetchBalances,
   useDeveloperModeSettings,
   useSendContacts,
@@ -118,7 +117,6 @@ const NO_DEVICE_CAPABILITIES: readonly DeviceCapability[] = [];
 export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   const { t } = useTranslation();
   const [state, actions] = useAccountsContext();
-  const [{ currency }] = useCurrencyContext();
   const { ready, activeAccount, activeBlockchainAccount, networkId } = state;
 
   // The two "show me more" flags come from the provider the side panel root
@@ -600,7 +598,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   // Bitcoin's row inside Portfolio and the selected token's detail page.
   const { bitcoin, selectedToken: selectedTokenMarket } = useHomeMarketData({
     currentChain,
-    currency,
     nativeAmount,
     usdTotal,
     bitcoinChartPeriod,
