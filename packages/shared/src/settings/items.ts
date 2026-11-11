@@ -22,6 +22,25 @@ export const CURRENCY_ITEMS: CurrencySelectorItem[] = SUPPORTED_CURRENCIES.map((
   symbol: CURRENCY_MAP[code].symbol,
 }));
 
+/** Lowercase, accents dropped, so `złoty` finds `Zloty`. */
+function fold(text: string): string {
+  return text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/ł/g, 'l')
+    .toLowerCase();
+}
+
+/** The currencies whose name or code contains `query`, in list order. */
+export function filterCurrencyItems(
+  items: readonly CurrencySelectorItem[],
+  query: string
+): CurrencySelectorItem[] {
+  const needle = fold(query.trim());
+  if (!needle) return [...items];
+  return items.filter((item) => fold(`${item.name} ${item.code}`).includes(needle));
+}
+
 export function toLanguageItems(codes: readonly string[]): LanguageSelectorItem[] {
   return codes.map((code) => ({
     code,

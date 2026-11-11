@@ -44,7 +44,6 @@ import {
   useAvailableNetworks,
   useBalance,
   usePrefetchBalances,
-  useCurrencyContext,
   useHomeShell,
   useHomePowerupTabs,
   useHomePowerupsCatalog,
@@ -210,7 +209,6 @@ export default function HomeScreen() {
   // `useCoverFloat` for why Home is not remounted for the unlock.
   const coverFloatStyle = useCoverFloat(isCovered, isReduceMotionEnabled);
   const fabCoverFloatStyle = useCoverFloat(isCovered, isReduceMotionEnabled);
-  const [{ currency }] = useCurrencyContext();
 
   // Top fade gradient opacity - animated based on scroll position
   // `useMemo`, not a ref read during render: the hooks lint (v7) forbids
@@ -479,7 +477,6 @@ export default function HomeScreen() {
   const bitcoin = useHomeBitcoinMarket({
     currentChain,
     currentNetworkId,
-    currency,
     chartPeriod: bitcoinChartPeriod,
     nativeAmount,
     usdTotal,

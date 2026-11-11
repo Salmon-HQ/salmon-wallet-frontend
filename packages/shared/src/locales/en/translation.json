@@ -213,6 +213,8 @@
     "security_notice_title": "Never share your keys",
     "currency": "Display Currency",
     "currency_subtitle": "Choose the currency balances show in.",
+    "currency_search": "Search currency",
+    "currency_no_match": "No currencies match",
     "appearance": "Appearance",
     "appearance_subtitle": "Choose light, dark, or system.",
     "appearance_options": {

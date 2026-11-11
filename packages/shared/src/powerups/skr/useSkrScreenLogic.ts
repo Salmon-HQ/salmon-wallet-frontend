@@ -10,7 +10,6 @@ import { useCurrencyContext } from '../../contexts/CurrencyContext';
 import { useCoinMarketData } from '../../hooks/useCoinMarketData';
 import { useSkrStake } from '../../hooks/useStaking';
 import type { PriceChartPeriod } from '../../types';
-import { formatFiatPrice } from '../../utils/currencyFormatting';
 import { formatPercentage } from '../../utils/formatting';
 import { PERIOD_TO_DAYS } from '../../utils/price-constants';
 import type { SkrMarket, SkrScreenInput } from './skrBlocks';
@@ -32,14 +31,13 @@ const MINUTE_MS = 60_000;
 
 export function useSkrScreenLogic({ publicKey }: UseSkrScreenLogicParams): UseSkrScreenLogicResult {
   const { t, i18n } = useTranslation();
-  const [{ currency }, { formatValue }] = useCurrencyContext();
+  const [, { formatValue, formatPrice }] = useCurrencyContext();
   const [period, setPeriod] = useState<PriceChartPeriod>('1M');
   const [rewardsExpanded, setRewardsExpanded] = useState(false);
   const expandRewards = useCallback(() => setRewardsExpanded(true), []);
   const coin = useCoinMarketData({
     coinId: SKR_COINGECKO_ID,
     contractAddress: SKR_MINT,
-    currency,
     days: PERIOD_TO_DAYS[period],
   });
   const chartData = useMemo(() => coin.chartData ?? [], [coin.chartData]);
@@ -71,11 +69,7 @@ export function useSkrScreenLogic({ publicKey }: UseSkrScreenLogicParams): UseSk
     const change = first && last !== undefined ? ((last - first) / first) * 100 : null;
     return {
       ...(coin.coinInfo?.image ? { logo: coin.coinInfo.image } : {}),
-      // The coin info is already in the user's currency.
-      price:
-        data?.currentPrice === undefined
-          ? null
-          : formatFiatPrice(data.currentPrice, currency, 1, i18n.language),
+      price: data?.currentPrice === undefined ? null : formatPrice(data.currentPrice),
       change:
         change === null
           ? null
@@ -86,7 +80,7 @@ export function useSkrScreenLogic({ publicKey }: UseSkrScreenLogicParams): UseSk
       totalSupply: data?.totalSupply ?? null,
       circulatingSupply: data?.circulatingSupply ?? null,
     };
-  }, [coin.coinInfo, chartData, currency, i18n.language, period]);
+  }, [coin.coinInfo, chartData, formatPrice, i18n.language, period]);
 
   const { refetch } = query;
   const refresh = useCallback(async () => {

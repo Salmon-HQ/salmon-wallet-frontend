@@ -42,6 +42,20 @@ function fiatOptions(decimals: number): Intl.NumberFormatOptions {
   };
 }
 
+/**
+ * `figure` with the currency's symbol on the side, and with the spacing, its
+ * home country uses: `$5`, `CHF 5`, `5 Kč`. The space is non-breaking so a
+ * symbol never wraps away from its number.
+ */
+function withSymbol(code: CurrencyCode, figure: string): string {
+  const info = CURRENCY_MAP[code];
+  if (!info) return `$${figure}`;
+  const gap = info.spaced ? '\u00A0' : '';
+  return info.position === 'after'
+    ? `${figure}${gap}${info.symbol}`
+    : `${info.symbol}${gap}${figure}`;
+}
+
 // ============================================================================
 // Public API
 // ============================================================================
@@ -82,10 +96,9 @@ export function formatFiatValue(
 
   const converted = convert(usdAmount, rate);
   const decimals = getDecimals(code);
-  const symbol = getCurrencySymbol(code);
   const rounded = round(converted, decimals);
 
-  return `${symbol}${formatNumber(rounded, fiatOptions(decimals), locale)}`;
+  return withSymbol(code, formatNumber(rounded, fiatOptions(decimals), locale));
 }
 
 /**
@@ -115,18 +128,20 @@ export function formatFiatPrice(
 
   const converted = convert(usdAmount, rate);
   const decimals = getDecimals(code);
-  const symbol = getCurrencySymbol(code);
   const isSubUnit = Math.abs(converted) < 1;
 
-  return `${symbol}${formatNumber(
-    converted,
-    {
-      minimumFractionDigits: isSubUnit ? 0 : decimals,
-      maximumFractionDigits: isSubUnit ? Math.max(decimals, 6) : decimals,
-      useGrouping: true,
-    },
-    locale
-  )}`;
+  return withSymbol(
+    code,
+    formatNumber(
+      converted,
+      {
+        minimumFractionDigits: isSubUnit ? 0 : decimals,
+        maximumFractionDigits: isSubUnit ? Math.max(decimals, 6) : decimals,
+        useGrouping: true,
+      },
+      locale
+    )
+  );
 }
 
 /**
@@ -145,20 +160,22 @@ export function formatFiatLarge(
   if (isNil(usdAmount)) return '-';
 
   const converted = convert(usdAmount, rate);
-  const symbol = getCurrencySymbol(code);
   const decimals = getDecimals(code);
   const compact = (scaled: number, suffix: string) =>
-    `${symbol}${formatNumber(
-      scaled,
-      { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: true },
-      locale
-    )}${suffix}`;
+    withSymbol(
+      code,
+      `${formatNumber(
+        scaled,
+        { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: true },
+        locale
+      )}${suffix}`
+    );
 
   if (converted >= 1_000_000_000) return compact(converted / 1_000_000_000, 'B');
   if (converted >= 1_000_000) return compact(converted / 1_000_000, 'M');
   if (converted >= 1_000) return compact(converted / 1_000, 'K');
 
-  return `${symbol}${formatNumber(converted, fiatOptions(decimals), locale)}`;
+  return withSymbol(code, formatNumber(converted, fiatOptions(decimals), locale));
 }
 
 /**
@@ -179,16 +196,15 @@ export function formatFiatChange(
 
   const converted = convert(Math.abs(usdAmount), rate);
   const decimals = getDecimals(code);
-  const symbol = getCurrencySymbol(code);
   const rounded = round(converted, decimals);
-  const val = formatNumber(rounded, fiatOptions(decimals), locale);
+  const val = withSymbol(code, formatNumber(rounded, fiatOptions(decimals), locale));
 
   // The typographic minus, matching the percentage beside it: DESIGN.md
   // §Colors' Three-Channel State Rule makes direction a glyph, and
   // §Typography's Tabular Rule needs that glyph to set at the plus's width.
-  if (usdAmount > 0) return `+${symbol}${val}`;
-  if (usdAmount < 0) return `${MINUS_SIGN}${symbol}${val}`;
-  return `${symbol}${val}`;
+  if (usdAmount > 0) return `+${val}`;
+  if (usdAmount < 0) return `${MINUS_SIGN}${val}`;
+  return val;
 }
 
 /**
@@ -211,9 +227,9 @@ export function formatFiatPrecise(
 }
 
 /**
- * Format using Intl.NumberFormat for the given currency.
- * Useful for chart tooltips / precise locale formatting.
- * Replaces extension's local `Intl.NumberFormat('en-US', { currency: 'USD' })`.
+ * Format an amount already in `code` (no conversion), for chart tooltips.
+ * Places the symbol like every other fiat figure, rather than the way the app
+ * language would place a foreign currency.
  *
  * @example formatFiatIntl(1234.56, 'eur') // '€1,234.56'
  */
@@ -223,14 +239,16 @@ export function formatFiatIntl(amount: number, code: CurrencyCode, locale?: stri
   // fixed cents at or above one unit, more digits only below it, where the
   // alternative is every sub-cent point reading as the same '0.00'.
   const isSubUnit = Math.abs(amount) < 1;
-  return formatNumber(
-    amount,
-    {
-      style: 'currency',
-      currency: code.toUpperCase(),
-      minimumFractionDigits: isSubUnit ? 0 : decimals,
-      maximumFractionDigits: isSubUnit ? Math.max(decimals, 6) : decimals,
-    },
-    locale
+  return withSymbol(
+    code,
+    formatNumber(
+      amount,
+      {
+        minimumFractionDigits: isSubUnit ? 0 : decimals,
+        maximumFractionDigits: isSubUnit ? Math.max(decimals, 6) : decimals,
+        useGrouping: true,
+      },
+      locale
+    )
   );
 }

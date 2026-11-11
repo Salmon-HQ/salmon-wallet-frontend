@@ -21,7 +21,6 @@ import {
 
 interface UseHomeMarketDataOptions {
   currentChain: BlockchainId;
-  currency: string;
   /** The active chain's native amount and total, for the Bitcoin row. */
   nativeAmount: number | undefined;
   usdTotal: number | undefined;
@@ -34,7 +33,6 @@ interface UseHomeMarketDataOptions {
 
 export function useHomeMarketData({
   currentChain,
-  currency,
   nativeAmount,
   usdTotal,
   bitcoinChartPeriod,
@@ -53,7 +51,6 @@ export function useHomeMarketData({
     error: bitcoinDataError,
   } = useCoinMarketData({
     coinId: bitcoinCoinId,
-    currency,
     days: PERIOD_TO_DAYS[bitcoinChartPeriod],
     enabled: currentChain === 'bitcoin',
   });
@@ -84,7 +81,6 @@ export function useHomeMarketData({
   } = useCoinMarketData({
     coinId: selectedTokenCoinId,
     contractAddress: selectedToken?.address,
-    currency,
     days: PERIOD_TO_DAYS[selectedTokenChartPeriod],
     enabled: !!selectedToken && tokenDetailOpen,
   });

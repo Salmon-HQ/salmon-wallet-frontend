@@ -4,6 +4,10 @@
  * Shared React Query hook that fetches CoinGecko coin info + market chart in
  * parallel. Replaces duplicated `useState + useEffect` blocks in web/extension
  * HomePage Bitcoin and selected-token detail flows.
+ *
+ * Every figure comes back in US dollars, like every other amount in the app:
+ * the currency formatters convert at display time. Asking CoinGecko for the
+ * display currency instead would have the formatters convert it a second time.
  */
 
 import { useCallback, useMemo } from 'react';
@@ -12,6 +16,8 @@ import { queryKeys } from '../query/keys';
 import { getTokenCoinInfo, getTokenMarketChart } from '../api/services';
 import type { CoinInfo } from '../types/price';
 import { isMainnetNetworkId } from '../utils/network';
+
+const MARKET_CURRENCY = 'usd';
 
 export interface MarketChartPoint {
   timestamp: number;
@@ -25,7 +31,6 @@ export interface UseCoinMarketDataParams {
    * for tokens without a CoinGecko coin ID.
    */
   contractAddress?: string;
-  currency: string;
   days: 1 | 7 | 30 | 90 | 365;
   enabled?: boolean;
   /**
@@ -49,9 +54,9 @@ export interface UseCoinMarketDataResult {
    * refresh into a whole-screen skeleton — the bug this pair exists to fix.
    */
   loading: boolean;
-  /** Coin info has never resolved for this token+currency. */
+  /** Coin info has never resolved for this token. */
   infoLoading: boolean;
-  /** No price series has ever resolved for this token+currency. */
+  /** No price series has ever resolved for this token. */
   chartLoading: boolean;
   /**
    * The series in hand belongs to the previously selected `days` while the
@@ -63,7 +68,7 @@ export interface UseCoinMarketDataResult {
 }
 
 export function useCoinMarketData(params: UseCoinMarketDataParams): UseCoinMarketDataResult {
-  const { coinId, contractAddress, currency, days, enabled = true, networkId } = params;
+  const { coinId, contractAddress, days, enabled = true, networkId } = params;
   // Token identity: CoinGecko coin ID when available, otherwise the mint
   // (contract-address fallback for both chart and coin info).
   const tokenId = coinId ?? (contractAddress ? `contract:solana:${contractAddress}` : undefined);
@@ -77,19 +82,20 @@ export function useCoinMarketData(params: UseCoinMarketDataParams): UseCoinMarke
   // to hand back and the series comes out empty anyway.
   const infoQuery = useQuery({
     queryKey: tokenId
-      ? queryKeys.coinInfo({ coinId: tokenId, currency })
+      ? queryKeys.coinInfo({ coinId: tokenId, currency: MARKET_CURRENCY })
       : ['coin-info', 'disabled'],
-    queryFn: () => getTokenCoinInfo({ coingeckoId: coinId, address: contractAddress }, currency),
+    queryFn: () =>
+      getTokenCoinInfo({ coingeckoId: coinId, address: contractAddress }, MARKET_CURRENCY),
     enabled: isEnabled,
     staleTime: 60_000,
   });
 
   const chartQuery = useQuery({
     queryKey: tokenId
-      ? queryKeys.marketChart({ coinId: tokenId, currency, days })
+      ? queryKeys.marketChart({ coinId: tokenId, currency: MARKET_CURRENCY, days })
       : ['market-chart', 'disabled'],
     queryFn: () =>
-      getTokenMarketChart({ coingeckoId: coinId, address: contractAddress }, days, currency),
+      getTokenMarketChart({ coingeckoId: coinId, address: contractAddress }, days, MARKET_CURRENCY),
     enabled: isEnabled,
     staleTime: 60_000,
     // `days` is part of this key, so every period press is a cache miss.
@@ -115,13 +121,13 @@ export function useCoinMarketData(params: UseCoinMarketDataParams): UseCoinMarke
     if (!tokenId) return;
     await Promise.all([
       queryClient.invalidateQueries({
-        queryKey: queryKeys.coinInfo({ coinId: tokenId, currency }),
+        queryKey: queryKeys.coinInfo({ coinId: tokenId, currency: MARKET_CURRENCY }),
       }),
       queryClient.invalidateQueries({
-        queryKey: queryKeys.marketChart({ coinId: tokenId, currency, days }),
+        queryKey: queryKeys.marketChart({ coinId: tokenId, currency: MARKET_CURRENCY, days }),
       }),
     ]);
-  }, [queryClient, tokenId, currency, days]);
+  }, [queryClient, tokenId, days]);
 
   return {
     coinInfo: infoQuery.data ?? null,

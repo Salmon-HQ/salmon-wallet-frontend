@@ -4,12 +4,20 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 
 ## mobile 1.5.0 — unreleased
 
+- Balances can be shown in 45 currencies, up from 15, including the Czech koruna, Polish złoty, Swedish krona and Argentine peso.
+- Each currency's symbol sits where its own country writes it: 1,234.50 Kč, CHF 1,234.50, €1,234.50.
+- Fixed: in any currency other than the US dollar, a token's market cap, volume and all-time high, and the Bitcoin price on Home, were converted twice.
+- If the chosen currency has no exchange rate available, amounts are shown in US dollars rather than under the wrong symbol.
 - Creating a wallet no longer stops for a recovery-phrase test: after the phrase, "I saved it" goes on to the password. Copying the phrase shows a countdown to when Salmon clears the clipboard and cannot be repeated until it ends.
 - Before a new wallet's first transaction, Salmon asks you to confirm its recovery phrase: after your password or biometrics it shows the phrase, then asks for three of its words, each picked from four. A wrong pick shows the phrase again. Wallets you imported or created before this version are never asked.
 - Home reminds a new wallet to save its phrase until you confirm it; Settings → Seed Phrase offers the check at any time.
 
 ## extension 0.19.0 — unreleased
 
+- Balances can be shown in 45 currencies, up from 15, including the Czech koruna, Polish złoty, Swedish krona and Argentine peso.
+- Each currency's symbol sits where its own country writes it: 1,234.50 Kč, CHF 1,234.50, €1,234.50.
+- Fixed: in any currency other than the US dollar, a token's market cap, volume and all-time high, and the Bitcoin price on Home, were converted twice.
+- If the chosen currency has no exchange rate available, amounts are shown in US dollars rather than under the wrong symbol.
 - Creating a wallet no longer stops for a recovery-phrase test: after the phrase, "I saved it" goes on to the password. Copying the phrase shows a countdown to when Salmon clears the clipboard and cannot be repeated until it ends.
 - Before a new wallet's first transaction, Salmon asks you to confirm its recovery phrase: after your password or biometrics it shows the phrase, then asks for three of its words, each picked from four. A wrong pick shows the phrase again. Wallets you imported or created before this version are never asked.
 - Home reminds a new wallet to save its phrase until you confirm it; Settings → Seed Phrase offers the check at any time.
