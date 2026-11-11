@@ -33,10 +33,8 @@ import { AccountsContext } from './AccountsContext';
 export type PhraseBackupSheetReason = 'send' | 'manual';
 
 export interface PhraseBackupValue {
-  /** The active wallet's phrase has not been confirmed yet. */
+  /** The active wallet's phrase has not been confirmed yet; Home's reminder shows until it is. */
   needsBackup: boolean;
-  /** Home's reminder shows: a backup is due and the owner has not closed it. */
-  reminderVisible: boolean;
   sheet: { reason: PhraseBackupSheetReason } | null;
   /** Resolves true at once when no backup is due, else after the sheet: true once confirmed. */
   requireBackup: () => Promise<boolean>;
@@ -47,20 +45,17 @@ export interface PhraseBackupValue {
   cancelBackup: () => void;
   /** Called by sign-up for a wallet created without the check. */
   markUnconfirmed: (walletId: string) => Promise<void>;
-  dismissReminder: () => Promise<void>;
 }
 
 /** Outside a provider (tests, a surface that cannot sign) nothing is ever due. */
 const NONE: PhraseBackupValue = {
   needsBackup: false,
-  reminderVisible: false,
   sheet: null,
   requireBackup: async () => true,
   openBackup: () => {},
   confirmBackup: async () => {},
   cancelBackup: () => {},
   markUnconfirmed: async () => {},
-  dismissReminder: async () => {},
 };
 
 const PhraseBackupContext = createContext<PhraseBackupValue>(NONE);
@@ -74,7 +69,6 @@ export function PhraseBackupProvider({ children }: { children: ReactNode }) {
   const accounts = useContext(AccountsContext)?.[0];
   const activeAccount = accounts?.activeAccount;
   const [unconfirmed, setUnconfirmed] = useState<string[]>([]);
-  const [dismissed, setDismissed] = useState(false);
   const [sheet, setSheet] = useState<PhraseBackupValue['sheet']>(null);
   const waiting = useRef<((confirmed: boolean) => void) | null>(null);
 
@@ -82,13 +76,9 @@ export function PhraseBackupProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     (async () => {
       try {
-        const [ids, closed] = await Promise.all([
-          getStorageItem<string[]>(STORAGE_KEYS.UNCONFIRMED_PHRASES),
-          getStorageItem<boolean>(STORAGE_KEYS.PHRASE_REMINDER_DISMISSED),
-        ]);
+        const ids = await getStorageItem<string[]>(STORAGE_KEYS.UNCONFIRMED_PHRASES);
         if (cancelled) return;
         if (Array.isArray(ids)) setUnconfirmed(ids);
-        setDismissed(closed === true);
       } catch (error) {
         console.error('[PhraseBackup] Failed to read backup state:', error);
       }
@@ -148,34 +138,17 @@ export function PhraseBackupProvider({ children }: { children: ReactNode }) {
     [update]
   );
 
-  const dismissReminder = useCallback(async () => {
-    setDismissed(true);
-    await setStorageItem(STORAGE_KEYS.PHRASE_REMINDER_DISMISSED, true);
-  }, []);
-
   const value = useMemo<PhraseBackupValue>(
     () => ({
       needsBackup,
-      reminderVisible: needsBackup && !dismissed,
       sheet,
       requireBackup,
       openBackup,
       confirmBackup,
       cancelBackup,
       markUnconfirmed,
-      dismissReminder,
     }),
-    [
-      needsBackup,
-      dismissed,
-      sheet,
-      requireBackup,
-      openBackup,
-      confirmBackup,
-      cancelBackup,
-      markUnconfirmed,
-      dismissReminder,
-    ]
+    [needsBackup, sheet, requireBackup, openBackup, confirmBackup, cancelBackup, markUnconfirmed]
   );
 
   return <PhraseBackupContext.Provider value={value}>{children}</PhraseBackupContext.Provider>;

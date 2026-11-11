@@ -239,8 +239,6 @@ export const STORAGE_KEYS = {
   // -- Recovery phrase backup (PhraseBackupContext) --
   /** Ids of wallets created here whose phrase the owner has not confirmed yet. No secret. */
   UNCONFIRMED_PHRASES: 'salmon_unconfirmed_phrases',
-  /** The owner closed Home's back-up reminder; it does not come back. */
-  PHRASE_REMINDER_DISMISSED: 'salmon_phrase_reminder_dismissed',
 
   // -- Legacy keys (v2 → v3 migration, removed after upgrade) --
   /** @deprecated Legacy wallet list */

@@ -6,13 +6,13 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 
 - Creating a wallet no longer stops for a recovery-phrase test: after the phrase you choose "I saved it" or "Save it later", and go on to the password.
 - Before a new wallet's first transaction, Salmon asks you to confirm its recovery phrase: after your password or biometrics it shows the phrase, then asks for three of its words, each picked from four. A wrong pick shows the phrase again. Wallets you imported or created before this version are never asked.
-- Home reminds a new wallet to save its phrase until you confirm it or tap Not now; Settings → Seed Phrase offers the check at any time.
+- Home reminds a new wallet to save its phrase until you confirm it; Settings → Seed Phrase offers the check at any time.
 
 ## extension 0.19.0 — unreleased
 
 - Creating a wallet no longer stops for a recovery-phrase test: after the phrase you choose "I saved it" or "Save it later", and go on to the password.
 - Before a new wallet's first transaction, Salmon asks you to confirm its recovery phrase: after your password or biometrics it shows the phrase, then asks for three of its words, each picked from four. A wrong pick shows the phrase again. Wallets you imported or created before this version are never asked.
-- Home reminds a new wallet to save its phrase until you confirm it or tap Not now; Settings → Seed Phrase offers the check at any time.
+- Home reminds a new wallet to save its phrase until you confirm it; Settings → Seed Phrase offers the check at any time.
 
 ## extension 0.18.0 — 2026-10-28
 

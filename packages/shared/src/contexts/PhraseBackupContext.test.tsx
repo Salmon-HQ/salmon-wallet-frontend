@@ -53,14 +53,12 @@ describe('PhraseBackupProvider', () => {
 
     await expect(result.current.requireBackup()).resolves.toBe(true);
     expect(result.current.needsBackup).toBe(false);
-    expect(result.current.reminderVisible).toBe(false);
   });
 
   it('holds a transaction until the phrase is confirmed, then never asks again', async () => {
     await setStorageItem(STORAGE_KEYS.UNCONFIRMED_PHRASES, ['new']);
     const { result } = setup(wallet('new'));
     await waitFor(() => expect(result.current.needsBackup).toBe(true));
-    expect(result.current.reminderVisible).toBe(true);
 
     let signed: Promise<boolean> = Promise.resolve(false);
     act(() => {
@@ -97,18 +95,6 @@ describe('PhraseBackupProvider', () => {
     const { result } = setup(wallet('child', { derivedFrom: 'parent' }));
 
     await waitFor(() => expect(result.current.needsBackup).toBe(true));
-  });
-
-  it('keeps the reminder closed once dismissed, while the check stays due', async () => {
-    await setStorageItem(STORAGE_KEYS.UNCONFIRMED_PHRASES, ['new']);
-    const { result } = setup(wallet('new'));
-    await waitFor(() => expect(result.current.reminderVisible).toBe(true));
-
-    await act(() => result.current.dismissReminder());
-
-    expect(result.current.reminderVisible).toBe(false);
-    expect(result.current.needsBackup).toBe(true);
-    expect(await getStorageItem(STORAGE_KEYS.PHRASE_REMINDER_DISMISSED)).toBe(true);
   });
 
   it('marks a new wallet without dropping one already waiting', async () => {

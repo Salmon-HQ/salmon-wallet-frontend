@@ -75,25 +75,17 @@ export function PortfolioColumn({
 
   return (
     <div style={scrollColumnStyle} onScroll={onScroll}>
-      {/* A wallet created without the phrase check (DEV-208). Closed, it does
-          not come back; the first send still asks. */}
-      {phraseBackup.reminderVisible && (
+      {/* A wallet created without the phrase check (DEV-208): it stays until
+          the phrase is confirmed. */}
+      {phraseBackup.needsBackup && (
         <div style={{ marginBottom: spacing.xl }} data-testid="phrase-reminder">
           <WarningNotice
             tone="warning"
             title={t('phrase_check.reminder_title')}
             action={
-              <div style={{ display: 'flex', gap: spacing.lg }}>
-                <TextButton onPress={phraseBackup.openBackup} testID="phrase-reminder-open">
-                  {t('phrase_check.reminder_action')}
-                </TextButton>
-                <TextButton
-                  onPress={() => void phraseBackup.dismissReminder()}
-                  testID="phrase-reminder-dismiss"
-                >
-                  {t('phrase_check.reminder_dismiss')}
-                </TextButton>
-              </div>
+              <TextButton onPress={phraseBackup.openBackup} testID="phrase-reminder-open">
+                {t('phrase_check.reminder_action')}
+              </TextButton>
             }
           >
             {t('phrase_check.reminder_body')}
@@ -101,9 +93,6 @@ export function PortfolioColumn({
         </div>
       )}
 
-      {/* Partial-load failure: keep whatever data loaded visible. Only 'ready'
-          carries data, so a total failure is left to the list's own error
-          state rather than told "shown data may be incomplete". */}
       {balanceError && balanceState === 'ready' && (
         <div style={{ marginBottom: spacing.xl }} data-testid="balance-load-error">
           <WarningNotice

@@ -72,11 +72,9 @@ jest.mock('@salmon/shared', () => ({
   // The phrase check (DEV-208) is never due here.
   usePhraseBackup: () => ({
     needsBackup: false,
-    reminderVisible: false,
     requireBackup: async () => true,
     openBackup: () => {},
     markUnconfirmed: async () => {},
-    dismissReminder: async () => {},
   }),
   // The focus-mode clock is real: the screen reads Home in its resting phases.
   ...jest.requireActual('../../../packages/shared/src/motion/useFocusModePhase'),

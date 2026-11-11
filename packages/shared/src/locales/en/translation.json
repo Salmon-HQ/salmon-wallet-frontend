@@ -1010,9 +1010,8 @@
     "question_title": "Question {{current}} of {{total}}",
     "question": "Which is word #{{position}}?",
     "reminder_title": "Save your recovery phrase",
-    "reminder_body": "It is the only way to get your funds back if you lose this device. We will ask you to confirm it before your first send.",
+    "reminder_body": "It is the only way to get your funds back if you lose this device. Confirm it before your first send.",
     "reminder_action": "Save it now",
-    "reminder_dismiss": "Not now",
     "settings_action": "Confirm phrase",
     "settings_pending": "Not confirmed yet"
   }

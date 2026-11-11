@@ -1010,9 +1010,8 @@
     "question_title": "Pregunta {{current}} de {{total}}",
     "question": "¿Cuál es la palabra #{{position}}?",
     "reminder_title": "Guardá tu frase de recuperación",
-    "reminder_body": "Es la única forma de recuperar tus fondos si perdés este dispositivo. Te vamos a pedir que la confirmes antes de tu primer envío.",
+    "reminder_body": "Es la única forma de recuperar tus fondos si perdés este dispositivo. Confirmala antes de tu primer envío.",
     "reminder_action": "Guardar ahora",
-    "reminder_dismiss": "Ahora no",
     "settings_action": "Confirmar frase",
     "settings_pending": "Sin confirmar"
   }

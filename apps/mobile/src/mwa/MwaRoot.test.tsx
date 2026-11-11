@@ -20,11 +20,9 @@ jest.mock('@salmon/shared', () => ({
   // The phrase check (DEV-208) is never due here.
   usePhraseBackup: () => ({
     needsBackup: false,
-    reminderVisible: false,
     requireBackup: async () => true,
     openBackup: () => {},
     markUnconfirmed: async () => {},
-    dismissReminder: async () => {},
   }),
   // The detail cards are the kit's, drawn for real.
   ...jest.requireActual('../../test-utils/themeTokens'),

@@ -44,11 +44,9 @@ jest.mock('@salmon/shared', () => ({
   // The phrase check (DEV-208) is never due here.
   usePhraseBackup: () => ({
     needsBackup: false,
-    reminderVisible: false,
     requireBackup: async () => true,
     openBackup: () => {},
     markUnconfirmed: async () => {},
-    dismissReminder: async () => {},
   }),
   // The confirmation provider and host are core's own (their own suites);
   // the layout only has to mount them.
