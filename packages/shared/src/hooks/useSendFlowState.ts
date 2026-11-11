@@ -21,6 +21,7 @@ import { withinDecimals } from '../utils/decimals';
 import type { AmountShortcutKey } from './useAmountShortcuts';
 import { useRecipientWarning } from './useRecipientWarning';
 import { useSendTransaction } from './useSendTransaction';
+import { usePhraseBackup } from '../contexts/PhraseBackupContext';
 
 /** Where a request-started Send lands, or why it could not start. */
 export type StartFromRequestResult =
@@ -63,6 +64,7 @@ export function useSendFlowState({
   const [request, setRequest] = useState<SendRequest | null>(null);
 
   const sendHook = useSendTransaction({ account, blockchain });
+  const { requireBackup } = usePhraseBackup();
 
   const setAmount = useCallback(
     (next: string, shortcut?: AmountShortcutKey) => {
@@ -197,6 +199,8 @@ export function useSendFlowState({
   /** Commit the transfer. The hook's `failed` status is the report. */
   const submit = useCallback(async () => {
     if (!token || !recipient) return;
+    // A new wallet's first transaction waits on the phrase check (DEV-208).
+    if (!(await requireBackup())) return;
     try {
       const result = await sendHook.sendTransaction({
         token: { address: token.address, decimals: token.decimals ?? 9, symbol: token.symbol },
@@ -211,7 +215,7 @@ export function useSendFlowState({
     } catch {
       // The hook's `failed` status is the report; the failure surface renders it.
     }
-  }, [sendHook, token, recipient, amount, maxFor, request]);
+  }, [sendHook, token, recipient, amount, maxFor, request, requireBackup]);
 
   return {
     token,

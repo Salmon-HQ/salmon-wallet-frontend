@@ -28,6 +28,7 @@ import {
   newMwaAuthToken,
   toSignAllTransactionsRequest,
   useAccountsContext,
+  usePhraseBackup,
   useSolanaTransactionApproval,
   type MwaPrecheck,
   type SolanaAccount,
@@ -448,6 +449,7 @@ function TransactionApproval({
     if (!preview) respond(invalid(payloads.map(() => false)));
   }, [preview, payloads, respond]);
 
+  const { requireBackup } = usePhraseBackup();
   const { feeSol, parsingError, effects, effectsLoading, details } = useSolanaTransactionApproval({
     account,
     request: preview,
@@ -473,6 +475,8 @@ function TransactionApproval({
   const approve = () =>
     run(async () => {
       setError(null);
+      // A new wallet's first transaction waits on the phrase check (DEV-208).
+      if (!(await requireBackup())) return;
       try {
         if (request.__type === MWARequestType.SignTransactionsRequest) {
           const signedPayloads = await mwaSignTransactions(account, payloads);

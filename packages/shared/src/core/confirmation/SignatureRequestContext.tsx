@@ -29,6 +29,7 @@ import React, {
 import type { ReactNode } from 'react';
 import { SolanaOutcomeUnknownError } from '../../blockchain/solana/confirm';
 import { usePendingTransactionsOptional } from '../../contexts/PendingTransactionsContext';
+import { usePhraseBackup } from '../../contexts/PhraseBackupContext';
 import { signProposal as defaultSignProposal, type SignProposalFn } from '../signing';
 import type { SolanaBroadcaster } from '../broadcast';
 import {
@@ -123,6 +124,7 @@ export function SignatureRequestProvider({
   const [receipt, setReceipt] = useState<SignatureRequestReceipt | null>(null);
   const parkedRef = useRef<ParkedRequest | null>(null);
   const pendingTransactions = usePendingTransactionsOptional();
+  const { requireBackup } = usePhraseBackup();
   const accountRef = useRef(account);
   useEffect(() => {
     accountRef.current = account;
@@ -150,6 +152,9 @@ export function SignatureRequestProvider({
   const confirm = useCallback(async () => {
     const parked = parkedRef.current;
     if (!parked || parked.unresolved) return;
+    // A new wallet's first transaction waits on the phrase check (DEV-208);
+    // left unconfirmed, the review stays open.
+    if (!(await requireBackup())) return;
     setPending((prev) => (prev ? { ...prev, phase: 'signing', error: null } : prev));
 
     const signer = accountRef.current;
@@ -211,7 +216,7 @@ export function SignatureRequestProvider({
       const message = error instanceof Error ? error.message : String(error);
       setPending((prev) => (prev ? { ...prev, phase: 'review', error: message } : prev));
     }
-  }, [settle, signProposal, pendingTransactions]);
+  }, [settle, signProposal, pendingTransactions, requireBackup]);
 
   const cancel = useCallback(() => {
     const parked = parkedRef.current;

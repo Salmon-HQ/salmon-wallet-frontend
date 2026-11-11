@@ -34,6 +34,15 @@ const mockSignAndSend = jest.fn();
 // The barrel drags the Solana stack in: the real analytics client, and the
 // signers and wallet state as stand-ins.
 jest.mock('@salmon/shared', () => ({
+  // The phrase check (DEV-208) is never due here.
+  usePhraseBackup: () => ({
+    needsBackup: false,
+    reminderVisible: false,
+    requireBackup: async () => true,
+    openBackup: () => {},
+    markUnconfirmed: async () => {},
+    dismissReminder: async () => {},
+  }),
   // The detail cards draw the kit's real tokens.
   ...jest.requireActual('../../test-utils/themeTokens'),
   ...jest.requireActual('../../../../packages/shared/src/analytics'),

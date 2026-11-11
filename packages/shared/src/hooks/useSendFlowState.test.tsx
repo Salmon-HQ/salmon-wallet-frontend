@@ -18,6 +18,11 @@ vi.mock('./useSendTransaction', () => ({
   useSendTransaction: () => ({ estimateFee, sendTransaction, reset, status: 'idle' }),
 }));
 
+const requireBackup = vi.fn();
+vi.mock('../contexts/PhraseBackupContext', () => ({
+  usePhraseBackup: () => ({ requireBackup }),
+}));
+
 import { SOL_CONSTANTS } from '../utils/balance';
 import { useSendFlowState } from './useSendFlowState';
 import type { SendToken } from '../types/ui/send-sheet';
@@ -31,6 +36,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   estimateFee.mockResolvedValue({ fee: '0.000005' });
   sendTransaction.mockResolvedValue({ txId: 'sig-1' });
+  requireBackup.mockResolvedValue(true);
 });
 
 describe('useSendFlowState', () => {
@@ -73,6 +79,20 @@ describe('useSendFlowState', () => {
     // A new token drops the estimate rather than showing the old pair's.
     act(() => result.current.setToken(usdc));
     expect(result.current.estimatedFee).toBeNull();
+  });
+
+  it('submit signs nothing while the recovery-phrase check is left unconfirmed', async () => {
+    requireBackup.mockResolvedValue(false);
+    const { result } = renderHook(() => useSendFlowState(params));
+    await waitFor(() => expect(result.current.token).not.toBeNull());
+
+    act(() => result.current.setRecipient({ address: 'dest' }));
+    act(() => result.current.setAmount('0.5'));
+    await act(() => result.current.submit());
+
+    expect(requireBackup).toHaveBeenCalled();
+    expect(sendTransaction).not.toHaveBeenCalled();
+    expect(result.current.txId).toBeNull();
   });
 
   it('submit pays the resolved address and hands the id to the receipt; reset drops it all', async () => {

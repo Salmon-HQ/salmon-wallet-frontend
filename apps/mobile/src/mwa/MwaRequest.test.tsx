@@ -15,6 +15,15 @@ jest.mock('@solana/kit', () => ({}));
 jest.mock('@salmon/shared', () => {
   const mwa = jest.requireActual('@salmon/shared/src/utils/mwa');
   return {
+    // The phrase check (DEV-208) is never due here.
+    usePhraseBackup: () => ({
+      needsBackup: false,
+      reminderVisible: false,
+      requireBackup: async () => true,
+      openBackup: () => {},
+      markUnconfirmed: async () => {},
+      dismissReminder: async () => {},
+    }),
     // The detail cards are the kit's, drawn for real: what they say about who
     // is asking is what these tests pin.
     ...jest.requireActual('../../test-utils/themeTokens'),
