@@ -37,6 +37,7 @@ import {
   NoSigningAccountError,
   SignatureRequestCancelledError,
   type AnyTransactionProposal,
+  type ReceivedTransactionProposal,
   type SignedResult,
   type TransactionProposal,
 } from './types';
@@ -93,8 +94,25 @@ function reportOutcome(proposal: AnyTransactionProposal, success: boolean): void
   }
 }
 
+/**
+ * Which door a request came in through. Recorded at parking and checked on
+ * every proposal that later takes its place (a refresh) and again right
+ * before signing, so a Powerup's proposal can never turn into a received one.
+ */
+type Door = 'powerup' | 'received';
+
+/** A Powerup's proposal carries no `source`; a received one says so. */
+function fitsDoor(proposal: AnyTransactionProposal, door: Door): boolean {
+  return door === 'received'
+    ? 'source' in proposal && proposal.source === 'received'
+    : !('source' in proposal);
+}
+
+const PROPOSAL_KIND_ERROR = 'transaction.errors.proposalKind';
+
 interface ParkedRequest {
   proposal: AnyTransactionProposal;
+  door: Door;
   resolve: (result: SignedResult) => void;
   reject: (error: Error) => void;
   /** Set once signed; the request resolves with it when the receipt is dismissed. */
@@ -140,13 +158,17 @@ export function SignatureRequestProvider({
   }, []);
 
   const park = useCallback(
-    (proposal: AnyTransactionProposal) =>
+    (proposal: AnyTransactionProposal, door: Door) =>
       new Promise<SignedResult>((resolve, reject) => {
+        if (!fitsDoor(proposal, door)) {
+          reject(new Error(PROPOSAL_KIND_ERROR));
+          return;
+        }
         if (parkedRef.current) {
           reject(new Error('transaction.errors.confirmationBusy'));
           return;
         }
-        parkedRef.current = { proposal, resolve, reject };
+        parkedRef.current = { proposal, door, resolve, reject };
         setPending({ proposal, phase: 'review', error: null });
       }),
     []
@@ -156,16 +178,25 @@ export function SignatureRequestProvider({
   // declared-effects check, so it is refused here whatever its type says.
   // Core's own received flows come in through `ReceivedSignatureContext`.
   const requestSignature = useCallback(
-    (proposal: TransactionProposal) =>
-      'source' in proposal
-        ? Promise.reject(new Error('transaction.errors.proposalKind'))
-        : park(proposal),
+    (proposal: TransactionProposal) => park(proposal, 'powerup'),
+    [park]
+  );
+  const requestReceivedSignature = useCallback(
+    (proposal: ReceivedTransactionProposal) => park(proposal, 'received'),
     [park]
   );
 
   const confirm = useCallback(async () => {
     const parked = parkedRef.current;
     if (!parked || parked.unresolved) return;
+    // The last word before the key is used: the bytes must be of the kind
+    // their door admits, whatever replaced them since.
+    if (!fitsDoor(parked.proposal, parked.door)) {
+      setPending((prev) =>
+        prev ? { ...prev, phase: 'review', error: PROPOSAL_KIND_ERROR } : prev
+      );
+      return;
+    }
     // A new wallet's first transaction waits on the phrase check (DEV-208);
     // left unconfirmed, the review stays open.
     if (!(await requireBackup())) return;
@@ -256,6 +287,12 @@ export function SignatureRequestProvider({
       const next = await refreshFn();
       // The request may have been cancelled while the build was in flight.
       if (parkedRef.current !== parked) return;
+      // A rebuild keeps its door: a Powerup's refresh that returns a received
+      // proposal would otherwise skip the declared-effects check.
+      if (!fitsDoor(next, parked.door)) {
+        setPending((prev) => (prev ? { ...prev, error: PROPOSAL_KIND_ERROR } : prev));
+        return;
+      }
       parked.proposal = next;
       setPending((prev) => (prev ? { ...prev, proposal: next, error: null } : prev));
     } catch (error) {
@@ -272,7 +309,9 @@ export function SignatureRequestProvider({
 
   return (
     <SignatureRequestContext.Provider value={value}>
-      <ReceivedSignatureContext.Provider value={park}>{children}</ReceivedSignatureContext.Provider>
+      <ReceivedSignatureContext.Provider value={requestReceivedSignature}>
+        {children}
+      </ReceivedSignatureContext.Provider>
     </SignatureRequestContext.Provider>
   );
 }
