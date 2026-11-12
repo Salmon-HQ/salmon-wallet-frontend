@@ -11,7 +11,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import bs58 from 'bs58';
-import type { Address } from '@solana/kit';
+import type { Address, Blockhash } from '@solana/kit';
 import {
   fetchMerchantDetails,
   fetchMerchantTransaction,
@@ -126,6 +126,9 @@ async function lacksSolForFee(
   }
 }
 
+/** Tells two builds of one payment apart, even within the same millisecond. */
+let buildCount = 0;
+
 /** Failures a second try can cure: the merchant or the network, never the transaction. */
 const RETRYABLE: ReadonlySet<TransactionRequestRefusal> = new Set([
   'unreachable',
@@ -184,74 +187,91 @@ export function useSolanaPayTransactionRequest({
       onPosted: () => void
     ): Promise<ReceivedTransactionProposal | null> => {
       const signer = wallet.getReceiveAddress();
-      const response = await fetchMerchantTransaction(link, signer, { signal });
-      if (signal.aborted) return null;
-      onPosted();
+      const rpc = wallet.getRpc();
 
-      const prepared = await prepareMerchantTransaction(
-        wallet.getRpc(),
-        signer,
-        response.transaction
-      );
-      if (signal.aborted) return null;
-      const request: DAppSignAndSendTransactionRequest = {
-        id: `solana-pay-${Date.now()}`,
-        method: 'signAndSendTransaction',
-        params: {
-          message: prepared.message,
-          transaction: bs58.encode(new Uint8Array(Buffer.from(prepared.wire, 'base64'))),
-        },
-      };
-      // The review opens only once the preview answered: the merchant
-      // controls the bytes, so "still simulating" is never signable.
-      const [approval, rawEffects] = await Promise.all([
-        loadSolanaTransactionApprovalDetails(wallet, request),
-        previewSolanaApprovalEffects(wallet, request),
-      ]);
-      if (signal.aborted) return null;
-      const effects = applySymbols(rawEffects, (mint) => catalogRef.current.get(mint));
-      const gate = dappTransactionGate({ effects, effectsLoading: false, parsingError: null });
-      const short =
-        !prepared.sponsored &&
-        (await lacksSolForFee(wallet, signer, BigInt(approval.feeLamports ?? 0), effects));
-      if (signal.aborted) return null;
-      const { label } = details;
-      const display = {
-        ...dappTransactionDisplay(
-          {
-            origin: details.domain,
-            signingAccount: { name: accountName, address: signer },
-            effects,
-            effectsLoading: false,
-            feeSol:
-              approval.feeLamports == null
-                ? null
-                : formatBaseUnits(BigInt(approval.feeLamports), SOL_DECIMALS),
-            transactionCount: 1,
-            parsingError: null,
-            requester: { name: label, icon: details.iconToRender, domain: details.domain },
-            message: response.message,
-            feePayer: prepared.feePayer,
+      const build = async (onAnswer: () => void): Promise<ReceivedTransactionProposal | null> => {
+        const response = await fetchMerchantTransaction(link, signer, { signal });
+        if (signal.aborted) return null;
+        onAnswer();
+
+        const prepared = await prepareMerchantTransaction(rpc, signer, response.transaction);
+        if (signal.aborted) return null;
+        const request: DAppSignAndSendTransactionRequest = {
+          id: `solana-pay-${Date.now()}-${(buildCount += 1)}`,
+          method: 'signAndSendTransaction',
+          params: {
+            message: prepared.message,
+            transaction: bs58.encode(new Uint8Array(Buffer.from(prepared.wire, 'base64'))),
           },
-          t
-        ),
-        title: t('solanaPay.reviewTitle'),
-        pendingTitle: t('solanaPay.paying', { label }),
-        receipt: { title: t('solanaPay.receiptTitle') },
-        requiresHold: gate.requiresHold,
-        ...(short
-          ? { confirmDisabled: true, warning: { title: t('solanaPay.notEnoughSolForFee') } }
-          : {}),
+        };
+        // The review opens only once the preview answered: the merchant
+        // controls the bytes, so "still simulating" is never signable.
+        const [approval, rawEffects] = await Promise.all([
+          loadSolanaTransactionApprovalDetails(wallet, request),
+          previewSolanaApprovalEffects(wallet, request),
+        ]);
+        if (signal.aborted) return null;
+        const effects = applySymbols(rawEffects, (mint) => catalogRef.current.get(mint));
+        const gate = dappTransactionGate({ effects, effectsLoading: false, parsingError: null });
+        const short =
+          !prepared.sponsored &&
+          (await lacksSolForFee(wallet, signer, BigInt(approval.feeLamports ?? 0), effects));
+        if (signal.aborted) return null;
+        const { label } = details;
+        const display = {
+          ...dappTransactionDisplay(
+            {
+              origin: details.domain,
+              signingAccount: { name: accountName, address: signer },
+              effects,
+              effectsLoading: false,
+              feeSol:
+                approval.feeLamports == null
+                  ? null
+                  : formatBaseUnits(BigInt(approval.feeLamports), SOL_DECIMALS),
+              transactionCount: 1,
+              parsingError: null,
+              requester: { name: label, icon: details.iconToRender, domain: details.domain },
+              message: response.message,
+              feePayer: prepared.feePayer,
+            },
+            t
+          ),
+          title: t('solanaPay.reviewTitle'),
+          pendingTitle: t('solanaPay.paying', { label }),
+          receipt: { title: t('solanaPay.receiptTitle') },
+          requiresHold: gate.requiresHold,
+          ...(short
+            ? { confirmDisabled: true, warning: { title: t('solanaPay.notEnoughSolForFee') } }
+            : {}),
+        };
+        return {
+          id: request.id as string,
+          source: 'received',
+          networkId: network,
+          transaction: prepared.wire,
+          signer,
+          display,
+          pending: { kind: 'send' },
+          // The merchant's blockhash lives about a minute; asked on the active
+          // network right before the press signs.
+          isStale: async () => {
+            const { value } = await rpc
+              .isBlockhashValid(prepared.lifetime as Blockhash, { commitment: 'confirmed' })
+              .send();
+            return !value;
+          },
+          // A stale payment is asked for again (the POST, not the GET), checked
+          // and previewed as the first one was; any failure means it expired.
+          refresh: async () => {
+            const next = await build(() => undefined).catch(() => null);
+            if (!next) throw new TransactionRequestError('expired');
+            return next;
+          },
+        };
       };
-      return {
-        id: request.id as string,
-        source: 'received',
-        networkId: network,
-        transaction: prepared.wire,
-        signer,
-        display,
-        pending: { kind: 'send' },
-      };
+
+      return build(onPosted);
     },
     [accountName, t]
   );

@@ -475,6 +475,68 @@ describe('useSolanaPayTransactionRequest — no sponsor, the user pays the fee',
   });
 });
 
+describe('useSolanaPayTransactionRequest — the merchant transaction goes stale', () => {
+  async function reviewedProposal(paying = account()) {
+    mocks.requestReceived.mockReturnValue(new Promise(() => undefined));
+    const { result } = renderHook(() => useSolanaPayTransactionRequest({ account: paying }));
+    act(() => result.current.start(LINK));
+    await waitFor(() => expect(mocks.requestReceived).toHaveBeenCalledTimes(1));
+    return mocks.requestReceived.mock.calls[0][0] as ReceivedTransactionProposal;
+  }
+
+  it("asks the active network whether the merchant's blockhash still holds", async () => {
+    let valid = true;
+    const proposal = await reviewedProposal(account({ blockhashValid: () => valid }));
+
+    expect(await proposal.isStale?.()).toBe(false);
+    valid = false;
+    expect(await proposal.isStale?.()).toBe(true);
+  });
+
+  it('rebuilds by asking the merchant again (POST only) and checking the new bytes', async () => {
+    const proposal = await reviewedProposal();
+    const fresh = await sponsoredMerchantTransaction({
+      version: 0,
+      sponsor,
+      user: user.address,
+      merchant: merchant.address,
+      blockhash: 'EkSnNWid2cvwEVnVx9aBqawnmiCNiDgp3gUdkDPTKN1N' as never,
+    });
+    mocks.fetchMerchantTransaction.mockResolvedValue({ transaction: fresh, message: 'Order #42' });
+
+    const next = await proposal.refresh!();
+
+    expect(mocks.fetchMerchantDetails).toHaveBeenCalledTimes(1);
+    expect(mocks.fetchMerchantTransaction).toHaveBeenCalledTimes(2);
+    expect(mocks.fetchMerchantTransaction).toHaveBeenLastCalledWith(
+      LINK,
+      user.address,
+      expect.anything()
+    );
+    expect(mocks.preview).toHaveBeenCalledTimes(2);
+    expect(next).toMatchObject({ source: 'received', transaction: fresh, signer: user.address });
+    expect(next.id).not.toBe(proposal.id);
+    expect(next.display).toEqual(proposal.display);
+    expect(typeof next.refresh).toBe('function');
+  });
+
+  it('says the payment expired when the merchant cannot rebuild it', async () => {
+    const proposal = await reviewedProposal();
+    mocks.fetchMerchantTransaction.mockRejectedValue(new TransactionRequestError('unreachable'));
+
+    await expect(proposal.refresh!()).rejects.toThrow('solanaPay.errors.expired');
+  });
+
+  it('says the payment expired when the rebuilt bytes fail the checks', async () => {
+    const proposal = await reviewedProposal();
+    const bytes = Buffer.from(wire, 'base64');
+    bytes[1] ^= 0xff;
+    mocks.fetchMerchantTransaction.mockResolvedValue({ transaction: bytes.toString('base64') });
+
+    await expect(proposal.refresh!()).rejects.toThrow('solanaPay.errors.expired');
+  });
+});
+
 describe('useSolanaPayRequest — one payment, mounted while its link is open', () => {
   it('starts on mount with the active account name and reports done', async () => {
     const onDone = vi.fn();

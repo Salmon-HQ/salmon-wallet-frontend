@@ -106,6 +106,10 @@ if (KORA_RPC_URL) {
 }
 
 const rpc = createSolanaRpc(RPC_URL);
+// The blockhash at start: on /pay/stale's first POST it is old (wait two
+// minutes after starting), so the wallet must ask again before it signs.
+const startBlockhash = (await rpc.getLatestBlockhash().send()).value;
+const staleServed = new Set();
 
 /**
  * The user's payment to MERCHANT_ADDR with a memo. By default the sponsor pays
@@ -115,10 +119,17 @@ const rpc = createSolanaRpc(RPC_URL);
  */
 async function merchantTransaction(
   account,
-  { version = 0, lamports = AMOUNT_LAMPORTS, payer = sponsor.signer, from, cosign = false } = {}
+  {
+    version = 0,
+    lamports = AMOUNT_LAMPORTS,
+    payer = sponsor.signer,
+    from,
+    cosign = false,
+    blockhash,
+  } = {}
 ) {
   const user = createNoopSigner(address(from ?? account));
-  const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
+  const latestBlockhash = blockhash ?? (await rpc.getLatestBlockhash().send()).value;
   const message = pipe(
     createTransactionMessage({ version }),
     (m) => setTransactionMessageFeePayerSigner(payer, m),
@@ -207,6 +218,15 @@ const ROUTES = {
     }),
   },
   '/pay/no-cors': { cors: false },
+  // Spec 043 US4: the first POST per account carries the start blockhash;
+  // every later POST (the wallet's refresh) a fresh one.
+  '/pay/stale': {
+    post: (account) => {
+      const first = !staleServed.has(account);
+      staleServed.add(account);
+      return merchantTransaction(account, first ? { blockhash: startBlockhash } : {});
+    },
+  },
   // Spec 043 US3: no sponsor. The merchant names itself fee payer and signs
   // nothing; the wallet makes the user pay and sets a fresh blockhash.
   '/pay/unsigned': {

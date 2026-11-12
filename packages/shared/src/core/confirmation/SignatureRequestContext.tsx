@@ -27,6 +27,7 @@ import React, {
   useState,
 } from 'react';
 import type { ReactNode } from 'react';
+import isEqual from 'lodash-es/isEqual';
 import { SolanaOutcomeUnknownError } from '../../blockchain/solana/confirm';
 import { usePendingTransactionsOptional } from '../../contexts/PendingTransactionsContext';
 import { usePhraseBackup } from '../../contexts/PhraseBackupContext';
@@ -81,6 +82,12 @@ export interface SignatureRequestContextValue {
   dismissReceipt: () => void;
   /** Replace the parked proposal with a fresh build of the same intent. */
   refresh: () => Promise<void>;
+  /**
+   * Rebuild a proposal that went stale. `true` when the rebuilt review shows
+   * exactly what the user saw, so the press may go on to sign; otherwise the
+   * review stays, with the rebuild's error or the note that it changed.
+   */
+  refreshStale: () => Promise<boolean>;
 }
 
 const SignatureRequestContext = createContext<SignatureRequestContextValue | null>(null);
@@ -109,6 +116,8 @@ function fitsDoor(proposal: AnyTransactionProposal, door: Door): boolean {
 }
 
 const PROPOSAL_KIND_ERROR = 'transaction.errors.proposalKind';
+/** Shown when a stale proposal was rebuilt into something the user has not seen. */
+const REFRESHED_NOTE = 'solanaPay.refreshed';
 
 /**
  * The proposal as core holds it: every field read once, from a plain object,
@@ -337,33 +346,64 @@ export function SignatureRequestProvider({
     parked.resolve(result);
   }, [settle]);
 
+  /** The parked proposal rebuilt in place; `null` when it was not (the error is shown). */
+  const rebuild = useCallback(
+    async (parked: ParkedRequest): Promise<AnyTransactionProposal | null> => {
+      const refreshFn = parked.proposal.refresh;
+      if (!refreshFn) return null;
+      try {
+        const next = await refreshFn();
+        // The request may have been cancelled while the build was in flight.
+        if (parkedRef.current !== parked) return null;
+        // A rebuild keeps its door: a Powerup's refresh that returns a received
+        // proposal would otherwise skip the declared-effects check.
+        const held = snapshotProposal(next, parked.door);
+        if (!held) {
+          setPending((prev) => (prev ? { ...prev, error: PROPOSAL_KIND_ERROR } : prev));
+          return null;
+        }
+        parked.proposal = held;
+        setPending((prev) => (prev ? { ...prev, proposal: held, error: null } : prev));
+        return held;
+      } catch (error) {
+        if (parkedRef.current !== parked) return null;
+        const message = error instanceof Error ? error.message : String(error);
+        setPending((prev) => (prev ? { ...prev, error: message } : prev));
+        return null;
+      }
+    },
+    []
+  );
+
   const refresh = useCallback(async () => {
     const parked = parkedRef.current;
-    const refreshFn = parked?.proposal.refresh;
-    if (!parked || !refreshFn) return;
-    try {
-      const next = await refreshFn();
-      // The request may have been cancelled while the build was in flight.
-      if (parkedRef.current !== parked) return;
-      // A rebuild keeps its door: a Powerup's refresh that returns a received
-      // proposal would otherwise skip the declared-effects check.
-      const held = snapshotProposal(next, parked.door);
-      if (!held) {
-        setPending((prev) => (prev ? { ...prev, error: PROPOSAL_KIND_ERROR } : prev));
-        return;
-      }
-      parked.proposal = held;
-      setPending((prev) => (prev ? { ...prev, proposal: held, error: null } : prev));
-    } catch (error) {
-      if (parkedRef.current !== parked) return;
-      const message = error instanceof Error ? error.message : String(error);
-      setPending((prev) => (prev ? { ...prev, error: message } : prev));
-    }
-  }, []);
+    if (parked) await rebuild(parked);
+  }, [rebuild]);
+
+  const refreshStale = useCallback(async () => {
+    const parked = parkedRef.current;
+    if (!parked) return false;
+    const seen = parked.proposal.display;
+    const held = await rebuild(parked);
+    if (!held) return false;
+    if (isEqual(held.display, seen)) return true;
+    // What the user reviewed is not what would be signed: they look again.
+    setPending((prev) => (prev ? { ...prev, error: REFRESHED_NOTE } : prev));
+    return false;
+  }, [rebuild]);
 
   const value = useMemo(
-    () => ({ pending, receipt, requestSignature, confirm, cancel, dismissReceipt, refresh }),
-    [pending, receipt, requestSignature, confirm, cancel, dismissReceipt, refresh]
+    () => ({
+      pending,
+      receipt,
+      requestSignature,
+      confirm,
+      cancel,
+      dismissReceipt,
+      refresh,
+      refreshStale,
+    }),
+    [pending, receipt, requestSignature, confirm, cancel, dismissReceipt, refresh, refreshStale]
   );
 
   return (

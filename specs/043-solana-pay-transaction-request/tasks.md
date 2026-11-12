@@ -140,10 +140,10 @@
 
 **Independent test**: open `/pay/sponsored`, wait > 90 s, confirm → refetch and land; `/pay/stale`.
 
-- [ ] T052 [P] [US4] Write failing cases in NEW `packages/shared/src/core/confirmation/useSignatureRequestHost.test.tsx`: `isStale` true + refreshed `display` deep-equal → one press signs once; changed display → no signature, note `solanaPay.refreshed`; refresh throws → the review keeps the error (e.g. `solanaPay.errors.expired`), no signature; a proposal without `isStale` behaves exactly as today (the `expiresAt` path untouched).
-- [ ] T053 [P] [US4] Add failing cases to `packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx`: the proposal's `isStale` asks `isBlockhashValid` on the active RPC; `refresh` repeats the POST (not the GET) → check → preview against the same link and account and returns a new proposal; a failed refresh throws `expired`.
-- [ ] T054 [US4] Implement the stale rule in `confirmOrRefresh` of `packages/shared/src/core/confirmation/useSignatureRequestHost.ts` and the received-kind `refresh` in `packages/shared/src/core/confirmation/SignatureRequestContext.tsx`; re-run the core checkpoint of T027 (frozen files unchanged and green). Depends on T052.
-- [ ] T055 [US4] Implement `isStale` / `refresh` in `packages/shared/src/hooks/useSolanaPayTransactionRequest.ts`. Depends on T053, T054.
+- [x] T052 [P] [US4] Write failing cases in NEW `packages/shared/src/core/confirmation/useSignatureRequestHost.test.tsx`: `isStale` true + refreshed `display` deep-equal → one press signs once; changed display → no signature, note `solanaPay.refreshed`; refresh throws → the review keeps the error (e.g. `solanaPay.errors.expired`), no signature; a proposal without `isStale` behaves exactly as today (the `expiresAt` path untouched).
+- [x] T053 [P] [US4] Add failing cases to `packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx`: the proposal's `isStale` asks `isBlockhashValid` on the active RPC; `refresh` repeats the POST (not the GET) → check → preview against the same link and account and returns a new proposal; a failed refresh throws `expired`.
+- [x] T054 [US4] Implement the stale rule in `confirmOrRefresh` of `packages/shared/src/core/confirmation/useSignatureRequestHost.ts` and the received-kind `refresh` in `packages/shared/src/core/confirmation/SignatureRequestContext.tsx`; re-run the core checkpoint of T027 (frozen files unchanged and green). Depends on T052.
+- [x] T055 [US4] Implement `isStale` / `refresh` in `packages/shared/src/hooks/useSolanaPayTransactionRequest.ts`. Depends on T053, T054.
 - [ ] T056 [US4] Add `/pay/stale` (first POST ~2-minute-old blockhash, later POSTs fresh) to `scripts/devnet-solana-pay-merchant.mjs`; manual check on both apps; note results for T069.
 
 ---

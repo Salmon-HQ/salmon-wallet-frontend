@@ -34,7 +34,7 @@ function secondsUntil(expiresAt: string | undefined, now: number): number | null
 }
 
 export function useSignatureRequestHost(): SignatureRequestHost {
-  const { pending, receipt, confirm, cancel, dismissReceipt, refresh } =
+  const { pending, receipt, confirm, cancel, dismissReceipt, refresh, refreshStale } =
     useSignatureRequestContext();
   const expiresAt = pending?.proposal.expiresAt;
   const [now, setNow] = useState(() => Date.now());
@@ -76,8 +76,29 @@ export function useSignatureRequestHost(): SignatureRequestHost {
       }
       return;
     }
+    const { isStale } = pending.proposal;
+    if (isStale) {
+      // Bytes past their lifetime are never signed: they are rebuilt, and the
+      // same press signs only when the rebuilt review is the one the user saw.
+      // A check that cannot answer counts as stale.
+      const stale = await isStale().catch(() => true);
+      if (stale) {
+        if (!pending.proposal.refresh) {
+          cancel();
+          return;
+        }
+        setRefreshing(true);
+        let unchanged: boolean;
+        try {
+          unchanged = await refreshStale();
+        } finally {
+          setRefreshing(false);
+        }
+        if (!unchanged) return;
+      }
+    }
     await confirm();
-  }, [pending, expired, refresh, confirm, cancel]);
+  }, [pending, expired, refresh, refreshStale, confirm, cancel]);
 
   const confirmLabel = useMemo(() => {
     if (pending?.unresolved) return i18n.t('actions.close', { defaultValue: 'Close' });
