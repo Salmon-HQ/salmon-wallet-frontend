@@ -7,7 +7,8 @@
  * entry are stand-ins; the transaction and its checks are real.
  */
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { classifyScanPayload } from '../utils/scan-payload';
 import { generateKeyPairSigner, type Address, type KeyPairSigner } from '@solana/kit';
 import bs58 from 'bs58';
 import {
@@ -534,6 +535,39 @@ describe('useSolanaPayTransactionRequest — the merchant transaction goes stale
     mocks.fetchMerchantTransaction.mockResolvedValue({ transaction: bytes.toString('base64') });
 
     await expect(proposal.refresh!()).rejects.toThrow('solanaPay.errors.expired');
+  });
+});
+
+describe('useSolanaPayTransactionRequest — accounts that cannot sign', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('refuses a watch-only Solana account before any request leaves the device', () => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal('fetch', fetchSpy);
+    const watchOnly = {
+      canSign: false,
+      network: { id: 'solana-devnet' },
+      getReceiveAddress: () => user.address,
+      getRpc: () => ({}),
+    } as never;
+    const { result } = renderHook(() => useSolanaPayTransactionRequest({ account: watchOnly }));
+
+    act(() => result.current.start(LINK));
+
+    expect(result.current.state).toEqual({
+      phase: 'refused',
+      reason: 'watchOnly',
+      merchant: { domain: 'merchant.example' },
+    });
+    expect(result.current.sheet.onRetry).toBeUndefined();
+    expect(mocks.fetchMerchantDetails).not.toHaveBeenCalled();
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('never sees a link scanned on another chain: the classifier stops it first', () => {
+    expect(classifyScanPayload('solana:https://merchant.example/pay', 'bitcoin')).toEqual({
+      kind: 'wrongChain',
+    });
   });
 });
 

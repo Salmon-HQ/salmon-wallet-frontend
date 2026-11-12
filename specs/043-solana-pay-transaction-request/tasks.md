@@ -152,8 +152,8 @@
 
 **Independent test**: watch-only account opens a link → refusal, server log shows no request.
 
-- [ ] T057 [US5] Add failing cases to `packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx`: a watch-only account (`isSignableAccount` false) → `refused('watchOnly')` and the mocked `fetch` is never called; a non-Solana active chain never reaches the hook (`wrongChain` from `classifyScanPayload`).
-- [ ] T058 [US5] Implement the watch-only refusal before any request in `packages/shared/src/hooks/useSolanaPayTransactionRequest.ts` using `isSignableAccount` from `packages/shared/src/utils/account.ts`. Depends on T057.
+- [x] T057 [US5] Add failing cases to `packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx`: a watch-only account (`isSignableAccount` false) → `refused('watchOnly')` and the mocked `fetch` is never called; a non-Solana active chain never reaches the hook (`wrongChain` from `classifyScanPayload`).
+- [x] T058 [US5] Implement the watch-only refusal before any request in `packages/shared/src/hooks/useSolanaPayTransactionRequest.ts` using `isSignableAccount` from `packages/shared/src/utils/account.ts`. Depends on T057.
 - [ ] T059 [US5] Manual check, quickstart §3 step 5 (and step 6, account switch mid-review → `accountChanged`); note results for T069.
 
 ---
@@ -161,10 +161,10 @@
 ## Phase 8: Polish and the "after" half
 
 - [ ] T060 [P] Coverage ratchet: `pnpm test:coverage`; raise `thresholds` in `packages/shared` / `packages/ui` vitest configs and `coverageThreshold` in the `apps/mobile` jest config where coverage went up.
-- [ ] T061 [P] Parity: `pnpm check:parity:report`; `CROSS_PLATFORM_CLONE_LINES_MAX` in `scripts/check-dom-parity.mjs` stays at or below its baseline value; if the sheet twins push it up, move the shared part into `packages/shared` rather than raise it.
+- [ ] T061 [P] Parity: `pnpm check:parity:report`. The repo rule governs `CROSS_PLATFORM_CLONE_LINES_MAX` in `scripts/check-dom-parity.mjs`: any logic the twins share moves into `packages/shared` first; the ceiling may go up only for pure rendering JSX left duplicated after that, each raise with a dated comment naming the lines (owner decision, 2026-11-12).
 - [ ] T062 [P] `pnpm --filter @salmon/extension build && pnpm check:manifest`: no permission change (owner decision 2).
 - [ ] T063 [P] e2e selectors: `node scripts/check-e2e-selectors.mjs` with the new sheet and identity-row test ids traced through `apps/mobile/.maestro` and the extension Playwright suite (no new e2e flow required).
-- [ ] T064 Remove `send.request.errors.transactionRequest` from `packages/shared/src/locales/en/translation.json` and `packages/shared/src/locales/es/translation.json` after confirming no reference is left (`grep -rn "errors.transactionRequest" packages apps`); `node scripts/check-i18n.mjs`.
+- [ ] T064 Keep `send.request.errors.transactionRequest` in both locales. No product path reaches it any more (an `https:` link is a transaction request, any other web address is `transactionRequestMalformed`), but the frozen `apps/mobile/__tests__/app/send-screens.test.tsx` scripts `readSettledPaymentLink` to return it and asserts its English text, and that file must stay byte-identical. Remove it in the first change after this feature that may edit that test. Run `node scripts/check-i18n.mjs` (the key stays referenced by that test).
 - [ ] T065 Security review of the diff (`typescript-reviewer` + `security-reviewer`, ask-pattern) focused on the threats table of plan.md; fix findings with a test each.
 - [ ] T066 `npx prettier --check .` and `pnpm -s check:no-secrets` clean.
 - [ ] T067 Run quickstart §2 Kora mode once (real Kora node, `KORA_RPC_URL`): confirm Kora signs a transaction whose user slot is empty and the payment lands; record whether `expo-image` drew the SVG icon on Android and how RN `fetch` handled `/pay/redirect-http` (the three items plan.md marks unverified).
