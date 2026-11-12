@@ -75,8 +75,12 @@ export interface SignatureRequestContextValue {
    * they back out of the confirmation.
    */
   requestSignature: (proposal: TransactionProposal) => Promise<SignedResult>;
-  /** The host's side. Each is a no-op without a parked request. */
-  confirm: () => Promise<void>;
+  /**
+   * The host's side. Each is a no-op without a parked request. `confirm` and
+   * `refreshStale` take the request the user pressed on (`heldRequest()` at
+   * press time) and do nothing once another one is parked.
+   */
+  confirm: (pressed?: HeldRequest) => Promise<void>;
   cancel: () => void;
   /** The receipt's one button: close the window and hand the Powerup back. */
   dismissReceipt: () => void;
@@ -87,8 +91,13 @@ export interface SignatureRequestContextValue {
    * exactly what the user saw, so the press may go on to sign; otherwise the
    * review stays, with the rebuild's error or the note that it changed.
    */
-  refreshStale: () => Promise<boolean>;
+  refreshStale: (pressed?: HeldRequest) => Promise<boolean>;
+  /** The parked request's identity, to hand back to `confirm` / `refreshStale`. */
+  heldRequest: () => HeldRequest | null;
 }
+
+/** Opaque identity of one parked request. */
+export type HeldRequest = object;
 
 const SignatureRequestContext = createContext<SignatureRequestContextValue | null>(null);
 
@@ -169,6 +178,8 @@ interface ParkedRequest {
   reject: (error: Error) => void;
   /** Set once signed; the request resolves with it when the receipt is dismissed. */
   result?: SignedResult;
+  /** A confirm is between the press and the signature: another one waits its turn. */
+  signing?: boolean;
   /**
    * Sent, with no verdict: it may have landed, so it is never signed again,
    * and closing hands the Powerup this error instead of a plain cancel.
@@ -239,96 +250,114 @@ export function SignatureRequestProvider({
     [park]
   );
 
-  const confirm = useCallback(async () => {
-    const parked = parkedRef.current;
-    if (!parked || parked.unresolved) return;
-    // The last word before the key is used: the bytes must be of the kind
-    // their door admits, whatever replaced them since.
-    if (!fitsDoor(parked.proposal, parked.door)) {
-      setPending((prev) =>
-        prev ? { ...prev, phase: 'review', error: PROPOSAL_KIND_ERROR } : prev
-      );
-      return;
-    }
-    // A new wallet's first transaction waits on the phrase check (DEV-208);
-    // left unconfirmed, the review stays open.
-    if (!(await requireBackup())) return;
-    // The wait above is long enough for anything to happen: the request must
-    // still be this one, and still fit its door, when the key is used.
-    if (parkedRef.current !== parked) return;
-    if (!fitsDoor(parked.proposal, parked.door)) {
-      setPending((prev) =>
-        prev ? { ...prev, phase: 'review', error: PROPOSAL_KIND_ERROR } : prev
-      );
-      return;
-    }
-    setPending((prev) => (prev ? { ...prev, phase: 'signing', error: null } : prev));
-
-    const signer = accountRef.current;
-    if (!signer) {
-      settle();
-      parked.reject(new NoSigningAccountError());
-      return;
-    }
-
-    let signed = false;
-    try {
-      // The path is chosen by the recorded door, never by the proposal. A
-      // Powerup's keeps the two-argument call, whose default is its door.
-      const result =
-        parked.door === 'received'
-          ? await signProposal(signer, parked.proposal, 'received')
-          : await signProposal(signer, parked.proposal);
-      signed = true;
-      reportOutcome(parked.proposal, true);
-      // Signing waited for the chain, so the banner reports the transaction as
-      // done from the same moment the receipt shows — never "in progress"
-      // beside it.
-      const { pending: report, networkId } = parked.proposal;
-      if (report) {
-        pendingTransactions?.trackPendingTransaction({
-          signature: result.signature,
-          kind: report.kind,
-          networkId,
-          submittedAt: Date.now(),
-          summary: report.summary,
-          status: 'confirmed',
-        });
+  const signParked = useCallback(
+    async (parked: ParkedRequest) => {
+      // The last word before the key is used: the bytes must be of the kind
+      // their door admits, whatever replaced them since.
+      if (!fitsDoor(parked.proposal, parked.door)) {
+        setPending((prev) =>
+          prev ? { ...prev, phase: 'review', error: PROPOSAL_KIND_ERROR } : prev
+        );
+        return;
       }
-      // The request stays parked: the window now shows the receipt, and the
-      // Powerup hears nothing until the user has closed it.
-      parked.result = result;
-      setPending(null);
-      setReceipt({ proposal: parked.proposal, signature: result.signature });
-    } catch (error) {
-      if (error instanceof SolanaOutcomeUnknownError) {
-        // It may have landed: the banner follows the signature until the
-        // chain answers, and the host offers only a way out. Analytics hears
-        // nothing, because neither outcome is known.
-        parked.unresolved = error;
+      // A new wallet's first transaction waits on the phrase check (DEV-208);
+      // left unconfirmed, the review stays open.
+      if (!(await requireBackup())) return;
+      // The wait above is long enough for anything to happen: the request must
+      // still be this one, and still fit its door, when the key is used.
+      if (parkedRef.current !== parked) return;
+      if (!fitsDoor(parked.proposal, parked.door)) {
+        setPending((prev) =>
+          prev ? { ...prev, phase: 'review', error: PROPOSAL_KIND_ERROR } : prev
+        );
+        return;
+      }
+      setPending((prev) => (prev ? { ...prev, phase: 'signing', error: null } : prev));
+
+      const signer = accountRef.current;
+      if (!signer) {
+        settle();
+        parked.reject(new NoSigningAccountError());
+        return;
+      }
+
+      let signed = false;
+      try {
+        // The path is chosen by the recorded door, never by the proposal. A
+        // Powerup's keeps the two-argument call, whose default is its door.
+        const result =
+          parked.door === 'received'
+            ? await signProposal(signer, parked.proposal, 'received')
+            : await signProposal(signer, parked.proposal);
+        signed = true;
+        reportOutcome(parked.proposal, true);
+        // Signing waited for the chain, so the banner reports the transaction as
+        // done from the same moment the receipt shows — never "in progress"
+        // beside it.
         const { pending: report, networkId } = parked.proposal;
         if (report) {
           pendingTransactions?.trackPendingTransaction({
-            signature: error.signature,
+            signature: result.signature,
             kind: report.kind,
             networkId,
             submittedAt: Date.now(),
             summary: report.summary,
+            status: 'confirmed',
           });
         }
-        setPending((prev) =>
-          prev ? { ...prev, phase: 'review', error: error.message, unresolved: true } : prev
-        );
-        return;
+        // The request stays parked: the window now shows the receipt, and the
+        // Powerup hears nothing until the user has closed it.
+        parked.result = result;
+        setPending(null);
+        setReceipt({ proposal: parked.proposal, signature: result.signature });
+      } catch (error) {
+        if (error instanceof SolanaOutcomeUnknownError) {
+          // It may have landed: the banner follows the signature until the
+          // chain answers, and the host offers only a way out. Analytics hears
+          // nothing, because neither outcome is known.
+          parked.unresolved = error;
+          const { pending: report, networkId } = parked.proposal;
+          if (report) {
+            pendingTransactions?.trackPendingTransaction({
+              signature: error.signature,
+              kind: report.kind,
+              networkId,
+              submittedAt: Date.now(),
+              summary: report.summary,
+            });
+          }
+          setPending((prev) =>
+            prev ? { ...prev, phase: 'review', error: error.message, unresolved: true } : prev
+          );
+          return;
+        }
+        // A throw after signing is not a failed attempt: it was already reported.
+        if (!signed) reportOutcome(parked.proposal, false);
+        // The parked request stays: the host shows the failure and the user
+        // retries or backs out. The rejection reaches the Powerup only on cancel.
+        const message = error instanceof Error ? error.message : String(error);
+        setPending((prev) => (prev ? { ...prev, phase: 'review', error: message } : prev));
       }
-      // A throw after signing is not a failed attempt: it was already reported.
-      if (!signed) reportOutcome(parked.proposal, false);
-      // The parked request stays: the host shows the failure and the user
-      // retries or backs out. The rejection reaches the Powerup only on cancel.
-      const message = error instanceof Error ? error.message : String(error);
-      setPending((prev) => (prev ? { ...prev, phase: 'review', error: message } : prev));
-    }
-  }, [settle, signProposal, pendingTransactions, requireBackup]);
+    },
+    [settle, signProposal, pendingTransactions, requireBackup]
+  );
+
+  const confirm = useCallback(
+    async (pressed?: HeldRequest) => {
+      const parked = parkedRef.current;
+      // Never twice, never after the signature, never on a request the user
+      // did not press on.
+      if (!parked || parked.unresolved || parked.result || parked.signing) return;
+      if (pressed && pressed !== parked) return;
+      parked.signing = true;
+      try {
+        await signParked(parked);
+      } finally {
+        parked.signing = false;
+      }
+    },
+    [signParked]
+  );
 
   const cancel = useCallback(() => {
     const parked = parkedRef.current;
@@ -380,17 +409,22 @@ export function SignatureRequestProvider({
     if (parked) await rebuild(parked);
   }, [rebuild]);
 
-  const refreshStale = useCallback(async () => {
-    const parked = parkedRef.current;
-    if (!parked) return false;
-    const seen = parked.proposal.display;
-    const held = await rebuild(parked);
-    if (!held) return false;
-    if (isEqual(held.display, seen)) return true;
-    // What the user reviewed is not what would be signed: they look again.
-    setPending((prev) => (prev ? { ...prev, error: REFRESHED_NOTE } : prev));
-    return false;
-  }, [rebuild]);
+  const refreshStale = useCallback(
+    async (pressed?: HeldRequest) => {
+      const parked = parkedRef.current;
+      if (!parked || (pressed && pressed !== parked)) return false;
+      const seen = parked.proposal.display;
+      const held = await rebuild(parked);
+      if (!held) return false;
+      if (isEqual(held.display, seen)) return true;
+      // What the user reviewed is not what would be signed: they look again.
+      setPending((prev) => (prev ? { ...prev, error: REFRESHED_NOTE } : prev));
+      return false;
+    },
+    [rebuild]
+  );
+
+  const heldRequest = useCallback(() => parkedRef.current, []);
 
   const value = useMemo(
     () => ({
@@ -402,8 +436,19 @@ export function SignatureRequestProvider({
       dismissReceipt,
       refresh,
       refreshStale,
+      heldRequest,
     }),
-    [pending, receipt, requestSignature, confirm, cancel, dismissReceipt, refresh, refreshStale]
+    [
+      pending,
+      receipt,
+      requestSignature,
+      confirm,
+      cancel,
+      dismissReceipt,
+      refresh,
+      refreshStale,
+      heldRequest,
+    ]
   );
 
   return (

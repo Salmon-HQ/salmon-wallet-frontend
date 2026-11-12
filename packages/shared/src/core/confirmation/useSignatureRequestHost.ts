@@ -4,7 +4,7 @@
  * "expired → rebuild before signing" rule live here once, so both twins
  * behave the same.
  */
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import i18n from 'i18next';
 import { useSignatureRequestContext } from './SignatureRequestContext';
 import type { PendingSignatureRequest, SignatureRequestReceipt } from './SignatureRequestContext';
@@ -34,8 +34,10 @@ function secondsUntil(expiresAt: string | undefined, now: number): number | null
 }
 
 export function useSignatureRequestHost(): SignatureRequestHost {
-  const { pending, receipt, confirm, cancel, dismissReceipt, refresh, refreshStale } =
+  const { pending, receipt, confirm, cancel, dismissReceipt, refresh, refreshStale, heldRequest } =
     useSignatureRequestContext();
+  /** A press is between its first wait and its end: further presses do nothing. */
+  const pressingRef = useRef(false);
   const expiresAt = pending?.proposal.expiresAt;
   const [now, setNow] = useState(() => Date.now());
   const [refreshing, setRefreshing] = useState(false);
@@ -51,54 +53,64 @@ export function useSignatureRequestHost(): SignatureRequestHost {
   const expired = secondsLeft === 0;
 
   const confirmOrRefresh = useCallback(async () => {
-    if (!pending) return;
+    if (!pending || pressingRef.current) return;
     // The last attempt may have landed: another press must never sign again.
     if (pending.unresolved) {
       cancel();
       return;
     }
-    if (expired) {
-      // A build that has run out is not signable. When the Powerup can rebuild
-      // it, the press rebuilds; when it cannot, the press dismisses. What it
-      // must never do is sign the stale transaction — the button said "Refresh
-      // Quote" and signed the old bytes anyway, so the press the user meant as
-      // "rebuild this" was the press that authorised it.
-      if (!pending.proposal.refresh) {
-        cancel();
-        return;
-      }
-
-      setRefreshing(true);
-      try {
-        await refresh();
-      } finally {
-        setRefreshing(false);
-      }
-      return;
-    }
-    const { isStale } = pending.proposal;
-    if (isStale) {
-      // Bytes past their lifetime are never signed: they are rebuilt, and the
-      // same press signs only when the rebuilt review is the one the user saw.
-      // A check that cannot answer counts as stale.
-      const stale = await isStale().catch(() => true);
-      if (stale) {
+    // Taken before any wait: this press acts on this request or on nothing,
+    // and a second press waits for it to end.
+    const pressed = heldRequest() ?? undefined;
+    const stillPressed = () => heldRequest() === pressed;
+    pressingRef.current = true;
+    try {
+      if (expired) {
+        // A build that has run out is not signable. When the Powerup can rebuild
+        // it, the press rebuilds; when it cannot, the press dismisses. What it
+        // must never do is sign the stale transaction — the button said "Refresh
+        // Quote" and signed the old bytes anyway, so the press the user meant as
+        // "rebuild this" was the press that authorised it.
         if (!pending.proposal.refresh) {
           cancel();
           return;
         }
+
         setRefreshing(true);
-        let unchanged: boolean;
         try {
-          unchanged = await refreshStale();
+          await refresh();
         } finally {
           setRefreshing(false);
         }
-        if (!unchanged) return;
+        return;
       }
+      const { isStale } = pending.proposal;
+      if (isStale) {
+        // Bytes past their lifetime are never signed: they are rebuilt, and the
+        // same press signs only when the rebuilt review is the one the user saw.
+        // A check that cannot answer counts as stale.
+        const stale = await isStale().catch(() => true);
+        if (!stillPressed()) return;
+        if (stale) {
+          if (!pending.proposal.refresh) {
+            cancel();
+            return;
+          }
+          setRefreshing(true);
+          let unchanged: boolean;
+          try {
+            unchanged = await refreshStale(pressed);
+          } finally {
+            setRefreshing(false);
+          }
+          if (!unchanged) return;
+        }
+      }
+      await confirm(pressed);
+    } finally {
+      pressingRef.current = false;
     }
-    await confirm();
-  }, [pending, expired, refresh, refreshStale, confirm, cancel]);
+  }, [pending, expired, refresh, refreshStale, confirm, cancel, heldRequest]);
 
   const confirmLabel = useMemo(() => {
     if (pending?.unresolved) return i18n.t('actions.close', { defaultValue: 'Close' });
