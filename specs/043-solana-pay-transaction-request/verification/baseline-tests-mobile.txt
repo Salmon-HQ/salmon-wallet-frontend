@@ -1,0 +1,925 @@
+apps/mobile/__tests__/abort-signal-polyfill.test.js › installAbortSignalGapFill aborts a timeout signal with a TimeoutError reason › passed
+apps/mobile/__tests__/abort-signal-polyfill.test.js › installAbortSignalGapFill documents the RN 0.83 baseline it exists to fix › passed
+apps/mobile/__tests__/abort-signal-polyfill.test.js › installAbortSignalGapFill does nothing on a runtime that already implements every member › passed
+apps/mobile/__tests__/abort-signal-polyfill.test.js › installAbortSignalGapFill fills only what a partially patched runtime lacks › passed
+apps/mobile/__tests__/abort-signal-polyfill.test.js › installAbortSignalGapFill installs timeout, abort, any and throwIfAborted › passed
+apps/mobile/__tests__/abort-signal-polyfill.test.js › installAbortSignalGapFill propagates the first aborting signal through any() › passed
+apps/mobile/__tests__/abort-signal-polyfill.test.js › installAbortSignalGapFill short-circuits any() when a signal is already aborted › passed
+apps/mobile/__tests__/abort-signal-polyfill.test.js › installAbortSignalGapFill throwIfAborted is a no-op while the signal is live › passed
+apps/mobile/__tests__/app/activity-screen.test.tsx › Activity screen does not self-close on lock — the lock overlay now mounts above the whole `(app)` stack and covers this screen directly › passed
+apps/mobile/__tests__/app/activity-screen.test.tsx › Activity screen draws the list under the screen header, with the filter chips › passed
+apps/mobile/__tests__/app/activity-screen.test.tsx › Activity screen filters the loaded rows client-side, without asking the indexer again › passed
+apps/mobile/__tests__/app/activity-screen.test.tsx › Activity screen keeps the wallet-is-empty copy when nothing is filtered out › passed
+apps/mobile/__tests__/app/activity-screen.test.tsx › Activity screen offers a retry that refreshes when the load failed › passed
+apps/mobile/__tests__/app/activity-screen.test.tsx › Activity screen opens the detail as a sheet over the screen, not a route › passed
+apps/mobile/__tests__/app/activity-screen.test.tsx › Activity screen pulls to refresh and pages on end reached › passed
+apps/mobile/__tests__/app/activity-screen.test.tsx › Activity screen puts everything that is neither send nor receive under OTHER › passed
+apps/mobile/__tests__/app/activity-screen.test.tsx › Activity screen says the filter is empty, not the wallet, when a filter matches nothing › passed
+apps/mobile/__tests__/app/activity-screen.test.tsx › groupByDay opens a run per day and never repeats a label › passed
+apps/mobile/__tests__/app/activity-screen.test.tsx › groupByDay returns nothing at all for an empty list › passed
+apps/mobile/__tests__/app/activity-screen.test.tsx › matchesFilter defines OTHER by exclusion, so a type this build has never seen lands in it › passed
+apps/mobile/__tests__/app/activity-screen.test.tsx › matchesFilter lets everything through on ALL › passed
+apps/mobile/__tests__/app/activity-screen.test.tsx › matchesFilter matches SEND and RECEIVE by type › passed
+apps/mobile/__tests__/app/app-lock.test.tsx › the (app) shell does not render the lock overlay while unlocked › passed
+apps/mobile/__tests__/app/app-lock.test.tsx › the (app) shell registers Wallets, Activity and Settings as pushed screens of this same layout › passed
+apps/mobile/__tests__/app/app-lock.test.tsx › the (app) shell renders nothing while the stored wallet waits for a password › passed
+apps/mobile/__tests__/app/app-lock.test.tsx › the (app) shell renders the lock overlay as a sibling above the stack when locked, covering every pushed screen › passed
+apps/mobile/__tests__/app/app-lock.test.tsx › the (app) shell uncovers Home in the same commit that releases the gate, without remounting it › passed
+apps/mobile/__tests__/app/auth-layout.test.tsx › AuthLayout disables the swipe-back gesture on "analytics-consent" › passed
+apps/mobile/__tests__/app/auth-layout.test.tsx › AuthLayout disables the swipe-back gesture on "biometric-setup" › passed
+apps/mobile/__tests__/app/auth-layout.test.tsx › AuthLayout disables the swipe-back gesture on "index" › passed
+apps/mobile/__tests__/app/auth-layout.test.tsx › AuthLayout disables the swipe-back gesture on "password" › passed
+apps/mobile/__tests__/app/auth-layout.test.tsx › AuthLayout disables the swipe-back gesture on "success" › passed
+apps/mobile/__tests__/app/auth-layout.test.tsx › AuthLayout keeps the swipe-back gesture on the screens the user can return from › passed
+apps/mobile/__tests__/app/auth-layout.test.tsx › AuthLayout no longer registers the derived-accounts detour › passed
+apps/mobile/__tests__/app/auth-layout.test.tsx › AuthLayout stands the whole onboarding flow in the app ground, once for the stack › passed
+apps/mobile/__tests__/app/auth-layout.test.tsx › AuthLayout steps between screens without sliding the whole screen › passed
+apps/mobile/__tests__/app/create-seed-copy.test.tsx › the create flow seed-phrase copy copies through the clearing clipboard and the button says when it is cleared › passed
+apps/mobile/__tests__/app/developer-mode-scope.test.tsx › the developer flag across the (app) stack hands the same instance to every pushed screen at once › passed
+apps/mobile/__tests__/app/developer-mode-scope.test.tsx › the developer flag across the (app) stack hands the stored flag to the activity screen › passed
+apps/mobile/__tests__/app/developer-mode-scope.test.tsx › the developer flag across the (app) stack hands the stored flag to the nft/[id] screen › passed
+apps/mobile/__tests__/app/developer-mode-scope.test.tsx › the developer flag across the (app) stack hands the stored flag to the send screen › passed
+apps/mobile/__tests__/app/developer-mode-scope.test.tsx › the developer flag across the (app) stack reads false back from storage, never a hardcoded default › passed
+apps/mobile/__tests__/app/nft-flow.test.tsx › the NFT flow provider resolves the NFT from the list the grid already loaded and hands the flow its identity › passed
+apps/mobile/__tests__/app/nft-flow.test.tsx › the NFT flow provider throws outside the provider — an NFT screen with no flow has no NFT to show › passed
+apps/mobile/__tests__/app/nft-flow.test.tsx › the NFT flow provider turns an unsupported burn into an alert — the flow itself stays silent › passed
+apps/mobile/__tests__/app/nft-screens.test.tsx › the NFT burn screen discloses the lookup table cost before the confirm › passed
+apps/mobile/__tests__/app/nft-screens.test.tsx › the NFT burn screen fires the flow s confirm once the preview is ready › passed
+apps/mobile/__tests__/app/nft-screens.test.tsx › the NFT burn screen holds the confirm until a preview exists › passed
+apps/mobile/__tests__/app/nft-screens.test.tsx › the NFT burn screen holds the confirm while the preview reports an error › passed
+apps/mobile/__tests__/app/nft-screens.test.tsx › the NFT burn screen shows the piece about to be burned › passed
+apps/mobile/__tests__/app/nft-screens.test.tsx › the NFT detail screen announces the burn as irreversible before the confirm step does › passed
+apps/mobile/__tests__/app/nft-screens.test.tsx › the NFT detail screen hides send and burn entirely for a wallet that can never sign › passed
+apps/mobile/__tests__/app/nft-screens.test.tsx › the NFT detail screen keeps them disabled while the account is still resolving › passed
+apps/mobile/__tests__/app/nft-screens.test.tsx › the NFT detail screen offers neither send nor burn for an NFT its issuer froze, and says why › passed
+apps/mobile/__tests__/app/nft-screens.test.tsx › the NFT detail screen prepares the burn on the way to the burn review › passed
+apps/mobile/__tests__/app/nft-screens.test.tsx › the NFT detail screen pushes the send step rather than opening anything in place › passed
+apps/mobile/__tests__/app/nft-screens.test.tsx › the NFT detail screen shows everything the sheet showed: media, description, traits and chain facts › passed
+apps/mobile/__tests__/app/nft-screens.test.tsx › the NFT review screen commits only from the confirm control › passed
+apps/mobile/__tests__/app/nft-screens.test.tsx › the NFT review screen never offers a second send after an unknown outcome: it may have landed › passed
+apps/mobile/__tests__/app/nft-screens.test.tsx › the NFT review screen refuses to confirm a recipient the validator did not approve › passed
+apps/mobile/__tests__/app/nft-screens.test.tsx › the NFT review screen refuses to confirm for a wallet that cannot sign › passed
+apps/mobile/__tests__/app/nft-screens.test.tsx › the NFT review screen refuses to confirm when no verdict travelled with the flow › passed
+apps/mobile/__tests__/app/nft-screens.test.tsx › the NFT review screen shows the resolved address under the domain that produced it › passed
+apps/mobile/__tests__/app/nft-screens.test.tsx › the NFT review screen shows what will move and signs nothing on the way in › passed
+apps/mobile/__tests__/app/nft-screens.test.tsx › the NFT review screen warns about a destination no key controls, judged on the resolved address › passed
+apps/mobile/__tests__/app/nft-screens.test.tsx › the NFT send screen blocks Continue for the debounce window after an edit › passed
+apps/mobile/__tests__/app/nft-screens.test.tsx › the NFT send screen offers no way forward for an ordinal, which cannot be transferred yet › passed
+apps/mobile/__tests__/app/nft-screens.test.tsx › the NFT send screen records the verdict and pushes the review › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens analytics-consent.tsx composes on OnboardingLayout › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens analytics-consent.tsx does not build a container of its own › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens analytics-consent.tsx draws the mark from the vector, never from Logo.png › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens analytics-consent.tsx sets no title or description type of its own › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens biometric-setup.tsx composes on OnboardingLayout › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens biometric-setup.tsx does not build a container of its own › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens biometric-setup.tsx draws the mark from the vector, never from Logo.png › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens biometric-setup.tsx sets no title or description type of its own › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens create.tsx composes on OnboardingLayout › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens create.tsx does not build a container of its own › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens create.tsx draws the mark from the vector, never from Logo.png › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens create.tsx sets no title or description type of its own › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens index.tsx composes on OnboardingLayout › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens index.tsx does not build a container of its own › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens index.tsx draws the mark from the vector, never from Logo.png › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens index.tsx draws the welcome mark at the grid’s own size — the lock is the reference › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens index.tsx sets no title or description type of its own › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens is the flow this spec covers, and nothing has been quietly added › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens password.tsx composes on OnboardingLayout › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens password.tsx does not build a container of its own › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens password.tsx draws the mark from the vector, never from Logo.png › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens password.tsx sets no title or description type of its own › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens recover.tsx composes on OnboardingLayout › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens recover.tsx does not build a container of its own › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens recover.tsx draws the mark from the vector, never from Logo.png › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens recover.tsx sets no title or description type of its own › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens seed-vault.tsx composes on OnboardingLayout › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens seed-vault.tsx does not build a container of its own › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens seed-vault.tsx draws the mark from the vector, never from Logo.png › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens seed-vault.tsx sets no title or description type of its own › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens seed-warning.tsx composes on OnboardingLayout › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens seed-warning.tsx does not build a container of its own › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens seed-warning.tsx draws the mark from the vector, never from Logo.png › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens seed-warning.tsx sets no title or description type of its own › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens success.tsx composes on OnboardingLayout › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens success.tsx does not build a container of its own › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens success.tsx draws the mark from the vector, never from Logo.png › passed
+apps/mobile/__tests__/app/onboarding-grid.test.ts › the (auth) screens success.tsx sets no title or description type of its own › passed
+apps/mobile/__tests__/app/password.test.tsx › PasswordScreen protecting a wallet stored without a password keeps the wallet when its sheet is dismissed › passed
+apps/mobile/__tests__/app/password.test.tsx › PasswordScreen protecting a wallet stored without a password lists the addresses the wallet holds › passed
+apps/mobile/__tests__/app/password.test.tsx › PasswordScreen protecting a wallet stored without a password protects the wallet with the confirmed password, then opens it › passed
+apps/mobile/__tests__/app/password.test.tsx › PasswordScreen protecting a wallet stored without a password removes the wallet only once its sheet is confirmed, then opens the welcome screen › passed
+apps/mobile/__tests__/app/password.test.tsx › PasswordScreen protecting a wallet stored without a password takes the addresses from the wallet, never from the link that opened the screen › passed
+apps/mobile/__tests__/app/password.test.tsx › PasswordScreen reserves the strength meter slot before the first keystroke › passed
+apps/mobile/__tests__/app/password.test.tsx › PasswordScreen submits recover flow and navigates to biometric setup › passed
+apps/mobile/__tests__/app/password.test.tsx › PasswordScreen verifies existing password in single-input flow and blocks on wrong password › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the amount screen — the shortcuts MAX is the whole balance — it has never subtracted a fee › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the amount screen — the shortcuts blocks Review when the wallet cannot pay the network fee › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the amount screen — the shortcuts fills 25% of the live balance, truncated at the token decimals › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the amount screen — the shortcuts fills 50% of the live balance, truncated at the token decimals › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the amount screen — the shortcuts fills 75% of the live balance, truncated at the token decimals › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the amount screen — the shortcuts fills max% of the live balance, truncated at the token decimals › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the amount screen — the shortcuts keeps Review dead on an amount finer than the token › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the amount screen — the shortcuts keeps Review dead on an empty amount › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the amount screen — the shortcuts keeps Review dead when the amount exceeds the balance › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the amount screen — the shortcuts opens Review once the amount is inside the balance › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the amount screen — the shortcuts takes no digit past the token's decimal places › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the amount screen — the shortcuts takes no separator for a token with no decimals › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the amount screen — what the frames put on it asks the flow for the fee once there is an amount, and draws it beside the arrival › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the amount screen — what the frames put on it shows the estimate the flow is holding › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the amount screen — what the frames put on it states the balance as a bare row, not inside a card › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the recipient screen — 04A and 04B 04A: an address the validator rejects blocks Continue and says why › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the recipient screen — 04A and 04B 04B: an uninitialised account is informational — Continue stays live › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the recipient screen — 04A and 04B carries the recipient forward and pushes the amount screen › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the recipient screen — 04A and 04B holds Continue while the validator is still deciding › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the recipient screen — 04A and 04B offers the address book, and a tap fills the field › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the recipient screen — a pasted payment request (spec 033 US3, mobile) a pasted plain address is still just an address › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the recipient screen — a pasted payment request (spec 033 US3, mobile) a pasted request starts the flow like a scanned one › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the recipient screen — a pasted payment request (spec 033 US3, mobile) a pasted request the wallet cannot read says which part, and starts nothing › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the recipient screen — a pasted payment request (spec 033 US3, mobile) does nothing with a link while it is still arriving, then reads the whole of it › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the recipient screen — a scanned payment request (spec 033 US3) a code that only carries an address fills the field, as it always has › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the recipient screen — a scanned payment request (spec 033 US3) a request for a token the account does not hold is refused, and says so › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the recipient screen — a scanned payment request (spec 033 US3) a request with an amount starts the flow from it and goes straight to review › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the recipient screen — a scanned payment request (spec 033 US3) a request without an amount lands on the amount screen › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the recipient screen — a scanned payment request (spec 033 US3) keeps the scanner down unless asked for › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the recipient screen — a scanned payment request (spec 033 US3) opens the scanner at once when Payments sends the user here to pay › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the review screen — a recipient no key controls shows no warning for an ordinary recipient › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the review screen — a recipient no key controls warns about an off-curve recipient without blocking the commit › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the review screen — the address row shows no second address row when "To" already is the address › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the review screen — the address row shows the address under a contact name › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the review screen — what a payment request locks (spec 033 US3) a balance under the requested amount blocks the commit and never swaps the token › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the review screen — what a payment request locks (spec 033 US3) shows who asked and what for, and offers no token change › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the route guard lets a signing wallet in › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the route guard lets the wait leave when a send fails, instead of cutting it › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › the route guard turns a watch-only wallet away from the flow › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › token choice — first screen, changeable on Review a token picked on the recipient screen reaches the flow › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › token choice — first screen, changeable on Review changing the token on Review to one that cannot cover the amount goes back to amount › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › token choice — first screen, changeable on Review review keeps the amount and the token in sync when the new one still covers it › passed
+apps/mobile/__tests__/app/send-screens.test.tsx › token choice — first screen, changeable on Review the amount screen reads whatever token the flow is holding, read-only › passed
+apps/mobile/__tests__/app/settings-appearance-row.test.tsx › Settings — appearance row shows the Dark label when the preference is dark › passed
+apps/mobile/__tests__/app/settings-appearance-row.test.tsx › Settings — appearance row shows the System label as the trailing value by default › passed
+apps/mobile/__tests__/app/settings-developer-rows.test.tsx › Settings — the two show-me-more rows moves the session off devnet before clearing the flag › passed
+apps/mobile/__tests__/app/settings-developer-rows.test.tsx › Settings — the two show-me-more rows offers Developer Networks with its restored description › passed
+apps/mobile/__tests__/app/settings-developer-rows.test.tsx › Settings — the two show-me-more rows persists the unverified-tokens choice on its own, never through the flag › passed
+apps/mobile/__tests__/app/settings-developer-rows.test.tsx › Settings — the two show-me-more rows reads each switch back from its own stored value › passed
+apps/mobile/__tests__/app/settings-remove-all.test.tsx › Settings — remove all wallets asks in a danger sheet, and only the confirm erases › passed
+apps/mobile/__tests__/app/settings-route-param.test.tsx › settings/[panel] route param a [panel] segment receives the pushed value › passed
+apps/mobile/__tests__/app/settings-route-param.test.tsx › settings/[panel] route param a [screen] segment loses it — the reserved-key trap › passed
+apps/mobile/__tests__/app/stack-transitions.test.tsx › the app stack declares no anchor on the settings sub-stack › passed
+apps/mobile/__tests__/app/stack-transitions.test.tsx › the app stack gives the settings sub-stack the same right slide › passed
+apps/mobile/__tests__/app/stack-transitions.test.tsx › the app stack pushes every screen in from the right, once, for the whole stack › passed
+apps/mobile/__tests__/app/stack-transitions.test.tsx › the app stack registers Activity and the send flow as screens of the stack, taking the stack default › passed
+apps/mobile/__tests__/app/stack-transitions.test.tsx › the app stack registers no route for a Powerup — Home carries them now › passed
+apps/mobile/__tests__/app/success-check-derived.test.tsx › SuccessScreen — check derivables asks the scan for the active wallet when tapped › passed
+apps/mobile/__tests__/app/success-check-derived.test.tsx › SuccessScreen — check derivables shows the wait over this screen while the scan runs, then the answer › passed
+apps/mobile/__tests__/app/success-check-derived.test.tsx › SuccessScreen — check derivables still enters the wallet through the consent step › passed
+apps/mobile/__tests__/app/token-detail-screen.test.tsx › token detail screen Send is gone, not greyed, for an account that cannot sign › passed
+apps/mobile/__tests__/app/token-detail-screen.test.tsx › token detail screen Send opens the flow on this token › passed
+apps/mobile/__tests__/app/token-detail-screen.test.tsx › token detail screen redirects home for an id that matches no token in the active list › passed
+apps/mobile/__tests__/app/token-detail-screen.test.tsx › token detail screen renders the header and the Performance chart for a known id › passed
+apps/mobile/__tests__/app/wallets-screen.test.tsx › Wallets — the last wallet in the total keeps it in and says why, in a sheet with nothing to press › passed
+apps/mobile/__tests__/app/wallets-screen.test.tsx › Wallets — wallets of one seed activates a wallet by its card alone › passed
+apps/mobile/__tests__/app/wallets-screen.test.tsx › Wallets — wallets of one seed draws the rail and names the wallet it descends from › passed
+apps/mobile/__tests__/app/wallets-screen.test.tsx › Wallets — wallets of one seed offers the rescan only where there is a seed to scan, and stops it while one runs › passed
+apps/mobile/__tests__/app/wallets-screen.test.tsx › Wallets — wallets of one seed puts a derived wallet right after the wallet it came from › passed
+apps/mobile/__tests__/app/wallets-screen.test.tsx › Wallets — wallets of one seed reads a derived wallet at its own path, not at the hole in front of it › passed
+apps/mobile/__tests__/app/wallets-screen.test.tsx › Wallets — wallets of one seed says nothing about derivation indexes › passed
+apps/mobile/__tests__/app/welcome.test.tsx › WelcomeScreen announces "Salmon" once — the wordmark, not the fish wrapper › passed
+apps/mobile/__tests__/app/welcome.test.tsx › WelcomeScreen shows the fish, the wordmark and the slogan › passed
+apps/mobile/__tests__/collectibles-load-error.test.tsx › Collectibles load-error vs empty draws the empty state as a StateBlock, not a hand-rolled block › passed
+apps/mobile/__tests__/collectibles-load-error.test.tsx › Collectibles load-error vs empty renders the empty state when the load succeeded with zero NFTs › passed
+apps/mobile/__tests__/collectibles-load-error.test.tsx › Collectibles load-error vs empty renders the error state with retry, not the empty state, when the load fails › passed
+apps/mobile/__tests__/collectibles-sections.test.tsx › the collectibles grid and the active network leaves spam to its own setting, never to developer mode › passed
+apps/mobile/__tests__/collectibles-sections.test.tsx › the collectibles grid and the active network queries the active network, and only it › passed
+apps/mobile/__tests__/collectibles-sections.test.tsx › the collectibles grid and the active network reads mainnet when the session stands on mainnet › passed
+apps/mobile/__tests__/collectibles-virtualization.test.tsx › Collectibles grid virtualization mounts a bounded window of cards, not the whole collection › passed
+apps/mobile/__tests__/collectibles-virtualization.test.tsx › Collectibles grid virtualization still renders neither the empty nor the error state with a full collection › passed
+apps/mobile/__tests__/components/security-panel-change-password.test.tsx › SecurityPanel — locking now locks through the accounts context, so the global overlay takes over › passed
+apps/mobile/__tests__/components/security-panel-change-password.test.tsx › SecurityPanel — success only after the change has persisted shows no success line while changePassword is still pending, then shows it on resolve › passed
+apps/mobile/__tests__/components/security-panel-change-password.test.tsx › SecurityPanel — success only after the change has persisted shows the wrong-password error (never success) when the change did not persist › passed
+apps/mobile/__tests__/components/security-panel-change-password.test.tsx › SecurityPanel — success only after the change has persisted treats a thrown changePassword as failure, not success › passed
+apps/mobile/__tests__/components/security-panel-change-password.test.tsx › SecurityPanel — the score counts what this device actually has counts only the password when the device has no biometrics › passed
+apps/mobile/__tests__/components/security-panel-change-password.test.tsx › SecurityPanel — the score counts what this device actually has counts the biometric safeguard as available but off until it is enabled › passed
+apps/mobile/__tests__/components/security-panel-change-password.test.tsx › SecurityPanel — the score counts what this device actually has reads two of two once biometric unlock is on › passed
+apps/mobile/__tests__/components/token-list-refresh.test.tsx › token list refresh affordance does not spin for a refresh the user never asked for › passed
+apps/mobile/__tests__/components/token-list-refresh.test.tsx › token list refresh affordance spins for the pull that started it, and stops when that refresh lands › passed
+apps/mobile/__tests__/components/token-list-refresh.test.tsx › token list refresh affordance survives a list that goes away before its refresh lands › passed
+apps/mobile/__tests__/event-target-polyfill.test.js › installEventTargetPolyfill hands listeners the dispatched event itself, not a wrapper › passed
+apps/mobile/__tests__/event-target-polyfill.test.js › installEventTargetPolyfill honours the signal listener option › passed
+apps/mobile/__tests__/event-target-polyfill.test.js › installEventTargetPolyfill installs both globals when they are missing › passed
+apps/mobile/__tests__/event-target-polyfill.test.js › installEventTargetPolyfill is a no-op when both globals already exist › passed
+apps/mobile/__tests__/event-target-polyfill.test.js › installEventTargetPolyfill only notifies listeners registered for the dispatched type › passed
+apps/mobile/__tests__/event-target-polyfill.test.js › installEventTargetPolyfill removes listeners on removeEventListener and after a once dispatch › passed
+apps/mobile/__tests__/event-target-polyfill.test.js › installEventTargetPolyfill survives a listener that unsubscribes during dispatch › passed
+apps/mobile/__tests__/home-balance-load-error.test.tsx › home token list — load failure vs empty wallet keeps the cached tokens on screen when a refetch fails › passed
+apps/mobile/__tests__/home-balance-load-error.test.tsx › home token list — load failure vs empty wallet reads an empty wallet as empty, never as an error › passed
+apps/mobile/__tests__/home-balance-load-error.test.tsx › home token list — load failure vs empty wallet shows the error state with its retry when the first load fails with nothing cached › passed
+apps/mobile/__tests__/home-subtabs.test.tsx › home developer networks drops the pages again when the setting goes off › passed
+apps/mobile/__tests__/home-subtabs.test.tsx › home developer networks offers the test-network pages as soon as the setting is on, with no chain change › passed
+apps/mobile/__tests__/home-subtabs.test.tsx › home for a watch-only account sees only its assets and NFTs: no Powerup tab, no + › passed
+apps/mobile/__tests__/home-subtabs.test.tsx › home for a watch-only account shows an installed Powerup and the + to a signing account › passed
+apps/mobile/__tests__/home-subtabs.test.tsx › home sub-tabs counts devnet as Solana, so the tab is offered there › passed
+apps/mobile/__tests__/home-subtabs.test.tsx › home sub-tabs does not offer the NFTs tab on Bitcoin › passed
+apps/mobile/__tests__/home-subtabs.test.tsx › home sub-tabs floats the NFTs tab back in its stored place on the way home to Solana › passed
+apps/mobile/__tests__/home-subtabs.test.tsx › home sub-tabs hands a chain change to the chain wrapper alone, never to the screen › passed
+apps/mobile/__tests__/home-subtabs.test.tsx › home sub-tabs hands a sub-tab change to the content region alone, never to the chain wrapper › passed
+apps/mobile/__tests__/home-subtabs.test.tsx › home sub-tabs keeps the balance out of the scrolling view on both sub-tabs › passed
+apps/mobile/__tests__/home-subtabs.test.tsx › home sub-tabs leaves the chain alone when NFTs is opened from Solana › passed
+apps/mobile/__tests__/home-subtabs.test.tsx › home sub-tabs lets the user swipe back to Bitcoin from NFTs; the chain leads › passed
+apps/mobile/__tests__/home-subtabs.test.tsx › home sub-tabs mounts one sub-tab row for both tabs, so the underline can slide › passed
+apps/mobile/__tests__/home-subtabs.test.tsx › home sub-tabs renders the row in the stored order › passed
+apps/mobile/__tests__/home-subtabs.test.tsx › home sub-tabs sends the balance pill to the Activity screen, not to a sheet › passed
+apps/mobile/__tests__/home-subtabs.test.tsx › home sub-tabs sinks the NFTs tab out of the row on Bitcoin and falls back to Portfolio › passed
+apps/mobile/__tests__/home-subtabs.test.tsx › home surfacing lets only the screen speak when it comes back, however it was left › passed
+apps/mobile/__tests__/home-task-engaged-content.test.tsx › home content vs an engaged task brings the home content back when the task releases the screen › passed
+apps/mobile/__tests__/home-task-engaged-content.test.tsx › home content vs an engaged task drops the beat when a task hand-back is followed by a surfacing › passed
+apps/mobile/__tests__/home-task-engaged-content.test.tsx › home content vs an engaged task floats again when the screen surfaces from under the lock overlay › passed
+apps/mobile/__tests__/home-task-engaged-content.test.tsx › home content vs an engaged task lets the screen own the verb on a hand-back, and silences the chain wrapper › passed
+apps/mobile/__tests__/home-task-engaged-content.test.tsx › home content vs an engaged task shows the balance block, sub-tabs and token list while no task is engaged › passed
+apps/mobile/__tests__/home-task-engaged-content.test.tsx › home content vs an engaged task takes the home content away while a task owns the screen › passed
+apps/mobile/__tests__/root-layout.test.tsx › RootLayout mobile lock lifecycle a wallet stored without a password does not lock it when the app goes to the background › passed
+apps/mobile/__tests__/root-layout.test.tsx › RootLayout mobile lock lifecycle a wallet stored without a password leaves it on the password screen once there › passed
+apps/mobile/__tests__/root-layout.test.tsx › RootLayout mobile lock lifecycle a wallet stored without a password moves it from the password screen in another mode to the protect mode › passed
+apps/mobile/__tests__/root-layout.test.tsx › RootLayout mobile lock lifecycle a wallet stored without a password sends a cleartext vault, opened in the app to the password screen › passed
+apps/mobile/__tests__/root-layout.test.tsx › RootLayout mobile lock lifecycle a wallet stored without a password sends an unprotected v2 record, on the welcome screen to the password screen › passed
+apps/mobile/__tests__/root-layout.test.tsx › RootLayout mobile lock lifecycle blocks with the init-error screen when init failed and no accounts loaded › passed
+apps/mobile/__tests__/root-layout.test.tsx › RootLayout mobile lock lifecycle blocks with the update screen when the store minimum is newer than this build › passed
+apps/mobile/__tests__/root-layout.test.tsx › RootLayout mobile lock lifecycle counts one app open per return the lock rule saw as a leave › passed
+apps/mobile/__tests__/root-layout.test.tsx › RootLayout mobile lock lifecycle does not block when accounts loaded despite a secondary error › passed
+apps/mobile/__tests__/root-layout.test.tsx › RootLayout mobile lock lifecycle does not lock on Android blur events triggered by in-app overlays like bottom sheets › passed
+apps/mobile/__tests__/root-layout.test.tsx › RootLayout mobile lock lifecycle does not lock on iOS-style inactive transitions alone › passed
+apps/mobile/__tests__/root-layout.test.tsx › RootLayout mobile lock lifecycle holds the splash while the store minimum is still being read › passed
+apps/mobile/__tests__/root-layout.test.tsx › RootLayout mobile lock lifecycle keeps the user on onboarding auth screens after an unlock instead of yanking to home › passed
+apps/mobile/__tests__/root-layout.test.tsx › RootLayout mobile lock lifecycle locks on repeated active to background cycles › passed
+apps/mobile/__tests__/root-layout.test.tsx › RootLayout mobile lock lifecycle locks when iOS eventually reaches background after becoming inactive › passed
+apps/mobile/__tests__/root-layout.test.tsx › RootLayout mobile lock lifecycle only subscribes to app state changes, not Android blur events from in-app modals › passed
+apps/mobile/__tests__/root-layout.test.tsx › RootLayout mobile lock lifecycle routes a locked returning user into the app, where the lock screen lives › passed
+apps/mobile/__tests__/root-layout.test.tsx › RootLayout mobile lock lifecycle still lets the creation flow finish before routing into the app › passed
+apps/mobile/__tests__/root-layout.test.tsx › RootLayout privacy hooks clears a secret left on the clipboard from the root, on launch and on return › passed
+apps/mobile/__tests__/root-layout.test.tsx › RootLayout privacy hooks turns on the app-wide app-switcher blur from the root › passed
+apps/mobile/__tests__/root-layout.test.tsx › RootLayout query focus tells React Query the app is focused when it comes to the foreground › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner app/(app)/activity.tsx does not add the inset again under its own bottom edge › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner app/(app)/nft/[id]/burn.tsx does not add the inset again under its own bottom edge › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner app/(app)/nft/[id]/burn.tsx spaces its action row with screenActionBottomPadding › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner app/(app)/nft/[id]/index.tsx does not add the inset again under its own bottom edge › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner app/(app)/nft/[id]/index.tsx spaces its action row with screenActionBottomPadding › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner app/(app)/nft/[id]/review.tsx does not add the inset again under its own bottom edge › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner app/(app)/nft/[id]/review.tsx spaces its action row with screenActionBottomPadding › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner app/(app)/nft/[id]/send.tsx does not add the inset again under its own bottom edge › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner app/(app)/nft/[id]/send.tsx spaces its action row with screenActionBottomPadding › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner app/(app)/nft/[id]/success.tsx does not add the inset again under its own bottom edge › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner app/(app)/send/amount.tsx does not add the inset again under its own bottom edge › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner app/(app)/send/amount.tsx spaces its action row with screenActionBottomPadding › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner app/(app)/send/index.tsx does not add the inset again under its own bottom edge › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner app/(app)/send/index.tsx spaces its action row with screenActionBottomPadding › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner app/(app)/send/review.tsx does not add the inset again under its own bottom edge › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner app/(app)/send/review.tsx spaces its action row with screenActionBottomPadding › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner app/(app)/send/success.tsx does not add the inset again under its own bottom edge › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner app/(app)/settings/index.tsx does not add the inset again under its own bottom edge › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner app/(app)/staking.tsx does not add the inset again under its own bottom edge › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner app/(app)/token/[id].tsx does not add the inset again under its own bottom edge › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner app/(app)/wallets.tsx does not add the inset again under its own bottom edge › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner finds the screens it guards › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner keeps Home's Powerups button on floatingBottomOffset › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner keeps the exchange receipt’s actions at screenBottom over its own inset › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner src/components/AboutPanel/AboutPanel.tsx does not add the inset again under its own bottom edge › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner src/components/AccountAddPanel/AccountAddPanel.tsx does not add the inset again under its own bottom edge › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner src/components/AccountAvatarPanel/AccountAvatarPanel.tsx does not add the inset again under its own bottom edge › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner src/components/AccountEditPanel/AccountEditPanel.tsx does not add the inset again under its own bottom edge › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner src/components/AccountNamePanel/AccountNamePanel.tsx does not add the inset again under its own bottom edge › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner src/components/AccountsPanel/AccountsPanel.tsx does not add the inset again under its own bottom edge › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner src/components/AddressBookPanel/AddressBookPanel.tsx does not add the inset again under its own bottom edge › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner src/components/AddressForm/AddressForm.tsx does not add the inset again under its own bottom edge › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner src/components/AppearanceSelector/AppearanceSelector.tsx does not add the inset again under its own bottom edge › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner src/components/BackupPanel/BackupPanel.tsx does not add the inset again under its own bottom edge › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner src/components/CurrencySelector/CurrencySelector.tsx does not add the inset again under its own bottom edge › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner src/components/ExplorerSelector/ExplorerSelector.tsx does not add the inset again under its own bottom edge › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner src/components/LanguageSelector/LanguageSelector.tsx does not add the inset again under its own bottom edge › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner src/components/NetworkSelector/NetworkSelector.tsx does not add the inset again under its own bottom edge › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner src/components/OnboardingLayout/OnboardingLayout.tsx does not add the inset again under its own bottom edge › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner src/components/PrivateKeyPanel/PrivateKeyPanel.tsx does not add the inset again under its own bottom edge › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner src/components/ReceiptScreen/TransferReceipt.tsx spaces its action row with screenActionBottomPadding › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner src/components/SecurityPanel/SecurityPanel.tsx does not add the inset again under its own bottom edge › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner src/components/SettingsScreenLayout/SettingsScreenLayout.tsx does not add the inset again under its own bottom edge › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner src/components/SupportSelector/SupportSelector.tsx does not add the inset again under its own bottom edge › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner src/components/TransactionConfirmation/ConfirmationHost.tsx lifts its confirmation by floatingBottomOffset › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner src/components/TrustedAppsSelector/TrustedAppsSelector.tsx does not add the inset again under its own bottom edge › passed
+apps/mobile/__tests__/safe-area-bottom-owner.test.ts › the bottom safe-area inset has one owner src/mwa/MwaRequest.tsx lifts its confirmation by floatingBottomOffset › passed
+apps/mobile/hooks/useCopyFeedback.test.tsx › useCopyFeedback (mobile wrapper) animates with timing on both trips — nothing bounces › passed
+apps/mobile/hooks/useCopyFeedback.test.tsx › useCopyFeedback (mobile wrapper) holds `copied` through the exit animation, then hides › passed
+apps/mobile/hooks/useCopyFeedback.test.tsx › useCopyFeedback (mobile wrapper) keys survive the round trip › passed
+apps/mobile/hooks/useCopyFeedback.test.tsx › useCopyFeedback (mobile wrapper) reduce motion keeps the feedback and drops the travel › passed
+apps/mobile/hooks/useCopyFeedback.test.tsx › useCopyFeedback (mobile wrapper) reset() hides immediately, without the exit trip › passed
+apps/mobile/hooks/usePressMotion.test.tsx › usePressMotion displaces the control by the specified scale and lets it back up › passed
+apps/mobile/hooks/usePressMotion.test.tsx › usePressMotion drops the scale under reduce motion but keeps the specular and the haptic › passed
+apps/mobile/hooks/usePressMotion.test.tsx › usePressMotion puts the specular at the touch point › passed
+apps/mobile/hooks/usePressMotion.test.tsx › usePressMotion spends `flick` and nothing else on a press › passed
+apps/mobile/hooks/useSecretClipboard.test.tsx › secretClipboard on mobile clears on the return to the foreground once 60 s have passed › passed
+apps/mobile/hooks/useSecretClipboard.test.tsx › secretClipboard on mobile clears the phrase 60 s after the copy while the app is open › passed
+apps/mobile/hooks/useSecretClipboard.test.tsx › secretClipboard on mobile leaves the phrase on a return inside the 60 s › passed
+apps/mobile/hooks/useSecretScreen.test.tsx › useSecretScreen gives each instance a distinct key so identical labels do not collide › passed
+apps/mobile/hooks/useSecretScreen.test.tsx › useSecretScreen keeps protection while any sibling secret component is still mounted › passed
+apps/mobile/hooks/useSecretScreen.test.tsx › useSecretScreen on Android skips the iOS-only app switcher call, since FLAG_SECURE already blanks Recents › passed
+apps/mobile/hooks/useSecretScreen.test.tsx › useSecretScreen on iOS turns the full blur on once for the process, and nothing turns it off › passed
+apps/mobile/hooks/useSecretScreen.test.tsx › useSecretScreen requests screen capture protection while mounted and releases it on unmount › passed
+apps/mobile/hooks/useSecretScreen.test.tsx › useSecretScreen tries the blur again after a refused call, and stops once it is on › passed
+apps/mobile/hooks/useTabChrome.test.tsx › useTabChrome bottom action metrics carries no inset in the in-safe-area padding › passed
+apps/mobile/hooks/useTabChrome.test.tsx › useTabChrome bottom action metrics puts a row inside the safe area where the Powerups button sits, on gesture navigation › passed
+apps/mobile/hooks/useTabChrome.test.tsx › useTabChrome bottom action metrics puts a row inside the safe area where the Powerups button sits, on the iPhone home indicator › passed
+apps/mobile/hooks/useTabChrome.test.tsx › useTabChrome bottom action metrics puts a row inside the safe area where the Powerups button sits, on three-button navigation › passed
+apps/mobile/hooks/useTabChrome.test.tsx › useTabChrome header metrics ends the header exactly at safe area + screenTop + the row › passed
+apps/mobile/hooks/useTabChrome.test.tsx › useTabChrome header metrics reserves the row, not the 56px header slot › passed
+apps/mobile/src/analytics/appAnalytics.test.ts › background sends what is queued once when the app goes to the background › passed
+apps/mobile/src/analytics/appAnalytics.test.ts › build routing posts a build on channel dapp-store-test to staging › passed
+apps/mobile/src/analytics/appAnalytics.test.ts › build routing posts a build on channel null to staging › passed
+apps/mobile/src/analytics/appAnalytics.test.ts › build routing posts a build on channel staging to staging › passed
+apps/mobile/src/analytics/appAnalytics.test.ts › build routing posts a store build to production › passed
+apps/mobile/src/analytics/appAnalytics.test.ts › consent given under the v1 text sends no open, cold or returning, and still sends the v1 events › passed
+apps/mobile/src/analytics/appAnalytics.test.ts › opens counts a return after the lock rule saw the app leave, in a new session › passed
+apps/mobile/src/analytics/appAnalytics.test.ts › opens counts each return once › passed
+apps/mobile/src/analytics/appAnalytics.test.ts › opens counts the cold open once per process › passed
+apps/mobile/src/analytics/appAnalytics.test.ts › opens does not count a return the lock rule did not see as a leave (Seed Vault screen) › passed
+apps/mobile/src/analytics/appAnalytics.test.ts › opens does not count an iOS overlay (inactive, then active) › passed
+apps/mobile/src/analytics/appAnalytics.test.ts › opens does not count the Mobile Wallet Adapter sheet coming up, and counts the next return › passed
+apps/mobile/src/analytics/appAnalytics.test.ts › platform is android on any other Android phone › passed
+apps/mobile/src/analytics/appAnalytics.test.ts › platform is android once the bound passes when the Seed Vault check never answers › passed
+apps/mobile/src/analytics/appAnalytics.test.ts › platform is android when the Seed Vault check throws › passed
+apps/mobile/src/analytics/appAnalytics.test.ts › platform is ios on an iPhone › passed
+apps/mobile/src/analytics/appAnalytics.test.ts › platform is seeker on an Android phone with a secure Seed Vault › passed
+apps/mobile/src/components/AccountAddPanel/AccountAddPanel.test.tsx › AccountAddPanel derive card does not offer deriving from a watch-only account either › passed
+apps/mobile/src/components/AccountAddPanel/AccountAddPanel.test.tsx › AccountAddPanel derive card does not offer deriving from an account imported by private key › passed
+apps/mobile/src/components/AccountAddPanel/AccountAddPanel.test.tsx › AccountAddPanel derive card offers deriving when the active account has a seed phrase › passed
+apps/mobile/src/components/AccountAddPanel/AccountAddPanel.test.tsx › AccountAddPanel expired vault key asks for the password on its own screen, before doing any work › passed
+apps/mobile/src/components/AccountAddPanel/AccountAddPanel.test.tsx › AccountAddPanel expired vault key completes the add with the verified password, keeping what was entered › passed
+apps/mobile/src/components/AccountAddPanel/AccountAddPanel.test.tsx › AccountAddPanel expired vault key never writes the vault under a password it has not verified › passed
+apps/mobile/src/components/AccountAddPanel/AccountAddPanel.test.tsx › AccountAddPanel failure notice falls back to the generic heading only when the cause is not one it knows › passed
+apps/mobile/src/components/AccountAddPanel/AccountAddPanel.test.tsx › AccountAddPanel falls back to the generic creation_error notice when addAccount throws another error › passed
+apps/mobile/src/components/AccountAddPanel/AccountAddPanel.test.tsx › AccountAddPanel imports a valid seed phrase and completes account creation › passed
+apps/mobile/src/components/AccountAddPanel/AccountAddPanel.test.tsx › AccountAddPanel imports a wallet from a private key without going through createAccount › passed
+apps/mobile/src/components/AccountAddPanel/AccountAddPanel.test.tsx › AccountAddPanel keeps the user on the key step when the key does not validate › passed
+apps/mobile/src/components/AccountAddPanel/AccountAddPanel.test.tsx › AccountAddPanel offers Continue only once the phrase checks out, and says so when a full grid does not › passed
+apps/mobile/src/components/AccountAddPanel/AccountAddPanel.test.tsx › AccountAddPanel scans derived accounts and creates from selected derivation index › passed
+apps/mobile/src/components/AccountsPanel/AccountsPanel.test.tsx › AccountsPanel address renders the account address in mono, the position-critical face › passed
+apps/mobile/src/components/AccountsPanel/AccountsPanel.test.tsx › AccountsPanel selected state marks the active account with the salmon check, not a status green › passed
+apps/mobile/src/components/Activity/TransactionItem.test.tsx › TransactionItem layout is a kit row: one `Card` ground, one radius › passed
+apps/mobile/src/components/Activity/TransactionItem.test.tsx › TransactionItem layout keeps the amount in its own reserved, right-aligned column › passed
+apps/mobile/src/components/Activity/TransactionItem.test.tsx › TransactionItem layout masks the amount when the balance is hidden › passed
+apps/mobile/src/components/Activity/TransactionItem.test.tsx › TransactionItem — the counterparty, not the program draws no program chip, whatever the indexer calls the protocol › passed
+apps/mobile/src/components/Activity/TransactionItem.test.tsx › TransactionItem — the counterparty, not the program leaves a transaction with no counterparty to the shared description › passed
+apps/mobile/src/components/Activity/TransactionItem.test.tsx › TransactionItem — the counterparty, not the program prefers the address book name over the address › passed
+apps/mobile/src/components/Activity/TransactionItem.test.tsx › TransactionItem — the counterparty, not the program says who it came from, in the header's short form › passed
+apps/mobile/src/components/Activity/TransactionItem.test.tsx › TransactionItem — the counterparty, not the program says who it went to, in the header's short form › passed
+apps/mobile/src/components/Activity/TransactionItem.test.tsx › TransactionItem — the leading mark is the token, badged with the type keeps the token as the mark when it has no logo — its initials stand in › passed
+apps/mobile/src/components/Activity/TransactionItem.test.tsx › TransactionItem — the leading mark is the token, badged with the type leads with the token that moved, not a bare type glyph › passed
+apps/mobile/src/components/AddressCopyRow/AddressCopyRow.test.tsx › AddressCopyRow copy feedback announces the copy confirmation and reverts to the copy label › passed
+apps/mobile/src/components/AddressCopyRow/AddressCopyRow.test.tsx › AddressCopyRow copy feedback sets the address in mono at the address size › passed
+apps/mobile/src/components/AppearanceSelector/AppearanceSelector.test.tsx › AppearanceSelector calls onSelectPreference with the tapped preference › passed
+apps/mobile/src/components/AppearanceSelector/AppearanceSelector.test.tsx › AppearanceSelector marks the active preference with a selected row › passed
+apps/mobile/src/components/AppearanceSelector/AppearanceSelector.test.tsx › AppearanceSelector renders System, Light and Dark options › passed
+apps/mobile/src/components/BackupPanel/BackupPanel.test.tsx › BackupPanel copies through the clearing clipboard and says when it is cleared › passed
+apps/mobile/src/components/BackupPanel/BackupPanel.test.tsx › BackupPanel does not hand over the phrase to whoever is holding an unlocked session › passed
+apps/mobile/src/components/BackupPanel/BackupPanel.test.tsx › BackupPanel for an imported account says there is no phrase instead of rendering an empty grid › passed
+apps/mobile/src/components/BackupPanel/BackupPanel.test.tsx › BackupPanel keeps the phrase hidden when the password is wrong › passed
+apps/mobile/src/components/BackupPanel/BackupPanel.test.tsx › BackupPanel says the clipboard is readable by other apps before the seed goes into it › passed
+apps/mobile/src/components/BackupPanel/BackupPanel.test.tsx › BackupPanel shows the phrase once the password is re-entered › passed
+apps/mobile/src/components/BackupPanel/BackupPanel.test.tsx › BackupPanel takes the biometric prompt as the equivalent of the password when it is available › passed
+apps/mobile/src/components/BalanceHeader/BalanceHeader.test.tsx › BalanceHeader amount travel changes the chain once, on the right index, when the drag passes the threshold › passed
+apps/mobile/src/components/BalanceHeader/BalanceHeader.test.tsx › BalanceHeader amount travel commits without animating when reduce motion is on › passed
+apps/mobile/src/components/BalanceHeader/BalanceHeader.test.tsx › BalanceHeader amount travel does not travel toward a chain that is not there › passed
+apps/mobile/src/components/BalanceHeader/BalanceHeader.test.tsx › BalanceHeader amount travel leaves by the edge it is heading for, and comes back from the other one › passed
+apps/mobile/src/components/BalanceHeader/BalanceHeader.test.tsx › BalanceHeader amount travel moves the amount with the finger and nothing else in the block › passed
+apps/mobile/src/components/BalanceHeader/BalanceHeader.test.tsx › BalanceHeader amount travel sinks the 24h change in place as the amount travels › passed
+apps/mobile/src/components/BalanceHeader/BalanceHeader.test.tsx › BalanceHeader amount travel springs back and changes nothing when the drag stops short › passed
+apps/mobile/src/components/BalanceHeader/BalanceHeader.test.tsx › BalanceHeader asks the screen to toggle visibility when the eye is pressed › passed
+apps/mobile/src/components/BalanceHeader/BalanceHeader.test.tsx › BalanceHeader flesh draws the flesh on the salmon-filled Send circle and never on the outline Receive circle › passed
+apps/mobile/src/components/BalanceHeader/BalanceHeader.test.tsx › BalanceHeader keeps the chain selector and the money controls out of the value change › passed
+apps/mobile/src/components/BalanceHeader/BalanceHeader.test.tsx › BalanceHeader masks the number when the balance is hidden, and never renders it › passed
+apps/mobile/src/components/BalanceHeader/BalanceHeader.test.tsx › BalanceHeader on a test network keeps the USD headline and the change line on mainnet › passed
+apps/mobile/src/components/BalanceHeader/BalanceHeader.test.tsx › BalanceHeader on a test network masks the native total exactly as it masks a fiat one › passed
+apps/mobile/src/components/BalanceHeader/BalanceHeader.test.tsx › BalanceHeader on a test network reports an empty test wallet as zero, never as an em-dash › passed
+apps/mobile/src/components/BalanceHeader/BalanceHeader.test.tsx › BalanceHeader on a test network reports the total in the native unit, with an em-dash for the unpriced 24h change › passed
+apps/mobile/src/components/BalanceHeader/BalanceHeader.test.tsx › BalanceHeader shows the total and its change for the active chain › passed
+apps/mobile/src/components/BalanceHeader/BalanceHeader.test.tsx › BalanceHeader swipe claims the horizontal axis only › passed
+apps/mobile/src/components/BalanceHeader/BalanceHeader.test.tsx › BalanceHeader switches chain from the selector, reporting the chain and its index › passed
+apps/mobile/src/components/BalanceHeader/BalanceHeader.test.tsx › BalanceHeader unknown values renders an em-dash for a change the backend has not returned, never a fabricated 0 › passed
+apps/mobile/src/components/BalanceHeader/BalanceHeader.test.tsx › BalanceHeader unknown values still reads the change when the data is there › passed
+apps/mobile/src/components/BalanceHeader/BalanceHeader.test.tsx › BalanceHeader value change does not play the float on mount, only on a real chain change › passed
+apps/mobile/src/components/BalanceHeader/BalanceHeader.test.tsx › BalanceHeader value change owes the change a float and never a second sink › passed
+apps/mobile/src/components/BalanceHeader/BalanceHeader.test.tsx › BalanceHeader will not send from a watch-only account › passed
+apps/mobile/src/components/BalanceHeader/ChainSelector.test.tsx › ChainSelector does not report a tap on the chain already active › passed
+apps/mobile/src/components/BalanceHeader/ChainSelector.test.tsx › ChainSelector labels every tab with the chain name alone on mainnet › passed
+apps/mobile/src/components/BalanceHeader/ChainSelector.test.tsx › ChainSelector names the environment on a single non-mainnet chain › passed
+apps/mobile/src/components/BalanceHeader/ChainSelector.test.tsx › ChainSelector renders nothing for a single mainnet chain — nothing to say, nothing to switch to › passed
+apps/mobile/src/components/BalanceHeader/ChainSelector.test.tsx › ChainSelector reports the tapped tab › passed
+apps/mobile/src/components/BalanceHeader/ChainSelector.test.tsx › ChainSelector takes the underline colour from the active chain, not the shared accent › passed
+apps/mobile/src/components/BarChart/BarChart.test.tsx › BarChart draws each value as a share of the tallest, the newest lit › passed
+apps/mobile/src/components/BlockList/BlockList.test.tsx › BlockList draws each block with its own kit component, in order › passed
+apps/mobile/src/components/BlockList/BlockList.test.tsx › BlockList — composed blocks nests a card's own blocks inside it, with rows, figures, dividers and bars › passed
+apps/mobile/src/components/BlurContainer/BlurContainer.test.tsx › BlurContainer spends no blur on an opaque fill › passed
+apps/mobile/src/components/BlurContainer/BlurContainer.test.tsx › BlurContainer uses BlurView with the Android blur target when the fill is translucent › passed
+apps/mobile/src/components/BottomSheetContainer/BottomSheetContainer.test.tsx › BottomSheetContainer departure reports again on a second departure › passed
+apps/mobile/src/components/BottomSheetContainer/BottomSheetContainer.test.tsx › BottomSheetContainer departure reports once even though the watchdog and the animation both land › passed
+apps/mobile/src/components/BottomSheetContainer/BottomSheetContainer.test.tsx › BottomSheetContainer departure reports the arrival, not just the request, once the sheet has left › passed
+apps/mobile/src/components/BottomSheetContainer/BottomSheetContainer.test.tsx › BottomSheetContainer dismissal for assistive tech names the backdrop as the button that closes the sheet › passed
+apps/mobile/src/components/BottomSheetContainer/BottomSheetContainer.test.tsx › BottomSheetContainer dismissal for assistive tech offers no such button while the sheet may not be dismissed › passed
+apps/mobile/src/components/BottomSheetContainer/BottomSheetContainer.test.tsx › BottomSheetContainer for typing hugs its content otherwise › passed
+apps/mobile/src/components/BottomSheetContainer/BottomSheetContainer.test.tsx › BottomSheetContainer for typing stands at the full sheet height when the user types into it › passed
+apps/mobile/src/components/BottomSheetContainer/BottomSheetContainer.test.tsx › BottomSheetContainer parent and child a parent dismissed under its child leaves once the child has › passed
+apps/mobile/src/components/BottomSheetContainer/BottomSheetContainer.test.tsx › BottomSheetContainer parent and child a tap on the backdrop under the child closes both, nothing returns › passed
+apps/mobile/src/components/BottomSheetContainer/BottomSheetContainer.test.tsx › BottomSheetContainer parent and child the parent yields while the child is up, and comes back once it has left › passed
+apps/mobile/src/components/BottomSheetContainer/BottomSheetContainer.test.tsx › BottomSheetContainer sheet material grounds on the thick-tier thermocline by default › passed
+apps/mobile/src/components/BottomSheetContainer/BottomSheetContainer.test.tsx › BottomSheetContainer sheet material lets an explicit background win over the default thermocline › passed
+apps/mobile/src/components/BottomSheetContainer/BottomSheetContainer.test.tsx › BottomSheetContainer sheet material renders no texture overlay — the material carries the ground alone › passed
+apps/mobile/src/components/BottomSheetContainer/SheetTitle.test.tsx › SheetTitle renders a leading element alongside the title › passed
+apps/mobile/src/components/BottomSheetContainer/SheetTitle.test.tsx › SheetTitle renders the subtitle under the title, centred in the secondary voice › passed
+apps/mobile/src/components/BottomSheetContainer/SheetTitle.test.tsx › SheetTitle renders the title text › passed
+apps/mobile/src/components/BrandMark/Wordmark.test.tsx › Wordmark centres itself and pins its own gap, whatever slot it lands in › passed
+apps/mobile/src/components/BrandMark/Wordmark.test.tsx › Wordmark draws at the token the text it replaced was set from › passed
+apps/mobile/src/components/BrandMark/Wordmark.test.tsx › Wordmark is white, and still readable as the name of the screen › passed
+apps/mobile/src/components/Button/HoldToCopyButton.test.tsx › HoldToCopyButton cancels when released early › passed
+apps/mobile/src/components/Button/HoldToCopyButton.test.tsx › HoldToCopyButton commits from the assistive activate action, but not from a tap › passed
+apps/mobile/src/components/Button/HoldToCopyButton.test.tsx › HoldToCopyButton commits once after being held for the full window › passed
+apps/mobile/src/components/Button/HoldToCopyButton.test.tsx › HoldToCopyButton does not commit on a plain tap › passed
+apps/mobile/src/components/Button/HoldToCopyButton.test.tsx › HoldToCopyButton does nothing from the action while disabled › passed
+apps/mobile/src/components/Button/HoldToCopyButton.test.tsx › HoldToCopyButton offers the long-press action on Android and commits from it › passed
+apps/mobile/src/components/Card/Card.test.tsx › Card announces as a link when it opens an external URL › passed
+apps/mobile/src/components/Card/Card.test.tsx › Card becomes a button only when it is given something to do › passed
+apps/mobile/src/components/Card/Card.test.tsx › Card draws nothing of its own in the clear tone, for content that only needs the layout › passed
+apps/mobile/src/components/Card/Card.test.tsx › Card grounds on the light card material when the mode is light › passed
+apps/mobile/src/components/Card/Card.test.tsx › Card grounds on the thin-tier membrane by default and on the ink well when asked › passed
+apps/mobile/src/components/Card/Card.test.tsx › Card lights the featured tone with a salmon glow from its top-right corner › passed
+apps/mobile/src/components/Chip/Chip.test.tsx › Chip announces and fills the selected filter › passed
+apps/mobile/src/components/Chip/Chip.test.tsx › Chip never fills in the outline variant, selected or not › passed
+apps/mobile/src/components/Chip/Chip.test.tsx › ChipGroup reports the chosen key and marks exactly one chip selected › passed
+apps/mobile/src/components/ConfirmSheet/ConfirmSheet.test.tsx › ConfirmSheet acknowledge-only draws no buttons at all › passed
+apps/mobile/src/components/ConfirmSheet/ConfirmSheet.test.tsx › ConfirmSheet and the keyboard hugs its content when it asks for nothing typed › passed
+apps/mobile/src/components/ConfirmSheet/ConfirmSheet.test.tsx › ConfirmSheet and the keyboard stands full height when it asks for a password › passed
+apps/mobile/src/components/ConfirmSheet/ConfirmSheet.test.tsx › ConfirmSheet arrival hands the container's arrival signal through › passed
+apps/mobile/src/components/ConfirmSheet/ConfirmSheet.test.tsx › ConfirmSheet ceiling keeps the container's ceiling and scrolls its body › passed
+apps/mobile/src/components/ConfirmSheet/ConfirmSheet.test.tsx › ConfirmSheet detail draws the detail above the message › passed
+apps/mobile/src/components/ConfirmSheet/ConfirmSheet.test.tsx › ConfirmSheet ground keeps the thermocline otherwise › passed
+apps/mobile/src/components/ConfirmSheet/ConfirmSheet.test.tsx › ConfirmSheet ground stands on opaque bedrock when asked to › passed
+apps/mobile/src/components/ConfirmSheet/ConfirmSheet.test.tsx › ConfirmSheet held confirm does not confirm from the keyboard when the confirm must be held › passed
+apps/mobile/src/components/ConfirmSheet/ConfirmSheet.test.tsx › ConfirmSheet held confirm does not start a hold while confirm is disabled › passed
+apps/mobile/src/components/ConfirmSheet/ConfirmSheet.test.tsx › ConfirmSheet held confirm ignores a tap and confirms once the hold completes › passed
+apps/mobile/src/components/ConfirmSheet/ConfirmSheet.test.tsx › ConfirmSheet not ready does not run the action while confirm is disabled › passed
+apps/mobile/src/components/ConfirmSheet/ConfirmSheet.test.tsx › ConfirmSheet password gate does not run the action when the password does not check out › passed
+apps/mobile/src/components/ConfirmSheet/ConfirmSheet.test.tsx › ConfirmSheet password gate hands the verified password to the action › passed
+apps/mobile/src/components/ConfirmSheet/ConfirmSheet.test.tsx › ConfirmSheet password gate leaves the password out of the action when it was never asked for › passed
+apps/mobile/src/components/DataAttribution/DataAttribution.test.tsx › DataAttribution draws nothing when the network owes no credit › passed
+apps/mobile/src/components/DataAttribution/DataAttribution.test.tsx › DataAttribution draws the credit verbatim and opens its link › passed
+apps/mobile/src/components/DerivedAccountsSheet/DerivedAccountsSheet.test.tsx › DerivedAccountsSheet "Not now" answers without importing anything › passed
+apps/mobile/src/components/DerivedAccountsSheet/DerivedAccountsSheet.test.tsx › DerivedAccountsSheet imports everything when nothing was unchecked › passed
+apps/mobile/src/components/DerivedAccountsSheet/DerivedAccountsSheet.test.tsx › DerivedAccountsSheet never draws a derivation index › passed
+apps/mobile/src/components/DerivedAccountsSheet/DerivedAccountsSheet.test.tsx › DerivedAccountsSheet offers every find taken, and imports the ones still taken › passed
+apps/mobile/src/components/DerivedAccountsSheet/DerivedAccountsSheet.test.tsx › DerivedAccountsSheet says so when a rescan found nothing › passed
+apps/mobile/src/components/DerivedAccountsSheet/DerivedAccountsSheet.test.tsx › DerivedAccountsSheet waits instead of asking while the scan the user asked for runs › passed
+apps/mobile/src/components/ExplorerLinkButton/ExplorerLinkButton.test.tsx › ExplorerLinkButton opens the explorer with `Linking` as the receiver, not a bare reference › passed
+apps/mobile/src/components/ExplorerLinkButton/ExplorerLinkButton.test.tsx › ExplorerLinkButton says the open failed, under the button that was pressed › passed
+apps/mobile/src/components/FactsCard/FactsCard.test.tsx › FactsCard draws the title over every fact › passed
+apps/mobile/src/components/FactsCard/FactsCard.test.tsx › FactsCard is only the facts when it carries no title › passed
+apps/mobile/src/components/FactsCard/FactsCard.test.tsx › FactsCard passes a row testID through, so a single fact can be selected › passed
+apps/mobile/src/components/FleshBackground/FleshBackground.test.tsx › FleshBackground renders the marbled drawing › passed
+apps/mobile/src/components/HomeTabOrderSheet/HomeTabOrderSheet.test.tsx › HomeTabOrderSheet cannot drop a row past the end of the list › passed
+apps/mobile/src/components/HomeTabOrderSheet/HomeTabOrderSheet.test.tsx › HomeTabOrderSheet lists the tabs in the order it is given › passed
+apps/mobile/src/components/HomeTabOrderSheet/HomeTabOrderSheet.test.tsx › HomeTabOrderSheet offers a remove control on a Powerup tab, and on nothing else › passed
+apps/mobile/src/components/HomeTabOrderSheet/HomeTabOrderSheet.test.tsx › HomeTabOrderSheet renders nothing while it is closed › passed
+apps/mobile/src/components/HomeTabOrderSheet/HomeTabOrderSheet.test.tsx › HomeTabOrderSheet reports nothing when a row is dropped where it started › passed
+apps/mobile/src/components/HomeTabOrderSheet/HomeTabOrderSheet.test.tsx › HomeTabOrderSheet reports the new key order when a row is dropped one place down › passed
+apps/mobile/src/components/IconBubble/IconBubble.test.tsx › IconBubble becomes a labelled button when given an onPress › passed
+apps/mobile/src/components/IconBubble/IconBubble.test.tsx › IconBubble carries the flesh texture, at the bubble scale, on every accent fill — pressable or not › passed
+apps/mobile/src/components/IconBubble/IconBubble.test.tsx › IconBubble draws the outline tone as an edge with nothing behind it › passed
+apps/mobile/src/components/IconBubble/IconBubble.test.tsx › IconBubble drops the flesh when a pressable accent bubble is disabled — the salmon is either alive or absent › passed
+apps/mobile/src/components/IconBubble/IconBubble.test.tsx › IconBubble forwards accessibilityHint when pressable › passed
+apps/mobile/src/components/IconBubble/IconBubble.test.tsx › IconBubble hands the glyph the tone ink › passed
+apps/mobile/src/components/IconBubble/IconBubble.test.tsx › IconBubble lets a call site quiet the glyph without changing the tone, but never on a disabled control › passed
+apps/mobile/src/components/IconBubble/IconBubble.test.tsx › IconBubble never draws the flesh texture on a non-accent ground › passed
+apps/mobile/src/components/IconBubble/IconBubble.test.tsx › IconBubble paints a string child with the tone ink rather than leaving it default › passed
+apps/mobile/src/components/IconBubble/IconBubble.test.tsx › IconBubble stays an inert well with no role while it has no onPress › passed
+apps/mobile/src/components/IconBubble/IconBubble.test.tsx › IconBubble switches a disabled control to the crest ground instead of dimming the fill › passed
+apps/mobile/src/components/IconBubble/IconBubble.test.tsx › IconBubble takes its ground from the tone and its shape from the shape › passed
+apps/mobile/src/components/IconBubble/IconBubble.test.tsx › IconBubble takes the smaller card corner when the frame asks for r12 › passed
+apps/mobile/src/components/KeyValueRow/KeyValueRow.test.tsx › KeyValueRow defaults the value to primary ink and the label to secondary › passed
+apps/mobile/src/components/KeyValueRow/KeyValueRow.test.tsx › KeyValueRow renders the pair and inks the value by tone › passed
+apps/mobile/src/components/ListRow/ListRow.test.tsx › ListRow forwards accessibilityRole="link" for a row that opens an external URL › passed
+apps/mobile/src/components/ListRow/ListRow.test.tsx › ListRow names itself with the subtitle so identical titles stay distinguishable › passed
+apps/mobile/src/components/ListRow/ListRow.test.tsx › ListRow renders leading, title, subtitle and trailing, and presses › passed
+apps/mobile/src/components/LoadingScreen/LoadingScreen.test.tsx › LoadingScreen a layout pass may change what is drawn, never what is running commits the overlay in the render that asks for it › passed
+apps/mobile/src/components/LoadingScreen/LoadingScreen.test.tsx › LoadingScreen a layout pass may change what is drawn, never what is running does not restart the wave when the emitter actually moves › passed
+apps/mobile/src/components/LoadingScreen/LoadingScreen.test.tsx › LoadingScreen a layout pass may change what is drawn, never what is running does not restart the wave when the emitter is measured again in place › passed
+apps/mobile/src/components/LoadingScreen/LoadingScreen.test.tsx › LoadingScreen gives the wave a visible source — the mark that emits it › passed
+apps/mobile/src/components/LoadingScreen/LoadingScreen.test.tsx › LoadingScreen leaves the words to carry the state under reduced motion › passed
+apps/mobile/src/components/LoadingScreen/LoadingScreen.test.tsx › LoadingScreen shows no progress track — this screen has never known a percentage › passed
+apps/mobile/src/components/LoadingScreen/LoadingScreen.test.tsx › LoadingScreen shows the tips on every wait, and lets one surface suppress them › passed
+apps/mobile/src/components/LoadingScreen/LoadingScreen.test.tsx › LoadingScreen still lets a surface opt out of showing anything living through itself › passed
+apps/mobile/src/components/LoadingScreen/LoadingScreen.test.tsx › LoadingScreen the cluster centres mark and words as one column, however many lines the caller passes › passed
+apps/mobile/src/components/LoadingScreen/LoadingScreen.test.tsx › LoadingScreen the cluster keeps the water out of the cluster, so the ground never travels with it › passed
+apps/mobile/src/components/LoadingScreen/LoadingScreen.test.tsx › LoadingScreen the handoff does not make a reduce-motion user wait out a wave they cannot see › passed
+apps/mobile/src/components/LoadingScreen/LoadingScreen.test.tsx › LoadingScreen the handoff hands off exactly once, however many clocks reach the end first › passed
+apps/mobile/src/components/LoadingScreen/LoadingScreen.test.tsx › LoadingScreen the handoff holds until the front in flight has left the screen, then ebbs › passed
+apps/mobile/src/components/LoadingScreen/LoadingScreen.test.tsx › LoadingScreen the handoff surfaces the shell when the wait leaves — once, whatever ends it › passed
+apps/mobile/src/components/LoadingScreen/LoadingScreen.test.tsx › LoadingScreen the report that the wait is running reports at once for a wait with no front to measure › passed
+apps/mobile/src/components/LoadingScreen/LoadingScreen.test.tsx › LoadingScreen the report that the wait is running waits for the emitter to be measured before reporting › passed
+apps/mobile/src/components/LoadingScreen/LoadingScreen.test.tsx › LoadingScreen treats every wait as water, not just the one that opted in › passed
+apps/mobile/src/components/LockOverlay/LockContent.test.tsx › LockContent auto-prompts biometrics, and unlocks with the password it recovers › passed
+apps/mobile/src/components/LockOverlay/LockContent.test.tsx › LockContent brings the form back on the next lock › passed
+apps/mobile/src/components/LockOverlay/LockContent.test.tsx › LockContent cancels a prompt the dApp lock arrives in time to own › passed
+apps/mobile/src/components/LockOverlay/LockContent.test.tsx › LockContent does not offer the biometric button when nothing is armed › passed
+apps/mobile/src/components/LockOverlay/LockContent.test.tsx › LockContent erases nothing when the warning is dismissed › passed
+apps/mobile/src/components/LockOverlay/LockContent.test.tsx › LockContent explains itself when the OS has destroyed the enrolment › passed
+apps/mobile/src/components/LockOverlay/LockContent.test.tsx › LockContent exposes stable test ids and accessibility state for e2e selection › passed
+apps/mobile/src/components/LockOverlay/LockContent.test.tsx › LockContent falls back quietly when biometrics cannot answer right now › passed
+apps/mobile/src/components/LockOverlay/LockContent.test.tsx › LockContent holds the prompt while the dApp lock is up, and asks when the app returns › passed
+apps/mobile/src/components/LockOverlay/LockContent.test.tsx › LockContent mounts the water column behind the lock, and keeps its feedback in the bands › passed
+apps/mobile/src/components/LockOverlay/LockContent.test.tsx › LockContent offers no reset when the caller does not allow it › passed
+apps/mobile/src/components/LockOverlay/LockContent.test.tsx › LockContent returns a failed unlock to the input instead of stranding it on the wave › passed
+apps/mobile/src/components/LockOverlay/LockContent.test.tsx › LockContent runs wallet reset after confirmation flow › passed
+apps/mobile/src/components/LockOverlay/LockContent.test.tsx › LockContent says nothing when the user dismisses the prompt › passed
+apps/mobile/src/components/LockOverlay/LockContent.test.tsx › LockContent says why the password field stopped accepting attempts › passed
+apps/mobile/src/components/LockOverlay/LockContent.test.tsx › LockContent shows password fallback when biometric is unavailable › passed
+apps/mobile/src/components/LockOverlay/LockContent.test.tsx › LockContent shows the unlock wait and releases the gate only after the wave exits › passed
+apps/mobile/src/components/LockOverlay/LockOverlay.test.tsx › LockOverlay fully covers whatever is behind it › passed
+apps/mobile/src/components/LockOverlay/LockOverlay.test.tsx › LockOverlay renders the lock content it is given › passed
+apps/mobile/src/components/LockOverlay/LockOverlay.test.tsx › LockOverlay swallows every touch while locked › passed
+apps/mobile/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout anchors the title and the description inward, not each to its own centre › passed
+apps/mobile/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout content: a screen with an assist and no secondary puts the assist over the action › passed
+apps/mobile/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout content: leaves an unused slot empty rather than collapsing it › passed
+apps/mobile/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout content: reserves every slot at that variant’s table height › passed
+apps/mobile/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout defaults to identity, so unlock and welcome need not ask for it › passed
+apps/mobile/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout does not move a slot when an optional element is revealed › passed
+apps/mobile/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout draws the mark larger on identity than on content › passed
+apps/mobile/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout draws the mark white, not in the accent › passed
+apps/mobile/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout drops the description first when the keyboard costs a little room › passed
+apps/mobile/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout gives up what the keyboard covers on android, bottom inset and all › passed
+apps/mobile/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout gives up what the keyboard covers on ios, bottom inset and all › passed
+apps/mobile/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout holds the two families’ control bands at one height › passed
+apps/mobile/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout identity: a screen with an assist and no secondary puts the assist over the action › passed
+apps/mobile/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout identity: centres the mark band on the middle of the screen › passed
+apps/mobile/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout identity: leaves an unused slot empty rather than collapsing it › passed
+apps/mobile/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout identity: reserves every slot at that variant’s table height › passed
+apps/mobile/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout keeps every slot in place when the float region wraps the content › passed
+apps/mobile/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout keeps the whole twelve-word grid clear of the keyboard › passed
+apps/mobile/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout lock: centres the mark band on the middle of the screen › passed
+apps/mobile/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout mounts no background host when none is passed › passed
+apps/mobile/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout moves nothing when the keyboard is open but covers nothing › passed
+apps/mobile/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout never drops copy for a viewport a few points short — only for a keyboard › passed
+apps/mobile/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout paints `background` behind the stack, absolute-fill and untouchable › passed
+apps/mobile/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout sits the mark at the bottom of its band, tight to the title › passed
+apps/mobile/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout welcome and the lock clamp their fish to one Y when the centre does not fit › passed
+apps/mobile/src/components/OnboardingLayout/OnboardingLayout.test.tsx › ReservedSlot keeps a hidden control out of the accessibility tree entirely › passed
+apps/mobile/src/components/PaymentsScreen/PaymentsScreen.test.tsx › PaymentsScreen draws the form inside the ask sheet when it is open › passed
+apps/mobile/src/components/PaymentsScreen/PaymentsScreen.test.tsx › PaymentsScreen draws the sheet with the code, the facts and the controls when open › passed
+apps/mobile/src/components/PaymentsScreen/PaymentsScreen.test.tsx › PaymentsScreen hides Pay when the hook offers none › passed
+apps/mobile/src/components/PaymentsScreen/PaymentsScreen.test.tsx › PaymentsScreen offers copy on a request just created in the ask sheet › passed
+apps/mobile/src/components/PaymentsScreen/PaymentsScreen.test.tsx › PaymentsScreen renders rows with their state and opens one on press › passed
+apps/mobile/src/components/PaymentsScreen/PaymentsScreen.test.tsx › PaymentsScreen renders the two actions over the empty list, and no form › passed
+apps/mobile/src/components/PaymentsScreen/PaymentsScreen.test.tsx › PaymentsScreen shows the unavailable state instead of the actions › passed
+apps/mobile/src/components/PendingActivityBanner/PendingActivityBanner.test.tsx › PendingActivityBanner labels every outcome, so state is never carried by colour alone › passed
+apps/mobile/src/components/PendingActivityBanner/PendingActivityBanner.test.tsx › PendingActivityBanner offers dismissal only once an entry has resolved › passed
+apps/mobile/src/components/PendingActivityBanner/PendingActivityBanner.test.tsx › PendingActivityBanner renders nothing when there is nothing in flight › passed
+apps/mobile/src/components/PendingValue/PendingValue.test.tsx › PendingValue does not remount the value when the refresh returns the same number › passed
+apps/mobile/src/components/PendingValue/PendingValue.test.tsx › PendingValue keeps the value on screen while it is being recalculated › passed
+apps/mobile/src/components/Pill/Pill.test.tsx › Pill inks a gain, a fall and a status each in its own token › passed
+apps/mobile/src/components/Pill/Pill.test.tsx › Pill shows the status dot only when asked › passed
+apps/mobile/src/components/PortfolioSubTabs/PortfolioSubTabs.test.tsx › PortfolioSubTabs calls onChange when an inactive tab is pressed › passed
+apps/mobile/src/components/PortfolioSubTabs/PortfolioSubTabs.test.tsx › PortfolioSubTabs calls onOrderPress when the order button is pressed › passed
+apps/mobile/src/components/PortfolioSubTabs/PortfolioSubTabs.test.tsx › PortfolioSubTabs does not call onChange when the active tab is pressed again › passed
+apps/mobile/src/components/PortfolioSubTabs/PortfolioSubTabs.test.tsx › PortfolioSubTabs lands the underline on the first measured tab with no travel › passed
+apps/mobile/src/components/PortfolioSubTabs/PortfolioSubTabs.test.tsx › PortfolioSubTabs slides the underline target to the newly active tab measured layout › passed
+apps/mobile/src/components/PortfolioSubTabs/PortfolioSubTabs.test.tsx › PortfolioSubTabs snaps instead of animating when reduce motion is on › passed
+apps/mobile/src/components/PortfolioSubTabs/PortfolioSubTabs.test.tsx › PortfolioSubTabs works for a 3-tab row: underline follows whichever of the three is active › passed
+apps/mobile/src/components/PowerupBadge/PowerupBadge.test.tsx › PowerupBadge keeps the accent for core and a plain surface for community › passed
+apps/mobile/src/components/PowerupBadge/PowerupBadge.test.tsx › PowerupBadge shouts the tier name in the current locale › passed
+apps/mobile/src/components/PowerupsCatalog/PowerupsCatalog.test.tsx › PowerupsCatalog dismissing the detail sheet leaves the whole catalogue, not one level › passed
+apps/mobile/src/components/PowerupsCatalog/PowerupsCatalog.test.tsx › PowerupsCatalog draws Core and Community, and nothing else › passed
+apps/mobile/src/components/PowerupsCatalog/PowerupsCatalog.test.tsx › PowerupsCatalog offers to take an installed Powerup away instead › passed
+apps/mobile/src/components/PowerupsCatalog/PowerupsCatalog.test.tsx › PowerupsCatalog opens an entry’s detail in the same sheet and installs from it › passed
+apps/mobile/src/components/PowerupsCatalog/PowerupsCatalog.test.tsx › PowerupsCatalog opens straight onto the detail of the Powerup it was opened on › passed
+apps/mobile/src/components/PowerupsCatalog/PowerupsCatalog.test.tsx › PowerupsCatalog rises no higher than the ceiling Home measured › passed
+apps/mobile/src/components/PowerupsCatalog/PowerupsCatalog.test.tsx › PowerupsCatalog the row’s own control installs in place, without opening the detail › passed
+apps/mobile/src/components/PowerupsFab/PowerupsFab.test.tsx › PowerupsFab calls onPress when tapped › passed
+apps/mobile/src/components/PowerupsFab/PowerupsFab.test.tsx › PowerupsFab carries the flesh texture — the FAB is a solid accent fill › passed
+apps/mobile/src/components/PowerupsFab/PowerupsFab.test.tsx › PowerupsFab draws a +, and keeps it while the launcher is open › passed
+apps/mobile/src/components/PowerupsFab/PowerupsFab.test.tsx › PowerupsFab exposes an accessible label that follows the launcher state › passed
+apps/mobile/src/components/PowerupsFab/PowerupsFab.test.tsx › PowerupsFab leaps on a tap: up by the theme’s rise, nose tilted, on the wrapper › passed
+apps/mobile/src/components/PriceChart/PriceChart.test.tsx › PriceChart curve interpolation helpers builds a path spanning the full chart width › passed
+apps/mobile/src/components/PriceChart/PriceChart.test.tsx › PriceChart curve interpolation helpers maps prices into chart coordinates (higher price = smaller y) › passed
+apps/mobile/src/components/PriceChart/PriceChart.test.tsx › PriceChart curve interpolation helpers resamples any series length to a fixed point count › passed
+apps/mobile/src/components/PriceChart/PriceChart.test.tsx › PriceChart curve interpolation helpers returns empty results for empty data › passed
+apps/mobile/src/components/PrivateKeyPanel/PrivateKeyPanel.test.tsx › PrivateKeyPanel blocks screen capture and the app-switcher thumbnail while the panel is mounted › passed
+apps/mobile/src/components/PrivateKeyPanel/PrivateKeyPanel.test.tsx › PrivateKeyPanel copies through the clearing clipboard and says when it is cleared › passed
+apps/mobile/src/components/PrivateKeyPanel/PrivateKeyPanel.test.tsx › PrivateKeyPanel does not hand over the private key to whoever is holding an unlocked session › passed
+apps/mobile/src/components/PrivateKeyPanel/PrivateKeyPanel.test.tsx › PrivateKeyPanel keeps the key hidden when the password is wrong › passed
+apps/mobile/src/components/PrivateKeyPanel/PrivateKeyPanel.test.tsx › PrivateKeyPanel network gate drops the caret — picking a network sinks into the keys, it does not slide a panel in › passed
+apps/mobile/src/components/PrivateKeyPanel/PrivateKeyPanel.test.tsx › PrivateKeyPanel network gate falls back to the globe for a chain it has no mark for › passed
+apps/mobile/src/components/PrivateKeyPanel/PrivateKeyPanel.test.tsx › PrivateKeyPanel network gate keeps the text chip on every non-mainnet row, so a testnet key cannot pass for a real one › passed
+apps/mobile/src/components/PrivateKeyPanel/PrivateKeyPanel.test.tsx › PrivateKeyPanel network gate leaves mainnet rows unchipped — mainnet is the silent default › passed
+apps/mobile/src/components/PrivateKeyPanel/PrivateKeyPanel.test.tsx › PrivateKeyPanel network gate marks each row with its own chain, not four identical globes › passed
+apps/mobile/src/components/PrivateKeyPanel/PrivateKeyPanel.test.tsx › PrivateKeyPanel says the clipboard is readable by other apps before the key goes into it › passed
+apps/mobile/src/components/PrivateKeyPanel/PrivateKeyPanel.test.tsx › PrivateKeyPanel shows the key once the password is re-entered › passed
+apps/mobile/src/components/PrivateKeyPanel/PrivateKeyPanel.test.tsx › PrivateKeyPanel takes the biometric prompt as the equivalent of the password when it is available › passed
+apps/mobile/src/components/ProgressBar/ProgressBar.test.tsx › ProgressBar fills its share of the track and announces it › passed
+apps/mobile/src/components/ProgressBar/ProgressBar.test.tsx › ProgressBar never fills past either end › passed
+apps/mobile/src/components/QRCode/QRCode.test.tsx › QRCode brand knockout centres the mark on a knockout in the code ground and forces level H › passed
+apps/mobile/src/components/QRCode/QRCode.test.tsx › QRCode brand knockout draws nothing over a plain code › passed
+apps/mobile/src/components/QRScanner/QRScanner.test.tsx › QRScanner calls onClose from the close button › passed
+apps/mobile/src/components/QRScanner/QRScanner.test.tsx › QRScanner distinguishes a wrong-chain address in the rejection message › passed
+apps/mobile/src/components/QRScanner/QRScanner.test.tsx › QRScanner handles a successful decode exactly once per scan session › passed
+apps/mobile/src/components/QRScanner/QRScanner.test.tsx › QRScanner hands the transfer request it read to the caller › passed
+apps/mobile/src/components/QRScanner/QRScanner.test.tsx › QRScanner names the part of a transfer request it could not read › passed
+apps/mobile/src/components/QRScanner/QRScanner.test.tsx › QRScanner rejects an invalid payload, keeps scanning, then accepts a valid one › passed
+apps/mobile/src/components/QRScanner/QRScanner.test.tsx › QRScanner renders nothing when hidden › passed
+apps/mobile/src/components/QRScanner/QRScanner.test.tsx › QRScanner requests permission when opened and not yet granted › passed
+apps/mobile/src/components/QRScanner/QRScanner.test.tsx › QRScanner shows the permission-denied state with a route to Settings › passed
+apps/mobile/src/components/ReceiptScreen/ReceiptScreen.test.tsx › ReceiptScreen — exchange tone delegates to the graphic receipt and its e2e vocabulary › passed
+apps/mobile/src/components/ReceiptScreen/ReceiptScreen.test.tsx › ReceiptScreen — transfer tone prefers the explorer link over a generic secondary, and disables the primary while settling › passed
+apps/mobile/src/components/ReceiptScreen/ReceiptScreen.test.tsx › ReceiptScreen — transfer tone renders the CORE 07 composition: seal, title, body, receipt rows, and both actions › passed
+apps/mobile/src/components/ReceiveSheet/ReceiveSheet.test.tsx › ReceiveSheet QR brand mark centers the salmon mark on a knockout over a level-H code › passed
+apps/mobile/src/components/ReceiveSheet/ReceiveSheet.test.tsx › ReceiveSheet address announces the copied state, because the button is the only path to the string › passed
+apps/mobile/src/components/ReceiveSheet/ReceiveSheet.test.tsx › ReceiveSheet address shows no written address — the code is the address, the button hands it over › passed
+apps/mobile/src/components/ReceiveSheet/ReceiveSheet.test.tsx › ReceiveSheet chain identity names the chain in a labelled badge › passed
+apps/mobile/src/components/ReceiveSheet/ReceiveSheet.test.tsx › ReceiveSheet chain identity names the environment inside the chain badge off mainnet › passed
+apps/mobile/src/components/ReceiveSheet/ReceiveSheet.test.tsx › ReceiveSheet chain identity warns that only assets on that chain may be sent to this address › passed
+apps/mobile/src/components/ReceiveSheet/ReceiveSheet.test.tsx › ReceiveSheet shapes and labels gives the chain chip the chip radius, not a pill › passed
+apps/mobile/src/components/ReceiveSheet/ReceiveSheet.test.tsx › ReceiveSheet shapes and labels renders the copy label as its translation says, with no text transform › passed
+apps/mobile/src/components/ScalesBackground/ScalesBackground.test.tsx › ScalesBackground refraction variant declares the Pattern before the Mask that references it › passed
+apps/mobile/src/components/ScalesBackground/ScalesBackground.test.tsx › ScalesBackground refraction variant paints a rect whose mask resolves to a defined mask filled by the defined pattern › passed
+apps/mobile/src/components/ScalesBackground/ScalesBackground.test.tsx › ScalesBackground refraction variant sets explicit maskUnits="userSpaceOnUse" on the Mask › passed
+apps/mobile/src/components/ScreenHeader/ScreenHeader.test.tsx › ScreenHeader — titled composition centres the title inside a well-height box (the mock: text box = 38, glyphs centred) › passed
+apps/mobile/src/components/ScreenHeader/ScreenHeader.test.tsx › ScreenHeader — titled composition centres the titled row (gap 12) so the well and the title share one centre line › passed
+apps/mobile/src/components/ScreenHeader/ScreenHeader.test.tsx › ScreenHeader — titled composition keeps the same title line box with no back well (Powerups composition) › passed
+apps/mobile/src/components/SectionLabel/SectionLabel.test.tsx › SectionLabel carries a figure at the end of its line, inked by tone › passed
+apps/mobile/src/components/SectionLabel/SectionLabel.test.tsx › SectionLabel sizes each variant off the type scale › passed
+apps/mobile/src/components/SectionLabel/SectionLabel.test.tsx › SectionLabel uppercases the caps variant and leaves the others alone › passed
+apps/mobile/src/components/SeedPhrase/SeedPhraseEntry.test.tsx › SeedPhraseEntry announces the index as a bare number, not as punctuation › passed
+apps/mobile/src/components/SeedPhrase/SeedPhraseEntry.test.tsx › SeedPhraseEntry does not step back from the first box › passed
+apps/mobile/src/components/SeedPhrase/SeedPhraseEntry.test.tsx › SeedPhraseEntry draws twelve boxes by default › passed
+apps/mobile/src/components/SeedPhrase/SeedPhraseEntry.test.tsx › SeedPhraseEntry fills every box from one paste, wherever it lands › passed
+apps/mobile/src/components/SeedPhrase/SeedPhraseEntry.test.tsx › SeedPhraseEntry grows to twenty-four when the thirteenth word is typed by hand › passed
+apps/mobile/src/components/SeedPhrase/SeedPhraseEntry.test.tsx › SeedPhraseEntry grows to twenty-four when twenty-four are pasted › passed
+apps/mobile/src/components/SeedPhrase/SeedPhraseEntry.test.tsx › SeedPhraseEntry keeps a wrong-length paste rather than discarding it, and says so › passed
+apps/mobile/src/components/SeedPhrase/SeedPhraseEntry.test.tsx › SeedPhraseEntry keeps the index period out of the phrase entirely › passed
+apps/mobile/src/components/SeedPhrase/SeedPhraseEntry.test.tsx › SeedPhraseEntry keeps the screenshot block that rides on the boxes › passed
+apps/mobile/src/components/SeedPhrase/SeedPhraseEntry.test.tsx › SeedPhraseEntry leaves the word where it was typed when space commits it › passed
+apps/mobile/src/components/SeedPhrase/SeedPhraseEntry.test.tsx › SeedPhraseEntry normalises line breaks, tabs and doubled spaces on paste › passed
+apps/mobile/src/components/SeedPhrase/SeedPhraseEntry.test.tsx › SeedPhraseEntry normalises to lowercase whatever the keyboard forced through › passed
+apps/mobile/src/components/SeedPhrase/SeedPhraseEntry.test.tsx › SeedPhraseEntry packs twenty-four denser instead of taller › passed
+apps/mobile/src/components/SeedPhrase/SeedPhraseEntry.test.tsx › SeedPhraseEntry steps back to the previous box when backspace lands on an empty one › passed
+apps/mobile/src/components/SeedPhrase/SeedPhraseEntry.test.tsx › distributePhrase 12 words → 12 boxes, fits=true › passed
+apps/mobile/src/components/SeedPhrase/SeedPhraseEntry.test.tsx › distributePhrase 13 words → 24 boxes, fits=false › passed
+apps/mobile/src/components/SeedPhrase/SeedPhraseEntry.test.tsx › distributePhrase 24 words → 24 boxes, fits=true › passed
+apps/mobile/src/components/SeedPhrase/SeedPhraseEntry.test.tsx › distributePhrase 30 words → 24 boxes, fits=false › passed
+apps/mobile/src/components/SeedPhrase/SeedPhraseEntry.test.tsx › distributePhrase 5 words → 12 boxes, fits=false › passed
+apps/mobile/src/components/SeedPhrase/SeedPhraseEntry.test.tsx › distributePhrase lowercases and collapses whitespace › passed
+apps/mobile/src/components/SeedPhrase/SeedWordGrid.test.tsx › SeedWordGrid keeps a long word inside its cell: one line, shrinking to fit › passed
+apps/mobile/src/components/SeedPhrase/SeedWordGrid.test.tsx › SeedWordGrid opts the grid into screen-capture protection › passed
+apps/mobile/src/components/SeedPhrase/SeedWordGrid.test.tsx › SeedWordGrid paints the word cell on an opaque ground, never a translucent wash › passed
+apps/mobile/src/components/SeedPhrase/SeedWordGrid.test.tsx › SeedWordGrid sets the cell number at label size so it is never read as part of the phrase › passed
+apps/mobile/src/components/SeedPhrase/SeedWordGrid.test.tsx › SeedWordGrid sets the word in the mono face at the rule size and weight › passed
+apps/mobile/src/components/Send/RecipientInput.test.tsx › RecipientInput defaults its field ids to the send flow prefix › passed
+apps/mobile/src/components/Send/RecipientInput.test.tsx › RecipientInput takes its ids from testIDPrefix for a non-send caller › passed
+apps/mobile/src/components/Send/SendFailure.test.tsx › SendFailure offers no retry when the outcome is unknown: a retry could send twice › passed
+apps/mobile/src/components/Send/SendFailure.test.tsx › SendFailure shows only the message when the message says it all › passed
+apps/mobile/src/components/Send/SendFailure.test.tsx › SendFailure shows the detail line when there is one › passed
+apps/mobile/src/components/SettingsScreenLayout/SettingsScreenLayout.test.tsx › SettingsScreenLayout renders a footer outside the scrollable body when one is passed › passed
+apps/mobile/src/components/SettingsScreenLayout/SettingsScreenLayout.test.tsx › SettingsScreenLayout renders no footer when none is passed › passed
+apps/mobile/src/components/SkrScreen/SkrScreen.test.tsx › SkrScreen draws the blocks shared builds from the owner's position › passed
+apps/mobile/src/components/StatTile/StatTile.test.tsx › StatGrid gives every figure an equal share of the row › passed
+apps/mobile/src/components/StatTile/StatTile.test.tsx › StatTile closes the value line with a note at the end, in its tone › passed
+apps/mobile/src/components/StatTile/StatTile.test.tsx › StatTile inks a gain with the change-positive token › passed
+apps/mobile/src/components/StatTile/StatTile.test.tsx › StatTile keeps the value and its unit on one line that shrinks to fit, as one › passed
+apps/mobile/src/components/StatTile/StatTile.test.tsx › StatTile reads its digits in the font's own widths, not table columns › passed
+apps/mobile/src/components/StatTile/StatTile.test.tsx › StatTile sets its pill beside the figure, centred on the tile › passed
+apps/mobile/src/components/StatTile/StatTile.test.tsx › StatTile shows the label in capitals, the value with its unit, and the caption › passed
+apps/mobile/src/components/StepIndicator/StepIndicator.test.tsx › StepIndicator announces the position to screen readers — the dots alone say nothing › passed
+apps/mobile/src/components/StepIndicator/StepIndicator.test.tsx › StepIndicator draws one inactive dot per step, and exactly one salmon dot › passed
+apps/mobile/src/components/StepIndicator/StepIndicator.test.tsx › StepIndicator keeps the track identical across a step change — nothing but the dot moves › passed
+apps/mobile/src/components/StepIndicator/StepIndicator.test.tsx › StepIndicator positions the salmon dot by translation, not by re-colouring a sibling › passed
+apps/mobile/src/components/SupportSelector/SupportSelector.test.tsx › SupportSelector carries no navigation caret › passed
+apps/mobile/src/components/SupportSelector/SupportSelector.test.tsx › SupportSelector draws row glyphs in the quiet ink, not the accent › passed
+apps/mobile/src/components/SupportSelector/SupportSelector.test.tsx › SupportSelector marks every row as leaving the app › passed
+apps/mobile/src/components/SwapScreen/SwapScreen.test.tsx › SwapScreen draws both token rows, the amount and the review control, from the hook › passed
+apps/mobile/src/components/SwapScreen/SwapScreen.test.tsx › SwapScreen draws the blocker as a warning, with its interpolated amount › passed
+apps/mobile/src/components/SwapScreen/SwapScreen.test.tsx › SwapScreen puts the keyboard away on a tap outside the field › passed
+apps/mobile/src/components/SwapScreen/SwapScreen.test.tsx › SwapScreen replaces the form with the region state when the backend refused the caller › passed
+apps/mobile/src/components/SwapScreen/SwapScreen.test.tsx › SwapScreen says there is nothing to swap when the wallet holds no token, instead of an empty form › passed
+apps/mobile/src/components/SwapScreen/SwapScreen.test.tsx › SwapScreen shows the build error as a notice and the open picker as a sheet › passed
+apps/mobile/src/components/Thermocline/Thermocline.test.tsx › Thermocline Reduce Transparency collapses to the opaque plane without moving layout › passed
+apps/mobile/src/components/Thermocline/Thermocline.test.tsx › Thermocline ignores the deprecated refraction prop › passed
+apps/mobile/src/components/Thermocline/Thermocline.test.tsx › Thermocline renders the tint — the translucent ink, membraneThick for the thick tier › passed
+apps/mobile/src/components/Thermocline/Thermocline.test.tsx › Thermocline the membrane field is retired — no field layer renders (2026-09-01) › passed
+apps/mobile/src/components/Thermocline/Thermocline.test.tsx › Thermocline the thin tier tints with membraneThin › passed
+apps/mobile/src/components/Thermocline/Thermocline.test.tsx › Thermocline thin tier collapses to surface.raised on the opaque rung › passed
+apps/mobile/src/components/Toggle/Toggle.test.tsx › Toggle fires onValueChange with the flipped value › passed
+apps/mobile/src/components/Toggle/Toggle.test.tsx › Toggle reads its checked state from `value` › passed
+apps/mobile/src/components/TokenAbout/TokenAbout.test.tsx › TokenAbout renders a skeleton row while loading › passed
+apps/mobile/src/components/TokenAbout/TokenAbout.test.tsx › TokenAbout renders nothing when there is nothing to show › passed
+apps/mobile/src/components/TokenAbout/TokenAbout.test.tsx › TokenAbout renders the description and the contract copy row › passed
+apps/mobile/src/components/TokenList/TokenListItem.test.tsx › TokenListItem amount compacts a large holding instead of truncating the ticker off the row › passed
+apps/mobile/src/components/TokenList/TokenListItem.test.tsx › TokenListItem amount keeps full precision below a thousand — dust is read digit by digit › passed
+apps/mobile/src/components/TokenList/TokenListItem.test.tsx › TokenListItem hidden balance hides the absolute change, which is money, and keeps the percentage › passed
+apps/mobile/src/components/TokenList/TokenListItem.test.tsx › TokenListItem hidden balance masks the balance for the screen reader too › passed
+apps/mobile/src/components/TokenList/TokenListItem.test.tsx › TokenListItem hidden balance masks the spoken price on the bitcoin row as well › passed
+apps/mobile/src/components/TokenList/TokenListItem.test.tsx › TokenListItem secondary line drops a missing segment without stray separators › passed
+apps/mobile/src/components/TokenList/TokenListItem.test.tsx › TokenListItem secondary line masks the price but keeps the ticker and change when hiddenBalance is set › passed
+apps/mobile/src/components/TokenList/TokenListItem.test.tsx › TokenListItem secondary line renders the ticker, the price and the change as one text run, long name included › passed
+apps/mobile/src/components/TokenMarketData/TokenMarketData.test.tsx › TokenMarketData renders a skeleton row while loading › passed
+apps/mobile/src/components/TokenMarketData/TokenMarketData.test.tsx › TokenMarketData renders nothing when there is no data and it is not loading › passed
+apps/mobile/src/components/TokenMarketData/TokenMarketData.test.tsx › TokenMarketData renders the known fields as KeyValueRows once data arrives › passed
+apps/mobile/src/components/TokenSelectList/TokenSelectList.test.tsx › hides untagged tokens when verifiedOnly is on (default) › passed
+apps/mobile/src/components/TokenSelectList/TokenSelectList.test.tsx › lists every token it was given when verifiedOnly is off › passed
+apps/mobile/src/components/TokenSelectList/TokenSelectList.test.tsx › shows the symbol alone in the trailing cell when balances are off › passed
+apps/mobile/src/components/TransactionConfirmation/ConfirmationButtons.test.tsx › ConfirmationButtons — approval friction asks for a hold instead of a tap when the review requires it › passed
+apps/mobile/src/components/TransactionConfirmation/ConfirmationButtons.test.tsx › ConfirmationButtons — approval friction cannot confirm while the review says it is not ready › passed
+apps/mobile/src/components/TransactionConfirmation/ConfirmationButtons.test.tsx › ConfirmationButtons — the pair stacks, full width gives each action the full width — nothing narrows it › passed
+apps/mobile/src/components/TransactionConfirmation/ConfirmationButtons.test.tsx › ConfirmationButtons — the pair stacks, full width puts the committing action at the bottom, as every other surface does › passed
+apps/mobile/src/components/TransactionConfirmation/ConfirmationButtons.test.tsx › ConfirmationButtons — the pair stacks, full width sizes both actions as the app's standard buttons, in every state › passed
+apps/mobile/src/components/TransactionConfirmation/ConfirmationButtons.test.tsx › ConfirmationButtons — the pair stacks, full width spins the confirm button only while a fresh quote is in flight › passed
+apps/mobile/src/components/TransactionConfirmation/ConfirmationButtons.test.tsx › ConfirmationButtons — the pair stacks, full width stacks the two actions in a column › passed
+apps/mobile/src/components/TransactionConfirmation/ConfirmationExchange.test.tsx › ConfirmationExchange — one graphic block instead of two cards omits the USD line when no dollar value exists › passed
+apps/mobile/src/components/TransactionConfirmation/ConfirmationExchange.test.tsx › ConfirmationExchange — one graphic block instead of two cards renders both token logos, the arrow between them, and each amount › passed
+apps/mobile/src/components/TransactionConfirmation/ConfirmationExchange.test.tsx › ConfirmationExchange — one graphic block instead of two cards trims a full-precision amount to significant digits for the review › passed
+apps/mobile/src/components/TransactionConfirmation/ConfirmationHost.test.tsx › ConfirmationHost holds the window until the wave has left, then closes it › passed
+apps/mobile/src/components/TransactionConfirmation/ConfirmationHost.test.tsx › ConfirmationHost opens its own window with the confirmation and wires the controls to core › passed
+apps/mobile/src/components/TransactionConfirmation/ConfirmationHost.test.tsx › ConfirmationHost opens nothing while no proposal is parked › passed
+apps/mobile/src/components/TransactionConfirmation/ConfirmationHost.test.tsx › ConfirmationHost replaces the confirmation with the wave wait while core signs, and refuses to back out of it › passed
+apps/mobile/src/components/TransactionConfirmation/ConfirmationHost.test.tsx › ConfirmationHost shows the receipt in the same window once the wave is gone, and closes on its button › passed
+apps/mobile/src/components/TransactionConfirmation/TransactionConfirmation.test.tsx › TransactionConfirmation title typography sets the screen title in the headline role, not a bold wide one › passed
+apps/mobile/src/components/TransactionConfirmation/TransactionConfirmation.test.tsx › TransactionConfirmation — every fee is its own line, the provider is named draws the warning the proposal carried, and none when it carried none › passed
+apps/mobile/src/components/TransactionConfirmation/TransactionConfirmation.test.tsx › TransactionConfirmation — every fee is its own line, the provider is named groups every detail row into a single card and folds the advanced ones › passed
+apps/mobile/src/components/TransactionConfirmation/TransactionConfirmation.test.tsx › TransactionConfirmation — every fee is its own line, the provider is named renders the attribution verbatim under the details › passed
+apps/mobile/src/components/TransactionConfirmation/TransactionConfirmation.test.tsx › TransactionConfirmation — every fee is its own line, the provider is named reports a failed signature above the controls, translated › passed
+apps/mobile/src/components/TransactionConfirmation/TransactionConfirmation.test.tsx › TransactionConfirmation — every fee is its own line, the provider is named reveals the advanced rows when the Details disclosure is pressed › passed
+apps/mobile/src/components/TransactionConfirmation/TransactionConfirmation.test.tsx › TransactionConfirmation — the warning card can always be read ends the scroll content above the action row rather than flush against it › passed
+apps/mobile/src/components/TransactionConfirmation/TransactionConfirmation.test.tsx › TransactionConfirmation — the warning card can always be read keeps the action row outside the scroll area, so it cannot cover the content › passed
+apps/mobile/src/components/TransactionDetail/TransactionDetail.test.tsx › TransactionDetail carries tabular figures on every rendered value › passed
+apps/mobile/src/components/TransactionDetail/TransactionDetail.test.tsx › TransactionDetail copies hash and forwards share action › passed
+apps/mobile/src/components/TransactionDetail/TransactionDetail.test.tsx › TransactionDetail derives the explorer chain and environment from networkId › passed
+apps/mobile/src/components/TransactionDetail/TransactionDetail.test.tsx › TransactionDetail does not render when transaction is missing › passed
+apps/mobile/src/components/TransactionDetail/TransactionDetail.test.tsx › TransactionDetail does not show copied feedback when the clipboard write fails › passed
+apps/mobile/src/components/TransactionDetail/TransactionDetail.test.tsx › TransactionDetail draws the status block and the receipt cards with the kit primitives › passed
+apps/mobile/src/components/TransactionDetail/TransactionDetail.test.tsx › TransactionDetail falls back to Solana mainnet when networkId is missing › passed
+apps/mobile/src/components/TransactionDetail/TransactionDetail.test.tsx › TransactionDetail omits the network fee row when the transaction carries no fee › passed
+apps/mobile/src/components/TransactionDetail/TransactionDetail.test.tsx › TransactionDetail renders the network fee row when the fee reaches the component › passed
+apps/mobile/src/components/TransactionDetail/TransactionDetail.test.tsx › TransactionDetail sets the transaction hash in mono at the address size › passed
+apps/mobile/src/components/TransactionDetail/TransactionDetail.test.tsx › TransactionDetail shows developer details and forwards explorer action › passed
+apps/mobile/src/components/UnderlineTabs/UnderlineTabs.test.tsx › UnderlineTabs dresses the `sm` label uppercase at the filter size, whatever case the copy is › passed
+apps/mobile/src/components/UnderlineTabs/UnderlineTabs.test.tsx › UnderlineTabs leaves the `md` sub-tab label at its own size and case › passed
+apps/mobile/src/components/UnderlineTabs/UnderlineTabs.test.tsx › UnderlineTabs marks selection with state, not a fill, and reports the chosen key › passed
+apps/mobile/src/components/UnderlineTabs/UnderlineTabs.test.tsx › UnderlineTabs overflow does not flip into a carousel over a rounding slack › passed
+apps/mobile/src/components/UnderlineTabs/UnderlineTabs.test.tsx › UnderlineTabs overflow enables the scroll and the fade when the tabs overrun it › passed
+apps/mobile/src/components/UnderlineTabs/UnderlineTabs.test.tsx › UnderlineTabs overflow fades only toward hidden tabs: none at the start, none at the end › passed
+apps/mobile/src/components/UnderlineTabs/UnderlineTabs.test.tsx › UnderlineTabs overflow holds still while the measured tabs fit their container › passed
+apps/mobile/src/components/UnderlineTabs/UnderlineTabs.test.tsx › UnderlineTabs overflow scrolls the newly active tab into view in overflow mode › passed
+apps/mobile/src/components/UpdateRequiredScreen/UpdateRequiredScreen.test.tsx › UpdateRequiredScreen offers the store as the one way out › passed
+apps/mobile/src/components/UpdateRequiredScreen/UpdateRequiredScreen.test.tsx › UpdateRequiredScreen says the build is unsupported and that the funds are safe › passed
+apps/mobile/src/components/ValueActionsRow/ValueActionsRow.test.tsx › ValueActionsRow draws no control group when there are no controls › passed
+apps/mobile/src/components/ValueActionsRow/ValueActionsRow.test.tsx › ValueActionsRow draws the text first and pins the controls to the trailing edge › passed
+apps/mobile/src/components/WalletFamily/WalletFamily.test.tsx › WalletFamily draws the parent, then every derived card on the rail › passed
+apps/mobile/src/components/WalletFamily/WalletFamily.test.tsx › WalletFamily is only the parent when nothing was derived from it › passed
+apps/mobile/src/components/WalletHeader/WalletHeader.test.tsx › WalletHeader account name opens the account switcher from the name, not only the avatar › passed
+apps/mobile/src/components/WalletHeader/WalletHeader.test.tsx › WalletHeader chain change does not remount the account text when only unrelated props change › passed
+apps/mobile/src/components/WalletHeader/WalletHeader.test.tsx › WalletHeader chain change re-keys the account text on address change without remounting the copy button › passed
+apps/mobile/src/components/WalletHeader/WalletHeader.test.tsx › WalletHeader copy address shows a copied tick after pressing copy, then reverts › passed
+apps/mobile/src/components/WalletHeader/WalletHeader.test.tsx › WalletHeader identity block draws the name and the short address as two lines, not one parenthesised string › passed
+apps/mobile/src/components/WalletHeader/WalletHeader.test.tsx › WalletHeader identity change falls back to the brand mark when the account has no picture › passed
+apps/mobile/src/components/WalletHeader/WalletHeader.test.tsx › WalletHeader identity change opens settings from the gear › passed
+apps/mobile/src/components/WalletHeader/WalletHeader.test.tsx › WalletHeader identity change puts the account picture on the left, where the wallet switcher is › passed
+apps/mobile/src/components/WalletHeader/WalletHeader.test.tsx › WalletHeader identity change puts the gear on the right, where settings opens › passed
+apps/mobile/src/components/WalletHeader/WalletHeader.test.tsx › WalletHeader touch targets gives the account switcher at least a 44pt effective hit area › passed
+apps/mobile/src/components/WalletHeader/WalletHeader.test.tsx › WalletHeader touch targets gives the copy-address button at least a 44pt effective hit area › passed
+apps/mobile/src/components/WalletHeader/WalletHeader.test.tsx › WalletHeader touch targets gives the settings button at least a 44pt effective hit area › passed
+apps/mobile/src/components/WarningNotice/WarningNotice.test.tsx › WarningNotice announces `info` politely, not as an alert — it states a fact, not a fault › passed
+apps/mobile/src/components/WarningNotice/WarningNotice.test.tsx › WarningNotice announces itself as an alert › passed
+apps/mobile/src/components/WarningNotice/WarningNotice.test.tsx › WarningNotice centres the icon on the first line: the title is exactly as tall as the icon › passed
+apps/mobile/src/components/WarningNotice/WarningNotice.test.tsx › WarningNotice forwards testID to the banner it renders › passed
+apps/mobile/src/components/WarningNotice/WarningNotice.test.tsx › WarningNotice renders the action slot when one is passed › passed
+apps/mobile/src/mwa/MwaRequest.analytics.test.tsx › approved requests counts a connection once, before the answer, with no props › passed
+apps/mobile/src/mwa/MwaRequest.analytics.test.tsx › approved requests counts a sign-in connection as a connection › passed
+apps/mobile/src/mwa/MwaRequest.analytics.test.tsx › approved requests counts sent transactions once, before the answer › passed
+apps/mobile/src/mwa/MwaRequest.analytics.test.tsx › approved requests counts signed messages once, before the answer › passed
+apps/mobile/src/mwa/MwaRequest.analytics.test.tsx › approved requests counts signed transactions once, before the answer › passed
+apps/mobile/src/mwa/MwaRequest.analytics.test.tsx › approved requests still answers an approved connection when tracking throws › passed
+apps/mobile/src/mwa/MwaRequest.analytics.test.tsx › requests that record nothing a Seed Vault refused message signature › passed
+apps/mobile/src/mwa/MwaRequest.analytics.test.tsx › requests that record nothing a Seed Vault refused transaction › passed
+apps/mobile/src/mwa/MwaRequest.analytics.test.tsx › requests that record nothing a connection that could not be saved › passed
+apps/mobile/src/mwa/MwaRequest.analytics.test.tsx › requests that record nothing a declined connection or a closed sheet › passed
+apps/mobile/src/mwa/MwaRequest.analytics.test.tsx › requests that record nothing a declined message or a closed sheet › passed
+apps/mobile/src/mwa/MwaRequest.analytics.test.tsx › requests that record nothing a declined sign and send or a closed sheet › passed
+apps/mobile/src/mwa/MwaRequest.analytics.test.tsx › requests that record nothing a declined transaction or a closed sheet › passed
+apps/mobile/src/mwa/MwaRequest.analytics.test.tsx › requests that record nothing a failed message signature › passed
+apps/mobile/src/mwa/MwaRequest.analytics.test.tsx › requests that record nothing a failed transaction signature, shown on the screen and not answered › passed
+apps/mobile/src/mwa/MwaRequest.analytics.test.tsx › requests that record nothing a send the network partly refused › passed
+apps/mobile/src/mwa/MwaRequest.test.tsx › MwaRequest — connect and sign in keeps a verified connect a plain tap under the site › passed
+apps/mobile/src/mwa/MwaRequest.test.tsx › MwaRequest — connect and sign in keeps a verified sign in a plain tap under the site › passed
+apps/mobile/src/mwa/MwaRequest.test.tsx › MwaRequest — connect and sign in names an unverified connect as a claim and asks for a hold › passed
+apps/mobile/src/mwa/MwaRequest.test.tsx › MwaRequest — connect and sign in names an unverified sign in as a claim and asks for a hold › passed
+apps/mobile/src/mwa/MwaRequest.test.tsx › MwaRequest — later requests from an unverified app keeps a verified app's message sheet a plain tap under the site › passed
+apps/mobile/src/mwa/MwaRequest.test.tsx › MwaRequest — later requests from an unverified app keeps a verified app's transaction a plain tap when its effects need none › passed
+apps/mobile/src/mwa/MwaRequest.test.tsx › MwaRequest — later requests from an unverified app names the claim on the message sheet and asks for a hold › passed
+apps/mobile/src/mwa/MwaRequest.test.tsx › MwaRequest — later requests from an unverified app names the claim on the transaction sheet and asks for a hold › passed
+apps/mobile/src/mwa/MwaRequest.test.tsx › MwaRequest — later requests from an unverified app stands the transaction approval on bedrock › passed
+apps/mobile/src/mwa/MwaRequest.test.tsx › MwaRequest — sign messages names the site, the account that signs and the message, each in its card, on bedrock › passed
+apps/mobile/src/mwa/MwaRequest.test.tsx › MwaRequest — what the identity check is given checks the normalised origin for AUTHORIZE_DAPP › passed
+apps/mobile/src/mwa/MwaRequest.test.tsx › MwaRequest — what the identity check is given checks the normalised origin for SIGN_MESSAGES › passed
+apps/mobile/src/mwa/MwaRequest.test.tsx › MwaRequest — what the identity check is given checks the normalised origin for SIGN_TRANSACTIONS › passed
+apps/mobile/src/mwa/MwaRequest.test.tsx › MwaRequest — what the identity check is given treats a native failure as unverified › passed
+apps/mobile/src/mwa/MwaRequestDetails.test.tsx › MwaRequestDetails — who is asking names an unverified app as a claim, after a warning that comes first › passed
+apps/mobile/src/mwa/MwaRequestDetails.test.tsx › MwaRequestDetails — who is asking puts the name the app gives in the site card, never on its own line › passed
+apps/mobile/src/mwa/MwaRequestDetails.test.tsx › MwaRequestDetails — who is asking states a verified origin plainly, with no warning › passed
+apps/mobile/src/mwa/MwaRequestDetails.test.tsx › MwaRequestDetails — with what draws no wallet or message card when the request carries neither › passed
+apps/mobile/src/mwa/MwaRequestDetails.test.tsx › MwaRequestDetails — with what falls back to "current wallet" when the account has no name › passed
+apps/mobile/src/mwa/MwaRequestDetails.test.tsx › MwaRequestDetails — with what names the signing wallet with its full address in mono › passed
+apps/mobile/src/mwa/MwaRequestDetails.test.tsx › MwaRequestDetails — with what shows the message to sign verbatim, in mono, in its own card › passed
+apps/mobile/src/mwa/MwaRoot.test.tsx › MwaHost — a devnet dApp on a mainnet wallet checks the normalised origin, not the raw identity URI › passed
+apps/mobile/src/mwa/MwaRoot.test.tsx › MwaHost — a devnet dApp on a mainnet wallet declines once and stays put when the user cancels › passed
+apps/mobile/src/mwa/MwaRoot.test.tsx › MwaHost — a devnet dApp on a mainnet wallet does not offer a network the active account holds nothing on › passed
+apps/mobile/src/mwa/MwaRoot.test.tsx › MwaHost — a devnet dApp on a mainnet wallet keeps a verified dApp's switch a plain tap under the site › passed
+apps/mobile/src/mwa/MwaRoot.test.tsx › MwaHost — a devnet dApp on a mainnet wallet never asks to switch for a disconnect › passed
+apps/mobile/src/mwa/MwaRoot.test.tsx › MwaHost — a devnet dApp on a mainnet wallet offers no switch for a signing request › passed
+apps/mobile/src/mwa/MwaRoot.test.tsx › MwaHost — a devnet dApp on a mainnet wallet offers no switch to a dApp that does not say who it is › passed
+apps/mobile/src/mwa/MwaRoot.test.tsx › MwaHost — a devnet dApp on a mainnet wallet offers to switch, naming both networks, instead of refusing › passed
+apps/mobile/src/mwa/MwaRoot.test.tsx › MwaHost — a devnet dApp on a mainnet wallet puts the origin first, as a claim and held when it cannot confirm who is asking › passed
+apps/mobile/src/mwa/MwaRoot.test.tsx › MwaHost — a devnet dApp on a mainnet wallet says the switch failed, then declines once › passed
+apps/mobile/src/mwa/MwaRoot.test.tsx › MwaHost — a devnet dApp on a mainnet wallet shows the request itself once the wallet is on the network asked for › passed
+apps/mobile/src/mwa/MwaRoot.test.tsx › MwaHost — a devnet dApp on a mainnet wallet switches through the same action Settings uses, and answers nothing yet › passed
+apps/mobile/src/mwa/MwaRoot.test.tsx › MwaHost — no wallet yet declines once when the user closes it › passed
+apps/mobile/src/mwa/MwaRoot.test.tsx › MwaHost — no wallet yet opens Salmon, then declines once and closes back › passed
+apps/mobile/src/mwa/MwaRoot.test.tsx › MwaHost — no wallet yet says so before anything about networks, whatever the dApp asks for › passed
+apps/mobile/src/mwa/MwaRoot.test.tsx › MwaHost — no wallet yet waits quietly while no request has arrived › passed
+apps/mobile/src/mwa/sessionOpen.test.ts › stays open while any session is still open › passed
+apps/mobile/src/mwa/useMwaSession.test.ts › useMwaSession answers each request once, even if the screen responds twice › passed
+apps/mobile/src/mwa/useMwaSession.test.ts › useMwaSession declines the pending request when the screen goes away › passed
+apps/mobile/src/mwa/useMwaSession.test.ts › useMwaSession declines whatever is still waiting when the dApp ends the session, then closes › passed
+apps/mobile/src/mwa/useMwaSession.test.ts › useMwaSession refuses a connect only as declined › passed
+apps/mobile/src/mwa/useMwaSession.test.ts › useMwaSession refuses a reconnect the way the protocol allows › passed
+apps/mobile/src/mwa/useMwaSession.test.ts › useMwaSession shows requests one at a time, in the order they arrived › passed
+apps/mobile/src/security/biometricStore.test.ts › biometricStore arm drops the pre-rebuild records, so no device keeps a vault key in the keychain › passed
+apps/mobile/src/security/biometricStore.test.ts › biometricStore arm leaves nothing armed when the seal cannot be written › passed
+apps/mobile/src/security/biometricStore.test.ts › biometricStore arm prompts before writing, because iOS never prompts on create › passed
+apps/mobile/src/security/biometricStore.test.ts › biometricStore arm seals the password and gates only the wrapping key behind biometrics › passed
+apps/mobile/src/security/biometricStore.test.ts › biometricStore arm writes nothing when the user dismisses the prompt › passed
+apps/mobile/src/security/biometricStore.test.ts › biometricStore disarm removes both records and survives a store that refuses › passed
+apps/mobile/src/security/biometricStore.test.ts › biometricStore migrateLegacyRecords retries next launch rather than failing the app › passed
+apps/mobile/src/security/biometricStore.test.ts › biometricStore migrateLegacyRecords runs once › passed
+apps/mobile/src/security/biometricStore.test.ts › biometricStore migrateLegacyRecords says nothing to a user who never had biometrics on › passed
+apps/mobile/src/security/biometricStore.test.ts › biometricStore migrateLegacyRecords sweeps the old records and reports that biometrics were on › passed
+apps/mobile/src/security/biometricStore.test.ts › biometricStore probe is not armed when the seal is missing or unreadable › passed
+apps/mobile/src/security/biometricStore.test.ts › biometricStore probe reads armed from the seal, without raising a prompt › passed
+apps/mobile/src/security/biometricStore.test.ts › biometricStore probe reports an unusable device rather than throwing › passed
+apps/mobile/src/security/biometricStore.test.ts › biometricStore unlock destroys nothing when the keychain read throws › passed
+apps/mobile/src/security/biometricStore.test.ts › biometricStore unlock disarms when the wrapping key cannot open the seal › passed
+apps/mobile/src/security/biometricStore.test.ts › biometricStore unlock is unaffected by anything that happens to the vault › passed
+apps/mobile/src/security/biometricStore.test.ts › biometricStore unlock keeps the enrolment when the device simply cannot answer right now › passed
+apps/mobile/src/security/biometricStore.test.ts › biometricStore unlock never prompts when nothing is armed › passed
+apps/mobile/src/security/biometricStore.test.ts › biometricStore unlock reads a null from a capable device as a destroyed enrolment, and disarms › passed
+apps/mobile/src/security/biometricStore.test.ts › biometricStore unlock reports a dismissed prompt as a cancellation, and keeps the enrolment › passed
+apps/mobile/src/security/biometricStore.test.ts › biometricStore unlock returns the password the seal was made from › passed
+apps/mobile/src/seed-vault/bridge.test.ts › Seed Vault bridge authorizes the new seed when creating it returns no usable authorization › passed
+apps/mobile/src/seed-vault/bridge.test.ts › Seed Vault bridge lists accounts and marks the ones the seed's own wallet uses › passed
+apps/mobile/src/seed-vault/bridge.test.ts › Seed Vault bridge reads a cancelled confirmation as cancelled › passed
+apps/mobile/src/seed-vault/bridge.test.ts › Seed Vault bridge reads an invalid authorization as revoked access › passed
+apps/mobile/src/seed-vault/bridge.test.ts › Seed Vault bridge sends one request per payload for the account path and reads back the signatures › passed
+apps/mobile/src/seed-vault/bridge.test.ts › Seed Vault bridge — review fixes does not give up an access Seed Vault no longer lists › passed
+apps/mobile/src/seed-vault/bridge.test.ts › Seed Vault bridge — review fixes gives up an access Seed Vault still lists › passed
+apps/mobile/src/seed-vault/bridge.test.ts › Seed Vault bridge — review fixes gives up on a Seed Vault screen that never answers, and reports it closed › passed
+apps/mobile/src/seed-vault/bridge.test.ts › Seed Vault bridge — review fixes reads "no seed to authorize" as its own reason › passed
+apps/mobile/src/seed-vault/bridge.test.ts › Seed Vault screen tracking reports Seed Vault's screen as open while a request waits, and closed after, even on failure › passed
+apps/mobile/src/seed-vault/useDeviceCapabilities.test.ts › useDeviceCapabilities gives analytics the answer the hook uses, from the same single question › passed
+apps/mobile/src/seed-vault/useDeviceCapabilities.test.ts › useDeviceCapabilities reports Seed Vault on a device that has it › passed
+apps/mobile/src/seed-vault/useDeviceCapabilities.test.ts › useDeviceCapabilities reports nothing elsewhere, and asks the device only once › passed
+apps/mobile/src/theme/useThemedStyles.test.tsx › useSemantic follows the mode › passed
+apps/mobile/src/theme/useThemedStyles.test.tsx › useThemedStyles hands two components the same object — the factory ran once › passed
+apps/mobile/src/theme/useThemedStyles.test.tsx › useThemedStyles keeps the same object across a re-render › passed
+apps/mobile/src/theme/useThemedStyles.test.tsx › useThemedStyles produces a different object — and different colour — in the other mode › passed
+apps/mobile/src/theme/useThemedStyles.test.tsx › useThemedStyles returns the cached object again when the first mode comes back › passed
+apps/mobile/src/updates/useMandatoryUpdate.test.tsx › useMandatoryUpdate applies a pending update before the app is shown › passed
+apps/mobile/src/updates/useMandatoryUpdate.test.tsx › useMandatoryUpdate does nothing in a development client › passed
+apps/mobile/src/updates/useMandatoryUpdate.test.tsx › useMandatoryUpdate opens the app anyway when the check throws › passed
+apps/mobile/src/updates/useMandatoryUpdate.test.tsx › useMandatoryUpdate opens the app anyway when the update server never answers › passed
+apps/mobile/src/updates/useMandatoryUpdate.test.tsx › useMandatoryUpdate opens the app when there is nothing to apply › passed
+apps/mobile/src/updates/useStoreUpdateGate.test.tsx › useStoreUpdateGate asks for the published minimum without a cache › passed
+apps/mobile/src/updates/useStoreUpdateGate.test.tsx › useStoreUpdateGate never runs in development › passed
+apps/mobile/src/updates/useStoreUpdateGate.test.tsx › useStoreUpdateGate opens the app on the minimum itself › passed
+apps/mobile/src/updates/useStoreUpdateGate.test.tsx › useStoreUpdateGate opens the app when the fetch throws › passed
+apps/mobile/src/updates/useStoreUpdateGate.test.tsx › useStoreUpdateGate opens the app when the file does not parse › passed
+apps/mobile/src/updates/useStoreUpdateGate.test.tsx › useStoreUpdateGate opens the app when the file names no usable minimum › passed
+apps/mobile/src/updates/useStoreUpdateGate.test.tsx › useStoreUpdateGate opens the app when the server answers with an error › passed
+apps/mobile/src/updates/useStoreUpdateGate.test.tsx › useStoreUpdateGate opens the app when the server does not answer in time › passed
+apps/mobile/src/updates/useStoreUpdateGate.test.tsx › useStoreUpdateGate requires the update when the minimum is newer than this build › passed
+apps/mobile/src/utils/sinkAndFloat.test.ts › sinkAndFloat chooses the instant cut under reduce motion › passed
+apps/mobile/src/utils/sinkAndFloat.test.ts › sinkAndFloat derives the durations from the water clock, not the generic-UI ramp › passed
+apps/mobile/src/utils/sinkAndFloat.test.ts › sinkAndFloat floats in: arrives from depth, rising the travel accent while the light returns › passed
+apps/mobile/src/utils/sinkAndFloat.test.ts › sinkAndFloat floats without delay by default — an arrival with no prior sink must not lag › passed
+apps/mobile/src/utils/sinkAndFloat.test.ts › sinkAndFloat inherits the band stagger from the Surfacing chrome › passed
+apps/mobile/src/utils/sinkAndFloat.test.ts › sinkAndFloat mirrors the halves on one Z axis, with travel kept to an accent › passed
+apps/mobile/src/utils/sinkAndFloat.test.ts › sinkAndFloat re-exports the shared constants rather than declaring its own › passed
+apps/mobile/src/utils/sinkAndFloat.test.ts › sinkAndFloat recedes on settle while travel and light accelerate on sink › passed
+apps/mobile/src/utils/sinkAndFloat.test.ts › sinkAndFloat sinks out: recedes to depth, dropping the travel accent — faster than it enters › passed
+apps/mobile/src/utils/sinkAndFloat.test.ts › sinkAndFloat sizes the beat to outlast the sink — the two halves must never overlap › passed
+apps/mobile/src/utils/sinkAndFloat.test.ts › sinkAndFloat splits the media: travel settles while the light returns on Beer–Lambert › passed
+apps/mobile/src/utils/sinkAndFloat.test.ts › sinkAndFloat takes a per-call scale override — chrome goes half as deep as content › passed
+apps/mobile/src/utils/sinkAndFloat.test.ts › sinkAndFloat takes per-call distance and duration overrides — the owner tunes by eye › passed
+apps/mobile/src/utils/sinkAndFloat.test.ts › sinkAndFloat waits the beat when asked: every animated property starts after delayMs › passed
+apps/mobile/src/utils/useWaitPassage.test.ts › useWaitPassage cuts under reduce motion — no layout animation at all › passed
+apps/mobile/src/utils/useWaitPassage.test.ts › useWaitPassage hands out the verb with the standard beat and no numbers of its own › passed
+apps/mobile/src/utils/useWaitPassage.test.ts › useWaitPassage keeps the wait held until it reports its closing wave has left › passed
