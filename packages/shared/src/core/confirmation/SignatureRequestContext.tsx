@@ -110,6 +110,49 @@ function fitsDoor(proposal: AnyTransactionProposal, door: Door): boolean {
 
 const PROPOSAL_KIND_ERROR = 'transaction.errors.proposalKind';
 
+/**
+ * The proposal as core holds it: every field read once, from a plain object,
+ * into a frozen copy of core's own making. What is signed is this copy, so a
+ * getter, a Proxy or a mutation of the caller's object after the door check
+ * changes nothing. `null` when the object is not plain or does not fit `door`.
+ */
+function snapshotProposal(
+  proposal: AnyTransactionProposal,
+  door: Door
+): AnyTransactionProposal | null {
+  if (typeof proposal !== 'object' || proposal === null) return null;
+  const prototype = Object.getPrototypeOf(proposal);
+  if (prototype !== Object.prototype && prototype !== null) return null;
+  if (!fitsDoor(proposal, door)) return null;
+
+  const { transaction } = proposal;
+  if (typeof transaction !== 'string') return null;
+  const base = {
+    id: proposal.id,
+    networkId: proposal.networkId,
+    display: proposal.display,
+    expiresAt: proposal.expiresAt,
+    isStale: proposal.isStale,
+    pending: proposal.pending,
+    onOutcome: proposal.onOutcome,
+    transaction,
+  };
+  if (door === 'received') {
+    const { signer, refresh } = proposal as ReceivedTransactionProposal;
+    if (typeof signer !== 'string') return null;
+    return Object.freeze({ ...base, source: 'received' as const, signer, refresh });
+  }
+  const { expect, refresh } = proposal as TransactionProposal;
+  let copied: TransactionProposal['expect'];
+  try {
+    // The declaration decides what may be signed: a deep copy, JSON-shaped by contract.
+    copied = JSON.parse(JSON.stringify(expect));
+  } catch {
+    return null;
+  }
+  return Object.freeze({ ...base, expect: copied, refresh });
+}
+
 interface ParkedRequest {
   proposal: AnyTransactionProposal;
   door: Door;
@@ -160,7 +203,8 @@ export function SignatureRequestProvider({
   const park = useCallback(
     (proposal: AnyTransactionProposal, door: Door) =>
       new Promise<SignedResult>((resolve, reject) => {
-        if (!fitsDoor(proposal, door)) {
+        const held = snapshotProposal(proposal, door);
+        if (!held) {
           reject(new Error(PROPOSAL_KIND_ERROR));
           return;
         }
@@ -168,8 +212,8 @@ export function SignatureRequestProvider({
           reject(new Error('transaction.errors.confirmationBusy'));
           return;
         }
-        parkedRef.current = { proposal, door, resolve, reject };
-        setPending({ proposal, phase: 'review', error: null });
+        parkedRef.current = { proposal: held, door, resolve, reject };
+        setPending({ proposal: held, phase: 'review', error: null });
       }),
     []
   );
@@ -200,6 +244,15 @@ export function SignatureRequestProvider({
     // A new wallet's first transaction waits on the phrase check (DEV-208);
     // left unconfirmed, the review stays open.
     if (!(await requireBackup())) return;
+    // The wait above is long enough for anything to happen: the request must
+    // still be this one, and still fit its door, when the key is used.
+    if (parkedRef.current !== parked) return;
+    if (!fitsDoor(parked.proposal, parked.door)) {
+      setPending((prev) =>
+        prev ? { ...prev, phase: 'review', error: PROPOSAL_KIND_ERROR } : prev
+      );
+      return;
+    }
     setPending((prev) => (prev ? { ...prev, phase: 'signing', error: null } : prev));
 
     const signer = accountRef.current;
@@ -211,7 +264,12 @@ export function SignatureRequestProvider({
 
     let signed = false;
     try {
-      const result = await signProposal(signer, parked.proposal);
+      // The path is chosen by the recorded door, never by the proposal. A
+      // Powerup's keeps the two-argument call, whose default is its door.
+      const result =
+        parked.door === 'received'
+          ? await signProposal(signer, parked.proposal, 'received')
+          : await signProposal(signer, parked.proposal);
       signed = true;
       reportOutcome(parked.proposal, true);
       // Signing waited for the chain, so the banner reports the transaction as
@@ -289,12 +347,13 @@ export function SignatureRequestProvider({
       if (parkedRef.current !== parked) return;
       // A rebuild keeps its door: a Powerup's refresh that returns a received
       // proposal would otherwise skip the declared-effects check.
-      if (!fitsDoor(next, parked.door)) {
+      const held = snapshotProposal(next, parked.door);
+      if (!held) {
         setPending((prev) => (prev ? { ...prev, error: PROPOSAL_KIND_ERROR } : prev));
         return;
       }
-      parked.proposal = next;
-      setPending((prev) => (prev ? { ...prev, proposal: next, error: null } : prev));
+      parked.proposal = held;
+      setPending((prev) => (prev ? { ...prev, proposal: held, error: null } : prev));
     } catch (error) {
       if (parkedRef.current !== parked) return;
       const message = error instanceof Error ? error.message : String(error);

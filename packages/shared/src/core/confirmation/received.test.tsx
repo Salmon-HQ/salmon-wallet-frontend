@@ -92,7 +92,8 @@ describe('useRequestReceivedSignature', () => {
     expect(requireBackup).toHaveBeenCalledTimes(1);
     expect(signProposal).toHaveBeenCalledWith(
       ACCOUNT,
-      expect.objectContaining({ source: 'received' })
+      expect.objectContaining({ source: 'received' }),
+      'received'
     );
     expect(view.result.current.ctx.receipt?.signature).toBe('sig-1');
 

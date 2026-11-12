@@ -21,22 +21,29 @@ import type { AnyTransactionProposal, SignedResult } from '../confirmation/types
  * A received proposal (a Solana Pay merchant's transaction, spec 043) is
  * signed as it arrived, in the slot of the address it was requested for.
  *
+ * The path is chosen by `door` — the door core recorded when it parked the
+ * request — never by a property of the proposal, which its author controls.
+ * A proposal whose shape disagrees with its door is refused unsigned.
+ *
  * @param account - The signing account for the proposal's network.
  * @param proposal - The proposal the user confirmed.
+ * @param door - Which entry admitted it; a Powerup's unless core says otherwise.
  * @returns The confirmed signature.
  */
 export async function signProposal(
   account: SolanaBroadcaster,
-  proposal: AnyTransactionProposal
+  proposal: AnyTransactionProposal,
+  door: 'powerup' | 'received' = 'powerup'
 ): Promise<SignedResult> {
-  if ('source' in proposal) {
-    const signature = await sendReceivedSolanaTransaction(
-      account,
-      proposal.transaction,
-      proposal.signer
-    );
+  if (door === 'received') {
+    if (!('source' in proposal) || proposal.source !== 'received') {
+      throw new Error('transaction.errors.proposalKind');
+    }
+    const { transaction, signer } = proposal;
+    const signature = await sendReceivedSolanaTransaction(account, transaction, signer);
     return { signature: String(signature) };
   }
+  if ('source' in proposal) throw new Error('transaction.errors.proposalKind');
   const signature = await signAndSendSolanaTransaction(account, proposal.transaction, {
     feePayer: String(account.signer.address),
     ...proposal.expect,
