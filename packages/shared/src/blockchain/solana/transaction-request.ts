@@ -83,3 +83,110 @@ export function parseTransactionRequestLink(raw: string): TransactionRequestLink
   if (parsed.protocol !== 'https:' || isLocalHost(parsed.hostname)) return malformed;
   return { ok: true, link: { url: parsed.href, host: parsed.hostname } };
 }
+
+export interface MerchantDetails {
+  /** The merchant's own name for itself: a claim, shown beside the domain. */
+  label: string;
+  icon: string;
+  /** `icon` when it is `https:`; `null` draws the placeholder. */
+  iconToRender: string | null;
+  /** The link's host: what the user can actually check. */
+  domain: string;
+}
+
+export interface MerchantTransactionResponse {
+  /** Base64 wire transaction; untrusted until `prepareMerchantTransaction` checked it. */
+  transaction: string;
+  message?: string;
+}
+
+export interface MerchantRequestOptions {
+  signal?: AbortSignal;
+}
+
+const ICON_PATH = /\.(svg|png|webp)$/i;
+
+// The standard asks that the request not identify the wallet or the user:
+// no cookies, no referrer, no wallet-added header beyond what JSON needs.
+const TRANSPORT: RequestInit = {
+  credentials: 'omit',
+  referrerPolicy: 'no-referrer',
+  cache: 'no-store',
+  redirect: 'error',
+};
+
+async function requestJson(link: TransactionRequestLink, init: RequestInit): Promise<unknown> {
+  let response: Response;
+  try {
+    response = await fetch(link.url, { ...TRANSPORT, ...init });
+  } catch {
+    // A network error and a CORS refusal look the same from inside a page.
+    throw new TransactionRequestError('unreachable');
+  }
+  if (!response.ok) throw new TransactionRequestError('merchantError');
+  try {
+    return await response.json();
+  } catch {
+    throw new TransactionRequestError('unreadable');
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function iconUrl(icon: string): URL | null {
+  try {
+    const url = new URL(icon);
+    return (url.protocol === 'https:' || url.protocol === 'http:') && ICON_PATH.test(url.pathname)
+      ? url
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+/** GET: the merchant's label and icon, shown while the payment is prepared. */
+export async function fetchMerchantDetails(
+  link: TransactionRequestLink,
+  { signal }: MerchantRequestOptions = {}
+): Promise<MerchantDetails> {
+  const body = await requestJson(link, {
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+    signal,
+  });
+  if (!isRecord(body) || typeof body.label !== 'string' || !body.label.trim()) {
+    throw new TransactionRequestError('unreadable');
+  }
+  const icon = typeof body.icon === 'string' ? iconUrl(body.icon) : null;
+  if (!icon) throw new TransactionRequestError('malformedIcon');
+  return {
+    label: body.label.trim(),
+    icon: body.icon as string,
+    iconToRender: icon.protocol === 'https:' ? (body.icon as string) : null,
+    domain: link.host,
+  };
+}
+
+/** POST `{"account"}`: the transaction the merchant built for that address. */
+export async function fetchMerchantTransaction(
+  link: TransactionRequestLink,
+  account: string,
+  { signal }: MerchantRequestOptions = {}
+): Promise<MerchantTransactionResponse> {
+  const body = await requestJson(link, {
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ account }),
+    signal,
+  });
+  if (!isRecord(body) || typeof body.transaction !== 'string' || !body.transaction) {
+    throw new TransactionRequestError('unreadable');
+  }
+  // Every other field, `redirect` included, is ignored: following it would
+  // open a page the merchant chose from inside the wallet.
+  return typeof body.message === 'string' && body.message
+    ? { transaction: body.transaction, message: body.message }
+    : { transaction: body.transaction };
+}
