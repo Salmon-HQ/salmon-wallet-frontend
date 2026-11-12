@@ -28,9 +28,9 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
-      // Ratchet: floors sit just under the measured coverage (2026-09-09) and
+      // Ratchet: floors sit just under the measured coverage (2026-11-12) and
       // only ever move up. A PR that drops below fails CI.
-      thresholds: { statements: 81, branches: 71, functions: 78, lines: 83 },
+      thresholds: { statements: 84, branches: 76, functions: 82, lines: 87 },
     },
   },
 });

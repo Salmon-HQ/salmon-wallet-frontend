@@ -16,9 +16,9 @@ module.exports = {
     '^@salmon/shared/powerups$': '<rootDir>/../../packages/shared/src/powerups',
   },
   testPathIgnorePatterns: ['/node_modules/', '/.expo/'],
-  // Ratchet: floors sit just under the measured coverage (2026-09-09) and
+  // Ratchet: floors sit just under the measured coverage (2026-11-12) and
   // only ever move up. A PR that drops below fails CI.
   coverageThreshold: {
-    global: { statements: 75, branches: 64, functions: 65, lines: 77 },
+    global: { statements: 80, branches: 69, functions: 71, lines: 81 },
   },
 };
