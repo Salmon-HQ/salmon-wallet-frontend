@@ -219,8 +219,19 @@ export default [
   // door is `requestSignature` from core/confirmation, which renders Salmon's
   // confirmation and only then signs and broadcasts. `packages/shared/src/
   // powerups/boundary.test.ts` asserts this block fires on a fixture.
+  //
+  // A Powerup's screens live outside `powerups/`: each app's Powerups entry
+  // registers them (mobile `src/powerups/index.ts`, the kit `src/powerups.ts`,
+  // the extension `pages/home/powerupBodies.tsx`), so they are listed here.
   {
-    files: ['packages/shared/src/powerups/**/*.{ts,tsx}'],
+    files: [
+      '**/powerups/**/*.{ts,tsx}',
+      'packages/ui/src/powerups.ts',
+      'packages/ui/src/components/{PowerupsPage,MemoPage,SwapPage,SkrPage,PaymentsPage}/**/*.{ts,tsx}',
+      'apps/mobile/src/screens/{MemoTab,PaymentsTab,SwapTab,SkrTab}.tsx',
+      'apps/mobile/src/components/PowerupsCatalog/**/*.{ts,tsx}',
+      'apps/extension/src/pages/home/powerupBodies.tsx',
+    ],
     ignores: ['**/*.test.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
@@ -237,6 +248,8 @@ export default [
                 // sign bytes no declaration describes (spec 043).
                 '**/core/confirmation/received',
                 '**/hooks/useSolanaPayTransactionRequest',
+                '**/SolanaPayRequestSheet',
+                '**/SolanaPayRequestSheet/**',
                 '**/crypto',
                 '**/crypto/**',
                 '**/storage',
@@ -260,6 +273,14 @@ export default [
                 'useSolanaPayTransactionRequest',
                 'useSolanaPayRequest',
               ],
+              message:
+                'A Powerup never signs bytes it did not declare: propose through requestSignature() from core/confirmation (spec 043).',
+            },
+            {
+              // The merchant flow's twin mounts that door: not through a
+              // components barrel (the app's, the kit's, a parent) either.
+              regex: '(^|/)components(/index)?$|^@salmon/ui$|^\\.\\.?(/\\.\\.)*(/index)?$',
+              importNames: ['SolanaPayRequest', 'SolanaPayRequestSheet'],
               message:
                 'A Powerup never signs bytes it did not declare: propose through requestSignature() from core/confirmation (spec 043).',
             },

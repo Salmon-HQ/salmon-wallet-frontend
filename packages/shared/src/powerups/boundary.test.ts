@@ -15,9 +15,9 @@ import path from 'node:path';
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../..');
 const FIXTURE_PATH = path.join(REPO_ROOT, 'packages/shared/src/powerups/__fixtures__/probe.ts');
 
-async function lint(code: string) {
+async function lint(code: string, filePath = FIXTURE_PATH) {
   const eslint = new ESLint({ cwd: REPO_ROOT });
-  const [result] = await eslint.lintText(code, { filePath: FIXTURE_PATH });
+  const [result] = await eslint.lintText(code, { filePath });
   return result.messages.map((message) => message.ruleId);
 }
 
@@ -76,5 +76,35 @@ describe('powerups boundary', () => {
       ].join('\n')
     );
     expect(rules).toEqual([]);
+  });
+
+  // A Powerup's screens live outside `powerups/` (each app registers them
+  // from its Powerups entry), and they hold the same boundary.
+  it.each([
+    [
+      'apps/mobile/src/screens/SwapTab.tsx',
+      "import { useSolanaPayRequest } from '@salmon/shared';",
+    ],
+    [
+      'apps/mobile/src/screens/PaymentsTab.tsx',
+      "import { SolanaPayRequest } from '../components';",
+    ],
+    [
+      'apps/mobile/src/components/PowerupsCatalog/PowerupsCatalog.tsx',
+      "import { signProposal } from '@salmon/shared/core/signing';",
+    ],
+    [
+      'packages/ui/src/components/SwapPage/SwapPage.tsx',
+      "import { SolanaPayRequest } from '../SolanaPayRequestSheet';",
+    ],
+    ['packages/ui/src/components/MemoPage/MemoPage.tsx', "import { SolanaPayRequest } from '..';"],
+    ['packages/ui/src/powerups.ts', "import { SolanaPayRequest } from './components';"],
+    [
+      'apps/extension/src/pages/home/powerupBodies.tsx',
+      "import { SolanaPayRequest } from '@salmon/ui';",
+    ],
+  ])('fails in %s on %s', async (file, code) => {
+    const rules = await lint(`${code}\nexport {};`, path.join(REPO_ROOT, file));
+    expect(rules).toContain('no-restricted-imports');
   });
 });
