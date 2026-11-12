@@ -43,6 +43,7 @@ export {
   fetchMerchantDetails,
   fetchMerchantTransaction,
   parseTransactionRequestLink,
+  setMerchantFetch,
 } from './transaction-request';
 export type {
   TransactionRequestLink,

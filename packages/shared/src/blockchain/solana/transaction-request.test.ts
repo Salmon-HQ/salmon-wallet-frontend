@@ -3,6 +3,7 @@ import {
   fetchMerchantDetails,
   fetchMerchantTransaction,
   parseTransactionRequestLink,
+  setMerchantFetch,
   TransactionRequestError,
   type TransactionRequestLink,
 } from './transaction-request';
@@ -29,6 +30,7 @@ function mockFetch(response: Response) {
 }
 
 afterEach(() => {
+  setMerchantFetch(null);
   vi.unstubAllGlobals();
   vi.useRealTimers();
 });
@@ -360,6 +362,12 @@ describe('parseTransactionRequestLink', () => {
     ['an IPv6 literal', 'solana:https://[::1]/pay'],
     ['localhost', 'solana:https://localhost/pay'],
     ['a localhost subdomain', 'solana:https://shop.localhost/pay'],
+    ['localhost with a trailing dot', 'solana:https://localhost./pay'],
+    ['a localhost subdomain with a trailing dot', 'solana:https://shop.localhost./pay'],
+    ['a .local name', 'solana:https://printer.local/pay'],
+    ['a .local name with a trailing dot', 'solana:https://printer.local./pay'],
+    ['a single-label name', 'solana:https://router/pay'],
+    ['a single-label name with a trailing dot', 'solana:https://router./pay'],
     ['an undecodable percent sequence', 'solana:https%3A%2F%2Fmerchant.example%2Fpay%E0%A4%A'],
     ['no web address at all', 'solana:https%3A'],
     ['not a solana link', 'https://merchant.example/pay'],
@@ -373,5 +381,67 @@ describe('parseTransactionRequestLink', () => {
       ok: true,
       link: { url: 'https://xn--bcher-kva.example/pay', host: 'xn--bcher-kva.example' },
     });
+  });
+});
+
+// Merchant text is drawn on the wallet's own screens: it stays short and
+// carries no control or direction-changing characters (a right-to-left
+// override can make a label read as something else).
+const RLO = '\u202e';
+const BELL = '\u0007';
+
+describe('merchant text the wallet shows', () => {
+  it('cuts the label to 64 characters', async () => {
+    mockFetch(jsonResponse({ ...DETAILS_BODY, label: 'L'.repeat(100) }));
+    expect((await fetchMerchantDetails(LINK)).label).toBe('L'.repeat(64));
+  });
+
+  it('strips control and bidi characters from the label', async () => {
+    mockFetch(jsonResponse({ ...DETAILS_BODY, label: `Corner${RLO} Café${BELL}\n` }));
+    expect((await fetchMerchantDetails(LINK)).label).toBe('Corner Café');
+  });
+
+  it('a label made only of control characters is unreadable', async () => {
+    mockFetch(jsonResponse({ ...DETAILS_BODY, label: `${RLO}${BELL}` }));
+    expect(await refusal(fetchMerchantDetails(LINK))).toEqual({ reason: 'unreadable' });
+  });
+
+  it('cuts the message to 256 characters and strips control and bidi characters', async () => {
+    mockFetch(
+      jsonResponse({ transaction: 'AQID', message: `${RLO}Order${BELL} ${'m'.repeat(300)}` })
+    );
+    const { message } = await fetchMerchantTransaction(LINK, ACCOUNT);
+    expect(message).toBe(`Order ${'m'.repeat(250)}`);
+  });
+
+  it("strips control and bidi characters from the merchant's error words", async () => {
+    mockFetch(jsonResponse({ message: `Out of${RLO} stock${BELL}` }, { status: 409 }));
+    expect(await refusal(fetchMerchantTransaction(LINK, ACCOUNT))).toEqual({
+      reason: 'merchantError',
+      merchantMessage: 'Out of stock',
+    });
+  });
+});
+
+describe('a platform fetch for merchant requests', () => {
+  // Mobile hands in `expo/fetch`, which honours `redirect: 'error'` where
+  // React Native's own fetch follows every redirect.
+  it('carries both requests, with redirects refused', async () => {
+    const globalFetch = mockFetch(jsonResponse(DETAILS_BODY));
+    const platform = vi.fn(async (_url: string, _init?: RequestInit) => {
+      const response = jsonResponse({ ...DETAILS_BODY, transaction: 'AQID' });
+      Object.defineProperty(response, 'url', { value: LINK.url });
+      return response;
+    });
+    setMerchantFetch(platform as unknown as typeof fetch);
+
+    await fetchMerchantDetails(LINK);
+    await fetchMerchantTransaction(LINK, ACCOUNT);
+
+    expect(globalFetch).not.toHaveBeenCalled();
+    expect(platform.mock.calls.map(([, init]) => [init?.method, init?.redirect])).toEqual([
+      ['GET', 'error'],
+      ['POST', 'error'],
+    ]);
   });
 });

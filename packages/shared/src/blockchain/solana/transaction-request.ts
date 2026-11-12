@@ -74,15 +74,20 @@ const IPV4 = /^\d{1,3}(\.\d{1,3}){3}$/;
 
 /**
  * A QR must not make the wallet post the user's address to a device on the
- * local network, so literal addresses and `localhost` are refused. A public
- * name that resolves to a private address is not covered.
+ * local network, so literal addresses, `localhost`, `.local` (mDNS) and
+ * single-label names (resolved on the local network) are refused, with or
+ * without the trailing dot of a fully qualified name. A public name that
+ * resolves to a private address is not covered.
  */
 function isLocalHost(hostname: string): boolean {
+  const name = hostname.endsWith('.') ? hostname.slice(0, -1) : hostname;
   return (
-    hostname.startsWith('[') ||
-    IPV4.test(hostname) ||
-    hostname === 'localhost' ||
-    hostname.endsWith('.localhost')
+    name.startsWith('[') ||
+    IPV4.test(name) ||
+    !name.includes('.') ||
+    name === 'localhost' ||
+    name.endsWith('.localhost') ||
+    name.endsWith('.local')
   );
 }
 
@@ -135,6 +140,32 @@ const ICON_PATH = /\.(svg|png|webp)$/i;
 const TIMEOUT_MS = 10_000;
 const MAX_BODY_BYTES = 64 * 1024;
 const MERCHANT_MESSAGE_CHARS = 80;
+const LABEL_CHARS = 64;
+const MESSAGE_CHARS = 256;
+
+/**
+ * Control characters (Cc) and the Unicode bidi controls: a right-to-left
+ * override inside a merchant's text can make it read as something else.
+ */
+const UNSAFE_CHARACTERS =
+  // eslint-disable-next-line no-control-regex -- matching control characters is the point
+  /[\u0000-\u001F\u007F-\u009F\u061C\u200E\u200F\u202A-\u202E\u2066-\u2069]/g;
+
+/** Merchant text as the wallet shows it: plain, trimmed, at most `max` characters. */
+function merchantText(text: string, max: number): string {
+  return [...text.replace(UNSAFE_CHARACTERS, '').trim()].slice(0, max).join('').trim();
+}
+
+let merchantFetch: typeof fetch | null = null;
+
+/**
+ * The platform's fetch for merchant requests, when the global one does not
+ * honour `redirect: 'error'` (React Native's follows every redirect; mobile
+ * hands in `expo/fetch`). `null` goes back to the global fetch.
+ */
+export function setMerchantFetch(fetchImpl: typeof fetch | null): void {
+  merchantFetch = fetchImpl;
+}
 
 /**
  * The standard asks that the request not identify the wallet or the user:
@@ -209,8 +240,8 @@ async function readCapped(response: Response): Promise<string> {
 function merchantWords(text: string): string | undefined {
   try {
     const body: unknown = JSON.parse(text);
-    if (isRecord(body) && typeof body.message === 'string' && body.message.trim()) {
-      return [...body.message.trim()].slice(0, MERCHANT_MESSAGE_CHARS).join('');
+    if (isRecord(body) && typeof body.message === 'string') {
+      return merchantText(body.message, MERCHANT_MESSAGE_CHARS) || undefined;
     }
   } catch {
     // Not JSON: the merchant said nothing the wallet can show.
@@ -231,7 +262,7 @@ async function requestJson(
   try {
     let response: Response;
     try {
-      response = await fetch(link.url, {
+      response = await (merchantFetch ?? fetch)(link.url, {
         ...transport(method),
         ...init,
         method,
@@ -284,13 +315,13 @@ export async function fetchMerchantDetails(
   { signal }: MerchantRequestOptions = {}
 ): Promise<MerchantDetails> {
   const body = await requestJson(link, 'GET', { headers: { Accept: 'application/json' } }, signal);
-  if (!isRecord(body) || typeof body.label !== 'string' || !body.label.trim()) {
-    throw new TransactionRequestError('unreadable');
-  }
+  const label =
+    isRecord(body) && typeof body.label === 'string' ? merchantText(body.label, LABEL_CHARS) : '';
+  if (!isRecord(body) || !label) throw new TransactionRequestError('unreadable');
   const icon = typeof body.icon === 'string' ? iconUrl(body.icon) : null;
   if (!icon) throw new TransactionRequestError('malformedIcon');
   return {
-    label: body.label.trim(),
+    label,
     icon: body.icon as string,
     iconToRender: icon.protocol === 'https:' ? (body.icon as string) : null,
     domain: link.host,
@@ -317,7 +348,6 @@ export async function fetchMerchantTransaction(
   }
   // Every other field, `redirect` included, is ignored: following it would
   // open a page the merchant chose from inside the wallet.
-  return typeof body.message === 'string' && body.message
-    ? { transaction: body.transaction, message: body.message }
-    : { transaction: body.transaction };
+  const message = typeof body.message === 'string' ? merchantText(body.message, MESSAGE_CHARS) : '';
+  return message ? { transaction: body.transaction, message } : { transaction: body.transaction };
 }
