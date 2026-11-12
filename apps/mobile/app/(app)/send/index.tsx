@@ -376,10 +376,10 @@ export default function SendRecipientScreen() {
         }}
       />
 
-      {merchantLink && account && (
+      {merchantLink && (
         <SolanaPayRequest
           link={merchantLink}
-          account={account}
+          account={account ?? null}
           onDone={() => router.replace('/')}
           onCancel={() => setMerchantLink(null)}
         />

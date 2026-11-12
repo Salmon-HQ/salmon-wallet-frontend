@@ -8,8 +8,8 @@ import type { BlockchainAccount } from '../blockchain';
  */
 export interface SolanaPayRequestPropsBase {
   link: TransactionRequestLink;
-  /** The account that pays: the active one. */
-  account: BlockchainAccount;
+  /** The account that pays: the active one; `null` is refused on the sheet. */
+  account: BlockchainAccount | null;
   /** The receipt was dismissed: the payment is done, the Send flow closes. */
   onDone: () => void;
   /** The user left (sheet closed, review cancelled, or it failed and was closed). */

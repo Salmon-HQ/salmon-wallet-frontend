@@ -15,6 +15,7 @@ const mockReadSettledPaymentLink = jest.fn();
 const mockStartFromRequest = jest.fn();
 const mockAccount = { getReceiveAddress: () => 'Sender1111111111111111111111111111111111111' };
 const LINK = { url: 'https://merchant.example/pay', host: 'merchant.example' };
+let mockFlowAccount: unknown = mockAccount;
 
 let mockScanHandler: ((result: unknown) => void) | null = null;
 let mockScannerProps: Record<string, unknown> = {};
@@ -107,7 +108,7 @@ jest.mock('../../src/components', () => {
 
 jest.mock('../../src/contexts/SendFlowContext', () => ({
   useSendFlow: () => ({
-    account: mockAccount,
+    account: mockFlowAccount,
     blockchain: 'solana',
     networkId: 'solana-mainnet',
     recipient: null,
@@ -139,6 +140,7 @@ beforeEach(() => {
   mockScanHandler = null;
   mockScannerProps = {};
   mockMerchantProps = null;
+  mockFlowAccount = mockAccount;
 });
 afterEach(() => jest.useRealTimers());
 
@@ -162,6 +164,16 @@ describe('the Send recipient screen — a Solana Pay transaction request', () =>
     expect(mockMerchantProps?.link).toEqual(LINK);
     expect(mockMerchantProps?.account).toBe(mockAccount);
     expect(mockStartFromRequest).not.toHaveBeenCalled();
+  });
+
+  // The flow refuses an account that cannot pay and says so; the screen must
+  // not swallow the scan by rendering nothing.
+  it('opens the merchant flow even without an active account, so it can say why', () => {
+    mockFlowAccount = null;
+    render(<SendRecipientScreen />);
+    act(() => mockScanHandler?.({ data: 'x', address: '', transactionRequest: LINK }));
+    expect(screen.getByTestId('solana-pay-request')).toBeTruthy();
+    expect(mockMerchantProps?.account).toBeNull();
   });
 
   it('a pasted one opens the merchant flow and clears the field', () => {
