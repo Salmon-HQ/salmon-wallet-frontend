@@ -17,10 +17,15 @@ import {
   getCompiledTransactionMessageEncoder,
   getSignatureFromTransaction,
   getTransactionDecoder,
+  isSolanaError,
 } from '@solana/kit';
 import type { Blockhash, Commitment, Signature, TransactionMessageBytes } from '@solana/kit';
 import { signTransactionWith, type SolanaSigner } from '../../blockchain/solana/signing';
-import { confirmSolanaSignature, sendExpectingOutcome } from '../../blockchain/solana/confirm';
+import {
+  confirmSolanaSignature,
+  sendExpectingOutcome,
+  SolanaOutcomeUnknownError,
+} from '../../blockchain/solana/confirm';
 import type { SolanaRpc, SolanaRpcSubscriptions } from '../../blockchain/solana/networks';
 import { TransactionRequestError } from '../../blockchain/solana/transaction-request';
 import { assertReceivedTransactionSignable } from '../../blockchain/solana/transaction-request-checks';
@@ -185,6 +190,9 @@ export async function sendReceivedSolanaTransaction(
     .isBlockhashValid(lifetimeToken as Blockhash, { commitment })
     .send();
   if (!valid) throw new TransactionRequestError('expired');
+  // Asked before the send: once the bytes may be on their way, no read may
+  // fail as a plain error, or the host would offer a second payment.
+  const blockHeight = await rpc.getBlockHeight({ commitment }).send();
 
   const signed = await signTransactionWith(account.signer, decoded);
 
@@ -200,13 +208,19 @@ export async function sendReceivedSolanaTransaction(
     getSignatureFromTransaction(signed)
   );
 
-  const blockHeight = await rpc.getBlockHeight({ commitment }).send();
-  await confirmSolanaSignature(
-    { rpc, rpcSubscriptions: account.getRpcSubscriptions() },
-    signature,
-    blockHeight + RECEIVED_LIFETIME_BLOCKS,
-    { commitment }
-  );
+  try {
+    await confirmSolanaSignature(
+      { rpc, rpcSubscriptions: account.getRpcSubscriptions() },
+      signature,
+      blockHeight + RECEIVED_LIFETIME_BLOCKS,
+      { commitment }
+    );
+  } catch (error) {
+    // The chain's own verdict (failed, expired) is final; anything else after
+    // the send says nothing about whether the payment landed.
+    if (error instanceof SolanaOutcomeUnknownError || isSolanaError(error)) throw error;
+    throw new SolanaOutcomeUnknownError(signature);
+  }
 
   return signature;
 }

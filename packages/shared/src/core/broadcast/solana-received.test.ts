@@ -181,4 +181,44 @@ describe('sendReceivedSolanaTransaction', () => {
       sendReceivedSolanaTransaction(account(createRpc()), wire, user.address)
     ).rejects.toBeInstanceOf(SolanaOutcomeUnknownError);
   });
+
+  // A lost answer after the broadcast must never read as a retryable failure:
+  // the host would offer Confirm again and the merchant's next transaction
+  // would be a second payment.
+  it('asks for the block height before sending, so its failure sends nothing', async () => {
+    const wire = await sponsoredMerchantTransaction({
+      version: 0,
+      sponsor,
+      user: user.address,
+      merchant: merchant.address,
+    });
+    const rpc = createRpc();
+    rpc.getBlockHeight.mockReturnValue({
+      send: async () => {
+        throw new Error('HTTP 429');
+      },
+    });
+
+    await expect(sendReceivedSolanaTransaction(account(rpc), wire, user.address)).rejects.toThrow(
+      'HTTP 429'
+    );
+    expect(rpc.sendTransaction).not.toHaveBeenCalled();
+  });
+
+  it('turns any other failure after the broadcast into an unknown outcome', async () => {
+    const wire = await sponsoredMerchantTransaction({
+      version: 0,
+      sponsor,
+      user: user.address,
+      merchant: merchant.address,
+    });
+    const rpc = createRpc();
+    confirmMock.mockRejectedValueOnce(new Error('socket closed'));
+
+    const sending = sendReceivedSolanaTransaction(account(rpc), wire, user.address);
+
+    await expect(sending).rejects.toBeInstanceOf(SolanaOutcomeUnknownError);
+    await expect(sending).rejects.toMatchObject({ signature: expect.any(String) });
+    expect(rpc.sendTransaction).toHaveBeenCalledTimes(1);
+  });
 });
