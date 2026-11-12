@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-12
 
-**Status**: Draft, three questions for the tester open (see §Open questions)
+**Status**: Draft, clarified 2026-11-12
 
 **Input**: Linear DEV-209. "A tester paid with Solana Pay at a merchant using Kora (a service that pays the network fee for the user) and it failed: Salmon rejects Solana Pay transaction requests (`solana:https://…`) with 'This kind of payment request is not supported yet'; spec 033 supports only transfer requests (`solana:<address>?amount=…`). With Kora the merchant can only use transaction requests: the transaction comes from the merchant server already signed by Kora as fee payer, and the wallet must add the user's signature without touching Kora's. Build: read the link, fetch the merchant's label and icon, send the user's address, receive the transaction, review it as untrusted, sign only the user's slot, keep Kora's signature, send it."
 
@@ -15,6 +15,17 @@ Solana Pay has two kinds of request. A **transfer request** names a recipient, a
 Merchants that use a fee sponsor such as Kora can only use the second kind, because the sponsor has to put its own signature on the transaction before the wallet sees it: the merchant's server builds the transaction, the sponsor signs as the account that pays the network fee, and the wallet adds the user's signature next to it. A tester hit exactly this at a merchant and the payment failed. Every point-of-sale that charges the user nothing in network fees, and every merchant flow that needs more than a plain transfer (loyalty, receipts as tokens, multi-party splits), goes through transaction requests, so a wallet that refuses them is locked out of a large part of Solana Pay.
 
 A transaction that a server hands the wallet is untrusted by definition: the merchant decides what it does. So this feature reuses the protection the wallet already gives a website that asks it to sign (a dApp transaction): a simulation of what the transaction does, a summary of what leaves the wallet, the same risk warnings, and a signature that fills only the user's own slot and leaves every other signature untouched.
+
+## Clarifications
+
+### Session 2026-11-12
+
+The owner's rule for this session: "Hay que asumir lo que la documentación indica." Each answer below is what the Solana Pay specification (version 1.1) or Kora's own guide says.
+
+- Q: In what order do the fee sponsor and the user sign? → A: The Solana Pay order. The merchant's server returns the transaction with the sponsor (Kora) already signed; the wallet signs last. A transaction that carries signatures and still expects one from anyone other than the user is rejected as unsafe (FR-014 stays). This works with Kora: its `signTransaction` call signs and returns the transaction without sending it, so a merchant can have Kora sign before answering the wallet.
+- Q: Who sends the signed transaction to the network? → A: The wallet, as FR-020 says. The specification's transaction-request flow ends with the wallet broadcasting and reading the confirmation; it defines no way to hand the signed transaction back to the merchant.
+- Q: Is there a test merchant? → A: Salmon stands up its own devnet merchant endpoint following Kora's guide (https://solana.com/docs/tools/kora/guides/full-demo). It serves a sponsored and an unsponsored transaction and every failure case of User Story 2. It is a development tool kept in the repository's scripts and never shipped; the plan says where and how it runs.
+- Q: Who writes the Spanish copy (FR-022)? → A: The implementer writes both languages; the owner reviews the copy in the pull request like any other change.
 
 ## User Scenarios & Testing _(mandatory)_
 
@@ -104,7 +115,7 @@ A watch-only account (one the wallet only observes, with no key) opens a transac
 - The link is percent-encoded (`solana:https%3A%2F%2F…`) because it carries its own query string: the wallet decodes it once, keeps the merchant's query parameters, and sends them on both requests.
 - The merchant's details arrive but the transaction request fails: the wallet shows the merchant it tried to pay and the failure, so the user knows which counter to talk to.
 - The server's answer carries fields beyond `transaction` and `message`: the wallet ignores them.
-- The user's account is on mainnet but the merchant's transaction targets devnet (or the reverse): the simulation fails against the active network and the review blocks it; the wallet never switches network on its own.
+- The user's account is on mainnet but the merchant's transaction targets devnet (or the reverse): the transaction's recent blockhash is unknown to the active network, so the wallet refuses it before review; the wallet never switches network on its own.
 - The transaction uses address lookup tables (the v0 format): the wallet resolves them for the review the same way it does for dApp transactions, and refuses if they cannot be resolved.
 - The merchant's transaction creates a token account for which the user pays rent (a refundable deposit the network charges to open an account): the review shows it as SOL leaving the user, even when a sponsor pays the network fee.
 - The same link is opened twice: each opening is a fresh request to the merchant; the wallet keeps no record of past transaction requests beyond Activity.
@@ -134,7 +145,7 @@ A watch-only account (one the wallet only observes, with no key) opens a transac
 **Checking the transaction**
 
 - **FR-010**: The wallet MUST read both transaction formats, legacy and v0, including v0 address lookup tables.
-- **FR-011**: If the transaction carries no signatures, the wallet MUST set the user's account as fee payer and a fresh recent blockhash before review.
+- **FR-011**: If the transaction carries no signatures, the wallet MUST set the user's account as fee payer and a fresh recent blockhash before review. If the transaction still expects a signature from anyone but the user after that, the wallet MUST refuse it, because no one else will sign it.
 - **FR-012**: If the transaction carries any signature, the wallet MUST NOT change its fee payer, recent blockhash or any instruction, and MUST verify every signature present; one that does not verify MUST make the request malformed.
 - **FR-013**: The wallet MUST sign only with the account it sent in FR-008, and only if the transaction expects that account's signature. A transaction that does not expect it MUST be refused.
 - **FR-014**: If the transaction carries signatures and any signature other than the user's is still missing, the wallet MUST reject it as unsafe and MUST NOT sign.
@@ -146,7 +157,7 @@ A watch-only account (one the wallet only observes, with no key) opens a transac
 - **FR-017**: Signing MUST fill only the user's signature slot and MUST keep every other signature exactly as received.
 - **FR-018**: Before signing, the wallet MUST pass the recovery-phrase confirmation gate that guards every first outgoing transaction of a new wallet.
 - **FR-019**: If the transaction's recent blockhash has expired by the time the user confirms, the wallet MUST request the transaction again from the merchant; if what the review shows changes, it MUST show the new review and ask again; if the merchant cannot be reached, it MUST say the payment expired.
-- **FR-020**: After signing, the wallet MUST send the transaction to the network itself and show the usual wait, confirmation and receipt; the payment MUST appear in Activity [NEEDS CLARIFICATION: does the tester's merchant expect the wallet to send the signed transaction to the network (assumed, the usual practice), or to hand it back to the merchant's server to send?].
+- **FR-020**: After signing, the wallet MUST send the transaction to the network itself and show the usual wait, confirmation and receipt; the payment MUST appear in Activity. The wallet never hands the signed transaction to the merchant or to anyone other than the network.
 
 **Both surfaces**
 
@@ -174,19 +185,11 @@ A watch-only account (one the wallet only observes, with no key) opens a transac
 
 ## Assumptions
 
-- **Signing order: the sponsor signs first.** The Solana Pay standard delivers the transaction from the merchant's server, so a sponsor's signature can only be on it before the wallet signs; the wallet adds the user's signature last. Kora's own guide shows a user-first order, in which the client signs and the sponsor signs afterwards. A transaction that arrives with the sponsor's slot empty is, by the standard's rule, rejected as unsafe (FR-014), so the tester's setup decides whether this feature works for them out of the box [NEEDS CLARIFICATION: does the tester's merchant have its Kora node sign before the transaction reaches the wallet (Solana Pay order), or does it expect the user to sign first and Kora after, as Kora's guide shows?].
-- **The wallet submits the transaction.** This is the usual practice for Solana Pay transaction requests and the wallet's own behaviour everywhere else; it is unverified for the tester's merchant (see FR-020).
-- **A test merchant is needed.** Building and verifying the flow requires a merchant endpoint on devnet that returns sponsored and unsponsored transactions and each failure case in User Story 2 [NEEDS CLARIFICATION: is there a test QR or merchant from the tester, or do we stand up our own devnet endpoint following Kora's guide?].
+- **Signing order: the sponsor signs first.** The Solana Pay standard delivers the transaction from the merchant's server, so a sponsor's signature can only be on it before the wallet signs; the wallet adds the user's signature last. Kora supports this order: its `signTransaction` call signs as fee payer and returns the transaction without sending it. A transaction that arrives with signatures and with any slot other than the user's still empty is rejected as unsafe (FR-014).
+- **The wallet submits the transaction.** The standard's transaction-request flow ends with the wallet broadcasting it; the wallet does the same for every other transaction it signs.
+- **A devnet test merchant is part of the work.** Building and verifying the flow uses Salmon's own devnet merchant endpoint, set up from Kora's guide, that returns sponsored and unsponsored transactions and each failure case in User Story 2. It is a development tool and never ships in either app.
 - **Same risk class as a dApp transaction.** The review reuses the simulation, the asset summary, the foreign-fee-payer handling and the warnings the wallet already applies when a website asks it to sign; the merchant gets no extra trust for arriving through a QR.
 - **The merchant's domain is what the user can check.** Solana Pay offers no merchant verification beyond the HTTPS address; the wallet shows the domain and does not claim the merchant is who its label says.
 - **No record of requests.** The wallet stores nothing about a transaction request beyond the transaction in Activity, as with any send.
-- **Known risk: sponsored payments have their own failure modes.** A Solana Foundation pull request removed Kora sponsorship from its own `/pay` flow citing three problems: transactions built for the wrong network, rent for new token accounts charged to the payer even though the sponsor pays the fee, and floods of transactions that touch a payment's reference account (https://github.com/solana-foundation/solana-developer-platform/pull/2467). The first two are what the simulation and the asset summary are for (wrong network fails simulation; rent shows as SOL leaving the user); the third is a merchant-side settlement problem the wallet cannot see.
+- **Known risk: sponsored payments have their own failure modes.** A Solana Foundation pull request removed Kora sponsorship from its own `/pay` flow citing three problems: transactions built for the wrong network, rent for new token accounts charged to the payer even though the sponsor pays the fee, and floods of transactions that touch a payment's reference account (https://github.com/solana-foundation/solana-developer-platform/pull/2467). The first two are what the simulation and the asset summary are for (a transaction for another network is refused because its blockhash is unknown on the active one; rent shows as SOL leaving the user); the third is a merchant-side settlement problem the wallet cannot see.
 - **Out of scope**: a link handler that opens `solana:` links from other apps or web pages (the capture paths are camera and paste, as in spec 033), merchant allow-lists or reputation, returning a signed transaction to anyone other than the network, and charging any Salmon fee.
-
-## Open questions
-
-For the tester, through the owner. They decide whether the first version works at the tester's merchant, not the shape of the feature.
-
-1. **Signing order** (§Assumptions): does the merchant's Kora node sign before the wallet, or after?
-2. **Who sends the transaction** (FR-020): the wallet, or the merchant's server?
-3. **Test merchant** (§Assumptions): is there a test QR or merchant, or do we build our own devnet endpoint?

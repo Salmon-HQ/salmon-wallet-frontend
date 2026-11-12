@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain
+- [x] No [NEEDS CLARIFICATION] markers remain
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -31,5 +31,5 @@
 
 ## Notes
 
-- Three [NEEDS CLARIFICATION] markers remain on purpose: signing order, who submits, and the test merchant. Only the tester can answer them; resolve via `/speckit-clarify` before `/speckit-plan`.
+- The three open questions (signing order, who submits, test merchant) were resolved on 2026-11-12 by the owner's rule to follow the documentation; see the spec's §Clarifications. The Spanish copy is written by the implementer.
 - The Solana Pay wire shapes (`{"account"}`, `{"transaction","message"}`, `label`/`icon`) stay in the spec because they are the external contract the feature must honour, not an implementation choice.
