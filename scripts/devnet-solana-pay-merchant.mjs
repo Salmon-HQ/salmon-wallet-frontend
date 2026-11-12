@@ -138,10 +138,15 @@ async function merchantTransaction(
       appendTransactionMessageInstructions(
         [
           getTransferSolInstruction({ source: user, destination: MERCHANT, amount: lamports }),
-          getAddMemoInstruction({
-            memo: `salmon-devnet-${Date.now()}`,
-            signers: cosign ? [sponsor.signer] : [],
-          }),
+          getAddMemoInstruction(
+            {
+              memo: `salmon-devnet-${Date.now()}`,
+              signers: cosign ? [sponsor.signer] : [],
+            },
+            // The package defaults to Memo v4, which Salmon's preview does not
+            // read; real merchants use SPL Memo v3, so the review stays clean.
+            { programAddress: address('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr') }
+          ),
         ],
         m
       )
