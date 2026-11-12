@@ -11,6 +11,7 @@
     "nfts": "NFTs"
   },
   "general": {
+    "hold_to_confirm": "Mantené para confirmar",
     "address": "Dirección",
     "name_or_address": "Nombre o Dirección \"{{token}}\"",
     "seed_phrase": "Seed-phrase",

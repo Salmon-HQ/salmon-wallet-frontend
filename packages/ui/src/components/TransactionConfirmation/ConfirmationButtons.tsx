@@ -35,7 +35,7 @@ export function ConfirmationButtons({
           loading={isRefreshing}
           disabled={isRefreshing || confirmDisabled}
         >
-          {label}
+          {t('general.hold_to_confirm')}
         </HoldToApproveButton>
       ) : (
         <PrimaryButton
