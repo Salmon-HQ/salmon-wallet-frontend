@@ -27,6 +27,13 @@ The owner's rule for this session: "Hay que asumir lo que la documentación indi
 - Q: Is there a test merchant? → A: Salmon stands up its own devnet merchant endpoint following Kora's guide (https://solana.com/docs/tools/kora/guides/full-demo). It serves a sponsored and an unsponsored transaction and every failure case of User Story 2. It is a development tool kept in the repository's scripts and never shipped; the plan says where and how it runs.
 - Q: Who writes the Spanish copy (FR-022)? → A: The implementer writes both languages; the owner reviews the copy in the pull request like any other change.
 
+Owner decisions on the plan (2026-11-12):
+
+- Q: Is the UI in `contracts/ui-contracts.md` approved? → A: Yes, as planned: the new `SolanaPayRequestSheet`, the merchant row on the core confirmation screen, the extension's confirmation screen gaining hold-to-confirm and a disabled confirm, the removal of "This kind of payment request is not supported yet", and the redirect message in the scanner and the NFT send ("This is a payment link. Open it from Send.").
+- Q: Does the extension get a broad host permission so it can reach any merchant? → A: No. Only merchants that send CORS headers (`Access-Control-Allow-Origin`, and the preflight for the JSON POST) can be paid from the extension; mobile has no such limit. A browser reports a CORS refusal exactly like a network error, so the extension shows the generic "the merchant could not be reached" message for both; no permission is added and `check:manifest` must show no change.
+- Q: Does the owner sign off on changing the signing path in `packages/shared/src/core`? → A: Yes, on the owner's condition: "testea antes y después para ver que no se haya roto nada". The full check suite runs on the untouched branch before any change and again at the end; no test that passed before may fail or disappear, and the existing dApp, MWA and Send signing tests must pass with their files unchanged.
+- Q: Who writes the Spanish copy? → A: The implementer (confirmed).
+
 ## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Pay a merchant whose fee is sponsored (Priority: P1)
