@@ -233,6 +233,10 @@ export default [
                 '**/core/signing/**',
                 '**/core/broadcast',
                 '**/core/broadcast/**',
+                // Core's received-transaction door and the flow that uses it
+                // sign bytes no declaration describes (spec 043).
+                '**/core/confirmation/received',
+                '**/hooks/useSolanaPayTransactionRequest',
                 '**/crypto',
                 '**/crypto/**',
                 '**/storage',

@@ -6,17 +6,20 @@
  * module (the lint boundary of spec 027 §2); a Powerup calls
  * `requestSignature` from `core/confirmation` and receives a signature back.
  */
-import { signAndSendSolanaTransaction } from '../broadcast';
+import { sendReceivedSolanaTransaction, signAndSendSolanaTransaction } from '../broadcast';
 import type { SolanaBroadcaster } from '../broadcast';
 
-import type { SignedResult, TransactionProposal } from '../confirmation/types';
+import type { AnyTransactionProposal, SignedResult } from '../confirmation/types';
 
 /**
  * Signs and broadcasts a confirmed proposal.
  *
- * The proposal's own declaration decides what the transaction may do; the fee
- * payer is added here, from the key about to sign, because that is the one
- * part of the expectation a Powerup has no business stating.
+ * A Powerup's proposal: its own declaration decides what the transaction may
+ * do; the fee payer is added here, from the key about to sign, because that
+ * is the one part of the expectation a Powerup has no business stating.
+ *
+ * A received proposal (a Solana Pay merchant's transaction, spec 043) is
+ * signed as it arrived, in the slot of the address it was requested for.
  *
  * @param account - The signing account for the proposal's network.
  * @param proposal - The proposal the user confirmed.
@@ -24,8 +27,16 @@ import type { SignedResult, TransactionProposal } from '../confirmation/types';
  */
 export async function signProposal(
   account: SolanaBroadcaster,
-  proposal: TransactionProposal
+  proposal: AnyTransactionProposal
 ): Promise<SignedResult> {
+  if ('source' in proposal) {
+    const signature = await sendReceivedSolanaTransaction(
+      account,
+      proposal.transaction,
+      proposal.signer
+    );
+    return { signature: String(signature) };
+  }
   const signature = await signAndSendSolanaTransaction(account, proposal.transaction, {
     feePayer: String(account.signer.address),
     ...proposal.expect,

@@ -32,9 +32,11 @@ import { usePendingTransactionsOptional } from '../../contexts/PendingTransactio
 import { usePhraseBackup } from '../../contexts/PhraseBackupContext';
 import { signProposal as defaultSignProposal, type SignProposalFn } from '../signing';
 import type { SolanaBroadcaster } from '../broadcast';
+import { ReceivedSignatureContext } from './received';
 import {
   NoSigningAccountError,
   SignatureRequestCancelledError,
+  type AnyTransactionProposal,
   type SignedResult,
   type TransactionProposal,
 } from './types';
@@ -42,7 +44,8 @@ import {
 export type SignatureRequestPhase = 'review' | 'signing';
 
 export interface PendingSignatureRequest {
-  proposal: TransactionProposal;
+  /** A Powerup's proposal, or a received one from core's own flows (spec 043). */
+  proposal: AnyTransactionProposal;
   phase: SignatureRequestPhase;
   /** The last failure to sign or refresh — a translation key. Cleared on retry. */
   error: string | null;
@@ -55,7 +58,7 @@ export interface PendingSignatureRequest {
 
 /** A signed proposal, waiting to be read: what the host's receipt renders. */
 export interface SignatureRequestReceipt {
-  proposal: TransactionProposal;
+  proposal: AnyTransactionProposal;
   signature: string;
 }
 
@@ -81,7 +84,7 @@ export interface SignatureRequestContextValue {
 
 const SignatureRequestContext = createContext<SignatureRequestContextValue | null>(null);
 
-function reportOutcome(proposal: TransactionProposal, success: boolean): void {
+function reportOutcome(proposal: AnyTransactionProposal, success: boolean): void {
   try {
     // An async callback's rejection is caught here too, not left unhandled.
     void Promise.resolve(proposal.onOutcome?.(success)).catch(() => undefined);
@@ -91,7 +94,7 @@ function reportOutcome(proposal: TransactionProposal, success: boolean): void {
 }
 
 interface ParkedRequest {
-  proposal: TransactionProposal;
+  proposal: AnyTransactionProposal;
   resolve: (result: SignedResult) => void;
   reject: (error: Error) => void;
   /** Set once signed; the request resolves with it when the receipt is dismissed. */
@@ -136,8 +139,8 @@ export function SignatureRequestProvider({
     setReceipt(null);
   }, []);
 
-  const requestSignature = useCallback(
-    (proposal: TransactionProposal) =>
+  const park = useCallback(
+    (proposal: AnyTransactionProposal) =>
       new Promise<SignedResult>((resolve, reject) => {
         if (parkedRef.current) {
           reject(new Error('transaction.errors.confirmationBusy'));
@@ -147,6 +150,17 @@ export function SignatureRequestProvider({
         setPending({ proposal, phase: 'review', error: null });
       }),
     []
+  );
+
+  // The Powerup door: a proposal that claims to be received would skip the
+  // declared-effects check, so it is refused here whatever its type says.
+  // Core's own received flows come in through `ReceivedSignatureContext`.
+  const requestSignature = useCallback(
+    (proposal: TransactionProposal) =>
+      'source' in proposal
+        ? Promise.reject(new Error('transaction.errors.proposalKind'))
+        : park(proposal),
+    [park]
   );
 
   const confirm = useCallback(async () => {
@@ -257,7 +271,9 @@ export function SignatureRequestProvider({
   );
 
   return (
-    <SignatureRequestContext.Provider value={value}>{children}</SignatureRequestContext.Provider>
+    <SignatureRequestContext.Provider value={value}>
+      <ReceivedSignatureContext.Provider value={park}>{children}</ReceivedSignatureContext.Provider>
+    </SignatureRequestContext.Provider>
   );
 }
 

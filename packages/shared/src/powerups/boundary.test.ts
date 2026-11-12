@@ -36,6 +36,14 @@ describe('powerups boundary', () => {
       "import { createRecentSignatureConfirmationPromiseFactory } from '@solana/transaction-confirmation';",
       'no-restricted-imports',
     ],
+    [
+      "import { useRequestReceivedSignature } from '../core/confirmation/received';",
+      'no-restricted-imports',
+    ],
+    [
+      "import { useSolanaPayTransactionRequest } from '../hooks/useSolanaPayTransactionRequest';",
+      'no-restricted-imports',
+    ],
     ['export const k = (account: { signer: unknown }) => account.signer;', 'no-restricted-syntax'],
     [
       'export const k = (account: { keyPair: unknown }) => account.keyPair;',
