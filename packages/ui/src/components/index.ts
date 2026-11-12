@@ -224,14 +224,20 @@ export {
   ConfirmationDetailsCard,
   ConfirmationExchange,
   ConfirmationHost,
+  RequesterRow,
   TransactionConfirmation,
 } from './TransactionConfirmation';
+
+// SolanaPayRequestSheet - the merchant a Solana Pay link names, while the payment is prepared (spec 043)
+export { SolanaPayRequest, SolanaPayRequestSheet } from './SolanaPayRequestSheet';
+export type { SolanaPayRequestProps, SolanaPayRequestSheetProps } from './SolanaPayRequestSheet';
 export type {
   ConfirmationButtonsProps,
   ConfirmationDetailsCardProps,
   ConfirmationExchangeProps,
   ConfirmationRow,
   ProposalDisplay,
+  RequesterRowProps,
   TransactionConfirmationProps,
 } from './TransactionConfirmation';
 

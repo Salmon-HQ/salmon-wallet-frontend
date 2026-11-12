@@ -1,3 +1,21 @@
+import type { TransactionRequestLink } from '../../blockchain/solana/transaction-request';
+import type { BlockchainAccount } from '../blockchain';
+
+/**
+ * One merchant payment, from the link to the receipt: what the Send recipient
+ * step mounts while a transaction-request link is open. Mounted only then, so
+ * the flow (and core's received door it needs) exists only while it runs.
+ */
+export interface SolanaPayRequestPropsBase {
+  link: TransactionRequestLink;
+  /** The account that pays: the active one. */
+  account: BlockchainAccount;
+  /** The receipt was dismissed: the payment is done, the Send flow closes. */
+  onDone: () => void;
+  /** The user left (sheet closed, review cancelled, or it failed and was closed). */
+  onCancel: () => void;
+}
+
 /**
  * The sheet that opens over the Send recipient step when a Solana Pay
  * transaction-request link is scanned or pasted (spec 043), and stays only

@@ -322,6 +322,7 @@ export {
   ConfirmationDetailsCard,
   ConfirmationExchange,
   ConfirmationHost,
+  RequesterRow,
   TransactionConfirmation,
 } from './TransactionConfirmation';
 export type {
@@ -330,8 +331,13 @@ export type {
   ConfirmationExchangeProps,
   ConfirmationRow,
   ProposalDisplay,
+  RequesterRowProps,
   TransactionConfirmationProps,
 } from './TransactionConfirmation';
+
+// SolanaPayRequestSheet - the merchant a Solana Pay link names, while the payment is prepared (spec 043)
+export { SolanaPayRequest, SolanaPayRequestSheet } from './SolanaPayRequestSheet';
+export type { SolanaPayRequestProps, SolanaPayRequestSheetProps } from './SolanaPayRequestSheet';
 
 // ---------------------------------------------------------------------------
 // Settings

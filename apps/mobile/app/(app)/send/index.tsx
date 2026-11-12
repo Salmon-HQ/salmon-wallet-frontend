@@ -38,6 +38,7 @@ import {
   vs,
   type NetworkId,
   type RecipientOption,
+  type TransactionRequestLink,
   type TransferRequest,
 } from '@salmon/shared';
 
@@ -50,6 +51,7 @@ import {
   SectionLabel,
   SkeletonRow,
   SettingsScreenLayout,
+  SolanaPayRequest,
   TokenLogo,
   TokenPickerSheet,
   WarningNotice,
@@ -102,6 +104,10 @@ export default function SendRecipientScreen() {
   // A translation key when a payment request could not start the flow: the
   // token is not held, or the pasted text is a request the wallet cannot read.
   const [requestError, setRequestError] = useState<string | null>(null);
+  // A transaction request: the merchant builds the payment, so its flow runs
+  // over this screen until the receipt (spec 043). Mounted only while a link
+  // is open, because it needs the confirmation host's received door.
+  const [merchantLink, setMerchantLink] = useState<TransactionRequestLink | null>(null);
 
   // `liveBalance` already falls back to the token's own amount.
   const tokenBalance = liveBalance ?? 0;
@@ -132,6 +138,14 @@ export default function SendRecipientScreen() {
       setAddressState(next);
     },
     [markDirty]
+  );
+
+  const openMerchant = useCallback(
+    (link: TransactionRequestLink) => {
+      setAddress('');
+      setMerchantLink(link);
+    },
+    [setAddress]
   );
 
   // The people this wallet has actually paid. The counterparty of a send is
@@ -178,13 +192,17 @@ export default function SendRecipientScreen() {
     (result: QRScanResult) => {
       setShowScanner(false);
       setRequestError(null);
+      if (result.transactionRequest) {
+        openMerchant(result.transactionRequest);
+        return;
+      }
       if (!result.request) {
         setAddress(result.address);
         return;
       }
       startRequest(result.request, result.address);
     },
-    [setAddress, startRequest]
+    [setAddress, startRequest, openMerchant]
   );
 
   // The same field takes a pasted request: a `solana:` URI is classified like
@@ -208,11 +226,10 @@ export default function SendRecipientScreen() {
       const outcome = readSettledPaymentLink(link, blockchain);
       if (outcome.kind === 'error') setRequestError(outcome.key);
       else if (outcome.kind === 'address') setAddress(outcome.address);
-      else if (outcome.kind === 'transactionRequest') {
-        setRequestError('send.request.errors.transactionRequest');
-      } else startRequest(outcome.request, outcome.address);
+      else if (outcome.kind === 'transactionRequest') openMerchant(outcome.link);
+      else startRequest(outcome.request, outcome.address);
     },
-    [blockchain, setAddress, startRequest]
+    [blockchain, setAddress, startRequest, openMerchant]
   );
   useSettledPaymentLink(address, handleSettledLink);
 
@@ -349,6 +366,7 @@ export default function SendRecipientScreen() {
       <QRScanner
         visible={showScanner}
         blockchain={blockchain}
+        acceptTransactionRequests
         onScan={handleScan}
         onClose={() => {
           // Payments' Pay opened the scanner over Send: closing it goes back to
@@ -357,6 +375,15 @@ export default function SendRecipientScreen() {
           else setShowScanner(false);
         }}
       />
+
+      {merchantLink && account && (
+        <SolanaPayRequest
+          link={merchantLink}
+          account={account}
+          onDone={() => router.replace('/')}
+          onCancel={() => setMerchantLink(null)}
+        />
+      )}
 
       <TokenPickerSheet
         visible={pickerOpen}

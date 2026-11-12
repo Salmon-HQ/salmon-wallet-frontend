@@ -63,12 +63,24 @@ vi.mock('./TransactionConfirmation', () => ({
     onBack,
     onConfirm,
     confirmLabel,
+    requester,
+    requiresHold,
+    confirmDisabled,
   }: {
     onBack: () => void;
     onConfirm: () => void;
     confirmLabel: string;
+    requester?: { domain: string };
+    requiresHold?: boolean;
+    confirmDisabled?: boolean;
   }) => (
-    <div data-testid="transaction-confirmation" data-label={confirmLabel}>
+    <div
+      data-testid="transaction-confirmation"
+      data-label={confirmLabel}
+      data-requester={requester?.domain ?? ''}
+      data-hold={String(!!requiresHold)}
+      data-disabled={String(!!confirmDisabled)}
+    >
       <button type="button" data-testid="stub-back" onClick={onBack} />
       <button type="button" data-testid="stub-confirm" onClick={onConfirm} />
     </div>
@@ -104,6 +116,26 @@ describe('ConfirmationHost', () => {
     fireEvent.click(screen.getByTestId('stub-back'));
     expect(mockHost.confirmOrRefresh).toHaveBeenCalledTimes(1);
     expect(mockHost.cancel).toHaveBeenCalledTimes(1);
+  });
+
+  it("forwards the proposal's requester, hold and disabled confirm", () => {
+    mockHost.request = {
+      proposal: {
+        display: {
+          ...proposal.display,
+          requester: { name: 'Corner Café', domain: 'merchant.example' },
+          requiresHold: true,
+          confirmDisabled: true,
+        },
+      },
+      phase: 'review',
+      error: null,
+    };
+    renderInMode('dark', <ConfirmationHost />);
+    const screenEl = screen.getByTestId('transaction-confirmation');
+    expect(screenEl.getAttribute('data-requester')).toBe('merchant.example');
+    expect(screenEl.getAttribute('data-hold')).toBe('true');
+    expect(screenEl.getAttribute('data-disabled')).toBe('true');
   });
 
   it('replaces the confirmation with the wave while core signs', () => {

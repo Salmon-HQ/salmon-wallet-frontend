@@ -8,8 +8,11 @@ import type { ViewStyle } from 'react-native';
 import type {
   ConfirmationDetailsCardPropsBase,
   ConfirmationExchangePropsBase,
+  RequesterRowPropsBase,
   TransactionConfirmationPropsBase,
 } from '@salmon/shared';
+
+export interface RequesterRowProps extends RequesterRowPropsBase {}
 
 export type { ConfirmationRow, ProposalDisplay } from '@salmon/shared';
 

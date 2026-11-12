@@ -25,6 +25,7 @@ import { WarningNotice } from '../WarningNotice';
 import { ConfirmationButtons } from './ConfirmationButtons';
 import { ConfirmationDetailsCard } from './ConfirmationDetailsCard';
 import { ConfirmationExchange } from './ConfirmationExchange';
+import { RequesterRow } from './RequesterRow';
 import type { TransactionConfirmationProps } from './types';
 
 /** One staged block, floating in on the verb at its own beat — the DOM's Reanimated. */
@@ -54,6 +55,9 @@ export function TransactionConfirmation({
   onConfirm,
   confirmLabel,
   isRefreshing = false,
+  confirmDisabled = false,
+  requiresHold = false,
+  requester,
   error,
   style,
 }: TransactionConfirmationProps) {
@@ -99,6 +103,17 @@ export function TransactionConfirmation({
           paddingBottom: spacing['4xl'],
         }}
       >
+        {requester && (
+          <Band step={1} style={{ marginBottom: spacing.xl }}>
+            <RequesterRow
+              name={requester.name}
+              icon={requester.icon}
+              domain={requester.domain}
+              testID="confirmation-requester"
+            />
+          </Band>
+        )}
+
         {display.exchange && (
           <Band step={1} style={{ marginBottom: spacing.xl }}>
             {/* The amount being sent is what the user typed: a rebuild cannot
@@ -193,6 +208,8 @@ export function TransactionConfirmation({
           onBack={onBack}
           onConfirm={onConfirm}
           isRefreshing={isRefreshing}
+          confirmDisabled={confirmDisabled}
+          requiresHold={requiresHold}
           confirmLabel={confirmLabel}
         />
       </Band>

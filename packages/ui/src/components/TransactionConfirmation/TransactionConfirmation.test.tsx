@@ -97,4 +97,51 @@ describe('TransactionConfirmation', () => {
       true
     );
   });
+
+  it('draws no identity row when nobody but the wallet asks', () => {
+    renderScreen();
+    expect(screen.queryByTestId('confirmation-requester')).toBeNull();
+    expect(screen.queryByTestId('confirmation-hold-button')).toBeNull();
+  });
+
+  it('names the merchant that asks: label, domain, and its icon only over https', () => {
+    renderScreen({
+      requester: {
+        name: 'Corner Café',
+        icon: 'https://merchant.example/logo.svg',
+        domain: 'merchant.example',
+      },
+    });
+    const row = screen.getByTestId('confirmation-requester');
+    expect(row.textContent).toContain('Corner Café');
+    expect(row.textContent).toContain('merchant.example');
+    const icon = row.querySelector('img');
+    expect(icon?.getAttribute('src')).toBe('https://merchant.example/logo.svg');
+    expect(icon?.getAttribute('referrerpolicy')).toBe('no-referrer');
+  });
+
+  it('draws the placeholder when the merchant icon fails to load', () => {
+    renderScreen({
+      requester: {
+        name: 'Corner Café',
+        icon: 'https://merchant.example/logo.svg',
+        domain: 'merchant.example',
+      },
+    });
+    fireEvent.error(screen.getByTestId('confirmation-requester').querySelector('img')!);
+    expect(screen.getByTestId('confirmation-requester').querySelector('img')).toBeNull();
+  });
+
+  it('asks for a hold instead of a tap when the review requires it', () => {
+    renderScreen({ requiresHold: true });
+    expect(screen.getByTestId('confirmation-hold-button')).toBeTruthy();
+    expect(screen.queryByTestId('confirmation-confirm-button')).toBeNull();
+  });
+
+  it('keeps confirm unavailable when the review says it cannot be confirmed', () => {
+    renderScreen({ confirmDisabled: true });
+    expect((screen.getByTestId('confirmation-confirm-button') as HTMLButtonElement).disabled).toBe(
+      true
+    );
+  });
 });

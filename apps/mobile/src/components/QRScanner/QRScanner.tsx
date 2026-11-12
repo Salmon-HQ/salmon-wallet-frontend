@@ -18,6 +18,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({
   visible,
   blockchain,
   onScan,
+  acceptTransactionRequests = false,
   onClose,
   title,
   containerStyle,
@@ -65,11 +66,14 @@ export const QRScanner: React.FC<QRScannerProps> = ({
       if (result.kind === 'valid') {
         scannedRef.current = true;
         onScan({ data, address: result.address, amount: result.amount, request: result.request });
+      } else if (result.kind === 'transactionRequest' && acceptTransactionRequests) {
+        scannedRef.current = true;
+        onScan({ data, address: '', transactionRequest: result.link });
       } else {
         setRejection(result);
       }
     },
-    [blockchain, onScan]
+    [blockchain, onScan, acceptTransactionRequests]
   );
 
   if (!visible) {
@@ -137,7 +141,9 @@ export const QRScanner: React.FC<QRScannerProps> = ({
                   ? t('qrScanner.wrongNetwork', 'This address belongs to a different network')
                   : rejection.kind === 'invalidRequest'
                     ? t(`send.request.errors.${rejection.reason}`)
-                    : t('qrScanner.notAddress', 'This code is not a valid address')}
+                    : rejection.kind === 'transactionRequest'
+                      ? t('qrScanner.paymentLinkOnlyInSend')
+                      : t('qrScanner.notAddress', 'This code is not a valid address')}
               </Text>
             </View>
           )}

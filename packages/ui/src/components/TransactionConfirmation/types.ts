@@ -2,8 +2,11 @@ import type { CSSProperties } from 'react';
 import type {
   ConfirmationDetailsCardPropsBase,
   ConfirmationExchangePropsBase,
+  RequesterRowPropsBase,
   TransactionConfirmationPropsBase,
 } from '@salmon/shared';
+
+export interface RequesterRowProps extends RequesterRowPropsBase {}
 
 export type { ConfirmationRow, ProposalDisplay } from '@salmon/shared';
 
@@ -19,6 +22,10 @@ export interface ConfirmationButtonsProps {
   onConfirm: () => void;
   /** A rebuild is in flight: the confirm control spins and refuses a second press. */
   isRefreshing?: boolean;
+  /** The review is not ready to be confirmed. */
+  confirmDisabled?: boolean;
+  /** Confirm must be held, not tapped. */
+  requiresHold?: boolean;
   confirmLabel?: string;
   style?: CSSProperties;
 }

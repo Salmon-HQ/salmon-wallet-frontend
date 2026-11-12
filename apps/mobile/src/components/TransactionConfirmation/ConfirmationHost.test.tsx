@@ -102,12 +102,22 @@ jest.mock('./TransactionConfirmation', () => {
       onBack,
       onConfirm,
       confirmLabel,
+      requester,
+      requiresHold,
+      confirmDisabled,
     }: {
       onBack: () => void;
       onConfirm: () => void;
       confirmLabel: string;
+      requester?: { domain: string };
+      requiresHold?: boolean;
+      confirmDisabled?: boolean;
     }) => (
-      <View testID="transaction-confirmation" accessibilityLabel={confirmLabel}>
+      <View
+        testID="transaction-confirmation"
+        accessibilityLabel={confirmLabel}
+        accessibilityHint={`${requester?.domain ?? ''}|${!!requiresHold}|${!!confirmDisabled}`}
+      >
         <View testID="stub-back" onPress={onBack} />
         <View testID="stub-confirm" onPress={onConfirm} />
       </View>
@@ -131,6 +141,26 @@ describe('ConfirmationHost', () => {
     // An RN Modal draws nothing at all while hidden.
     expect(queryByTestId('confirmation-window')).toBeNull();
     expect(queryByTestId('transaction-confirmation')).toBeNull();
+  });
+
+  it("forwards the proposal's requester, hold and disabled confirm", () => {
+    mockHost.request = {
+      proposal: {
+        display: {
+          ...proposal.display,
+          requester: { name: 'Corner Café', domain: 'merchant.example' },
+          requiresHold: true,
+          confirmDisabled: true,
+        },
+      },
+      phase: 'review',
+      error: null,
+    };
+    const { getByTestId, rerender } = render(<ConfirmationHost />);
+    rerender(<ConfirmationHost />);
+    expect(getByTestId('transaction-confirmation').props.accessibilityHint).toBe(
+      'merchant.example|true|true'
+    );
   });
 
   it('opens its own window with the confirmation and wires the controls to core', () => {

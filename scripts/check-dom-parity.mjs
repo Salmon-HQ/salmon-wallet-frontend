@@ -98,7 +98,17 @@ import { fileURLToPath } from 'node:url';
 // 2026-11-11, with DEV-206 merged: 2442 → 2458. The currency selector's search
 // field and empty state on both `CurrencySelector` twins: the same JSX, no
 // logic — the filtering is `filterCurrencyItems` in shared.
-export const CROSS_PLATFORM_CLONE_LINES_MAX = 2458;
+// 2026-11-12: 2458 → 2483. Spec 043 (DEV-209): one new twin pair
+// (`SolanaPayRequestSheet`, the same imports and props on both platforms, 15
+// lines) and both `ConfirmationHost` twins forwarding the proposal's
+// requester, hold and disabled confirm to the screen (10 lines of the same
+// JSX). No logic: the flow is `useSolanaPayTransactionRequest`, and the icon
+// rule and the row's contract are `requesterIconSource` /
+// `RequesterRowPropsBase` in shared, hoisted before measuring (2496 → 2483).
+// 2026-11-12, later: 2483 → 2492. The `SolanaPayRequest` twins that the Send
+// recipient step mounts while a link is open: one line of JSX that spreads
+// `useSolanaPayRequest` into the sheet, with the same imports on both.
+export const CROSS_PLATFORM_CLONE_LINES_MAX = 2492;
 
 /** Twins whose folders are not named the same. mobile folder → DOM folder(s). */
 export const MAP = {

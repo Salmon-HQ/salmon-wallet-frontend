@@ -32,6 +32,7 @@ import {
   type SendRecipient,
   type SendStep,
   type SendToken,
+  type TransactionRequestLink,
   type TransferRequest,
 } from '@salmon/shared';
 
@@ -41,6 +42,7 @@ import { DepthBackground } from '../DepthBackground';
 import { LoadingScreen } from '../LoadingScreen';
 import { ScalesBackground } from '../ScalesBackground';
 import { SinkFloat } from '../SinkFloat';
+import { SolanaPayRequest } from '../SolanaPayRequestSheet';
 import { SendFailure } from './SendFailure';
 import { StepAmount } from './StepAmount';
 import { StepRecipient } from './StepRecipient';
@@ -181,6 +183,12 @@ export function SendPage({
     [startFromRequest, tokens, goToStep]
   );
 
+  // A pasted transaction request: the merchant builds the payment, so the
+  // flow runs over this step until its receipt (spec 043). Mounted only while
+  // a link is open, because it needs the confirmation host's received door.
+  const [merchantLink, setMerchantLink] = useState<TransactionRequestLink | null>(null);
+  const closeMerchant = useCallback(() => setMerchantLink(null), []);
+
   // A token picked on review may not cover the amount already typed: the fee
   // re-estimates itself, but the amount is the one thing review cannot fix.
   const handleReviewSelectToken = useCallback(
@@ -234,6 +242,7 @@ export function SendPage({
             onSelectToken={setToken}
             nft={nft}
             onRequest={handleRequest}
+            onTransactionRequest={nft ? undefined : setMerchantLink}
           />
         )}
 
@@ -290,6 +299,15 @@ export function SendPage({
           />
         )}
       </SinkFloat>
+
+      {merchantLink && (
+        <SolanaPayRequest
+          link={merchantLink}
+          account={account}
+          onDone={handleLeave}
+          onCancel={closeMerchant}
+        />
+      )}
 
       {/* The wave wait, in its own window above every piece of chrome. */}
       {isWaveHeld && (
