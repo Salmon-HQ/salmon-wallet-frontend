@@ -22,6 +22,11 @@ export interface ConfirmationExchangePropsBase<TStyle> {
 
 export interface TransactionConfirmationPropsBase<TStyle> {
   display: ProposalDisplay;
+  /**
+   * Who asks, drawn as an identity row above the details (a Solana Pay
+   * merchant). Absent, the screen is exactly the Powerup one.
+   */
+  requester?: { name: string; icon?: string | null; domain: string };
   onBack: () => void;
   onConfirm: () => void;
   /** The confirm control's label: countdown, or "Refresh Quote" once expired */

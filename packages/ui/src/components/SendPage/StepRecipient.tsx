@@ -142,6 +142,10 @@ export function StepRecipient({
         setAddress(outcome.address);
         return;
       }
+      if (outcome.kind === 'transactionRequest') {
+        setRequestError('send.request.errors.transactionRequest');
+        return;
+      }
       // A flow that takes no requests (an NFT send) says so rather than
       // quietly dropping the amount and memo the link asked for.
       if (!onRequest) {

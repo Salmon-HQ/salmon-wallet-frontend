@@ -20,6 +20,7 @@ export type {
   ConfirmationWarning,
   ExchangeSide,
   ProposalDisplay,
+  ReceivedTransactionProposal,
   SignedResult,
   TransactionProposal,
 } from './types';

@@ -208,7 +208,9 @@ export default function SendRecipientScreen() {
       const outcome = readSettledPaymentLink(link, blockchain);
       if (outcome.kind === 'error') setRequestError(outcome.key);
       else if (outcome.kind === 'address') setAddress(outcome.address);
-      else startRequest(outcome.request, outcome.address);
+      else if (outcome.kind === 'transactionRequest') {
+        setRequestError('send.request.errors.transactionRequest');
+      } else startRequest(outcome.request, outcome.address);
     },
     [blockchain, setAddress, startRequest]
   );

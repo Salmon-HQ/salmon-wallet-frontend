@@ -83,29 +83,26 @@ export interface ProposalDisplay {
   pendingTitle: string;
   /** Amounts and symbols only, e.g. `1.5 SOL → 210 USDC`. */
   pendingSubtitle?: string;
+  /**
+   * Who asks, drawn above the rows: name, icon (rendered only when `https:`,
+   * otherwise the placeholder) and the domain the user can check.
+   */
+  requester?: { name: string; icon?: string | null; domain: string };
+  /** Confirm must be held, not tapped (the dApp hold cases). */
+  requiresHold?: boolean;
+  /** Confirm cannot be pressed (e.g. not enough SOL for the network fee). */
+  confirmDisabled?: boolean;
 }
 
-/**
- * An unsigned transaction and its rendering. `refresh` returns a new proposal
- * for the same intent — called when the quote expired before the user
- * confirmed, or when they ask for a fresh one.
- */
-export interface TransactionProposal {
+/** What every proposal kind carries, whoever built its bytes. */
+interface ProposalBase {
   /** Identity of this build: a new proposal from `refresh` has a new id. */
   id: string;
   networkId: SolanaNetworkId;
-  /** Base64 unsigned transaction, wire format. */
-  transaction: string;
-  /**
-   * What this transaction may do: the programs the Powerup's manifest declares
-   * and, where the flow knows them, the accounts it must name. Core checks the
-   * bytes against this before signing, so a build that disagrees with the
-   * screen is refused rather than confirmed.
-   */
-  expect: DeclaredTransactionEffects;
   /** ISO timestamp after which the transaction must be rebuilt. */
   expiresAt?: string;
-  refresh?: () => Promise<TransactionProposal>;
+  /** Asked before confirming; `true` sends the press to `refresh` instead of signing. */
+  isStale?: () => Promise<boolean>;
   display: ProposalDisplay;
   /**
    * How the pending-activity banner reports this transaction once signed.
@@ -126,6 +123,41 @@ export interface TransactionProposal {
    */
   onOutcome?: (success: boolean) => void;
 }
+
+/**
+ * An unsigned transaction and its rendering. `refresh` returns a new proposal
+ * for the same intent — called when the quote expired before the user
+ * confirmed, or when they ask for a fresh one.
+ */
+export interface TransactionProposal extends ProposalBase {
+  /** Base64 unsigned transaction, wire format. */
+  transaction: string;
+  /**
+   * What this transaction may do: the programs the Powerup's manifest declares
+   * and, where the flow knows them, the accounts it must name. Core checks the
+   * bytes against this before signing, so a build that disagrees with the
+   * screen is refused rather than confirmed.
+   */
+  expect: DeclaredTransactionEffects;
+  refresh?: () => Promise<TransactionProposal>;
+}
+
+/**
+ * A transaction someone else built and may already have signed (a Solana Pay
+ * merchant and its fee sponsor, spec 043). Core only: a Powerup's door
+ * refuses it. Signed byte-for-byte as received, in the `signer` slot only.
+ */
+export interface ReceivedTransactionProposal extends ProposalBase {
+  source: 'received';
+  /** Base64 wire transaction, signatures included. */
+  transaction: string;
+  /** The only address that may sign: the one the transaction was requested for. */
+  signer: string;
+  refresh?: () => Promise<ReceivedTransactionProposal>;
+}
+
+/** Either kind, as core parks and signs it. */
+export type AnyTransactionProposal = TransactionProposal | ReceivedTransactionProposal;
 
 export interface SignedResult {
   /** The confirmed signature. */
