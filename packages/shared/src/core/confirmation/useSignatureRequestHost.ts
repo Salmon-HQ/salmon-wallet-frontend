@@ -88,23 +88,24 @@ export function useSignatureRequestHost(): SignatureRequestHost {
       if (isStale) {
         // Bytes past their lifetime are never signed: they are rebuilt, and the
         // same press signs only when the rebuilt review is the one the user saw.
-        // A check that cannot answer counts as stale.
-        const stale = await isStale().catch(() => true);
-        if (!stillPressed()) return;
-        if (stale) {
-          if (!pending.proposal.refresh) {
-            cancel();
-            return;
-          }
-          setRefreshing(true);
-          let unchanged: boolean;
-          try {
+        // A check that cannot answer counts as stale. The press shows as
+        // busy from here: the check is a network wait too.
+        setRefreshing(true);
+        let unchanged = true;
+        try {
+          const stale = await isStale().catch(() => true);
+          if (!stillPressed()) return;
+          if (stale) {
+            if (!pending.proposal.refresh) {
+              cancel();
+              return;
+            }
             unchanged = await refreshStale(pressed);
-          } finally {
-            setRefreshing(false);
           }
-          if (!unchanged) return;
+        } finally {
+          setRefreshing(false);
         }
+        if (!unchanged) return;
       }
       await confirm(pressed);
     } finally {

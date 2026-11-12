@@ -68,7 +68,7 @@ idle
                          ▼
                    reviewing  (core confirmation host owns the screen)
                      ├─ cancel ──────────────▶ idle            nothing signed
-                     ├─ stale ─▶ refresh ─▶ reviewing (same display → confirm continues; changed → "check again")
+                     ├─ stale ─▶ refresh ─▶ reviewing (same display, preview vouched → confirm continues; changed or held → "check again")
                      │                    └▶ reviewing + error "expired"
                      └─ signed + receipt dismissed ─▶ done      caller leaves the Send flow
 ```

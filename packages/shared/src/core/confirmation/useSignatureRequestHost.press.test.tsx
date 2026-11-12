@@ -145,4 +145,63 @@ describe('useSignatureRequestHost — one press, one signature, on the request p
 
     expect(signed()).toEqual([]);
   });
+
+  it('shows the press as busy while the stale check runs', async () => {
+    const { view, park, signed } = setup();
+    const check = deferred<boolean>();
+    await park(received({ isStale: () => check.promise, refresh: async () => received() }));
+
+    let press!: Promise<void>;
+    act(() => {
+      press = view.result.current.host.confirmOrRefresh();
+    });
+
+    expect(view.result.current.host.refreshing).toBe(true);
+    await act(async () => {
+      check.resolve(false);
+      await press;
+    });
+    expect(view.result.current.host.refreshing).toBe(false);
+    expect(signed()).toEqual(['AQID']);
+  });
+});
+
+// A rebuild whose review reads the same is signed in the same press only when
+// the preview vouches for it: when it could not say what the transaction does,
+// the same words can hide different bytes.
+describe('useSignatureRequestHost — a received rebuild with new bytes', () => {
+  const display = { title: 'Review payment', rows: [], pendingTitle: 'Paying' };
+
+  it('asks for a new press when the preview could not vouch for the transaction', async () => {
+    const { view, park, signed } = setup();
+    const held = { ...display, requiresHold: true };
+    const rebuilt = received({
+      id: 'r-2',
+      transaction: 'BBBB',
+      display: held,
+      isStale: async () => false,
+    });
+    await park(
+      received({ display: held, isStale: async () => true, refresh: async () => rebuilt })
+    );
+
+    await act(async () => view.result.current.host.confirmOrRefresh());
+
+    expect(signed()).toEqual([]);
+    expect(view.result.current.host.request?.error).toBe('solanaPay.refreshed');
+    expect(view.result.current.host.request?.proposal.transaction).toBe('BBBB');
+
+    await act(async () => view.result.current.host.confirmOrRefresh());
+    expect(signed()).toEqual(['BBBB']);
+  });
+
+  it('signs in the same press when the preview vouched for both', async () => {
+    const { view, park, signed } = setup();
+    const rebuilt = received({ id: 'r-2', transaction: 'BBBB', isStale: async () => false });
+    await park(received({ isStale: async () => true, refresh: async () => rebuilt }));
+
+    await act(async () => view.result.current.host.confirmOrRefresh());
+
+    expect(signed()).toEqual(['BBBB']);
+  });
 });

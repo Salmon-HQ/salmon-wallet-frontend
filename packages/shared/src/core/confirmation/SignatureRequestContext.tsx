@@ -252,19 +252,12 @@ export function SignatureRequestProvider({
 
   const signParked = useCallback(
     async (parked: ParkedRequest) => {
-      // The last word before the key is used: the bytes must be of the kind
-      // their door admits, whatever replaced them since.
-      if (!fitsDoor(parked.proposal, parked.door)) {
-        setPending((prev) =>
-          prev ? { ...prev, phase: 'review', error: PROPOSAL_KIND_ERROR } : prev
-        );
-        return;
-      }
       // A new wallet's first transaction waits on the phrase check (DEV-208);
       // left unconfirmed, the review stays open.
       if (!(await requireBackup())) return;
       // The wait above is long enough for anything to happen: the request must
-      // still be this one, and still fit its door, when the key is used.
+      // still be this one, and its bytes of the kind their door admits, when
+      // the key is used.
       if (parkedRef.current !== parked) return;
       if (!fitsDoor(parked.proposal, parked.door)) {
         setPending((prev) =>
@@ -413,10 +406,14 @@ export function SignatureRequestProvider({
     async (pressed?: HeldRequest) => {
       const parked = parkedRef.current;
       if (!parked || (pressed && pressed !== parked)) return false;
-      const seen = parked.proposal.display;
+      const { display: seen, transaction: seenBytes } = parked.proposal;
       const held = await rebuild(parked);
       if (!held) return false;
-      if (isEqual(held.display, seen)) return true;
+      // Words alone vouch for new bytes only when the preview could say what
+      // they do; a held review (undetermined effects, approvals) is read again.
+      const vouched =
+        parked.door !== 'received' || held.transaction === seenBytes || !held.display.requiresHold;
+      if (vouched && isEqual(held.display, seen)) return true;
       // What the user reviewed is not what would be signed: they look again.
       setPending((prev) => (prev ? { ...prev, error: REFRESHED_NOTE } : prev));
       return false;
