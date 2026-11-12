@@ -11,6 +11,11 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 - Creating a wallet no longer stops for a recovery-phrase test: after the phrase, "I saved it" goes on to the password. Copying the phrase shows a countdown to when Salmon clears the clipboard and cannot be repeated until it ends.
 - Before a new wallet's first transaction, Salmon asks you to confirm its recovery phrase: after your password or biometrics it shows the phrase, then asks for three of its words, each picked from four. A wrong pick shows the phrase again. Wallets you imported or created before this version are never asked.
 - Home reminds a new wallet to save its phrase until you confirm it; Settings → Seed Phrase offers the check at any time.
+- Pay merchants through Solana Pay transaction requests: scan a merchant's `solana:` payment link from Send, or paste it, and Salmon shows the merchant's name, icon and web address, asks the merchant for the payment and opens a review of what you send and receive before you confirm. The general scanner points payment links to Send.
+- When the merchant or a sponsor such as Kora pays the network fee, the review names who pays it and you pay none; when nobody does, you pay the fee, the review shows it, and Confirm stays disabled if the account lacks the SOL to cover it.
+- Salmon signs nothing it cannot trust: a transaction with a signature that does not match, one still waiting for another party's signature, one that does not ask for your account, or one your account already signed is refused with its own message. A merchant that cannot be reached or answers something unreadable gets its own message and Try again.
+- If the payment goes stale before you confirm, Salmon asks the merchant for a fresh one and signs it only if it matches what you reviewed; otherwise the review shows the new payment and asks again.
+- Watch-only accounts and networks other than Solana cannot open a payment link, and Salmon contacts no merchant for them.
 
 ## extension 0.19.0 — unreleased
 
@@ -21,6 +26,12 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 - Creating a wallet no longer stops for a recovery-phrase test: after the phrase, "I saved it" goes on to the password. Copying the phrase shows a countdown to when Salmon clears the clipboard and cannot be repeated until it ends.
 - Before a new wallet's first transaction, Salmon asks you to confirm its recovery phrase: after your password or biometrics it shows the phrase, then asks for three of its words, each picked from four. A wrong pick shows the phrase again. Wallets you imported or created before this version are never asked.
 - Home reminds a new wallet to save its phrase until you confirm it; Settings → Seed Phrase offers the check at any time.
+- Pay merchants through Solana Pay transaction requests: paste a merchant's `solana:` payment link in Send, and Salmon shows the merchant's name, icon and web address, asks the merchant for the payment and opens a review of what you send and receive before you confirm.
+- When the merchant or a sponsor such as Kora pays the network fee, the review names who pays it and you pay none; when nobody does, you pay the fee, the review shows it, and Confirm stays disabled if the account lacks the SOL to cover it.
+- Salmon signs nothing it cannot trust: a transaction with a signature that does not match, one still waiting for another party's signature, one that does not ask for your account, or one your account already signed is refused with its own message. A merchant that cannot be reached or answers something unreadable gets its own message and Try again.
+- If the payment goes stale before you confirm, Salmon asks the merchant for a fresh one and signs it only if it matches what you reviewed; otherwise the review shows the new payment and asks again.
+- Watch-only accounts and networks other than Solana cannot open a payment link, and Salmon contacts no merchant for them.
+- The extension can pay only merchants whose site accepts requests from other websites (CORS); for any other merchant it says the merchant could not be reached. The mobile app has no such limit.
 
 ## extension 0.18.0 — 2026-10-28
 
