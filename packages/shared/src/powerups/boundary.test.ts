@@ -44,6 +44,19 @@ describe('powerups boundary', () => {
       "import { useSolanaPayTransactionRequest } from '../hooks/useSolanaPayTransactionRequest';",
       'no-restricted-imports',
     ],
+    ["import { useSolanaPayTransactionRequest } from '../hooks';", 'no-restricted-imports'],
+    ["import { useSolanaPayRequest } from '../../hooks/index';", 'no-restricted-imports'],
+    ["import { useSolanaPayTransactionRequest } from '@salmon/shared';", 'no-restricted-imports'],
+    ["import { useSolanaPayRequest } from '../..';", 'no-restricted-imports'],
+    [
+      "import { useRequestReceivedSignature } from '../core/confirmation';",
+      'no-restricted-imports',
+    ],
+    ["import { ReceivedSignatureContext } from '../core';", 'no-restricted-imports'],
+    [
+      "import * as shared from '@salmon/shared';\nexport const s = shared;",
+      'no-restricted-imports',
+    ],
     ['export const k = (account: { signer: unknown }) => account.signer;', 'no-restricted-syntax'],
     [
       'export const k = (account: { keyPair: unknown }) => account.keyPair;',

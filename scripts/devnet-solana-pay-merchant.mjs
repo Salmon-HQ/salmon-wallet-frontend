@@ -29,6 +29,7 @@ import {
   createNoopSigner,
   createSolanaRpc,
   createTransactionMessage,
+  generateKeyPairSigner,
   getBase64EncodedWireTransaction,
   partiallySignTransactionMessageWithSigners,
   pipe,
@@ -106,48 +107,117 @@ if (KORA_RPC_URL) {
 
 const rpc = createSolanaRpc(RPC_URL);
 
-/** The user's payment, fee paid and signed by the sponsor, user slot empty. */
-async function sponsoredTransaction(account, version) {
-  const user = createNoopSigner(address(account));
+/**
+ * The user's payment to MERCHANT_ADDR with a memo. By default the sponsor pays
+ * the fee and signs first, the user's slot left empty. `payer` replaces the
+ * fee payer (a noop signer never signs), `from` replaces who pays the amount,
+ * `cosign` adds the sponsor as a memo signer.
+ */
+async function merchantTransaction(
+  account,
+  { version = 0, lamports = AMOUNT_LAMPORTS, payer = sponsor.signer, from, cosign = false } = {}
+) {
+  const user = createNoopSigner(address(from ?? account));
   const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
   const message = pipe(
     createTransactionMessage({ version }),
-    (m) => setTransactionMessageFeePayerSigner(sponsor.signer, m),
+    (m) => setTransactionMessageFeePayerSigner(payer, m),
     (m) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, m),
     (m) =>
       appendTransactionMessageInstructions(
         [
-          getTransferSolInstruction({
-            source: user,
-            destination: MERCHANT,
-            amount: AMOUNT_LAMPORTS,
+          getTransferSolInstruction({ source: user, destination: MERCHANT, amount: lamports }),
+          getAddMemoInstruction({
+            memo: `salmon-devnet-${Date.now()}`,
+            signers: cosign ? [sponsor.signer] : [],
           }),
-          getAddMemoInstruction({ memo: `salmon-devnet-${Date.now()}` }),
         ],
         m
       )
   );
   const transaction = await partiallySignTransactionMessageWithSigners(message);
   const wire = getBase64EncodedWireTransaction(transaction);
-  if (!KORA_RPC_URL) return wire;
+  if (!KORA_RPC_URL || payer !== sponsor.signer) return wire;
   // ponytail: field name from Kora's docs (signTransaction → signed_transaction); check it on a live node.
   const { signed_transaction: signed } = await kora('signTransaction', { transaction: wire });
   return signed;
 }
 
+/** A throwaway address: an account nobody will sign for. */
+async function stranger() {
+  return createNoopSigner((await generateKeyPairSigner()).address);
+}
+
+/** The fee payer's signature (the first, after the count byte) with one byte changed. */
+function tamper(wire) {
+  const bytes = Buffer.from(wire, 'base64');
+  bytes[1] ^= 0xff;
+  return bytes.toString('base64');
+}
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const MESSAGE = 'Thanks for testing Salmon';
+
+/**
+ * Each route: `get` answers the wallet's GET (default: label and icon),
+ * `post` its POST (default: a sponsored payment). `cors: false` answers with
+ * no CORS headers at all, as a merchant that never thought of the extension.
+ */
 const ROUTES = {
-  '/pay/sponsored': { version: 'legacy', message: 'Thanks for testing Salmon' },
-  '/pay/sponsored-v0': { version: 0, message: 'Thanks for testing Salmon (v0)' },
+  '/pay/sponsored': { post: (account) => merchantTransaction(account, { version: 'legacy' }) },
+  '/pay/sponsored-v0': {},
+  // Spec 043 US2: each answer the wallet must refuse, nothing signed.
+  '/pay/http-error': {
+    post: () => ({ status: 500, body: { message: 'Out of stock — test merchant error' } }),
+  },
+  '/pay/not-json': {
+    get: () => ({ status: 200, body: '<html>not json</html>', type: 'text/html' }),
+  },
+  '/pay/bad-icon': {
+    get: () => ({ status: 200, body: { label: LABEL, icon: `${PUBLIC_URL}/icon.gif` } }),
+  },
+  '/pay/bad-signature': { post: async (account) => tamper(await merchantTransaction(account)) },
+  '/pay/missing-sponsor': {
+    post: async (account) =>
+      merchantTransaction(account, { payer: await stranger(), cosign: true }),
+  },
+  '/pay/not-for-you': {
+    post: async (account) => merchantTransaction(account, { from: (await stranger()).address }),
+  },
+  // Would fail on chain (more SOL than a test wallet holds): the review opens, held.
+  '/pay/fails': {
+    post: (account) => merchantTransaction(account, { lamports: 1_000_000_000_000_000n }),
+  },
+  '/pay/slow': {
+    post: async (account) => {
+      await sleep(15_000);
+      return merchantTransaction(account);
+    },
+  },
+  '/pay/redirect-http': {
+    get: () => ({
+      status: 302,
+      headers: { Location: `http://${new URL(PUBLIC_URL).host}/pay/sponsored` },
+    }),
+  },
+  '/pay/huge': {
+    get: () => ({
+      status: 200,
+      body: { label: LABEL, icon: `${PUBLIC_URL}/icon.svg`, pad: 'x'.repeat(100 * 1024) },
+    }),
+  },
+  '/pay/no-cors': { cors: false },
 };
 
-function send(res, status, body, type = 'application/json') {
-  res.writeHead(status, {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Accept',
-    'Content-Type': type,
-  });
-  res.end(typeof body === 'string' ? body : JSON.stringify(body));
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Accept',
+};
+
+function send(res, status, body, { type = 'application/json', cors = true, headers = {} } = {}) {
+  res.writeHead(status, { ...(cors ? CORS : {}), 'Content-Type': type, ...headers });
+  res.end(typeof body === 'string' ? body : JSON.stringify(body ?? ''));
 }
 
 function readBody(req) {
@@ -171,27 +241,41 @@ const server = http.createServer(async (req, res) => {
     `${new Date().toISOString()} ${req.method} ${path} origin=${req.headers.origin ?? '-'} ua=${req.headers['user-agent'] ?? '-'}${body ? ` body=${body}` : ''}`
   );
 
-  if (req.method === 'OPTIONS') return send(res, 204, '');
-  if (path === '/icon.svg') return send(res, 200, ICON_SVG, 'image/svg+xml');
-
   const route = ROUTES[path];
+  const cors = route?.cors !== false;
+  if (req.method === 'OPTIONS') return cors ? send(res, 204, '') : send(res, 405, '', { cors });
+  if (path === '/icon.svg') return send(res, 200, ICON_SVG, { type: 'image/svg+xml' });
   if (!route) return send(res, 404, { message: 'No such route' });
-  if (req.method === 'GET') return send(res, 200, { label: LABEL, icon: `${PUBLIC_URL}/icon.svg` });
-  if (req.method !== 'POST') return send(res, 405, { message: 'GET or POST' });
+
+  if (req.method === 'GET') {
+    const answer = route.get?.() ?? {
+      status: 200,
+      body: { label: LABEL, icon: `${PUBLIC_URL}/icon.svg` },
+    };
+    return send(res, answer.status, answer.body, {
+      type: answer.type,
+      headers: answer.headers,
+      cors,
+    });
+  }
+  if (req.method !== 'POST') return send(res, 405, { message: 'GET or POST' }, { cors });
 
   let account;
   try {
     account = JSON.parse(body).account;
     address(account);
   } catch {
-    return send(res, 400, { message: 'Send {"account": "<address>"}' });
+    return send(res, 400, { message: 'Send {"account": "<address>"}' }, { cors });
   }
   try {
-    const transaction = await sponsoredTransaction(account, route.version);
-    return send(res, 200, { transaction, message: route.message });
+    const answer = await (route.post ?? merchantTransaction)(account);
+    if (typeof answer === 'string') {
+      return send(res, 200, { transaction: answer, message: MESSAGE }, { cors });
+    }
+    return send(res, answer.status, answer.body, { cors });
   } catch (error) {
     console.error(`  ${path}: ${error.message}`);
-    return send(res, 500, { message: 'The test merchant could not build the payment' });
+    return send(res, 500, { message: 'The test merchant could not build the payment' }, { cors });
   }
 });
 
@@ -205,4 +289,8 @@ server.listen(PORT, async () => {
     console.log(`\n${path}\n${link}`);
     console.log(await QRCode.toString(link, { type: 'terminal', small: true }));
   }
+  // Refused as malformed before any request: nothing reaches this server.
+  console.log(
+    `\nhttp link (printed only)\nsolana:http://${new URL(PUBLIC_URL).host}/pay/sponsored`
+  );
 });

@@ -11,8 +11,12 @@ import bs58 from 'bs58';
 import {
   assertIsTransactionWithinSizeLimit,
   getCompiledTransactionMessageDecoder,
+  getPublicKeyFromAddress,
   getTransactionDecoder,
+  verifySignature,
+  type Address,
   type Blockhash,
+  type CompiledTransactionMessage,
   type Transaction,
 } from '@solana/kit';
 import { TransactionRequestError } from './transaction-request';
@@ -51,18 +55,57 @@ function decodeMerchantTransaction(transactionBase64: string) {
   }
 }
 
+const SYSTEM_PROGRAM = '11111111111111111111111111111111';
+const ADVANCE_NONCE_ACCOUNT = [4, 0, 0, 0];
+
+/**
+ * A durable-nonce transaction never expires, so a merchant holding the
+ * user's signature could send it whenever it liked. The network recognises
+ * one by its first instruction: the System program's `AdvanceNonceAccount`.
+ */
+function usesDurableNonce(message: CompiledTransactionMessage): boolean {
+  if (!('instructions' in message)) return false;
+  const [first] = message.instructions;
+  if (!first || message.staticAccounts[first.programAddressIndex] !== SYSTEM_PROGRAM) return false;
+  const data = first.data ?? new Uint8Array();
+  return ADVANCE_NONCE_ACCOUNT.every((byte, i) => data[i] === byte);
+}
+
 /**
  * The signed-case rules alone, on exact bytes; core runs them again right
- * before the key is used.
+ * before the key is used. The user must be asked to sign and not have signed
+ * yet; every other party must already have signed, each signature valid over
+ * these exact message bytes; and the lifetime must be a blockhash.
+ *
+ * @throws TransactionRequestError - With the first rule the bytes break.
  */
 export async function assertReceivedTransactionSignable(
   transaction: Transaction,
   signer: string
 ): Promise<void> {
-  // ponytail: US1 checks only that the user is an expected signer; the full
-  // refusals (signature verification, missing co-signer, filled user slot)
-  // land with spec 043 US2 (T038/T041).
-  if (!(signer in transaction.signatures)) throw new TransactionRequestError('notForThisAccount');
+  const { signatures, messageBytes } = transaction;
+  if (!(signer in signatures)) throw new TransactionRequestError('notForThisAccount');
+  if (signatures[signer as Address] !== null) throw new TransactionRequestError('alreadySigned');
+
+  const others = Object.entries(signatures).filter(([address]) => address !== signer);
+  // Nobody else signs after the user: an empty slot means it could never land.
+  if (others.some(([, signature]) => !signature)) {
+    throw new TransactionRequestError('missingSignature');
+  }
+  for (const [address, signature] of others) {
+    const key = await getPublicKeyFromAddress(address as Address);
+    if (!signature || !(await verifySignature(key, signature, messageBytes))) {
+      throw new TransactionRequestError('invalidSignature');
+    }
+  }
+
+  let message: CompiledTransactionMessage;
+  try {
+    message = getCompiledTransactionMessageDecoder().decode(messageBytes);
+  } catch {
+    throw new TransactionRequestError('malformedTransaction');
+  }
+  if (usesDurableNonce(message)) throw new TransactionRequestError('staleOrWrongNetwork');
 }
 
 async function assertLifetimeValid(rpc: SolanaRpc, lifetime: string): Promise<void> {

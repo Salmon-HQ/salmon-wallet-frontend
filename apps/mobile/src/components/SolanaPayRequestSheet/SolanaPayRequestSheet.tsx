@@ -12,6 +12,7 @@ import { fontFamilyNative, fontSize, s, spacing, vs, type Semantic } from '@salm
 
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { BottomSheetContainer } from '../BottomSheetContainer';
+import { PrimaryButton } from '../Button/PrimaryButton';
 import { SecondaryButton } from '../Button/SecondaryButton';
 import { Spinner } from '../Spinner';
 import { RequesterRow } from '../TransactionConfirmation/RequesterRow';
@@ -23,6 +24,7 @@ export function SolanaPayRequestSheet({
   merchant,
   phase,
   error,
+  onRetry,
   onClose,
 }: SolanaPayRequestSheetProps) {
   const { t } = useTranslation();
@@ -41,7 +43,11 @@ export function SolanaPayRequestSheet({
 
         {phase === 'failed' ? (
           <View testID="solana-pay-error">
-            <WarningNotice tone="warning" title={t(error?.key ?? 'solanaPay.errors.unreachable')} />
+            <WarningNotice tone="warning" title={t(error?.key ?? 'solanaPay.errors.unreachable')}>
+              {error?.merchantMessage
+                ? t('solanaPay.merchantMessage', { message: error.merchantMessage })
+                : null}
+            </WarningNotice>
           </View>
         ) : (
           <View style={styles.status} testID="solana-pay-status" accessibilityRole="progressbar">
@@ -51,6 +57,12 @@ export function SolanaPayRequestSheet({
             </Text>
           </View>
         )}
+
+        {onRetry ? (
+          <PrimaryButton testID="solana-pay-retry" onPress={onRetry}>
+            {t('solanaPay.retry')}
+          </PrimaryButton>
+        ) : null}
 
         <SecondaryButton testID="solana-pay-close" onPress={onClose}>
           {t('actions.close')}

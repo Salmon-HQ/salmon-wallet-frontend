@@ -11,7 +11,10 @@ jest.mock('@salmon/shared', () => ({
 }));
 
 jest.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
+  useTranslation: () => ({
+    t: (key: string, values?: { message?: string }) =>
+      values?.message ? `${key}: ${values.message}` : key,
+  }),
 }));
 
 // The container drags in Reanimated/expo-blur; its behaviour has its own suite.
@@ -19,31 +22,37 @@ jest.mock('../BottomSheetContainer', () => ({
   BottomSheetContainer: ({ visible, children }: { visible: boolean; children: React.ReactNode }) =>
     visible ? children : null,
 }));
-jest.mock('../Button/SecondaryButton', () => ({
-  SecondaryButton: ({
-    children,
-    onPress,
-    testID,
-  }: {
-    children: React.ReactNode;
-    onPress: () => void;
-    testID?: string;
-  }) => {
-    const RN = require('react-native');
-    const R = require('react');
-    return R.createElement(
-      RN.TouchableOpacity,
-      { onPress, testID },
-      R.createElement(RN.Text, null, children)
-    );
-  },
-}));
+function mockButton({
+  children,
+  onPress,
+  testID,
+}: {
+  children: React.ReactNode;
+  onPress: () => void;
+  testID?: string;
+}) {
+  const RN = require('react-native');
+  const R = require('react');
+  return R.createElement(
+    RN.TouchableOpacity,
+    { onPress, testID },
+    R.createElement(RN.Text, null, children)
+  );
+}
+jest.mock('../Button/SecondaryButton', () => ({ SecondaryButton: mockButton }));
+jest.mock('../Button/PrimaryButton', () => ({ PrimaryButton: mockButton }));
 jest.mock('../Spinner', () => ({ Spinner: () => null }));
 jest.mock('../WarningNotice', () => ({
-  WarningNotice: ({ title }: { title: string }) => {
+  WarningNotice: ({ title, children }: { title: string; children?: React.ReactNode }) => {
     const RN = require('react-native');
     const R = require('react');
-    return R.createElement(RN.Text, null, title);
+    // As the real notice: the body is a Text of its own.
+    return R.createElement(
+      RN.View,
+      null,
+      R.createElement(RN.Text, null, title),
+      children != null ? R.createElement(RN.Text, null, children) : null
+    );
   },
 }));
 // The identity row has its own suite (TransactionConfirmation/RequesterRow).
@@ -113,6 +122,33 @@ describe('SolanaPayRequestSheet', () => {
     expect(queryByTestId('solana-pay-status')).toBeNull();
     expect(getByTestId('solana-pay-error')).toBeTruthy();
     expect(getByText('solanaPay.errors.unreachable')).toBeTruthy();
+  });
+
+  it("shows the merchant's own words as plain text, markup included", () => {
+    const { getByText } = renderSheet({
+      phase: 'failed',
+      error: { key: 'solanaPay.errors.merchantError', merchantMessage: '<b>Out of stock</b>' },
+    });
+    expect(getByText('solanaPay.merchantMessage: <b>Out of stock</b>')).toBeTruthy();
+  });
+
+  it('offers a retry only when the failure allows one', () => {
+    const refused = renderSheet({
+      phase: 'failed',
+      error: { key: 'solanaPay.errors.invalidSignature' },
+    });
+    expect(refused.queryByTestId('solana-pay-retry')).toBeNull();
+    refused.unmount();
+
+    const onRetry = jest.fn();
+    const { getByTestId, getByText } = renderSheet({
+      phase: 'failed',
+      error: { key: 'solanaPay.errors.unreachable' },
+      onRetry,
+    });
+    fireEvent.press(getByTestId('solana-pay-retry'));
+    expect(onRetry).toHaveBeenCalledTimes(1);
+    expect(getByText('solanaPay.retry')).toBeTruthy();
   });
 
   it('closes on its button', () => {

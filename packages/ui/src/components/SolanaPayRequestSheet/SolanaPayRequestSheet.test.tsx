@@ -10,7 +10,10 @@ import { SolanaPayRequestSheet } from './SolanaPayRequestSheet';
 import type { SolanaPayRequestSheetProps } from './types';
 
 vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
+  useTranslation: () => ({
+    t: (key: string, values?: { message?: string }) =>
+      values?.message ? `${key}: ${values.message}` : key,
+  }),
 }));
 
 afterEach(cleanup);
@@ -72,6 +75,28 @@ describe('SolanaPayRequestSheet', () => {
     expect(screen.getByTestId('solana-pay-error').textContent).toContain(
       'solanaPay.errors.unreachable'
     );
+  });
+
+  it("shows the merchant's own words as plain text, markup included", () => {
+    renderSheet({
+      phase: 'failed',
+      error: { key: 'solanaPay.errors.merchantError', merchantMessage: '<b>Out of stock</b>' },
+    });
+    const error = screen.getByTestId('solana-pay-error');
+    expect(error.textContent).toContain('solanaPay.merchantMessage: <b>Out of stock</b>');
+    expect(error.querySelector('b')).toBeNull();
+  });
+
+  it('offers a retry only when the failure allows one', () => {
+    renderSheet({ phase: 'failed', error: { key: 'solanaPay.errors.invalidSignature' } });
+    expect(screen.queryByTestId('solana-pay-retry')).toBeNull();
+    cleanup();
+
+    const onRetry = vi.fn();
+    renderSheet({ phase: 'failed', error: { key: 'solanaPay.errors.unreachable' }, onRetry });
+    fireEvent.click(screen.getByTestId('solana-pay-retry'));
+    expect(onRetry).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('solana-pay-retry').textContent).toContain('solanaPay.retry');
   });
 
   it('closes on its button', () => {

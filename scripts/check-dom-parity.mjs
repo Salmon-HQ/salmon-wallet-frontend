@@ -108,7 +108,11 @@ import { fileURLToPath } from 'node:url';
 // 2026-11-12, later: 2483 → 2492. The `SolanaPayRequest` twins that the Send
 // recipient step mounts while a link is open: one line of JSX that spreads
 // `useSolanaPayRequest` into the sheet, with the same imports on both.
-export const CROSS_PLATFORM_CLONE_LINES_MAX = 2492;
+// 2026-11-12, spec 043 US2: 2492 → 2513. The sheet's failed phase on both
+// twins: the merchant's words as the notice body and a Retry button. Pure
+// JSX: which failures may retry, the reason's key and the 80-character cut
+// are decided in `useSolanaPayTransactionRequest` / `transaction-request.ts`.
+export const CROSS_PLATFORM_CLONE_LINES_MAX = 2513;
 
 /** Twins whose folders are not named the same. mobile folder → DOM folder(s). */
 export const MAP = {

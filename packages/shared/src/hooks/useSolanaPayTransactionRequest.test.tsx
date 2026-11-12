@@ -15,6 +15,7 @@ import {
   useSolanaPayTransactionRequest,
 } from './useSolanaPayTransactionRequest';
 import { SignatureRequestCancelledError } from '../core/confirmation/types';
+import { TransactionRequestError } from '../blockchain/solana/transaction-request';
 import type { ReceivedTransactionProposal } from '../core/confirmation/types';
 import type { TransactionEffects } from '../blockchain/solana/simulation-types';
 import { sponsoredMerchantTransaction } from '../test-utils/solana-pay-merchant';
@@ -264,6 +265,137 @@ describe('useSolanaPayTransactionRequest — sponsored payment', () => {
       merchant: { domain: 'merchant.example' },
       error: { key: 'solanaPay.errors.watchOnly' },
     });
+  });
+});
+
+describe('useSolanaPayTransactionRequest — refusals and retry', () => {
+  /** A stranger's transaction: it never asks for the user's signature. */
+  async function strangersWire() {
+    const stranger = await generateKeyPairSigner();
+    return sponsoredMerchantTransaction({
+      version: 0,
+      sponsor,
+      user: stranger.address,
+      merchant: merchant.address,
+    });
+  }
+
+  /** The same sponsored transaction with one byte of the sponsor's signature changed. */
+  function tamperedWire() {
+    const bytes = Buffer.from(wire, 'base64');
+    bytes[1] ^= 0xff;
+    return bytes.toString('base64');
+  }
+
+  it('a GET refusal keeps only the domain and offers no retry for a malformed icon', async () => {
+    mocks.fetchMerchantDetails.mockRejectedValue(new TransactionRequestError('malformedIcon'));
+    const { result } = renderHook(() => useSolanaPayTransactionRequest({ account: account() }));
+
+    act(() => result.current.start(LINK));
+
+    await waitFor(() => expect(result.current.state.phase).toBe('failed'));
+    expect(result.current.state).toEqual({
+      phase: 'failed',
+      reason: 'malformedIcon',
+      merchant: { domain: 'merchant.example' },
+    });
+    expect(result.current.sheet).toMatchObject({
+      visible: true,
+      phase: 'failed',
+      error: { key: 'solanaPay.errors.malformedIcon' },
+    });
+    expect(result.current.sheet.onRetry).toBeUndefined();
+    expect(mocks.fetchMerchantTransaction).not.toHaveBeenCalled();
+    expect(mocks.requestReceived).not.toHaveBeenCalled();
+  });
+
+  it('a POST refusal keeps the merchant and its own words', async () => {
+    mocks.fetchMerchantTransaction.mockRejectedValue(
+      new TransactionRequestError('merchantError', 'Out of stock')
+    );
+    const { result } = renderHook(() => useSolanaPayTransactionRequest({ account: account() }));
+
+    act(() => result.current.start(LINK));
+
+    await waitFor(() => expect(result.current.state.phase).toBe('failed'));
+    expect(result.current.state).toMatchObject({
+      reason: 'merchantError',
+      merchantMessage: 'Out of stock',
+      merchant: { domain: 'merchant.example', label: 'Corner Café' },
+    });
+    expect(result.current.sheet.error).toEqual({
+      key: 'solanaPay.errors.merchantError',
+      merchantMessage: 'Out of stock',
+    });
+    expect(mocks.requestReceived).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['invalidSignature', tamperedWire],
+    ['notForThisAccount', strangersWire],
+    ['malformedTransaction', async () => Buffer.from([1, 2, 3]).toString('base64')],
+  ] as const)(
+    'an unsafe transaction (%s) stops before the review, with no retry',
+    async (reason, makeWire) => {
+      mocks.fetchMerchantTransaction.mockResolvedValue({ transaction: await makeWire() });
+      const { result } = renderHook(() => useSolanaPayTransactionRequest({ account: account() }));
+
+      act(() => result.current.start(LINK));
+
+      await waitFor(() => expect(result.current.state.phase).toBe('failed'));
+      expect(result.current.state).toMatchObject({ reason });
+      expect(result.current.sheet.onRetry).toBeUndefined();
+      expect(mocks.preview).not.toHaveBeenCalled();
+      expect(mocks.requestReceived).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each(['unreachable', 'merchantError', 'unreadable'] as const)(
+    'retry after a %s GET asks for the details again, then goes on',
+    async (reason) => {
+      mocks.fetchMerchantDetails.mockRejectedValueOnce(new TransactionRequestError(reason));
+      const { result } = renderHook(() => useSolanaPayTransactionRequest({ account: account() }));
+
+      act(() => result.current.start(LINK));
+      await waitFor(() => expect(result.current.sheet.onRetry).toBeDefined());
+      act(() => result.current.sheet.onRetry?.());
+
+      await waitFor(() => expect(result.current.state.phase).toBe('done'));
+      expect(mocks.fetchMerchantDetails).toHaveBeenCalledTimes(2);
+      expect(mocks.fetchMerchantTransaction).toHaveBeenCalledTimes(1);
+    }
+  );
+
+  it('retry after a failed POST repeats only the POST', async () => {
+    mocks.fetchMerchantTransaction.mockRejectedValueOnce(
+      new TransactionRequestError('unreachable')
+    );
+    const { result } = renderHook(() => useSolanaPayTransactionRequest({ account: account() }));
+
+    act(() => result.current.start(LINK));
+    await waitFor(() => expect(result.current.sheet.onRetry).toBeDefined());
+    act(() => result.current.sheet.onRetry?.());
+
+    await waitFor(() => expect(result.current.state.phase).toBe('done'));
+    expect(mocks.fetchMerchantDetails).toHaveBeenCalledTimes(1);
+    expect(mocks.fetchMerchantTransaction).toHaveBeenCalledTimes(2);
+  });
+
+  it('a preview that cannot say what happens still opens the review, held, with the warning', async () => {
+    mocks.preview.mockResolvedValue({
+      kind: 'undetermined',
+      account: user.address,
+      reason: 'simulation-unavailable',
+      detail: 'node down',
+    });
+    const { result } = renderHook(() => useSolanaPayTransactionRequest({ account: account() }));
+
+    act(() => result.current.start(LINK));
+    await waitFor(() => expect(mocks.requestReceived).toHaveBeenCalledTimes(1));
+
+    const { display } = mocks.requestReceived.mock.calls[0][0];
+    expect(display.requiresHold).toBe(true);
+    expect(display.warning).toBeDefined();
   });
 });
 

@@ -8,6 +8,7 @@
  * link and talks to the server; the transaction itself is checked in
  * `transaction-request-checks.ts`.
  */
+import { isReactNative } from '../../utils/platform';
 
 /** Why a transaction request stops; each has its own `solanaPay.errors.<reason>` copy. */
 export type TransactionRequestRefusal =
@@ -26,13 +27,34 @@ export type TransactionRequestRefusal =
   | 'expired'
   | 'accountChanged';
 
+/**
+ * Each refusal's copy, spelled out so the i18n check sees every key in use
+ * (a template string would hide them).
+ */
+export const SOLANA_PAY_ERROR_KEY: Record<TransactionRequestRefusal, string> = {
+  watchOnly: 'solanaPay.errors.watchOnly',
+  malformedLink: 'solanaPay.errors.malformedLink',
+  unreachable: 'solanaPay.errors.unreachable',
+  merchantError: 'solanaPay.errors.merchantError',
+  unreadable: 'solanaPay.errors.unreadable',
+  malformedIcon: 'solanaPay.errors.malformedIcon',
+  malformedTransaction: 'solanaPay.errors.malformedTransaction',
+  invalidSignature: 'solanaPay.errors.invalidSignature',
+  notForThisAccount: 'solanaPay.errors.notForThisAccount',
+  alreadySigned: 'solanaPay.errors.alreadySigned',
+  missingSignature: 'solanaPay.errors.missingSignature',
+  staleOrWrongNetwork: 'solanaPay.errors.staleOrWrongNetwork',
+  expired: 'solanaPay.errors.expired',
+  accountChanged: 'solanaPay.errors.accountChanged',
+};
+
 /** A refusal, with the merchant's own words when its error answer carried some. */
 export class TransactionRequestError extends Error {
   constructor(
     readonly reason: TransactionRequestRefusal,
     readonly merchantMessage?: string
   ) {
-    super(`solanaPay.errors.${reason}`);
+    super(SOLANA_PAY_ERROR_KEY[reason]);
     this.name = 'TransactionRequestError';
   }
 }
@@ -105,29 +127,128 @@ export interface MerchantRequestOptions {
 }
 
 const ICON_PATH = /\.(svg|png|webp)$/i;
+const TIMEOUT_MS = 10_000;
+const MAX_BODY_BYTES = 64 * 1024;
+const MERCHANT_MESSAGE_CHARS = 80;
 
-// The standard asks that the request not identify the wallet or the user:
-// no cookies, no referrer, no wallet-added header beyond what JSON needs.
-const TRANSPORT: RequestInit = {
-  credentials: 'omit',
-  referrerPolicy: 'no-referrer',
-  cache: 'no-store',
-  redirect: 'error',
-};
+/**
+ * The standard asks that the request not identify the wallet or the user:
+ * no cookies, no referrer, no wallet-added header beyond what JSON needs.
+ * React Native's fetch turns `cache: 'no-store'` on a GET into an added
+ * `_=<time>` query parameter, so there the GET goes without it and the
+ * merchant gets its address exactly as the link gave it.
+ */
+function transport(method: 'GET' | 'POST'): RequestInit {
+  const init: RequestInit = {
+    credentials: 'omit',
+    referrerPolicy: 'no-referrer',
+    redirect: 'error',
+  };
+  if (!(method === 'GET' && isReactNative())) init.cache = 'no-store';
+  return init;
+}
 
-async function requestJson(link: TransactionRequestLink, init: RequestInit): Promise<unknown> {
-  let response: Response;
+/**
+ * Where `redirect: 'error'` is not honoured (React Native follows redirects),
+ * the answer must still come from the link's own host over HTTPS.
+ */
+function cameFromLink(response: Response, link: TransactionRequestLink): boolean {
+  if (!response.url) return true;
   try {
-    response = await fetch(link.url, { ...TRANSPORT, ...init });
+    const url = new URL(response.url);
+    return url.protocol === 'https:' && url.hostname === link.host;
   } catch {
-    // A network error and a CORS refusal look the same from inside a page.
-    throw new TransactionRequestError('unreachable');
+    return false;
   }
-  if (!response.ok) throw new TransactionRequestError('merchantError');
-  try {
-    return await response.json();
-  } catch {
+}
+
+/** The body as text, refused past 64 KiB whether or not the server announced it. */
+async function readCapped(response: Response): Promise<string> {
+  if (Number(response.headers.get('Content-Length') ?? 0) > MAX_BODY_BYTES) {
     throw new TransactionRequestError('unreadable');
+  }
+  const reader = response.body?.getReader?.();
+  if (!reader) {
+    const text = await response.text();
+    if (text.length > MAX_BODY_BYTES) throw new TransactionRequestError('unreadable');
+    return text;
+  }
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > MAX_BODY_BYTES) {
+      void reader.cancel().catch(() => undefined);
+      throw new TransactionRequestError('unreadable');
+    }
+    chunks.push(value);
+  }
+  const bytes = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder().decode(bytes);
+}
+
+/** The merchant's own words from an error answer, cut to what the review shows. */
+function merchantWords(text: string): string | undefined {
+  try {
+    const body: unknown = JSON.parse(text);
+    if (isRecord(body) && typeof body.message === 'string' && body.message.trim()) {
+      return [...body.message.trim()].slice(0, MERCHANT_MESSAGE_CHARS).join('');
+    }
+  } catch {
+    // Not JSON: the merchant said nothing the wallet can show.
+  }
+  return undefined;
+}
+
+async function requestJson(
+  link: TransactionRequestLink,
+  method: 'GET' | 'POST',
+  init: RequestInit,
+  callerSignal?: AbortSignal
+): Promise<unknown> {
+  const controller = new AbortController();
+  const onAbort = () => controller.abort();
+  callerSignal?.addEventListener('abort', onAbort);
+  const timer = setTimeout(onAbort, TIMEOUT_MS);
+  try {
+    let response: Response;
+    try {
+      response = await fetch(link.url, {
+        ...transport(method),
+        ...init,
+        method,
+        signal: controller.signal,
+      });
+    } catch {
+      // A network error and a CORS refusal look the same from inside a page.
+      throw new TransactionRequestError('unreachable');
+    }
+    if (!cameFromLink(response, link)) throw new TransactionRequestError('unreachable');
+
+    let text = '';
+    try {
+      text = await readCapped(response);
+    } catch {
+      if (controller.signal.aborted) throw new TransactionRequestError('unreachable');
+      // An error answer too large to read still says the merchant failed.
+      if (response.ok) throw new TransactionRequestError('unreadable');
+    }
+    if (!response.ok) throw new TransactionRequestError('merchantError', merchantWords(text));
+    try {
+      return JSON.parse(text);
+    } catch {
+      throw new TransactionRequestError('unreadable');
+    }
+  } finally {
+    clearTimeout(timer);
+    callerSignal?.removeEventListener('abort', onAbort);
   }
 }
 
@@ -151,11 +272,7 @@ export async function fetchMerchantDetails(
   link: TransactionRequestLink,
   { signal }: MerchantRequestOptions = {}
 ): Promise<MerchantDetails> {
-  const body = await requestJson(link, {
-    method: 'GET',
-    headers: { Accept: 'application/json' },
-    signal,
-  });
+  const body = await requestJson(link, 'GET', { headers: { Accept: 'application/json' } }, signal);
   if (!isRecord(body) || typeof body.label !== 'string' || !body.label.trim()) {
     throw new TransactionRequestError('unreadable');
   }
@@ -175,12 +292,15 @@ export async function fetchMerchantTransaction(
   account: string,
   { signal }: MerchantRequestOptions = {}
 ): Promise<MerchantTransactionResponse> {
-  const body = await requestJson(link, {
-    method: 'POST',
-    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-    body: JSON.stringify({ account }),
-    signal,
-  });
+  const body = await requestJson(
+    link,
+    'POST',
+    {
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ account }),
+    },
+    signal
+  );
   if (!isRecord(body) || typeof body.transaction !== 'string' || !body.transaction) {
     throw new TransactionRequestError('unreadable');
   }

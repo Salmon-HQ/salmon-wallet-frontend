@@ -14,14 +14,19 @@ import bs58 from 'bs58';
 import {
   fetchMerchantDetails,
   fetchMerchantTransaction,
+  SOLANA_PAY_ERROR_KEY,
   TransactionRequestError,
+  type MerchantDetails,
   type TransactionRequestLink,
   type TransactionRequestRefusal,
 } from '../blockchain/solana/transaction-request';
 import { prepareMerchantTransaction } from '../blockchain/solana/transaction-request-checks';
 import type { SolanaAccount } from '../blockchain/solana/SolanaAccount';
 import { useRequestReceivedSignature } from '../core/confirmation/received';
-import { SignatureRequestCancelledError } from '../core/confirmation/types';
+import {
+  SignatureRequestCancelledError,
+  type ReceivedTransactionProposal,
+} from '../core/confirmation/types';
 import {
   loadSolanaTransactionApprovalDetails,
   previewSolanaApprovalEffects,
@@ -94,6 +99,17 @@ function sheetPhase(state: MerchantPaymentState): SolanaPayRequestSheetPropsBase
   }
 }
 
+/** Failures a second try can cure: the merchant or the network, never the transaction. */
+const RETRYABLE: ReadonlySet<TransactionRequestRefusal> = new Set([
+  'unreachable',
+  'merchantError',
+  'unreadable',
+]);
+
+function identity(details: MerchantDetails): MerchantIdentity {
+  return { domain: details.domain, label: details.label, icon: details.iconToRender };
+}
+
 export function useSolanaPayTransactionRequest({
   account,
   accountName,
@@ -102,6 +118,10 @@ export function useSolanaPayTransactionRequest({
   const requestReceived = useRequestReceivedSignature();
   const [state, setState] = useState<MerchantPaymentState>({ phase: 'idle' });
   const attemptRef = useRef<AbortController | null>(null);
+  /** Where a retry resumes, when a second try can cure the failure. */
+  const retryRef = useRef<{ link: TransactionRequestLink; details: MerchantDetails | null } | null>(
+    null
+  );
 
   const solanaAccount: SolanaAccount | null =
     account && isSignableSolanaAccount(account) ? account : null;
@@ -118,98 +138,126 @@ export function useSolanaPayTransactionRequest({
   const close = useCallback(() => {
     attemptRef.current?.abort();
     attemptRef.current = null;
+    retryRef.current = null;
     setState({ phase: 'idle' });
   }, []);
 
-  const start = useCallback(
-    (link: TransactionRequestLink) => {
+  /**
+   * POST → checks → preview → the proposal core reviews. Run once per
+   * attempt; `onPosted` moves the sheet to "preparing" once the merchant
+   * answered.
+   */
+  const buildProposal = useCallback(
+    async (
+      wallet: SolanaAccount,
+      network: SolanaNetworkId,
+      link: TransactionRequestLink,
+      details: MerchantDetails,
+      signal: AbortSignal,
+      onPosted: () => void
+    ): Promise<ReceivedTransactionProposal | null> => {
+      const signer = wallet.getReceiveAddress();
+      const response = await fetchMerchantTransaction(link, signer, { signal });
+      if (signal.aborted) return null;
+      onPosted();
+
+      const prepared = await prepareMerchantTransaction(
+        wallet.getRpc(),
+        signer,
+        response.transaction
+      );
+      if (signal.aborted) return null;
+      const request: DAppSignAndSendTransactionRequest = {
+        id: `solana-pay-${Date.now()}`,
+        method: 'signAndSendTransaction',
+        params: {
+          message: prepared.message,
+          transaction: bs58.encode(new Uint8Array(Buffer.from(prepared.wire, 'base64'))),
+        },
+      };
+      // The review opens only once the preview answered: the merchant
+      // controls the bytes, so "still simulating" is never signable.
+      const [approval, rawEffects] = await Promise.all([
+        loadSolanaTransactionApprovalDetails(wallet, request),
+        previewSolanaApprovalEffects(wallet, request),
+      ]);
+      if (signal.aborted) return null;
+      const effects = applySymbols(rawEffects, (mint) => catalogRef.current.get(mint));
+      const gate = dappTransactionGate({ effects, effectsLoading: false, parsingError: null });
+      const { label } = details;
+      const display = {
+        ...dappTransactionDisplay(
+          {
+            origin: details.domain,
+            signingAccount: { name: accountName, address: signer },
+            effects,
+            effectsLoading: false,
+            feeSol:
+              approval.feeLamports == null
+                ? null
+                : formatBaseUnits(BigInt(approval.feeLamports), SOL_DECIMALS),
+            transactionCount: 1,
+            parsingError: null,
+            requester: { name: label, icon: details.iconToRender, domain: details.domain },
+            message: response.message,
+            feePayer: prepared.feePayer,
+          },
+          t
+        ),
+        title: t('solanaPay.reviewTitle'),
+        pendingTitle: t('solanaPay.paying', { label }),
+        receipt: { title: t('solanaPay.receiptTitle') },
+        requiresHold: gate.requiresHold,
+      };
+      return {
+        id: request.id as string,
+        source: 'received',
+        networkId: network,
+        transaction: prepared.wire,
+        signer,
+        display,
+        pending: { kind: 'send' },
+      };
+    },
+    [accountName, t]
+  );
+
+  /** One attempt from `details` (or from the GET when they are not known yet). */
+  const attempt = useCallback(
+    (link: TransactionRequestLink, known: MerchantDetails | null) => {
       attemptRef.current?.abort();
+      retryRef.current = null;
       if (!solanaAccount || !networkId) {
         setState({ phase: 'refused', reason: 'watchOnly', merchant: { domain: link.host } });
         return;
       }
-      const attempt = new AbortController();
-      attemptRef.current = attempt;
-      const { signal } = attempt;
+      const controller = new AbortController();
+      attemptRef.current = controller;
+      const { signal } = controller;
       // Every step re-checks: a closed sheet must not be reopened by a late answer.
       const update = (next: MerchantPaymentState) => {
         if (!signal.aborted) setState(next);
       };
-      let merchant: MerchantIdentity = { domain: link.host };
+      let details = known;
+      let merchant: MerchantIdentity = details ? identity(details) : { domain: link.host };
 
       const run = async () => {
-        update({ phase: 'loadingDetails', merchant });
-        const details = await fetchMerchantDetails(link, { signal });
-        // A closed sheet ends the flow: no further request leaves the device.
-        if (signal.aborted) return;
-        merchant = { domain: details.domain, label: details.label, icon: details.iconToRender };
+        if (!details) {
+          update({ phase: 'loadingDetails', merchant });
+          details = await fetchMerchantDetails(link, { signal });
+          // A closed sheet ends the flow: no further request leaves the device.
+          if (signal.aborted) return;
+          merchant = identity(details);
+        }
         update({ phase: 'loadingTransaction', merchant });
-
-        const signer = solanaAccount.getReceiveAddress();
-        const response = await fetchMerchantTransaction(link, signer, { signal });
-        if (signal.aborted) return;
-        update({ phase: 'preparing', merchant });
-
-        const prepared = await prepareMerchantTransaction(
-          solanaAccount.getRpc(),
-          signer,
-          response.transaction
+        const proposal = await buildProposal(solanaAccount, networkId, link, details, signal, () =>
+          update({ phase: 'preparing', merchant })
         );
-        if (signal.aborted) return;
-        const request: DAppSignAndSendTransactionRequest = {
-          id: `solana-pay-${Date.now()}`,
-          method: 'signAndSendTransaction',
-          params: {
-            message: prepared.message,
-            transaction: bs58.encode(new Uint8Array(Buffer.from(prepared.wire, 'base64'))),
-          },
-        };
-        // The review opens only once the preview answered: the merchant
-        // controls the bytes, so "still simulating" is never signable.
-        const [approval, rawEffects] = await Promise.all([
-          loadSolanaTransactionApprovalDetails(solanaAccount, request),
-          previewSolanaApprovalEffects(solanaAccount, request),
-        ]);
-        if (signal.aborted) return;
-        const effects = applySymbols(rawEffects, (mint) => catalogRef.current.get(mint));
-        const gate = dappTransactionGate({ effects, effectsLoading: false, parsingError: null });
-        const label = details.label;
-        const display = {
-          ...dappTransactionDisplay(
-            {
-              origin: details.domain,
-              signingAccount: { name: accountName, address: signer },
-              effects,
-              effectsLoading: false,
-              feeSol:
-                approval.feeLamports == null
-                  ? null
-                  : formatBaseUnits(BigInt(approval.feeLamports), SOL_DECIMALS),
-              transactionCount: 1,
-              parsingError: null,
-              requester: { name: label, icon: details.iconToRender, domain: details.domain },
-              message: response.message,
-              feePayer: prepared.feePayer,
-            },
-            t
-          ),
-          title: t('solanaPay.reviewTitle'),
-          pendingTitle: t('solanaPay.paying', { label }),
-          receipt: { title: t('solanaPay.receiptTitle') },
-          requiresHold: gate.requiresHold,
-        };
+        if (!proposal) return;
 
         update({ phase: 'reviewing', merchant });
         try {
-          await requestReceived({
-            id: request.id as string,
-            source: 'received',
-            networkId,
-            transaction: prepared.wire,
-            signer,
-            display,
-            pending: { kind: 'send' },
-          });
+          await requestReceived(proposal);
         } catch {
           // ponytail: every way out of the review (back, busy, an unknown
           // outcome the host already showed) ends the flow quietly.
@@ -220,8 +268,11 @@ export function useSolanaPayTransactionRequest({
       };
 
       run().catch((error: unknown) => {
-        if (error instanceof SignatureRequestCancelledError) return;
+        if (signal.aborted || error instanceof SignatureRequestCancelledError) return;
         const reason = error instanceof TransactionRequestError ? error.reason : 'unreachable';
+        // A retry repeats only the request that failed: the GET when the
+        // details never came, the POST otherwise.
+        retryRef.current = RETRYABLE.has(reason) ? { link, details } : null;
         update({
           phase: 'failed',
           reason,
@@ -232,26 +283,33 @@ export function useSolanaPayTransactionRequest({
         });
       });
     },
-    [solanaAccount, networkId, accountName, requestReceived, t]
+    [solanaAccount, networkId, buildProposal, requestReceived]
   );
+
+  const start = useCallback((link: TransactionRequestLink) => attempt(link, null), [attempt]);
+  const retry = useCallback(() => {
+    const resume = retryRef.current;
+    if (resume) attempt(resume.link, resume.details);
+  }, [attempt]);
 
   const sheet = useMemo<SolanaPayRequestSheetPropsBase>(() => {
     const phase = sheetPhase(state);
     const merchant = 'merchant' in state ? state.merchant : { domain: '' };
+    const failed = state.phase === 'failed' || state.phase === 'refused';
     return {
       visible: phase !== null,
       merchant,
       phase: phase ?? 'contacting',
-      error:
-        state.phase === 'failed' || state.phase === 'refused'
-          ? {
-              key: `solanaPay.errors.${state.reason}`,
-              merchantMessage: state.phase === 'failed' ? state.merchantMessage : undefined,
-            }
-          : null,
+      error: failed
+        ? {
+            key: SOLANA_PAY_ERROR_KEY[state.reason],
+            merchantMessage: state.phase === 'failed' ? state.merchantMessage : undefined,
+          }
+        : null,
+      onRetry: state.phase === 'failed' && RETRYABLE.has(state.reason) ? retry : undefined,
       onClose: close,
     };
-  }, [state, close]);
+  }, [state, close, retry]);
 
   return { state, sheet, start, close };
 }

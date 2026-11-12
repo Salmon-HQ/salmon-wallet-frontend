@@ -145,6 +145,29 @@ describe('sendReceivedSolanaTransaction', () => {
     expect(rpc.sendTransaction).not.toHaveBeenCalled();
   });
 
+  it('refuses a sponsor signature that does not verify, signing nothing', async () => {
+    const bytes = Buffer.from(
+      await sponsoredMerchantTransaction({
+        version: 0,
+        sponsor,
+        user: user.address,
+        merchant: merchant.address,
+      }),
+      'base64'
+    );
+    // The fee payer's signature is the first after the count byte.
+    bytes[1] ^= 0xff;
+    const rpc = createRpc();
+    const signTransactions = vi.fn(user.signTransactions);
+    const watched = { ...user, signTransactions } as KeyPairSigner;
+
+    await expect(
+      sendReceivedSolanaTransaction(account(rpc, watched), bytes.toString('base64'), user.address)
+    ).rejects.toThrow('solanaPay.errors.invalidSignature');
+    expect(signTransactions).not.toHaveBeenCalled();
+    expect(rpc.sendTransaction).not.toHaveBeenCalled();
+  });
+
   it('lets an unknown outcome through, so nothing offers a second send', async () => {
     const wire = await sponsoredMerchantTransaction({
       version: 0,

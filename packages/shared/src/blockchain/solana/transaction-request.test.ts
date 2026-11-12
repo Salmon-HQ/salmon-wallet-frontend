@@ -3,6 +3,7 @@ import {
   fetchMerchantDetails,
   fetchMerchantTransaction,
   parseTransactionRequestLink,
+  TransactionRequestError,
   type TransactionRequestLink,
 } from './transaction-request';
 
@@ -27,7 +28,33 @@ function mockFetch(response: Response) {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.useRealTimers();
 });
+
+/** The refusal a call ends in: its reason and the merchant's words, if any. */
+async function refusal(call: Promise<unknown>) {
+  try {
+    await call;
+  } catch (error) {
+    expect(error).toBeInstanceOf(TransactionRequestError);
+    const { reason, merchantMessage } = error as TransactionRequestError;
+    return merchantMessage === undefined ? { reason } : { reason, merchantMessage };
+  }
+  throw new Error('expected a refusal');
+}
+
+function textResponse(body: string | ReadableStream<Uint8Array>, init: ResponseInit = {}) {
+  return new Response(body, { status: 200, ...init });
+}
+
+/** A response the platform reached after following a redirect to `url`. */
+function redirectedTo(url: string, response: Response) {
+  Object.defineProperty(response, 'url', { value: url });
+  return response;
+}
+
+const DETAILS_BODY = { label: 'Corner Café', icon: 'https://merchant.example/logo.svg' };
+const OVER_CAP = 64 * 1024 + 1;
 
 describe('fetchMerchantDetails', () => {
   it('asks for JSON with nothing that identifies the user or the wallet', async () => {
@@ -105,6 +132,144 @@ describe('fetchMerchantTransaction', () => {
       transaction: 'AQID',
       message: 'Thanks for your order #42',
     });
+  });
+});
+
+describe('merchant answers the wallet refuses', () => {
+  it('a GET error status is the merchant failing', async () => {
+    mockFetch(textResponse('not here', { status: 404 }));
+    expect(await refusal(fetchMerchantDetails(LINK))).toEqual({ reason: 'merchantError' });
+  });
+
+  it('a GET answer that is not JSON is unreadable', async () => {
+    mockFetch(textResponse('<html>hello</html>'));
+    expect(await refusal(fetchMerchantDetails(LINK))).toEqual({ reason: 'unreadable' });
+  });
+
+  it('an empty label is unreadable', async () => {
+    mockFetch(jsonResponse({ label: '  ', icon: 'https://merchant.example/logo.svg' }));
+    expect(await refusal(fetchMerchantDetails(LINK))).toEqual({ reason: 'unreadable' });
+  });
+
+  it.each([
+    ['relative', '/logo.svg'],
+    ['a gif', 'https://merchant.example/logo.gif'],
+    ['a data address', 'data:image/svg+xml;base64,PHN2Zz48L3N2Zz4='],
+  ])('a %s icon is malformed, and asking stops there', async (_, icon) => {
+    const fetchMock = mockFetch(jsonResponse({ label: 'Corner Café', icon }));
+    expect(await refusal(fetchMerchantDetails(LINK))).toEqual({ reason: 'malformedIcon' });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('a body announced as larger than 64 KiB is unreadable', async () => {
+    mockFetch(
+      textResponse(JSON.stringify(DETAILS_BODY), {
+        headers: { 'Content-Length': String(OVER_CAP) },
+      })
+    );
+    expect(await refusal(fetchMerchantDetails(LINK))).toEqual({ reason: 'unreadable' });
+  });
+
+  it('a streamed body that grows past 64 KiB is unreadable', async () => {
+    const chunk = new Uint8Array(16 * 1024).fill(0x20);
+    let sent = 0;
+    const stream = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        // Never ends on its own: only the cap stops the read.
+        sent += chunk.length;
+        controller.enqueue(chunk);
+      },
+    });
+    mockFetch(textResponse(stream));
+    expect(await refusal(fetchMerchantDetails(LINK))).toEqual({ reason: 'unreadable' });
+    expect(sent).toBeLessThan(OVER_CAP + 2 * chunk.length);
+  });
+
+  it('a merchant that does not answer within 10 seconds is unreachable', async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.fn(
+      (_url: string, init?: RequestInit) =>
+        new Promise<Response>((_, reject) => {
+          init?.signal?.addEventListener('abort', () => reject(new Error('aborted')));
+        })
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const call = refusal(fetchMerchantDetails(LINK));
+    await vi.advanceTimersByTimeAsync(9_999);
+    expect(fetchMock.mock.calls[0][1]?.signal?.aborted).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+
+    expect(await call).toEqual({ reason: 'unreachable' });
+  });
+
+  it('a network error or a CORS refusal (the page cannot tell them apart) is unreachable', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new TypeError('Failed to fetch');
+      })
+    );
+    expect(await refusal(fetchMerchantDetails(LINK))).toEqual({ reason: 'unreachable' });
+  });
+
+  it.each([
+    ['off https', 'http://merchant.example/pay?order=42'],
+    ['to another host', 'https://elsewhere.example/pay'],
+  ])('an answer that arrived through a redirect %s is unreachable', async (_, url) => {
+    mockFetch(redirectedTo(url, jsonResponse(DETAILS_BODY)));
+    expect(await refusal(fetchMerchantDetails(LINK))).toEqual({ reason: 'unreachable' });
+  });
+
+  it('a redirect that stays on the same https host is followed', async () => {
+    mockFetch(redirectedTo('https://merchant.example/pay/v2', jsonResponse(DETAILS_BODY)));
+    expect((await fetchMerchantDetails(LINK)).label).toBe('Corner Café');
+  });
+
+  it("a POST error keeps the first 80 characters of the merchant's message", async () => {
+    const message = 'x'.repeat(120);
+    mockFetch(jsonResponse({ message }, { status: 500 }));
+    expect(await refusal(fetchMerchantTransaction(LINK, ACCOUNT))).toEqual({
+      reason: 'merchantError',
+      merchantMessage: 'x'.repeat(80),
+    });
+  });
+
+  it('a POST error without a message is the merchant failing, nothing more', async () => {
+    mockFetch(textResponse('Internal Server Error', { status: 500 }));
+    expect(await refusal(fetchMerchantTransaction(LINK, ACCOUNT))).toEqual({
+      reason: 'merchantError',
+    });
+  });
+
+  it.each([
+    ['without a transaction', { message: 'hi' }],
+    ['with a transaction that is not text', { transaction: 42 }],
+  ])('a POST answer %s is unreadable', async (_, body) => {
+    mockFetch(jsonResponse(body));
+    expect(await refusal(fetchMerchantTransaction(LINK, ACCOUNT))).toEqual({
+      reason: 'unreadable',
+    });
+  });
+
+  it('every refusal carries its own copy key', () => {
+    expect(new TransactionRequestError('missingSignature').message).toBe(
+      'solanaPay.errors.missingSignature'
+    );
+  });
+});
+
+describe('on React Native', () => {
+  // RN's fetch (whatwg-fetch) turns `cache: 'no-store'` on a GET into an
+  // added `_=<time>` query parameter: the merchant must get its link as given.
+  it('a GET asks without a cache mode, so the address reaches the merchant unchanged', async () => {
+    vi.stubGlobal('navigator', { product: 'ReactNative' });
+    const fetchMock = mockFetch(jsonResponse(DETAILS_BODY));
+
+    await fetchMerchantDetails(LINK);
+
+    expect(fetchMock.mock.calls[0][0]).toBe(LINK.url);
+    expect(fetchMock.mock.calls[0][1]).not.toHaveProperty('cache');
   });
 });
 

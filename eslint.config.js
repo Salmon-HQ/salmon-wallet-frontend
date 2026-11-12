@@ -248,6 +248,21 @@ export default [
               message:
                 'A Powerup never signs, stores or broadcasts: propose through requestSignature() from core/confirmation (spec 027 §2).',
             },
+            {
+              // The same doors by name through a barrel (hooks, core, the
+              // package root, a relative parent), should one ever re-export
+              // them (spec 043).
+              regex:
+                '(^|/)(hooks|core|confirmation)(/index)?$|^@salmon/shared$|^\\.\\.(/\\.\\.)*(/index)?$',
+              importNames: [
+                'useRequestReceivedSignature',
+                'ReceivedSignatureContext',
+                'useSolanaPayTransactionRequest',
+                'useSolanaPayRequest',
+              ],
+              message:
+                'A Powerup never signs bytes it did not declare: propose through requestSignature() from core/confirmation (spec 043).',
+            },
           ],
           paths: [
             {
