@@ -336,6 +336,22 @@ describe('prepareMerchantTransaction — unsigned, the user pays', () => {
     }
   );
 
+  // A lookup table that does not exist on the active network means the
+  // merchant built for another network, not that the merchant failed.
+  it('a lookup table missing on the active network is stale or for another network', async () => {
+    const wire = await merchantWire({
+      lookupTable: lookupTable.address,
+      feePayer: sponsor.address,
+      signWith: [],
+    });
+    const rpc = userPaysRpc();
+    rpc.getMultipleAccounts.mockReturnValue({ send: async () => ({ value: [null] }) });
+
+    await expect(
+      prepareMerchantTransaction(rpc as never, user.address, wire)
+    ).rejects.toMatchObject({ reason: 'staleOrWrongNetwork' });
+  });
+
   it('refuses a transaction that would still need another party to sign', async () => {
     const wire = await merchantWire({
       feePayer: sponsor.address,

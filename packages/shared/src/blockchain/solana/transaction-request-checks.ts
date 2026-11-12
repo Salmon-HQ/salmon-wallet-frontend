@@ -18,9 +18,11 @@ import {
   getCompiledTransactionMessageEncoder,
   getPublicKeyFromAddress,
   getTransactionDecoder,
+  isSolanaError,
   pipe,
   setTransactionMessageFeePayer,
   setTransactionMessageLifetimeUsingBlockhash,
+  SOLANA_ERROR__ACCOUNTS__ONE_OR_MORE_ACCOUNTS_NOT_FOUND,
   verifySignature,
   type Address,
   type Blockhash,
@@ -156,7 +158,16 @@ async function makeTheUserPay(
     }) as TransactionMessageBytes;
     return { messageBytes, signatures: transaction.signatures };
   }
-  const decompiled = await decompileTransactionMessageFetchingLookupTables(message, rpc);
+  let decompiled: Awaited<ReturnType<typeof decompileTransactionMessageFetchingLookupTables>>;
+  try {
+    decompiled = await decompileTransactionMessageFetchingLookupTables(message, rpc);
+  } catch (error) {
+    // A lookup table the active network does not have: built for another one.
+    if (isSolanaError(error, SOLANA_ERROR__ACCOUNTS__ONE_OR_MORE_ACCOUNTS_NOT_FOUND)) {
+      throw new TransactionRequestError('staleOrWrongNetwork');
+    }
+    throw error;
+  }
   return compileTransaction(
     pipe(
       decompiled,

@@ -77,22 +77,23 @@ idle
 
 ## TransactionRequestRefusal (reason codes)
 
-| Reason                 | When                                                         | Spec              |
-| ---------------------- | ------------------------------------------------------------ | ----------------- |
-| `watchOnly`            | Active account cannot sign                                   | FR-004            |
-| `malformedLink`        | Link not absolute HTTPS, or IP-literal / localhost host      | FR-002            |
-| `unreachable`          | Network error, timeout, CORS refusal, redirect off HTTPS     | FR-009            |
-| `merchantError`        | 4xx/5xx (carries the merchant's `message` when present)      | FR-009            |
-| `unreadable`           | Not JSON, too large, missing or wrong-typed field            | FR-009            |
-| `malformedIcon`        | Icon not absolute http(s) or not SVG/PNG/WebP                | FR-006            |
-| `malformedTransaction` | Base64/decoder/size/version failure                          | FR-010            |
-| `invalidSignature`     | A present signature does not verify                          | FR-012            |
-| `notForThisAccount`    | User's address is not a signer of the transaction            | FR-013            |
-| `alreadySigned`        | User's slot already filled                                   | FR-013            |
-| `missingSignature`     | Another signer's slot is empty                               | FR-011/014        |
-| `staleOrWrongNetwork`  | Lifetime not valid on the active network                     | FR-019, edge case |
-| `expired`              | Went stale during review and the refresh failed              | FR-019            |
-| `accountChanged`       | Active signer differs from the address given to the merchant | FR-013            |
+| Reason                 | When                                                                                                                 | Spec              |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| `watchOnly`            | Active account cannot sign                                                                                           | FR-004            |
+| `malformedLink`        | Link not absolute HTTPS, or a local host (IP literal, localhost, .local, single label)                               | FR-002            |
+| `unreachable`          | Network error, timeout, CORS refusal, redirect off HTTPS                                                             | FR-009            |
+| `merchantError`        | 4xx/5xx (carries the merchant's `message` when present)                                                              | FR-009            |
+| `unreadable`           | Not JSON, too large, missing or wrong-typed field                                                                    | FR-009            |
+| `malformedIcon`        | Icon not absolute http(s) or not SVG/PNG/WebP                                                                        | FR-006            |
+| `malformedTransaction` | Base64/decoder/size/version failure                                                                                  | FR-010            |
+| `invalidSignature`     | A present signature does not verify                                                                                  | FR-012            |
+| `notForThisAccount`    | User's address is not a signer of the transaction                                                                    | FR-013            |
+| `alreadySigned`        | User's slot already filled                                                                                           | FR-013            |
+| `missingSignature`     | Another signer's slot is empty                                                                                       | FR-011/014        |
+| `staleOrWrongNetwork`  | Lifetime not valid on the active network, or a lookup table it does not have                                         | FR-019, edge case |
+| `expired`              | Went stale during review and the flow was closed during the refresh (any other refresh failure keeps its own reason) | FR-019            |
+| `accountChanged`       | Active signer differs from the address given to the merchant                                                         | FR-013            |
+| `networkUnavailable`   | The wallet's own RPC failed (blockhash, lookup table, fee read): not the merchant's fault; retryable                 | FR-009            |
 
 Preview outcomes (`TransactionEffects`) are not refusals: they flow into the display and the hold rule exactly as for a dApp (`dappTransactionGate`).
 

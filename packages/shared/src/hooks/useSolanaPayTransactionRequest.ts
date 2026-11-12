@@ -23,6 +23,7 @@ import {
 } from '../blockchain/solana/transaction-request';
 import { prepareMerchantTransaction } from '../blockchain/solana/transaction-request-checks';
 import type { SolanaAccount } from '../blockchain/solana/SolanaAccount';
+import { SolanaOutcomeUnknownError } from '../blockchain/solana/confirm';
 import { useRequestReceivedSignature } from '../core/confirmation/received';
 import {
   SignatureRequestCancelledError,
@@ -66,6 +67,8 @@ export type MerchantPaymentState =
       merchant: MerchantIdentity;
       merchantMessage?: string;
     }
+  /** Core did not open the review (another one is open, …): its own copy key. */
+  | { phase: 'failed'; errorKey: string; merchant: MerchantIdentity }
   | { phase: 'done' };
 
 export interface UseSolanaPayTransactionRequestParams {
@@ -134,7 +137,19 @@ const RETRYABLE: ReadonlySet<TransactionRequestRefusal> = new Set([
   'unreachable',
   'merchantError',
   'unreadable',
+  'networkUnavailable',
 ]);
+
+/**
+ * Every failure as a refusal. The merchant's requests only ever throw
+ * refusals, so anything else came from the wallet's own network calls
+ * (blockhash, lookup tables, fees): the merchant is not to blame.
+ */
+function asRefusal(error: unknown): TransactionRequestError {
+  return error instanceof TransactionRequestError
+    ? error
+    : new TransactionRequestError('networkUnavailable');
+}
 
 function identity(details: MerchantDetails): MerchantIdentity {
   return { domain: details.domain, label: details.label, icon: details.iconToRender };
@@ -262,9 +277,15 @@ export function useSolanaPayTransactionRequest({
             return !value;
           },
           // A stale payment is asked for again (the POST, not the GET), checked
-          // and previewed as the first one was; any failure means it expired.
+          // and previewed as the first one was. A failure says why; only a
+          // flow closed meanwhile reads as expired.
           refresh: async () => {
-            const next = await build(() => undefined).catch(() => null);
+            let next: ReceivedTransactionProposal | null;
+            try {
+              next = await build(() => undefined);
+            } catch (error) {
+              throw asRefusal(error);
+            }
             if (!next) throw new TransactionRequestError('expired');
             return next;
           },
@@ -312,18 +333,29 @@ export function useSolanaPayTransactionRequest({
         update({ phase: 'reviewing', merchant });
         try {
           await requestReceived(proposal);
-        } catch {
-          // ponytail: every way out of the review (back, busy, an unknown
-          // outcome the host already showed) ends the flow quietly.
-          update({ phase: 'idle' });
+        } catch (error) {
+          // Backing out, or an unknown outcome the host already showed, ends
+          // the flow quietly; core refusing to open the review says why.
+          if (
+            error instanceof SignatureRequestCancelledError ||
+            error instanceof SolanaOutcomeUnknownError
+          ) {
+            update({ phase: 'idle' });
+          } else {
+            update({
+              phase: 'failed',
+              errorKey: error instanceof Error ? error.message : String(error),
+              merchant,
+            });
+          }
           return;
         }
         update({ phase: 'done' });
       };
 
       run().catch((error: unknown) => {
-        if (signal.aborted || error instanceof SignatureRequestCancelledError) return;
-        const reason = error instanceof TransactionRequestError ? error.reason : 'unreachable';
+        if (signal.aborted) return;
+        const { reason, merchantMessage } = asRefusal(error);
         // A retry repeats only the request that failed: the GET when the
         // details never came, the POST otherwise.
         retryRef.current = RETRYABLE.has(reason) ? { link, details } : null;
@@ -331,9 +363,7 @@ export function useSolanaPayTransactionRequest({
           phase: 'failed',
           reason,
           merchant,
-          ...(error instanceof TransactionRequestError && error.merchantMessage
-            ? { merchantMessage: error.merchantMessage }
-            : {}),
+          ...(merchantMessage ? { merchantMessage } : {}),
         });
       });
     },
@@ -354,13 +384,18 @@ export function useSolanaPayTransactionRequest({
       visible: phase !== null,
       merchant,
       phase: phase ?? 'contacting',
-      error: failed
-        ? {
-            key: SOLANA_PAY_ERROR_KEY[state.reason],
-            merchantMessage: state.phase === 'failed' ? state.merchantMessage : undefined,
-          }
-        : null,
-      onRetry: state.phase === 'failed' && RETRYABLE.has(state.reason) ? retry : undefined,
+      error: !failed
+        ? null
+        : 'errorKey' in state
+          ? { key: state.errorKey }
+          : {
+              key: SOLANA_PAY_ERROR_KEY[state.reason],
+              merchantMessage: 'merchantMessage' in state ? state.merchantMessage : undefined,
+            },
+      onRetry:
+        state.phase === 'failed' && 'reason' in state && RETRYABLE.has(state.reason)
+          ? retry
+          : undefined,
       onClose: close,
     };
   }, [state, close, retry]);

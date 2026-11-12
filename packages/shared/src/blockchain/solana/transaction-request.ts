@@ -25,7 +25,9 @@ export type TransactionRequestRefusal =
   | 'missingSignature'
   | 'staleOrWrongNetwork'
   | 'expired'
-  | 'accountChanged';
+  | 'accountChanged'
+  /** The wallet's own RPC failed (the active network, not the merchant). */
+  | 'networkUnavailable';
 
 /**
  * Each refusal's copy, spelled out so the i18n check sees every key in use
@@ -46,6 +48,7 @@ export const SOLANA_PAY_ERROR_KEY: Record<TransactionRequestRefusal, string> = {
   staleOrWrongNetwork: 'solanaPay.errors.staleOrWrongNetwork',
   expired: 'solanaPay.errors.expired',
   accountChanged: 'solanaPay.errors.accountChanged',
+  networkUnavailable: 'solanaPay.errors.networkUnavailable',
 };
 
 /** A refusal, with the merchant's own words when its error answer carried some. */

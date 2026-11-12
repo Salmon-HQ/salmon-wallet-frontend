@@ -1028,7 +1028,8 @@
       "missingSignature": "This transaction still needs another party's signature, so it is not safe to sign.",
       "staleOrWrongNetwork": "This payment expired or is meant for another network.",
       "expired": "This payment expired. Nothing was sent.",
-      "accountChanged": "The account changed after the merchant prepared this payment. Nothing was signed."
+      "accountChanged": "The account changed after the merchant prepared this payment. Nothing was signed.",
+      "networkUnavailable": "The Solana network could not be reached. Check your connection and try again."
     }
   },
   "phrase_check": {

@@ -17,6 +17,7 @@ import {
   useSolanaPayTransactionRequest,
 } from './useSolanaPayTransactionRequest';
 import { SignatureRequestCancelledError } from '../core/confirmation/types';
+import { SolanaOutcomeUnknownError } from '../blockchain/solana/confirm';
 import { TransactionRequestError } from '../blockchain/solana/transaction-request';
 import type { ReceivedTransactionProposal } from '../core/confirmation/types';
 import type { TransactionEffects } from '../blockchain/solana/simulation-types';
@@ -257,6 +258,34 @@ describe('useSolanaPayTransactionRequest — sponsored payment', () => {
     expect(result.current.sheet.visible).toBe(false);
   });
 
+  it('ends quietly when the review leaves an unknown outcome behind', async () => {
+    mocks.requestReceived.mockRejectedValue(new SolanaOutcomeUnknownError('sig-1' as never));
+    const { result } = renderHook(() => useSolanaPayTransactionRequest({ account: account() }));
+
+    act(() => result.current.start(LINK));
+
+    await waitFor(() => expect(result.current.state).toEqual({ phase: 'idle' }));
+  });
+
+  // Core refusing to open the review is not the user backing out.
+  it.each(['transaction.errors.confirmationBusy', 'transaction.errors.proposalKind'])(
+    'shows why when core does not open the review (%s)',
+    async (key) => {
+      mocks.requestReceived.mockRejectedValue(new Error(key));
+      const { result } = renderHook(() => useSolanaPayTransactionRequest({ account: account() }));
+
+      act(() => result.current.start(LINK));
+
+      await waitFor(() => expect(result.current.state.phase).toBe('failed'));
+      expect(result.current.sheet).toMatchObject({
+        visible: true,
+        phase: 'failed',
+        error: { key },
+      });
+      expect(result.current.sheet.onRetry).toBeUndefined();
+    }
+  );
+
   it('is done once the receipt is dismissed', async () => {
     const { result } = renderHook(() => useSolanaPayTransactionRequest({ account: account() }));
 
@@ -378,6 +407,29 @@ describe('useSolanaPayTransactionRequest — refusals and retry', () => {
       expect(mocks.fetchMerchantTransaction).toHaveBeenCalledTimes(1);
     }
   );
+
+  // The wallet's own network failing is not the merchant's fault.
+  it.each([
+    ['the blockhash check', () => ({ isBlockhashValid: true })],
+    ['the fee and approval details', () => ({ loadDetails: true })],
+  ])('a failure of %s blames the network, with a retry', async (_, which) => {
+    const failing = which();
+    if ('loadDetails' in failing) mocks.loadDetails.mockRejectedValueOnce(new Error('HTTP 503'));
+    const paying = account({
+      blockhashValid: () => {
+        if ('isBlockhashValid' in failing) throw new Error('HTTP 429');
+        return true;
+      },
+    });
+    const { result } = renderHook(() => useSolanaPayTransactionRequest({ account: paying }));
+
+    act(() => result.current.start(LINK));
+
+    await waitFor(() => expect(result.current.state.phase).toBe('failed'));
+    expect(result.current.state).toMatchObject({ reason: 'networkUnavailable' });
+    expect(result.current.sheet.error?.key).toBe('solanaPay.errors.networkUnavailable');
+    expect(result.current.sheet.onRetry).toBeDefined();
+  });
 
   it('retry after a failed POST repeats only the POST', async () => {
     mocks.fetchMerchantTransaction.mockRejectedValueOnce(
@@ -522,18 +574,39 @@ describe('useSolanaPayTransactionRequest — the merchant transaction goes stale
     expect(typeof next.refresh).toBe('function');
   });
 
-  it('says the payment expired when the merchant cannot rebuild it', async () => {
+  // A rebuild that fails says why, so the user is not told "expired" when
+  // the merchant is down or its new bytes are unsafe.
+  it('says the merchant could not be reached when it cannot rebuild the payment', async () => {
     const proposal = await reviewedProposal();
     mocks.fetchMerchantTransaction.mockRejectedValue(new TransactionRequestError('unreachable'));
 
-    await expect(proposal.refresh!()).rejects.toThrow('solanaPay.errors.expired');
+    await expect(proposal.refresh!()).rejects.toThrow('solanaPay.errors.unreachable');
   });
 
-  it('says the payment expired when the rebuilt bytes fail the checks', async () => {
+  it('names the check the rebuilt bytes fail', async () => {
     const proposal = await reviewedProposal();
     const bytes = Buffer.from(wire, 'base64');
     bytes[1] ^= 0xff;
     mocks.fetchMerchantTransaction.mockResolvedValue({ transaction: bytes.toString('base64') });
+
+    await expect(proposal.refresh!()).rejects.toThrow('solanaPay.errors.invalidSignature');
+  });
+
+  it("says the wallet's network failed when the rebuild cannot ask it", async () => {
+    const proposal = await reviewedProposal();
+    mocks.loadDetails.mockRejectedValue(new Error('HTTP 503'));
+
+    await expect(proposal.refresh!()).rejects.toThrow('solanaPay.errors.networkUnavailable');
+  });
+
+  it('says the payment expired when the flow was closed during the rebuild', async () => {
+    mocks.requestReceived.mockReturnValue(new Promise(() => undefined));
+    const { result } = renderHook(() => useSolanaPayTransactionRequest({ account: account() }));
+    act(() => result.current.start(LINK));
+    await waitFor(() => expect(mocks.requestReceived).toHaveBeenCalledTimes(1));
+    const proposal = mocks.requestReceived.mock.calls[0][0] as ReceivedTransactionProposal;
+
+    act(() => result.current.close());
 
     await expect(proposal.refresh!()).rejects.toThrow('solanaPay.errors.expired');
   });
