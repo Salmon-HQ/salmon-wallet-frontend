@@ -86,6 +86,11 @@ function isLocalHost(hostname: string): boolean {
   );
 }
 
+/** Absolute HTTPS to a public name: what a merchant address must be, before and after redirects. */
+function isPublicHttps(url: URL): boolean {
+  return url.protocol === 'https:' && !isLocalHost(url.hostname);
+}
+
 /**
  * Reads `solana:<link>`. The link is URL-decoded exactly once (the standard
  * encodes it when it carries a query string), must be absolute HTTPS, and
@@ -102,7 +107,7 @@ export function parseTransactionRequestLink(raw: string): TransactionRequestLink
   } catch {
     return malformed;
   }
-  if (parsed.protocol !== 'https:' || isLocalHost(parsed.hostname)) return malformed;
+  if (!isPublicHttps(parsed)) return malformed;
   return { ok: true, link: { url: parsed.href, host: parsed.hostname } };
 }
 
@@ -150,13 +155,15 @@ function transport(method: 'GET' | 'POST'): RequestInit {
 
 /**
  * Where `redirect: 'error'` is not honoured (React Native follows redirects),
- * the answer must still come from the link's own host over HTTPS.
+ * the answer must still come from the link's own host, by the link's rules.
+ * An answer that does not say where it came from is not trusted: browsers
+ * and React Native's XHR both report the final address, so an empty one means
+ * the platform cannot vouch for it.
  */
 function cameFromLink(response: Response, link: TransactionRequestLink): boolean {
-  if (!response.url) return true;
   try {
     const url = new URL(response.url);
-    return url.protocol === 'https:' && url.hostname === link.host;
+    return isPublicHttps(url) && url.hostname === link.host;
   } catch {
     return false;
   }
@@ -170,7 +177,11 @@ async function readCapped(response: Response): Promise<string> {
   const reader = response.body?.getReader?.();
   if (!reader) {
     const text = await response.text();
-    if (text.length > MAX_BODY_BYTES) throw new TransactionRequestError('unreadable');
+    // ponytail: without a stream (React Native) the body is read whole before
+    // it can be measured; the announced size and the 10 s timeout bound it.
+    if (new TextEncoder().encode(text).byteLength > MAX_BODY_BYTES) {
+      throw new TransactionRequestError('unreadable');
+    }
     return text;
   }
   const chunks: Uint8Array[] = [];

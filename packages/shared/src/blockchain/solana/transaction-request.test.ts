@@ -20,7 +20,9 @@ function jsonResponse(body: unknown, init: ResponseInit = { status: 200 }) {
   });
 }
 
+/** Every platform reports where an answer came from; a test answer comes from the link. */
 function mockFetch(response: Response) {
+  if (!response.url) Object.defineProperty(response, 'url', { value: LINK.url });
   const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => response);
   vi.stubGlobal('fetch', fetchMock);
   return fetchMock;
@@ -256,6 +258,56 @@ describe('merchant answers the wallet refuses', () => {
     expect(new TransactionRequestError('missingSignature').message).toBe(
       'solanaPay.errors.missingSignature'
     );
+  });
+});
+
+describe('answers the platform cannot vouch for', () => {
+  it('an answer that does not say where it came from is unreachable', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => jsonResponse(DETAILS_BODY))
+    );
+    expect(await refusal(fetchMerchantDetails(LINK))).toEqual({ reason: 'unreachable' });
+  });
+
+  it.each([
+    ['an IP literal', 'https://127.0.0.1/pay'],
+    ['localhost', 'https://localhost/pay'],
+    ['a relative address', '/pay'],
+  ])('an answer redirected to %s is unreachable', async (_, url) => {
+    mockFetch(redirectedTo(url, jsonResponse(DETAILS_BODY)));
+    expect(await refusal(fetchMerchantDetails(LINK))).toEqual({ reason: 'unreachable' });
+  });
+});
+
+describe('a body read without a stream (React Native)', () => {
+  /** What whatwg-fetch hands back: no body stream, only `text()`. */
+  function unstreamed(text: string, headers: Record<string, string> = {}) {
+    const read = vi.fn(async () => text);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        status: 200,
+        url: LINK.url,
+        headers: new Headers(headers),
+        body: null,
+        text: read,
+      }))
+    );
+    return read;
+  }
+
+  it('is refused unread when it announces more than 64 KiB', async () => {
+    const read = unstreamed(JSON.stringify(DETAILS_BODY), { 'Content-Length': String(OVER_CAP) });
+    expect(await refusal(fetchMerchantDetails(LINK))).toEqual({ reason: 'unreadable' });
+    expect(read).not.toHaveBeenCalled();
+  });
+
+  it('is measured in bytes, not characters', async () => {
+    // 40 000 characters, 80 000 bytes in UTF-8: under the cap by length, over it by size.
+    unstreamed(JSON.stringify({ ...DETAILS_BODY, pad: 'é'.repeat(40_000) }));
+    expect(await refusal(fetchMerchantDetails(LINK))).toEqual({ reason: 'unreadable' });
   });
 });
 
