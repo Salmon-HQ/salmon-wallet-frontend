@@ -28,6 +28,7 @@ import {
   type Address,
   type Blockhash,
   type CompiledTransactionMessage,
+  type Instruction,
   type Transaction,
   type TransactionMessageBytes,
 } from '@solana/kit';
@@ -174,7 +175,7 @@ async function makeTheUserPay(
   const namedPayer = String(message.staticAccounts[0]);
   const unnamed = {
     ...decompiled,
-    instructions: decompiled.instructions.map((instruction) => ({
+    instructions: (decompiled.instructions as readonly Instruction[]).map((instruction) => ({
       ...instruction,
       accounts: instruction.accounts?.map((account) =>
         String(account.address) === namedPayer
