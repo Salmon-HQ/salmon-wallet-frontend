@@ -27,7 +27,7 @@ import { getTransferSolInstruction } from '@solana-program/system';
 export const MERCHANT_BLOCKHASH = 'GHtXQBsoZHVnNFa9YevAzFr17DJjgHXk3ycTKD5xD3Zi' as Blockhash;
 
 export interface MerchantTransactionFixture {
-  version: 'legacy' | 0;
+  version: 'legacy' | 0 | 1;
   sponsor: KeyPairSigner;
   user: Address;
   merchant: Address;

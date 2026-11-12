@@ -65,19 +65,30 @@ function decodeMerchantTransaction(transactionBase64: string) {
 }
 
 const SYSTEM_PROGRAM = '11111111111111111111111111111111';
-const ADVANCE_NONCE_ACCOUNT = [4, 0, 0, 0];
 
 /**
- * A durable-nonce transaction never expires, so a merchant holding the
- * user's signature could send it whenever it liked. The network recognises
- * one by its first instruction: the System program's `AdvanceNonceAccount`.
+ * A durable-nonce transaction never expires, so whoever holds the user's
+ * signature could send it whenever they liked. The network recognises one by
+ * its first instruction: System `AdvanceNonceAccount` (tag 4; the runtime
+ * ignores bytes after the tag). A v1 message lays its instructions out as
+ * headers and payloads instead of `instructions`.
  */
-function usesDurableNonce(message: CompiledTransactionMessage): boolean {
-  if (!('instructions' in message)) return false;
-  const [first] = message.instructions;
-  if (!first || message.staticAccounts[first.programAddressIndex] !== SYSTEM_PROGRAM) return false;
-  const data = first.data ?? new Uint8Array();
-  return ADVANCE_NONCE_ACCOUNT.every((byte, i) => data[i] === byte);
+export function opensWithAdvanceNonce(message: CompiledTransactionMessage): boolean {
+  const [program, data] =
+    'instructions' in message
+      ? [message.instructions[0]?.programAddressIndex, message.instructions[0]?.data]
+      : [
+          message.instructionHeaders[0]?.programAccountIndex,
+          message.instructionPayloads[0]?.instructionData,
+        ];
+  return (
+    program !== undefined &&
+    message.staticAccounts[program] === SYSTEM_PROGRAM &&
+    data?.[0] === 4 &&
+    data[1] === 0 &&
+    data[2] === 0 &&
+    data[3] === 0
+  );
 }
 
 /**
@@ -114,7 +125,7 @@ export async function assertReceivedTransactionSignable(
   } catch {
     throw new TransactionRequestError('malformedTransaction');
   }
-  if (usesDurableNonce(message)) throw new TransactionRequestError('staleOrWrongNetwork');
+  if (opensWithAdvanceNonce(message)) throw new TransactionRequestError('staleOrWrongNetwork');
 }
 
 async function assertLifetimeValid(rpc: SolanaRpc, lifetime: string): Promise<void> {

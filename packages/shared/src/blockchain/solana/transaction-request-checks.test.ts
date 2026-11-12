@@ -211,6 +211,13 @@ describe('prepareMerchantTransaction — refusals', () => {
     expect(await signableRefusal(wire)).toBe('staleOrWrongNetwork');
   });
 
+  // A v1 message lays its instructions out as headers and payloads.
+  it('a durable-nonce lifetime is refused in a v1 message too', async () => {
+    const wire = await merchantWire({ version: 1, nonceAccount: stranger.address });
+    expect(await prepareRefusal(wire)).toBe('staleOrWrongNetwork');
+    expect(await signableRefusal(wire)).toBe('staleOrWrongNetwork');
+  });
+
   it('core accepts the bytes a sponsor signed for this user', async () => {
     await expect(
       assertReceivedTransactionSignable(decode(await merchantWire()).transaction, user.address)
