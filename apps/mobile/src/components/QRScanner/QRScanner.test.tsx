@@ -163,7 +163,7 @@ describe('QRScanner', () => {
 
     expect(onScan).not.toHaveBeenCalled();
     expect(screen.getByTestId('qr-scanner-error').props.children).toBe(
-      'qrScanner.paymentLinkOnlyInSend'
+      'send.request.errors.paymentLinkNotHere'
     );
   });
 

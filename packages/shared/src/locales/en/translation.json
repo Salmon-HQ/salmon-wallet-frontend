@@ -793,8 +793,7 @@
     "permissionMessage": "Scanning QR codes requires camera access. You can still type or paste the address manually.",
     "openSettings": "Open Settings",
     "notAddress": "This code is not a valid address",
-    "wrongNetwork": "This address belongs to a different network",
-    "paymentLinkOnlyInSend": "This is a payment link. Open it from Send."
+    "wrongNetwork": "This address belongs to a different network"
   },
   "accessibility": {
     "copy_address": "Copy wallet address {{address}}",

@@ -142,7 +142,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({
                   : rejection.kind === 'invalidRequest'
                     ? t(`send.request.errors.${rejection.reason}`)
                     : rejection.kind === 'transactionRequest'
-                      ? t('qrScanner.paymentLinkOnlyInSend')
+                      ? t('send.request.errors.paymentLinkNotHere')
                       : t('qrScanner.notAddress', 'This code is not a valid address')}
               </Text>
             </View>
