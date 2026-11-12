@@ -137,6 +137,7 @@ jest.mock('@salmon/shared', () => {
     }),
     focusManager: { setEventListener: jest.fn() },
     setApiPlatform: jest.fn(),
+    setMerchantFetch: jest.fn(),
     initAnalytics: jest.fn(),
     getAnalytics: () => null,
     trackEvent: jest.fn(),
