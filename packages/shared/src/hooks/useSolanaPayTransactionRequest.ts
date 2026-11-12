@@ -255,7 +255,10 @@ export function useSolanaPayTransactionRequest({
           title: t('solanaPay.reviewTitle'),
           pendingTitle: t('solanaPay.paying', { label }),
           receipt: { title: t('solanaPay.receiptTitle') },
-          requiresHold: gate.requiresHold,
+          // A payment the network would reject only spends the fee: it cannot be
+          // confirmed at all, rather than held (dApps keep the hold).
+          requiresHold: gate.requiresHold && effects?.kind !== 'transaction-would-fail',
+          ...(effects?.kind === 'transaction-would-fail' ? { confirmDisabled: true } : {}),
           ...(short
             ? { confirmDisabled: true, warning: { title: t('solanaPay.notEnoughSolForFee') } }
             : {}),

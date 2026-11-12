@@ -233,7 +233,9 @@ describe('useSolanaPayTransactionRequest — sponsored payment', () => {
     expect(result.current.sheet.visible).toBe(false);
   });
 
-  it('asks for a hold when the preview cannot vouch for the transaction', async () => {
+  // Owner decision 2026-11-12: a merchant payment the network would reject
+  // cannot be confirmed at all — signing it would only spend the fee.
+  it('cannot be confirmed when the network would reject the payment', async () => {
     mocks.preview.mockResolvedValue({
       kind: 'transaction-would-fail',
       account: user.address,
@@ -245,7 +247,9 @@ describe('useSolanaPayTransactionRequest — sponsored payment', () => {
     act(() => result.current.start(LINK));
     await waitFor(() => expect(mocks.requestReceived).toHaveBeenCalledTimes(1));
 
-    expect(mocks.requestReceived.mock.calls[0][0].display.requiresHold).toBe(true);
+    const { display } = mocks.requestReceived.mock.calls[0][0];
+    expect(display.confirmDisabled).toBe(true);
+    expect(display.requiresHold).toBe(false);
   });
 
   it('goes back to idle when the user backs out of the review', async () => {

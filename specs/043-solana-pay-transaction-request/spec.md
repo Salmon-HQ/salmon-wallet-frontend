@@ -34,6 +34,8 @@ Owner decisions on the plan (2026-11-12):
 - Q: Does the owner sign off on changing the signing path in `packages/shared/src/core`? → A: Yes, on the owner's condition: "testea antes y después para ver que no se haya roto nada". The full check suite runs on the untouched branch before any change and again at the end; no test that passed before may fail or disappear, and the existing dApp, MWA and Send signing tests must pass with their files unchanged.
 - Q: Who writes the Spanish copy? → A: The implementer (confirmed).
 
+- Q: A merchant payment the network would reject (the simulation fails) — hold to confirm, as for a dApp, or block it? → A: Block it: Confirm stays disabled and the review says the transaction would fail, because signing it only spends the fee (owner, 2026-11-12). dApp transactions keep the hold.
+
 ## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Pay a merchant whose fee is sponsored (Priority: P1)

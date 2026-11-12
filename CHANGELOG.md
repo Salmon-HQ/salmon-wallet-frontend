@@ -12,7 +12,7 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 - Before a new wallet's first transaction, Salmon asks you to confirm its recovery phrase: after your password or biometrics it shows the phrase, then asks for three of its words, each picked from four. A wrong pick shows the phrase again. Wallets you imported or created before this version are never asked.
 - Home reminds a new wallet to save its phrase until you confirm it; Settings → Seed Phrase offers the check at any time.
 - Pay merchants with Solana Pay transaction requests (`solana:https://…`): scan or paste the link in Send, check the merchant's name and website, review what you send and receive, and confirm.
-- When a merchant or a sponsor such as Kora pays the network fee, the review says who pays it. Otherwise you pay it, and Confirm stays disabled without enough SOL.
+- When a merchant or a sponsor such as Kora pays the network fee, the review says who pays it. Otherwise you pay it, and Confirm stays disabled without enough SOL or when the network would reject the payment.
 - Salmon refuses to sign a merchant transaction with an invalid signature, a missing signature from another party, or no place for your account, and says why.
 - If the payment expires before you confirm, Salmon asks the merchant for a new one and shows it again if anything changed.
 - Watch-only accounts cannot pay a payment link.
@@ -27,7 +27,7 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 - Before a new wallet's first transaction, Salmon asks you to confirm its recovery phrase: after your password or biometrics it shows the phrase, then asks for three of its words, each picked from four. A wrong pick shows the phrase again. Wallets you imported or created before this version are never asked.
 - Home reminds a new wallet to save its phrase until you confirm it; Settings → Seed Phrase offers the check at any time.
 - Pay merchants with Solana Pay transaction requests (`solana:https://…`): paste the link in Send, check the merchant's name and website, review what you send and receive, and confirm.
-- When a merchant or a sponsor such as Kora pays the network fee, the review says who pays it. Otherwise you pay it, and Confirm stays disabled without enough SOL.
+- When a merchant or a sponsor such as Kora pays the network fee, the review says who pays it. Otherwise you pay it, and Confirm stays disabled without enough SOL or when the network would reject the payment.
 - Salmon refuses to sign a merchant transaction with an invalid signature, a missing signature from another party, or no place for your account, and says why.
 - If the payment expires before you confirm, Salmon asks the merchant for a new one and shows it again if anything changed.
 - Watch-only accounts cannot pay a payment link.
