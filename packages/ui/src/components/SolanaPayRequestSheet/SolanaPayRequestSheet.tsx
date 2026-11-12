@@ -30,7 +30,14 @@ export function SolanaPayRequestSheet({
 
   return (
     <BottomSheetContainer visible={visible} onClose={onClose} testID="solana-pay-sheet">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.lg }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: spacing.lg,
+          paddingBottom: spacing.lg,
+        }}
+      >
         <RequesterRow
           name={merchant.label}
           icon={merchant.icon}
