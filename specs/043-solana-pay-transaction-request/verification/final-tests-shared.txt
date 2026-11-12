@@ -1173,6 +1173,7 @@ packages/shared/src/blockchain/solana/solana.test.ts › removeDecimals should h
 packages/shared/src/blockchain/solana/solana.test.ts › removeDecimals should handle zero decimals › passed
 packages/shared/src/blockchain/solana/transaction-request-checks.test.ts › prepareMerchantTransaction — refusals a blockhash the active network does not accept is stale or for another network › passed
 packages/shared/src/blockchain/solana/transaction-request-checks.test.ts › prepareMerchantTransaction — refusals a co-signer's empty slot is missing a signature › passed
+packages/shared/src/blockchain/solana/transaction-request-checks.test.ts › prepareMerchantTransaction — refusals a durable-nonce lifetime is refused in a v1 message too › passed
 packages/shared/src/blockchain/solana/transaction-request-checks.test.ts › prepareMerchantTransaction — refusals a durable-nonce lifetime is refused, whatever the network says of it › passed
 packages/shared/src/blockchain/solana/transaction-request-checks.test.ts › prepareMerchantTransaction — refusals a message version the wallet cannot read is malformed › passed
 packages/shared/src/blockchain/solana/transaction-request-checks.test.ts › prepareMerchantTransaction — refusals a sponsor signature with one byte changed does not verify › passed
@@ -1186,6 +1187,7 @@ packages/shared/src/blockchain/solana/transaction-request-checks.test.ts › pre
 packages/shared/src/blockchain/solana/transaction-request-checks.test.ts › prepareMerchantTransaction — sponsored carries the message bytes base58-encoded for the dApp preview › passed
 packages/shared/src/blockchain/solana/transaction-request-checks.test.ts › prepareMerchantTransaction — sponsored passes a 0 transaction through byte for byte › passed
 packages/shared/src/blockchain/solana/transaction-request-checks.test.ts › prepareMerchantTransaction — sponsored passes a legacy transaction through byte for byte › passed
+packages/shared/src/blockchain/solana/transaction-request-checks.test.ts › prepareMerchantTransaction — unsigned, the user pays a lookup table missing on the active network is stale or for another network › passed
 packages/shared/src/blockchain/solana/transaction-request-checks.test.ts › prepareMerchantTransaction — unsigned, the user pays changes only the blockhash when the user already pays the fee › passed
 packages/shared/src/blockchain/solana/transaction-request-checks.test.ts › prepareMerchantTransaction — unsigned, the user pays makes the user pay a legacy transaction someone else was named to pay › passed
 packages/shared/src/blockchain/solana/transaction-request-checks.test.ts › prepareMerchantTransaction — unsigned, the user pays makes the user pay a v0 lookup-table transaction someone else was named to pay › passed
@@ -1193,6 +1195,7 @@ packages/shared/src/blockchain/solana/transaction-request-checks.test.ts › pre
 packages/shared/src/blockchain/solana/transaction-request-checks.test.ts › prepareMerchantTransaction — unsigned, the user pays refuses a transaction that would still need another party to sign › passed
 packages/shared/src/blockchain/solana/transaction-request.test.ts › a body read without a stream (React Native) is measured in bytes, not characters › passed
 packages/shared/src/blockchain/solana/transaction-request.test.ts › a body read without a stream (React Native) is refused unread when it announces more than 64 KiB › passed
+packages/shared/src/blockchain/solana/transaction-request.test.ts › a platform fetch for merchant requests carries both requests, with redirects refused › passed
 packages/shared/src/blockchain/solana/transaction-request.test.ts › answers the platform cannot vouch for an answer redirected to a relative address is unreachable › passed
 packages/shared/src/blockchain/solana/transaction-request.test.ts › answers the platform cannot vouch for an answer redirected to an IP literal is unreachable › passed
 packages/shared/src/blockchain/solana/transaction-request.test.ts › answers the platform cannot vouch for an answer redirected to localhost is unreachable › passed
@@ -1220,17 +1223,28 @@ packages/shared/src/blockchain/solana/transaction-request.test.ts › merchant a
 packages/shared/src/blockchain/solana/transaction-request.test.ts › merchant answers the wallet refuses an answer that arrived through a redirect to another host is unreachable › passed
 packages/shared/src/blockchain/solana/transaction-request.test.ts › merchant answers the wallet refuses an empty label is unreadable › passed
 packages/shared/src/blockchain/solana/transaction-request.test.ts › merchant answers the wallet refuses every refusal carries its own copy key › passed
+packages/shared/src/blockchain/solana/transaction-request.test.ts › merchant text the wallet shows a label made only of control characters is unreadable › passed
+packages/shared/src/blockchain/solana/transaction-request.test.ts › merchant text the wallet shows cuts the label to 64 characters › passed
+packages/shared/src/blockchain/solana/transaction-request.test.ts › merchant text the wallet shows cuts the message to 256 characters and strips control and bidi characters › passed
+packages/shared/src/blockchain/solana/transaction-request.test.ts › merchant text the wallet shows strips control and bidi characters from the label › passed
+packages/shared/src/blockchain/solana/transaction-request.test.ts › merchant text the wallet shows strips control and bidi characters from the merchant's error words › passed
 packages/shared/src/blockchain/solana/transaction-request.test.ts › on React Native a GET asks without a cache mode, so the address reaches the merchant unchanged › passed
 packages/shared/src/blockchain/solana/transaction-request.test.ts › parseTransactionRequestLink decodes a percent-encoded link once and keeps its query string verbatim › passed
 packages/shared/src/blockchain/solana/transaction-request.test.ts › parseTransactionRequestLink decodes only once › passed
 packages/shared/src/blockchain/solana/transaction-request.test.ts › parseTransactionRequestLink reads an unencoded link › passed
+packages/shared/src/blockchain/solana/transaction-request.test.ts › parseTransactionRequestLink refuses a .local name as a malformed link › passed
+packages/shared/src/blockchain/solana/transaction-request.test.ts › parseTransactionRequestLink refuses a .local name with a trailing dot as a malformed link › passed
 packages/shared/src/blockchain/solana/transaction-request.test.ts › parseTransactionRequestLink refuses a localhost subdomain as a malformed link › passed
+packages/shared/src/blockchain/solana/transaction-request.test.ts › parseTransactionRequestLink refuses a localhost subdomain with a trailing dot as a malformed link › passed
 packages/shared/src/blockchain/solana/transaction-request.test.ts › parseTransactionRequestLink refuses a numeric IPv4 form as a malformed link › passed
+packages/shared/src/blockchain/solana/transaction-request.test.ts › parseTransactionRequestLink refuses a single-label name as a malformed link › passed
+packages/shared/src/blockchain/solana/transaction-request.test.ts › parseTransactionRequestLink refuses a single-label name with a trailing dot as a malformed link › passed
 packages/shared/src/blockchain/solana/transaction-request.test.ts › parseTransactionRequestLink refuses an IPv4 literal as a malformed link › passed
 packages/shared/src/blockchain/solana/transaction-request.test.ts › parseTransactionRequestLink refuses an IPv6 literal as a malformed link › passed
 packages/shared/src/blockchain/solana/transaction-request.test.ts › parseTransactionRequestLink refuses an undecodable percent sequence as a malformed link › passed
 packages/shared/src/blockchain/solana/transaction-request.test.ts › parseTransactionRequestLink refuses encoded http as a malformed link › passed
 packages/shared/src/blockchain/solana/transaction-request.test.ts › parseTransactionRequestLink refuses localhost as a malformed link › passed
+packages/shared/src/blockchain/solana/transaction-request.test.ts › parseTransactionRequestLink refuses localhost with a trailing dot as a malformed link › passed
 packages/shared/src/blockchain/solana/transaction-request.test.ts › parseTransactionRequestLink refuses no web address at all as a malformed link › passed
 packages/shared/src/blockchain/solana/transaction-request.test.ts › parseTransactionRequestLink refuses not a solana link as a malformed link › passed
 packages/shared/src/blockchain/solana/transaction-request.test.ts › parseTransactionRequestLink refuses plain http as a malformed link › passed
@@ -1363,10 +1377,12 @@ packages/shared/src/contexts/useSheetTurn.test.tsx › useSheetTurn as a child: 
 packages/shared/src/contexts/useSheetTurn.test.tsx › useSheetTurn as a parent: sinks when the child asks, rises back if still wanted, leaves if dismissed › passed
 packages/shared/src/core/broadcast/solana-received.test.ts › sendReceivedSolanaTransaction adds only the user signature to a 0 transaction and keeps the sponsor one › passed
 packages/shared/src/core/broadcast/solana-received.test.ts › sendReceivedSolanaTransaction adds only the user signature to a legacy transaction and keeps the sponsor one › passed
+packages/shared/src/core/broadcast/solana-received.test.ts › sendReceivedSolanaTransaction asks for the block height before sending, so its failure sends nothing › passed
 packages/shared/src/core/broadcast/solana-received.test.ts › sendReceivedSolanaTransaction lets an unknown outcome through, so nothing offers a second send › passed
 packages/shared/src/core/broadcast/solana-received.test.ts › sendReceivedSolanaTransaction refuses a sponsor signature that does not verify, signing nothing › passed
 packages/shared/src/core/broadcast/solana-received.test.ts › sendReceivedSolanaTransaction refuses an expired blockhash before signing › passed
 packages/shared/src/core/broadcast/solana-received.test.ts › sendReceivedSolanaTransaction refuses when the active account is not the one the merchant was given › passed
+packages/shared/src/core/broadcast/solana-received.test.ts › sendReceivedSolanaTransaction turns any other failure after the broadcast into an unknown outcome › passed
 packages/shared/src/core/broadcast/solana-received.test.ts › sendReceivedSolanaTransaction waits for the verdict with a window of 150 blocks from now › passed
 packages/shared/src/core/broadcast/solana-swap.test.ts › signAndSendSolanaTransaction — a swap is simulated before it is signed refuses, without sending, a 0x swap whose output never reaches the wallet › passed
 packages/shared/src/core/broadcast/solana-swap.test.ts › signAndSendSolanaTransaction — a swap is simulated before it is signed runs the byte check before any simulation › passed
@@ -1408,9 +1424,12 @@ packages/shared/src/core/confirmation/received.test.tsx › useRequestReceivedSi
 packages/shared/src/core/confirmation/received.test.tsx › useRequestReceivedSignature rejects on cancel and signs nothing › passed
 packages/shared/src/core/confirmation/received.test.tsx › useRequestReceivedSignature signs nothing while the recovery phrase is unconfirmed › passed
 packages/shared/src/core/confirmation/received.test.tsx › useRequestReceivedSignature takes one request at a time › passed
+packages/shared/src/core/confirmation/useSignatureRequestHost.press.test.tsx › useSignatureRequestHost — a received rebuild with new bytes asks for a new press when the preview could not vouch for the transaction › passed
+packages/shared/src/core/confirmation/useSignatureRequestHost.press.test.tsx › useSignatureRequestHost — a received rebuild with new bytes signs in the same press when the preview vouched for both › passed
 packages/shared/src/core/confirmation/useSignatureRequestHost.press.test.tsx › useSignatureRequestHost — one press, one signature, on the request pressed a request replaced during the rebuild is not signed › passed
 packages/shared/src/core/confirmation/useSignatureRequestHost.press.test.tsx › useSignatureRequestHost — one press, one signature, on the request pressed a request replaced during the stale check is not signed › passed
 packages/shared/src/core/confirmation/useSignatureRequestHost.press.test.tsx › useSignatureRequestHost — one press, one signature, on the request pressed a second press while the first is signing does not sign again › passed
+packages/shared/src/core/confirmation/useSignatureRequestHost.press.test.tsx › useSignatureRequestHost — one press, one signature, on the request pressed shows the press as busy while the stale check runs › passed
 packages/shared/src/core/confirmation/useSignatureRequestHost.press.test.tsx › useSignatureRequestHost — one press, one signature, on the request pressed two presses during the stale check sign once › passed
 packages/shared/src/core/confirmation/useSignatureRequestHost.test.tsx › useSignatureRequestHost — a proposal that went stale keeps the error and signs nothing when the rebuild fails › passed
 packages/shared/src/core/confirmation/useSignatureRequestHost.test.tsx › useSignatureRequestHost — a proposal that went stale signs as it always did when the proposal is still fresh, or never asks › passed
@@ -2094,6 +2113,7 @@ packages/shared/src/hooks/useSolanaNfts.test.tsx › useSolanaNfts (react-query)
 packages/shared/src/hooks/useSolanaNfts.test.tsx › useSolanaNfts (react-query) passes includeSpam through to the API › passed
 packages/shared/src/hooks/useSolanaNfts.test.tsx › useSolanaNfts (react-query) refresh() triggers a refetch › passed
 packages/shared/src/hooks/useSolanaNfts.test.tsx › useSolanaNfts (react-query) reuses a list younger than 15s on a remount, and refetches once it is older › passed
+packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayRequest — one payment, mounted while its link is open reaches the review under StrictMode › passed
 packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayRequest — one payment, mounted while its link is open reports a cancel when the review is backed out of › passed
 packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayRequest — one payment, mounted while its link is open reports a cancel when the sheet is closed › passed
 packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayRequest — one payment, mounted while its link is open starts on mount with the active account name and reports done › passed
@@ -2104,6 +2124,8 @@ packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaP
 packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — no sponsor, the user pays the fee shows the fee as the user's own cost › passed
 packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — refusals and retry a GET refusal keeps only the domain and offers no retry for a malformed icon › passed
 packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — refusals and retry a POST refusal keeps the merchant and its own words › passed
+packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — refusals and retry a failure of the blockhash check blames the network, with a retry › passed
+packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — refusals and retry a failure of the fee and approval details blames the network, with a retry › passed
 packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — refusals and retry a preview that cannot say what happens still opens the review, held, with the warning › passed
 packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — refusals and retry an unsafe transaction (invalidSignature) stops before the review, with no retry › passed
 packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — refusals and retry an unsafe transaction (malformedTransaction) stops before the review, with no retry › passed
@@ -2113,15 +2135,20 @@ packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaP
 packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — refusals and retry retry after a unreachable GET asks for the details again, then goes on › passed
 packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — refusals and retry retry after a unreadable GET asks for the details again, then goes on › passed
 packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — sponsored payment asks for a hold when the preview cannot vouch for the transaction › passed
+packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — sponsored payment ends quietly when the review leaves an unknown outcome behind › passed
 packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — sponsored payment goes back to idle when the user backs out of the review › passed
 packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — sponsored payment hands core the exact merchant bytes, the address it posted and the dApp review › passed
 packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — sponsored payment is done once the receipt is dismissed › passed
 packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — sponsored payment shows a refusal on the sheet for an account that cannot sign, asking nothing › passed
 packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — sponsored payment shows the domain at once, then the label and icon, then prepares › passed
+packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — sponsored payment shows why when core does not open the review (transaction.errors.confirmationBusy) › passed
+packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — sponsored payment shows why when core does not open the review (transaction.errors.proposalKind) › passed
 packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — the merchant transaction goes stale asks the active network whether the merchant's blockhash still holds › passed
+packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — the merchant transaction goes stale names the check the rebuilt bytes fail › passed
 packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — the merchant transaction goes stale rebuilds by asking the merchant again (POST only) and checking the new bytes › passed
-packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — the merchant transaction goes stale says the payment expired when the merchant cannot rebuild it › passed
-packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — the merchant transaction goes stale says the payment expired when the rebuilt bytes fail the checks › passed
+packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — the merchant transaction goes stale says the merchant could not be reached when it cannot rebuild the payment › passed
+packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — the merchant transaction goes stale says the payment expired when the flow was closed during the rebuild › passed
+packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — the merchant transaction goes stale says the wallet's network failed when the rebuild cannot ask it › passed
 packages/shared/src/hooks/useSolanaTransactionApproval.test.ts › applySymbols leaves an unknown mint unnamed rather than inventing a ticker › passed
 packages/shared/src/hooks/useSolanaTransactionApproval.test.ts › applySymbols names the mint in an approval, where the token is the whole warning › passed
 packages/shared/src/hooks/useSolanaTransactionApproval.test.ts › applySymbols names the tokens a preview could not resolve on its own › passed
@@ -2291,6 +2318,13 @@ packages/shared/src/powerups/backend/errors.test.ts › describePowerupBuildErro
 packages/shared/src/powerups/backend/errors.test.ts › describePowerupBuildError — spec 029 §5.3 503 simulation_unavailable › passed
 packages/shared/src/powerups/backend/errors.test.ts › describePowerupBuildError — spec 029 §5.3 lets a Powerup extend the table and name its own fallback › passed
 packages/shared/src/powerups/boundary.test.ts › powerups boundary allows the one door: requestSignature from core/confirmation, and plain kit reads › passed
+packages/shared/src/powerups/boundary.test.ts › powerups boundary fails in apps/extension/src/pages/home/powerupBodies.tsx on import { SolanaPayRequest } from '@salmon/ui'; › passed
+packages/shared/src/powerups/boundary.test.ts › powerups boundary fails in apps/mobile/src/components/PowerupsCatalog/PowerupsCatalog.tsx on import { signProposal } from '@salmon/shared/core/signing'; › passed
+packages/shared/src/powerups/boundary.test.ts › powerups boundary fails in apps/mobile/src/screens/PaymentsTab.tsx on import { SolanaPayRequest } from '../components'; › passed
+packages/shared/src/powerups/boundary.test.ts › powerups boundary fails in apps/mobile/src/screens/SwapTab.tsx on import { useSolanaPayRequest } from '@salmon/shared'; › passed
+packages/shared/src/powerups/boundary.test.ts › powerups boundary fails in packages/ui/src/components/MemoPage/MemoPage.tsx on import { SolanaPayRequest } from '..'; › passed
+packages/shared/src/powerups/boundary.test.ts › powerups boundary fails in packages/ui/src/components/SwapPage/SwapPage.tsx on import { SolanaPayRequest } from '../SolanaPayRequestSheet'; › passed
+packages/shared/src/powerups/boundary.test.ts › powerups boundary fails in packages/ui/src/powerups.ts on import { SolanaPayRequest } from './components'; › passed
 packages/shared/src/powerups/boundary.test.ts › powerups boundary fails on export const k = (account: { keyPair: unknown }) => account.keyPair; › passed
 packages/shared/src/powerups/boundary.test.ts › powerups boundary fails on export const k = (account: { signer: unknown }) => account.signer; › passed
 packages/shared/src/powerups/boundary.test.ts › powerups boundary fails on import * as shared from '@salmon/shared';

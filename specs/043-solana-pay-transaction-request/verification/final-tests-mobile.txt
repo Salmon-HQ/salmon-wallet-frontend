@@ -160,6 +160,7 @@ apps/mobile/__tests__/app/send-solana-pay.test.tsx › the Send recipient screen
 apps/mobile/__tests__/app/send-solana-pay.test.tsx › the Send recipient screen — a Solana Pay transaction request a scanned one opens the merchant flow for the active account › passed
 apps/mobile/__tests__/app/send-solana-pay.test.tsx › the Send recipient screen — a Solana Pay transaction request a transfer request still opens the locked review › passed
 apps/mobile/__tests__/app/send-solana-pay.test.tsx › the Send recipient screen — a Solana Pay transaction request is the one scanner that accepts merchant links › passed
+apps/mobile/__tests__/app/send-solana-pay.test.tsx › the Send recipient screen — a Solana Pay transaction request opens the merchant flow even without an active account, so it can say why › passed
 apps/mobile/__tests__/app/send-solana-pay.test.tsx › the Send recipient screen — a Solana Pay transaction request the receipt closes Send › passed
 apps/mobile/__tests__/app/settings-appearance-row.test.tsx › Settings — appearance row shows the Dark label when the preference is dark › passed
 apps/mobile/__tests__/app/settings-appearance-row.test.tsx › Settings — appearance row shows the System label as the trailing value by default › passed
