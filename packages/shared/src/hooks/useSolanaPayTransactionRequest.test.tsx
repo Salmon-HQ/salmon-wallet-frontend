@@ -6,6 +6,7 @@
  * core's review. The merchant's server, the RPC preview and core's received
  * entry are stand-ins; the transaction and its checks are real.
  */
+import { StrictMode } from 'react';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { classifyScanPayload } from '../utils/scan-payload';
@@ -613,5 +614,18 @@ describe('useSolanaPayRequest — one payment, mounted while its link is open', 
     expect(onCancel).toHaveBeenCalledTimes(1);
     await act(async () => details.resolve(DETAILS));
     expect(mocks.fetchMerchantTransaction).not.toHaveBeenCalled();
+  });
+
+  // The extension mounts its tree in StrictMode, which runs every effect,
+  // its cleanup, and the effect again: the second run must start again.
+  it('reaches the review under StrictMode', async () => {
+    const onDone = vi.fn();
+    const { result } = renderHook(
+      () => useSolanaPayRequest({ link: LINK, account: account(), onDone, onCancel: vi.fn() }),
+      { wrapper: StrictMode }
+    );
+
+    await waitFor(() => expect(onDone).toHaveBeenCalledTimes(1));
+    expect(result.current.visible).toBe(false);
   });
 });

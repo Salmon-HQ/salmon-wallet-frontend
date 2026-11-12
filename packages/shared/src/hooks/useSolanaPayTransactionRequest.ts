@@ -380,20 +380,24 @@ export function useSolanaPayRequest({
   onCancel,
 }: SolanaPayRequestPropsBase): SolanaPayRequestSheetPropsBase {
   const [accounts] = useAccountsContext();
-  const { state, sheet, start } = useSolanaPayTransactionRequest({
+  const { state, sheet, start, close } = useSolanaPayTransactionRequest({
     account,
     accountName: accounts.activeAccount?.name,
   });
-  const startedRef = useRef(false);
+  // `start` changes with the account; the payment starts once per link.
+  const startRef = useRef(start);
+  useEffect(() => {
+    startRef.current = start;
+  }, [start]);
   const runningRef = useRef(false);
   const endedRef = useRef(false);
 
+  // Start and abort in one effect, so StrictMode's second run starts again
+  // the attempt its cleanup aborted.
   useEffect(() => {
-    // ponytail: one start per mount; a new link remounts the container.
-    if (startedRef.current) return;
-    startedRef.current = true;
-    start(link);
-  }, [link, start]);
+    startRef.current(link);
+    return close;
+  }, [link, close]);
 
   useEffect(() => {
     // The first render's `idle` is before the start, not a way out of it.
