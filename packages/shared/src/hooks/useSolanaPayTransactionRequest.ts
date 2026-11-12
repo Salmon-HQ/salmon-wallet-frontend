@@ -11,6 +11,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import bs58 from 'bs58';
+import type { Address } from '@solana/kit';
 import {
   fetchMerchantDetails,
   fetchMerchantTransaction,
@@ -35,6 +36,7 @@ import { dappTransactionDisplay, dappTransactionGate } from '../utils/dapp-trans
 import { formatBaseUnits } from '../utils/formatting';
 import { isSignableSolanaAccount } from '../utils/account';
 import type { BlockchainAccount } from '../types/blockchain';
+import type { TransactionEffects } from '../blockchain/solana/simulation-types';
 import type { SolanaNetworkId } from '../types/blockchain';
 import type { DAppSignAndSendTransactionRequest } from '../types/dapp-approval';
 import type {
@@ -96,6 +98,31 @@ function sheetPhase(state: MerchantPaymentState): SolanaPayRequestSheetPropsBase
       return 'failed';
     default:
       return null;
+  }
+}
+
+/**
+ * When the user pays the fee, the SOL held must cover it and whatever else the
+ * preview shows leaving. The simulated change already contains the fee when
+ * the user pays it, so the need is the larger of the two. A balance that
+ * cannot be read blocks nothing: the network refuses an unpayable fee anyway.
+ */
+async function lacksSolForFee(
+  wallet: SolanaAccount,
+  signer: string,
+  feeLamports: bigint,
+  effects: TransactionEffects | null
+): Promise<boolean> {
+  const leaving = effects?.kind === 'effects' ? -effects.sol.lamports : 0n;
+  const needed = leaving > feeLamports ? leaving : feeLamports;
+  try {
+    const { value } = await wallet
+      .getRpc()
+      .getBalance(signer as Address, { commitment: 'confirmed' })
+      .send();
+    return BigInt(value) < needed;
+  } catch {
+    return false;
   }
 }
 
@@ -184,6 +211,10 @@ export function useSolanaPayTransactionRequest({
       if (signal.aborted) return null;
       const effects = applySymbols(rawEffects, (mint) => catalogRef.current.get(mint));
       const gate = dappTransactionGate({ effects, effectsLoading: false, parsingError: null });
+      const short =
+        !prepared.sponsored &&
+        (await lacksSolForFee(wallet, signer, BigInt(approval.feeLamports ?? 0), effects));
+      if (signal.aborted) return null;
       const { label } = details;
       const display = {
         ...dappTransactionDisplay(
@@ -208,6 +239,9 @@ export function useSolanaPayTransactionRequest({
         pendingTitle: t('solanaPay.paying', { label }),
         receipt: { title: t('solanaPay.receiptTitle') },
         requiresHold: gate.requiresHold,
+        ...(short
+          ? { confirmDisabled: true, warning: { title: t('solanaPay.notEnoughSolForFee') } }
+          : {}),
       };
       return {
         id: request.id as string,

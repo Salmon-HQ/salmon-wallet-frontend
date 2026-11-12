@@ -207,6 +207,19 @@ const ROUTES = {
     }),
   },
   '/pay/no-cors': { cors: false },
+  // Spec 043 US3: no sponsor. The merchant names itself fee payer and signs
+  // nothing; the wallet makes the user pay and sets a fresh blockhash.
+  '/pay/unsigned': {
+    post: (account) => merchantTransaction(account, { payer: createNoopSigner(MERCHANT) }),
+  },
+  // More SOL than a test wallet holds: confirm stays disabled, "not enough SOL".
+  '/pay/unsigned-broke': {
+    post: (account) =>
+      merchantTransaction(account, {
+        payer: createNoopSigner(MERCHANT),
+        lamports: 1_000_000_000_000_000n,
+      }),
+  },
 };
 
 const CORS = {

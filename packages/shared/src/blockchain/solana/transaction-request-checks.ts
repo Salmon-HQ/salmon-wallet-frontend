@@ -9,15 +9,24 @@
  */
 import bs58 from 'bs58';
 import {
+  address,
   assertIsTransactionWithinSizeLimit,
+  compileTransaction,
+  decompileTransactionMessageFetchingLookupTables,
+  getBase64EncodedWireTransaction,
   getCompiledTransactionMessageDecoder,
+  getCompiledTransactionMessageEncoder,
   getPublicKeyFromAddress,
   getTransactionDecoder,
+  pipe,
+  setTransactionMessageFeePayer,
+  setTransactionMessageLifetimeUsingBlockhash,
   verifySignature,
   type Address,
   type Blockhash,
   type CompiledTransactionMessage,
   type Transaction,
+  type TransactionMessageBytes,
 } from '@solana/kit';
 import { TransactionRequestError } from './transaction-request';
 import type { SolanaRpc } from './networks';
@@ -116,7 +125,41 @@ async function assertLifetimeValid(rpc: SolanaRpc, lifetime: string): Promise<vo
 }
 
 /**
- * Decodes and checks the merchant's transaction for `signer`.
+ * An unsigned transaction becomes the user's to pay: fee payer = the user,
+ * lifetime = the latest blockhash. When the user already pays, only the
+ * blockhash changes, patched in the compiled message so every other byte
+ * stays as the merchant built it; otherwise the message is rebuilt with its
+ * lookup tables read, its instructions unchanged.
+ */
+async function makeTheUserPay(
+  rpc: SolanaRpc,
+  signer: string,
+  transaction: Transaction,
+  message: ReturnType<typeof decodeMerchantTransaction>['message']
+): Promise<Transaction> {
+  const { value: latest } = await rpc.getLatestBlockhash({ commitment: 'confirmed' }).send();
+  if (String(message.staticAccounts[0]) === signer) {
+    const messageBytes = getCompiledTransactionMessageEncoder().encode({
+      ...message,
+      lifetimeToken: latest.blockhash,
+    }) as TransactionMessageBytes;
+    return { messageBytes, signatures: transaction.signatures };
+  }
+  const decompiled = await decompileTransactionMessageFetchingLookupTables(message, rpc);
+  return compileTransaction(
+    pipe(
+      decompiled,
+      (m) => setTransactionMessageFeePayer(address(signer), m),
+      (m) => setTransactionMessageLifetimeUsingBlockhash(latest, m)
+    )
+  );
+}
+
+/**
+ * Decodes and checks the merchant's transaction for `signer`. One that
+ * arrived signed is kept byte for byte; one that arrived unsigned is made the
+ * user's to pay first. Either way the result passes the same checks core runs
+ * before signing.
  *
  * @throws TransactionRequestError - With the reason the transaction is refused.
  */
@@ -125,18 +168,24 @@ export async function prepareMerchantTransaction(
   signer: string,
   transactionBase64: string
 ): Promise<PreparedMerchantTransaction> {
-  const { transaction, message } = decodeMerchantTransaction(transactionBase64);
-  const sponsored = Object.values(transaction.signatures).some((signature) => signature !== null);
-  // ponytail: an unsigned transaction is made the user's (fee payer and a
-  // fresh blockhash) in spec 043 US3 (T049); until then it is refused.
-  if (!sponsored) throw new TransactionRequestError('malformedTransaction');
+  const received = decodeMerchantTransaction(transactionBase64);
+  const sponsored = Object.values(received.transaction.signatures).some(
+    (signature) => signature !== null
+  );
+  const transaction = sponsored
+    ? received.transaction
+    : await makeTheUserPay(rpc, signer, received.transaction, received.message);
+  const message = sponsored
+    ? received.message
+    : getCompiledTransactionMessageDecoder().decode(transaction.messageBytes);
 
   await assertReceivedTransactionSignable(transaction, signer);
   const lifetime = String(message.lifetimeToken);
-  await assertLifetimeValid(rpc, lifetime);
+  // A fresh blockhash needs no asking; the merchant's must still be valid here.
+  if (sponsored) await assertLifetimeValid(rpc, lifetime);
 
   return {
-    wire: transactionBase64,
+    wire: sponsored ? transactionBase64 : getBase64EncodedWireTransaction(transaction),
     message: bs58.encode(new Uint8Array(transaction.messageBytes)),
     sponsored,
     feePayer: String(message.staticAccounts[0]),

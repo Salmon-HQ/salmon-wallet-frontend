@@ -126,10 +126,10 @@
 
 **Independent test**: `/pay/unsigned` and `/pay/unsigned-broke`.
 
-- [ ] T047 [P] [US3] Add failing unsigned cases to `packages/shared/src/blockchain/solana/transaction-request-checks.test.ts`: fee payer already the user → only the lifetime changes, every other byte equal; another fee payer, legacy and v0 with an address lookup table (mocked lookup fetch) → fee payer = user and lifetime = latest blockhash, instructions unchanged; a second signer left after preparation → `missingSignature`; `sponsored: false`.
-- [ ] T048 [P] [US3] Add failing cases to `packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx`: user is fee payer → the fee row is a cost to the user; SOL balance below fee + SOL the preview shows leaving → `display.confirmDisabled` with `solanaPay.notEnoughSolForFee`.
-- [ ] T049 [US3] Implement the unsigned branch of `prepareMerchantTransaction` in `packages/shared/src/blockchain/solana/transaction-request-checks.ts` (compiled-message lifetime patch as `packages/shared/src/core/broadcast/solana.ts` lines ~103–107 do; otherwise `decompileTransactionMessageFetchingLookupTables` → `setTransactionMessageFeePayer` → `setTransactionMessageLifetimeUsingBlockhash` → `compileTransaction`). Depends on T047.
-- [ ] T050 [US3] Implement the fee and balance rule in `packages/shared/src/hooks/useSolanaPayTransactionRequest.ts`. Depends on T048, T049.
+- [x] T047 [P] [US3] Add failing unsigned cases to `packages/shared/src/blockchain/solana/transaction-request-checks.test.ts`: fee payer already the user → only the lifetime changes, every other byte equal; another fee payer, legacy and v0 with an address lookup table (mocked lookup fetch) → fee payer = user and lifetime = latest blockhash, instructions unchanged; a second signer left after preparation → `missingSignature`; `sponsored: false`.
+- [x] T048 [P] [US3] Add failing cases to `packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx`: user is fee payer → the fee row is a cost to the user; SOL balance below fee + SOL the preview shows leaving → `display.confirmDisabled` with `solanaPay.notEnoughSolForFee`.
+- [x] T049 [US3] Implement the unsigned branch of `prepareMerchantTransaction` in `packages/shared/src/blockchain/solana/transaction-request-checks.ts` (compiled-message lifetime patch as `packages/shared/src/core/broadcast/solana.ts` lines ~103–107 do; otherwise `decompileTransactionMessageFetchingLookupTables` → `setTransactionMessageFeePayer` → `setTransactionMessageLifetimeUsingBlockhash` → `compileTransaction`). Depends on T047.
+- [x] T050 [US3] Implement the fee and balance rule in `packages/shared/src/hooks/useSolanaPayTransactionRequest.ts`. Depends on T048, T049.
 - [ ] T051 [US3] Add `/pay/unsigned` and `/pay/unsigned-broke` to `scripts/devnet-solana-pay-merchant.mjs`; manual check on both apps; note results for T069.
 
 ---

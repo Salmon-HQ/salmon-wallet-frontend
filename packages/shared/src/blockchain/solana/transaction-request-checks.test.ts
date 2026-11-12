@@ -3,6 +3,7 @@ import bs58 from 'bs58';
 import {
   generateKeyPairSigner,
   getCompiledTransactionMessageDecoder,
+  getCompiledTransactionMessageEncoder,
   getTransactionDecoder,
   type Address,
   type KeyPairSigner,
@@ -214,5 +215,130 @@ describe('prepareMerchantTransaction — refusals', () => {
     await expect(
       assertReceivedTransactionSignable(decode(await merchantWire()).transaction, user.address)
     ).resolves.toBeUndefined();
+  });
+});
+
+describe('prepareMerchantTransaction — unsigned, the user pays', () => {
+  const LATEST = 'EkSnNWid2cvwEVnVx9aBqawnmiCNiDgp3gUdkDPTKN1N';
+  let lookupTable: KeyPairSigner;
+
+  beforeAll(async () => {
+    lookupTable = await generateKeyPairSigner();
+  });
+
+  function userPaysRpc() {
+    return {
+      isBlockhashValid: vi.fn().mockReturnValue({ send: async () => ({ value: true }) }),
+      getLatestBlockhash: vi.fn().mockReturnValue({
+        send: async () => ({ value: { blockhash: LATEST, lastValidBlockHeight: 500n } }),
+      }),
+      // The lookup table the v0 message reads the merchant's address from.
+      getMultipleAccounts: vi.fn().mockReturnValue({
+        send: async () => ({
+          value: [
+            {
+              data: {
+                parsed: {
+                  type: 'lookupTable',
+                  info: {
+                    addresses: [merchant.address],
+                    authority: sponsor.address,
+                    deactivationSlot: '18446744073709551615',
+                    lastExtendedSlot: '1',
+                    lastExtendedSlotStartIndex: 0,
+                  },
+                },
+                program: 'address-lookup-table',
+                space: 88n,
+              },
+              executable: false,
+              lamports: 1_000_000n,
+              owner: 'AddressLookupTab1e1111111111111111111111111',
+              space: 88n,
+            },
+          ],
+        }),
+      }),
+    };
+  }
+
+  /** Each instruction as program, accounts (by address) and data: what the transaction does. */
+  function instructionsOf(wire: string) {
+    const { message } = decode(wire);
+    const lookups =
+      'addressTableLookups' in message && message.addressTableLookups?.length
+        ? [merchant.address]
+        : [];
+    const keys = [...message.staticAccounts.map(String), ...lookups];
+    if (!('instructions' in message)) throw new Error('legacy or v0 only');
+    return message.instructions.map((instruction) => ({
+      program: keys[instruction.programAddressIndex],
+      accounts: (instruction.accountIndices ?? []).map((index) => keys[index]),
+      data: Buffer.from(instruction.data ?? new Uint8Array()).toString('hex'),
+    }));
+  }
+
+  it('changes only the blockhash when the user already pays the fee', async () => {
+    const wire = await merchantWire({ feePayer: user.address, signWith: [] });
+    const rpc = userPaysRpc();
+
+    const prepared = await prepareMerchantTransaction(rpc as never, user.address, wire);
+
+    const before = decode(wire);
+    const expected = getCompiledTransactionMessageEncoder().encode({
+      ...before.message,
+      lifetimeToken: LATEST,
+    } as never);
+    expect(new Uint8Array(decode(prepared.wire).transaction.messageBytes)).toEqual(
+      new Uint8Array(expected)
+    );
+    expect(prepared).toMatchObject({
+      sponsored: false,
+      feePayer: user.address,
+      signer: user.address,
+      lifetime: LATEST,
+    });
+    expect(decode(prepared.wire).transaction.signatures).toEqual({ [user.address]: null });
+  });
+
+  it.each([
+    ['a legacy', 'legacy', false],
+    ['a v0', 0, false],
+    ['a v0 lookup-table', 0, true],
+  ] as const)(
+    'makes the user pay %s transaction someone else was named to pay',
+    async (_, version, withLookupTable) => {
+      const wire = await merchantWire({
+        version,
+        ...(withLookupTable ? { lookupTable: lookupTable.address } : {}),
+        feePayer: sponsor.address,
+        signWith: [],
+      });
+      const rpc = userPaysRpc();
+
+      const prepared = await prepareMerchantTransaction(rpc as never, user.address, wire);
+
+      expect(prepared).toMatchObject({
+        sponsored: false,
+        feePayer: user.address,
+        lifetime: LATEST,
+      });
+      expect(decode(prepared.wire).message.staticAccounts[0]).toBe(user.address);
+      expect(decode(prepared.wire).transaction.signatures).toEqual({ [user.address]: null });
+      expect(instructionsOf(prepared.wire)).toEqual(instructionsOf(wire));
+    }
+  );
+
+  it('refuses a transaction that would still need another party to sign', async () => {
+    const wire = await merchantWire({
+      feePayer: sponsor.address,
+      cosigner: merchant.address,
+      signWith: [],
+    });
+    expect(
+      await prepareMerchantTransaction(userPaysRpc() as never, user.address, wire).catch(
+        (error: TransactionRequestError) => error.reason
+      )
+    ).toBe('missingSignature');
   });
 });

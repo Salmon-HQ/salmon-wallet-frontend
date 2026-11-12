@@ -91,14 +91,25 @@ function effects(): TransactionEffects {
   };
 }
 
-function account() {
+const LATEST_BLOCKHASH = 'EkSnNWid2cvwEVnVx9aBqawnmiCNiDgp3gUdkDPTKN1N';
+
+/** The paying account; its RPC answers for the blockhash and the SOL it holds. */
+function account({
+  lamports = 10_000_000_000n,
+  blockhashValid = () => true,
+}: { lamports?: bigint; blockhashValid?: () => boolean } = {}) {
+  const rpc = {
+    isBlockhashValid: vi.fn(() => ({ send: async () => ({ value: blockhashValid() }) })),
+    getLatestBlockhash: vi.fn(() => ({
+      send: async () => ({ value: { blockhash: LATEST_BLOCKHASH, lastValidBlockHeight: 900n } }),
+    })),
+    getBalance: vi.fn(() => ({ send: async () => ({ value: lamports }) })),
+  };
   return {
     canSign: true,
     network: { id: 'solana-devnet' },
     getReceiveAddress: () => user.address,
-    getRpc: () => ({
-      isBlockhashValid: () => ({ send: async () => ({ value: true }) }),
-    }),
+    getRpc: () => rpc,
   } as never;
 }
 
@@ -396,6 +407,71 @@ describe('useSolanaPayTransactionRequest — refusals and retry', () => {
     const { display } = mocks.requestReceived.mock.calls[0][0];
     expect(display.requiresHold).toBe(true);
     expect(display.warning).toBeDefined();
+  });
+});
+
+describe('useSolanaPayTransactionRequest — no sponsor, the user pays the fee', () => {
+  let unsignedWire: string;
+
+  beforeAll(async () => {
+    unsignedWire = await sponsoredMerchantTransaction({
+      version: 0,
+      sponsor,
+      user: user.address,
+      merchant: merchant.address,
+      feePayer: user.address,
+      signWith: [],
+    });
+  });
+
+  beforeEach(() => {
+    mocks.fetchMerchantTransaction.mockResolvedValue({ transaction: unsignedWire });
+    // 0.001 SOL to the merchant plus the 5000-lamport fee, as the simulation sees it.
+    mocks.preview.mockResolvedValue({
+      ...effects(),
+      sol: { lamports: -1_005_000n, feeLamports: 5000n },
+    });
+  });
+
+  it("shows the fee as the user's own cost", async () => {
+    const { result } = renderHook(() => useSolanaPayTransactionRequest({ account: account() }));
+
+    act(() => result.current.start(LINK));
+    await waitFor(() => expect(mocks.requestReceived).toHaveBeenCalledTimes(1));
+
+    const { display } = mocks.requestReceived.mock.calls[0][0];
+    expect(display.rows).toContainEqual(
+      expect.objectContaining({
+        label: 'dapp.transaction_fee',
+        value: expect.stringContaining('SOL'),
+      })
+    );
+    expect(JSON.stringify(display.rows)).not.toContain('solanaPay.feePaidBy');
+    expect(display.confirmDisabled).toBeFalsy();
+  });
+
+  it('cannot be confirmed when the SOL held does not cover the fee and what leaves', async () => {
+    const { result } = renderHook(() =>
+      useSolanaPayTransactionRequest({ account: account({ lamports: 1_004_999n }) })
+    );
+
+    act(() => result.current.start(LINK));
+    await waitFor(() => expect(mocks.requestReceived).toHaveBeenCalledTimes(1));
+
+    const { display } = mocks.requestReceived.mock.calls[0][0];
+    expect(display.confirmDisabled).toBe(true);
+    expect(display.warning).toEqual({ title: 'solanaPay.notEnoughSolForFee' });
+  });
+
+  it('can be confirmed with exactly enough SOL', async () => {
+    const { result } = renderHook(() =>
+      useSolanaPayTransactionRequest({ account: account({ lamports: 1_005_000n }) })
+    );
+
+    act(() => result.current.start(LINK));
+    await waitFor(() => expect(mocks.requestReceived).toHaveBeenCalledTimes(1));
+
+    expect(mocks.requestReceived.mock.calls[0][0].display.confirmDisabled).toBeFalsy();
   });
 });
 
