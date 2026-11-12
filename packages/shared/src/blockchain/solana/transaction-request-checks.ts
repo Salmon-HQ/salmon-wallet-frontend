@@ -13,6 +13,7 @@ import {
   assertIsTransactionWithinSizeLimit,
   compileTransaction,
   decompileTransactionMessageFetchingLookupTables,
+  downgradeRoleToNonSigner,
   getBase64EncodedWireTransaction,
   getCompiledTransactionMessageDecoder,
   getCompiledTransactionMessageEncoder,
@@ -168,9 +169,23 @@ async function makeTheUserPay(
     }
     throw error;
   }
+  // The named payer signed only because it paid the fee (that is all the
+  // compiled header says), so once the user pays it is a plain account.
+  const namedPayer = String(message.staticAccounts[0]);
+  const unnamed = {
+    ...decompiled,
+    instructions: decompiled.instructions.map((instruction) => ({
+      ...instruction,
+      accounts: instruction.accounts?.map((account) =>
+        String(account.address) === namedPayer
+          ? { ...account, role: downgradeRoleToNonSigner(account.role) }
+          : account
+      ),
+    })),
+  } as typeof decompiled;
   return compileTransaction(
     pipe(
-      decompiled,
+      unnamed,
       (m) => setTransactionMessageFeePayer(address(signer), m),
       (m) => setTransactionMessageLifetimeUsingBlockhash(latest, m)
     )

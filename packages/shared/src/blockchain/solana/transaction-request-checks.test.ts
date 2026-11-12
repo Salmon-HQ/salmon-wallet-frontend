@@ -336,6 +336,25 @@ describe('prepareMerchantTransaction — unsigned, the user pays', () => {
     }
   );
 
+  // The merchant names itself fee payer and is also who the payment goes to.
+  // Its signature was asked only because it paid the fee; once the user pays,
+  // it is a plain receiving account (Solana Pay 1.1: ignore the feePayer).
+  it.each([
+    ['a legacy', 'legacy'],
+    ['a v0', 0],
+  ] as const)(
+    'makes the user pay %s transaction whose named payer is also the recipient',
+    async (_, version) => {
+      const wire = await merchantWire({ version, feePayer: merchant.address, signWith: [] });
+
+      const prepared = await prepareMerchantTransaction(userPaysRpc() as never, user.address, wire);
+
+      expect(decode(prepared.wire).message.staticAccounts[0]).toBe(user.address);
+      expect(decode(prepared.wire).transaction.signatures).toEqual({ [user.address]: null });
+      expect(instructionsOf(prepared.wire)).toEqual(instructionsOf(wire));
+    }
+  );
+
   // A lookup table that does not exist on the active network means the
   // merchant built for another network, not that the merchant failed.
   it('a lookup table missing on the active network is stale or for another network', async () => {
