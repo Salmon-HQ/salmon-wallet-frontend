@@ -138,17 +138,36 @@ const RETRYABLE: ReadonlySet<TransactionRequestRefusal> = new Set([
   'merchantError',
   'unreadable',
   'networkUnavailable',
+  'unexpected',
 ]);
+
+/** What `fetch` throws when the request never got an answer: Hermes, Chrome, Safari. */
+const FETCH_FAILED = /network request failed|failed to fetch|load failed/i;
+
+/**
+ * A bug in the wallet's own code, told apart from its network calls failing:
+ * the engine's own error types, except the TypeError a failed `fetch` throws.
+ */
+function isWalletFault(error: unknown): boolean {
+  if (error instanceof TypeError) return !FETCH_FAILED.test(error.message);
+  return (
+    error instanceof ReferenceError || error instanceof RangeError || error instanceof SyntaxError
+  );
+}
 
 /**
  * Every failure as a refusal. The merchant's requests only ever throw
- * refusals, so anything else came from the wallet's own network calls
- * (blockhash, lookup tables, fees): the merchant is not to blame.
+ * refusals, so anything else came from the wallet: its own network calls
+ * (blockhash, lookup tables, fees), or a fault in its code, which must not
+ * pass for a network outage.
  */
 function asRefusal(error: unknown): TransactionRequestError {
-  return error instanceof TransactionRequestError
-    ? error
-    : new TransactionRequestError('networkUnavailable');
+  if (error instanceof TransactionRequestError) return error;
+  if (isWalletFault(error)) {
+    console.error('[useSolanaPayTransactionRequest] Unexpected failure:', error);
+    return new TransactionRequestError('unexpected');
+  }
+  return new TransactionRequestError('networkUnavailable');
 }
 
 function identity(details: MerchantDetails): MerchantIdentity {

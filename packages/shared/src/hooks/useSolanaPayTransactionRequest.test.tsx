@@ -587,6 +587,26 @@ describe('useSolanaPayTransactionRequest — the merchant transaction goes stale
     await expect(proposal.refresh!()).rejects.toThrow('solanaPay.errors.unreachable');
   });
 
+  it.each([
+    ['a fault in the wallet', new TypeError('undefined is not a function'), 'unexpected'],
+    [
+      'a fetch that never got an answer',
+      new TypeError('Network request failed'),
+      'networkUnavailable',
+    ],
+  ])('tells %s apart', async (_, error, reason) => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    mocks.loadDetails.mockRejectedValueOnce(error);
+    const { result } = renderHook(() => useSolanaPayTransactionRequest({ account: account() }));
+
+    act(() => result.current.start(LINK));
+
+    await waitFor(() => expect(result.current.state.phase).toBe('failed'));
+    expect(result.current.state).toMatchObject({ reason });
+    expect(result.current.sheet.onRetry).toBeDefined();
+    consoleError.mockRestore();
+  });
+
   it('names the check the rebuilt bytes fail', async () => {
     const proposal = await reviewedProposal();
     const bytes = Buffer.from(wire, 'base64');

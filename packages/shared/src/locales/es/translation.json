@@ -1029,7 +1029,8 @@
       "staleOrWrongNetwork": "Este pago venció o es para otra red.",
       "expired": "Este pago venció. No se envió nada.",
       "accountChanged": "La cuenta cambió después de que el comercio preparó este pago. No se firmó nada.",
-      "networkUnavailable": "No pudimos conectarnos a la red de Solana. Revisá tu conexión y probá de nuevo."
+      "networkUnavailable": "No pudimos conectarnos a la red de Solana. Revisá tu conexión y probá de nuevo.",
+      "unexpected": "Algo salió mal al preparar este pago. Probá de nuevo."
     }
   },
   "phrase_check": {

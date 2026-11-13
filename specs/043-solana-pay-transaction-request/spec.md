@@ -35,6 +35,7 @@ Owner decisions on the plan (2026-11-12):
 - Q: Who writes the Spanish copy? → A: The implementer (confirmed).
 
 - Q: A merchant payment the network would reject (the simulation fails) — hold to confirm, as for a dApp, or block it? → A: Block it: Confirm stays disabled and the review says the transaction would fail, because signing it only spends the fee (owner, 2026-11-12). dApp transactions keep the hold.
+- Q: A fault in the wallet's own code while it prepares the payment — reported as the network being unreachable? → A: No. It gets its own generic message ("Something went wrong while preparing this payment") with Retry, and the error is written to the device console; the frontend has no remote error reporting, and none is added (owner, 2026-11-13).
 
 ## User Scenarios & Testing _(mandatory)_
 
