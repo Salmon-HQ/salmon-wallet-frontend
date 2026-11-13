@@ -28,6 +28,7 @@ Refines the repo-root `AGENTS.md` (canonical rules) for this app.
   bundled chromium with the built extension loaded). See
   `.playwright/README.md` for setup and `.playwright/AGENTS.md` for
   conventions agents must follow when extending the suite.
+- Hand testing in Chrome: `pnpm build:staging` writes `dist/chrome-mv3-staging`, `pnpm build` writes `dist/chrome-mv3`. Rebuild the folder Chrome already loads (its path shows in `chrome://extensions` → Details), because loading the other one is a different unpacked extension with its own empty storage, and its wallets are gone.
 
 ## Releasing
 

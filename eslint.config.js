@@ -178,6 +178,22 @@ export default [
       ],
     },
   },
+  // Shared and mobile code runs on Hermes, while their tests run on Node: an
+  // API only Node has passes every test and breaks on the phone. Hermes's Intl
+  // has no formatToParts (spec 043 shipped one to a device; the payment failed).
+  {
+    files: ['packages/shared/**/*.{ts,tsx}', 'apps/mobile/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-properties': [
+        'error',
+        {
+          property: 'formatToParts',
+          message:
+            'Hermes has no Intl formatToParts. Derive the part from format() output instead (see decimalSeparator in packages/shared/src/utils/formatting.ts).',
+        },
+      ],
+    },
+  },
   // @solana/web3.js is gone from every production path in this repo. This
   // errors when one comes back, instead of drifting back in one import at a
   // time.
