@@ -24,8 +24,7 @@ import type { EffectDetails, ResolveSymbolFn, TransactionEffects } from '../bloc
 import type { SolanaAccount } from '../blockchain/solana';
 import type { DAppTransactionRequest } from '../types/dapp-approval';
 import type { SolanaNetworkId } from '../types/blockchain';
-
-const LAMPORTS_PER_SOL = 1_000_000_000;
+import { formatBaseUnits } from '../utils/formatting';
 
 export interface UseSolanaTransactionApprovalParams {
   account: SolanaAccount | null | undefined;
@@ -87,7 +86,7 @@ export function applySymbols(
 /** Lamports as a trimmed SOL string, or `null` when the amount is not known. */
 function formatLamports(lamports: number | null | undefined): string | null {
   if (lamports == null) return null;
-  return (lamports / LAMPORTS_PER_SOL).toFixed(9).replace(/0+$/, '').replace(/\.$/, '');
+  return formatBaseUnits(BigInt(lamports), 9);
 }
 
 /** The message this request is about — the identity a preview is cached under. */

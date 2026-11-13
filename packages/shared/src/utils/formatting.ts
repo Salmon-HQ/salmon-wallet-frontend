@@ -162,6 +162,7 @@ export function formatAmount(amount: number, decimals: number): string {
  *
  * @param amount - Amount in the mint's base units. Sign is ignored.
  * @param decimals - The mint's decimals.
+ * @param locale - Override locale; defaults to the active i18next language.
  * @returns The magnitude, with trailing fractional zeros trimmed.
  *
  * @example
@@ -171,14 +172,22 @@ export function formatAmount(amount: number, decimals: number): string {
  * formatBaseUnits(1n, 9)              // '0.000000001'
  * ```
  */
-export function formatBaseUnits(amount: bigint, decimals: number): string {
+export function formatBaseUnits(amount: bigint, decimals: number, locale?: string): string {
   const magnitude = amount < 0n ? -amount : amount;
   if (decimals <= 0) return magnitude.toString();
 
   const digits = magnitude.toString().padStart(decimals + 1, '0');
   const whole = digits.slice(0, digits.length - decimals);
   const fraction = digits.slice(digits.length - decimals).replace(/0+$/, '');
-  return fraction ? `${whole}.${fraction}` : whole;
+  return fraction ? `${whole}${decimalSeparator(locale)}${fraction}` : whole;
+}
+
+function decimalSeparator(locale?: string): string {
+  return (
+    numberFormatFor(resolveLocale(locale), {})
+      .formatToParts(1.5)
+      .find((part) => part.type === 'decimal')?.value ?? '.'
+  );
 }
 
 /**
