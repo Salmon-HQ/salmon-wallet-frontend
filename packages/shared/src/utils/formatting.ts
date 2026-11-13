@@ -182,12 +182,10 @@ export function formatBaseUnits(amount: bigint, decimals: number, locale?: strin
   return fraction ? `${whole}${decimalSeparator(locale)}${fraction}` : whole;
 }
 
+// Hermes has no `formatToParts`: the separator is what is left of "1.5" once
+// the digits are gone.
 function decimalSeparator(locale?: string): string {
-  return (
-    numberFormatFor(resolveLocale(locale), {})
-      .formatToParts(1.5)
-      .find((part) => part.type === 'decimal')?.value ?? '.'
-  );
+  return numberFormatFor(resolveLocale(locale), {}).format(1.5).replace(/\d/g, '') || '.';
 }
 
 /**
