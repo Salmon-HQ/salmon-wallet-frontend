@@ -1190,8 +1190,10 @@ packages/shared/src/blockchain/solana/transaction-request-checks.test.ts › pre
 packages/shared/src/blockchain/solana/transaction-request-checks.test.ts › prepareMerchantTransaction — unsigned, the user pays a lookup table missing on the active network is stale or for another network › passed
 packages/shared/src/blockchain/solana/transaction-request-checks.test.ts › prepareMerchantTransaction — unsigned, the user pays changes only the blockhash when the user already pays the fee › passed
 packages/shared/src/blockchain/solana/transaction-request-checks.test.ts › prepareMerchantTransaction — unsigned, the user pays makes the user pay a legacy transaction someone else was named to pay › passed
+packages/shared/src/blockchain/solana/transaction-request-checks.test.ts › prepareMerchantTransaction — unsigned, the user pays makes the user pay a legacy transaction whose named payer is also the recipient › passed
 packages/shared/src/blockchain/solana/transaction-request-checks.test.ts › prepareMerchantTransaction — unsigned, the user pays makes the user pay a v0 lookup-table transaction someone else was named to pay › passed
 packages/shared/src/blockchain/solana/transaction-request-checks.test.ts › prepareMerchantTransaction — unsigned, the user pays makes the user pay a v0 transaction someone else was named to pay › passed
+packages/shared/src/blockchain/solana/transaction-request-checks.test.ts › prepareMerchantTransaction — unsigned, the user pays makes the user pay a v0 transaction whose named payer is also the recipient › passed
 packages/shared/src/blockchain/solana/transaction-request-checks.test.ts › prepareMerchantTransaction — unsigned, the user pays refuses a transaction that would still need another party to sign › passed
 packages/shared/src/blockchain/solana/transaction-request.test.ts › a body read without a stream (React Native) is measured in bytes, not characters › passed
 packages/shared/src/blockchain/solana/transaction-request.test.ts › a body read without a stream (React Native) is refused unread when it announces more than 64 KiB › passed
@@ -2134,7 +2136,7 @@ packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaP
 packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — refusals and retry retry after a merchantError GET asks for the details again, then goes on › passed
 packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — refusals and retry retry after a unreachable GET asks for the details again, then goes on › passed
 packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — refusals and retry retry after a unreadable GET asks for the details again, then goes on › passed
-packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — sponsored payment asks for a hold when the preview cannot vouch for the transaction › passed
+packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — sponsored payment cannot be confirmed when the network would reject the payment › passed
 packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — sponsored payment ends quietly when the review leaves an unknown outcome behind › passed
 packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — sponsored payment goes back to idle when the user backs out of the review › passed
 packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — sponsored payment hands core the exact merchant bytes, the address it posted and the dApp review › passed
@@ -2149,6 +2151,8 @@ packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaP
 packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — the merchant transaction goes stale says the merchant could not be reached when it cannot rebuild the payment › passed
 packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — the merchant transaction goes stale says the payment expired when the flow was closed during the rebuild › passed
 packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — the merchant transaction goes stale says the wallet's network failed when the rebuild cannot ask it › passed
+packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — the merchant transaction goes stale tells a fault in the wallet apart › passed
+packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx › useSolanaPayTransactionRequest — the merchant transaction goes stale tells a fetch that never got an answer apart › passed
 packages/shared/src/hooks/useSolanaTransactionApproval.test.ts › applySymbols leaves an unknown mint unnamed rather than inventing a ticker › passed
 packages/shared/src/hooks/useSolanaTransactionApproval.test.ts › applySymbols names the mint in an approval, where the token is the whole warning › passed
 packages/shared/src/hooks/useSolanaTransactionApproval.test.ts › applySymbols names the tokens a preview could not resolve on its own › passed
@@ -3155,6 +3159,7 @@ packages/shared/src/utils/formatting.test.ts › formatBaseUnits renders whole a
 packages/shared/src/utils/formatting.test.ts › formatBaseUnits returns the magnitude, leaving the sign to the caller › passed
 packages/shared/src/utils/formatting.test.ts › formatBaseUnits stays exact past the range a float can represent › passed
 packages/shared/src/utils/formatting.test.ts › formatBaseUnits treats a zero-decimal mint as whole units › passed
+packages/shared/src/utils/formatting.test.ts › formatBaseUnits writes the decimal separator of the app language, still exact › passed
 packages/shared/src/utils/formatting.test.ts › formatPercent renders an undirected percentage without a sign › passed
 packages/shared/src/utils/formatting.test.ts › formatPercent shares the zero and empty forms with the signed renderer › passed
 packages/shared/src/utils/formatting.test.ts › formatPercentage does not group a percentage, which is not a money magnitude › passed

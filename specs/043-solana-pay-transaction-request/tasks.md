@@ -88,7 +88,7 @@
 - [x] T033 [US1] DOM entry: new `onTransactionRequest` prop on `packages/ui/src/components/SendPage/StepRecipient.tsx`; `packages/ui/src/components/SendPage/SendPage.tsx` (and `types.ts`) runs `useSolanaPayTransactionRequest`, shows the sheet, closes the Send flow through `onBack` after the receipt, returns to the recipient step with the field cleared on cancel. In the NFT send (no handler) any payment link — transfer or transaction request — shows `send.request.errors.paymentLinkNotHere`. Tests first in NEW `packages/ui/src/components/SendPage/StepRecipient.test.tsx` (transaction request → handler with the link; NFT → `paymentLinkNotHere`; transfer request unchanged). Depends on T008, T028, T029, T031.
 - [x] T034 [US1] Mobile entry: `acceptTransactionRequests` prop on `apps/mobile/src/components/QRScanner/QRScanner.tsx` (+ `types.ts`); without it a transaction-request code shows `qrScanner.paymentLinkOnlyInSend` (callers `apps/mobile/src/components/AddressForm/AddressForm.tsx` and `apps/mobile/app/(app)/nft/[id]/send.tsx` pass nothing); `apps/mobile/app/(app)/send/index.tsx` passes the prop and wires scan and paste → hook → sheet → core review → `router.replace('/')` after the receipt. Tests first: cases in `apps/mobile/src/components/QRScanner/QRScanner.test.tsx` and NEW `apps/mobile/__tests__/app/send-solana-pay.test.tsx` (scan and paste open the sheet; transfer request still opens the locked review). Depends on T008, T028, T030, T032.
 - [x] T035 [US1] Create NEW `scripts/devnet-solana-pay-merchant.mjs` (dev-only, imported by nothing): `node:http` on `PORT` (default 8787), `Access-Control-Allow-Origin: *` and `OPTIONS` on every route, a request log (method, path, `Origin`, `User-Agent`, POST body), devnet RPC fixed, prints each route's `solana:` link and a terminal QR (root-hoisted `qrcode`, `type: 'terminal'`) for `PUBLIC_URL`; routes `/pay/sponsored` (SOL transfer user→`MERCHANT_ADDR` + memo, SVG icon, sponsor = wallet B from `SALMON_TEST_SEED_B`, or Kora `signTransaction` via JSON-RPC `fetch` when `KORA_RPC_URL` is set) and `/pay/sponsored-v0`. Imports only `@solana/kit`, `@solana-program/system`, `@solana-program/memo`, `qrcode`; never prints a key. Run `pnpm -s check:no-secrets`.
-- [ ] T036 [US1] Manual check, quickstart §3 steps 1–3 on devnet (mobile scan, extension paste) with `/pay/sponsored` and `/pay/sponsored-v0`, plus step 2 (phrase gate first); note results for T069.
+- [x] T036 [US1] Manual check, quickstart §3 steps 1–3 on devnet (mobile scan, extension paste) with `/pay/sponsored` and `/pay/sponsored-v0`, plus step 2 (phrase gate first); note results for T069.
 
 **Checkpoint**: US1 works end to end on both apps on devnet.
 
@@ -114,7 +114,7 @@
 - [x] T043 [P] [US2] Failed phase in the DOM sheet `packages/ui/src/components/SolanaPayRequestSheet/SolanaPayRequestSheet.tsx`: `WarningNotice` with the reason, "The merchant says: …" as plain text, Retry only when `onRetry` is given. Tests first in `SolanaPayRequestSheet.test.tsx` (markup in `merchantMessage` renders as text). Depends on T031.
 - [x] T044 [P] [US2] Same failed phase in `apps/mobile/src/components/SolanaPayRequestSheet/SolanaPayRequestSheet.tsx` with tests in its `SolanaPayRequestSheet.test.tsx`. Depends on T032.
 - [x] T045 [US2] Add the failure routes to `scripts/devnet-solana-pay-merchant.mjs`: `/pay/http-error`, `/pay/not-json`, `/pay/bad-icon`, `/pay/bad-signature`, `/pay/missing-sponsor`, `/pay/not-for-you`, `/pay/fails`, `/pay/slow`, `/pay/redirect-http`, `/pay/huge`, the printed-only `solana:http://…` link, and `/pay/no-cors` (sponsored, but no CORS headers and no `OPTIONS` answer) for owner decision 2.
-- [ ] T046 [US2] Manual check, quickstart §3 step 4 for every failure route on both apps; `/pay/no-cors` pays on mobile and shows `solanaPay.errors.unreachable` on the extension; note results for T069.
+- [ ] T046 [US2] Manual check, quickstart §3 step 4 for every failure route on both apps; `/pay/no-cors` pays on mobile and shows `solanaPay.errors.unreachable` on the extension; note results for T069. — done except `/pay/no-cors` on the extension; see verification/final.md
 
 **Checkpoint**: US1 + US2 = MVP. Every case of SC-003 refused with its own message, nothing signed.
 
@@ -130,7 +130,7 @@
 - [x] T048 [P] [US3] Add failing cases to `packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx`: user is fee payer → the fee row is a cost to the user; SOL balance below fee + SOL the preview shows leaving → `display.confirmDisabled` with `solanaPay.notEnoughSolForFee`.
 - [x] T049 [US3] Implement the unsigned branch of `prepareMerchantTransaction` in `packages/shared/src/blockchain/solana/transaction-request-checks.ts` (compiled-message lifetime patch as `packages/shared/src/core/broadcast/solana.ts` lines ~103–107 do; otherwise `decompileTransactionMessageFetchingLookupTables` → `setTransactionMessageFeePayer` → `setTransactionMessageLifetimeUsingBlockhash` → `compileTransaction`). Depends on T047.
 - [x] T050 [US3] Implement the fee and balance rule in `packages/shared/src/hooks/useSolanaPayTransactionRequest.ts`. Depends on T048, T049.
-- [ ] T051 [US3] Add `/pay/unsigned` and `/pay/unsigned-broke` to `scripts/devnet-solana-pay-merchant.mjs`; manual check on both apps; note results for T069.
+- [x] T051 [US3] Add `/pay/unsigned` and `/pay/unsigned-broke` to `scripts/devnet-solana-pay-merchant.mjs`; manual check on both apps; note results for T069.
 
 ---
 
@@ -144,7 +144,7 @@
 - [x] T053 [P] [US4] Add failing cases to `packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx`: the proposal's `isStale` asks `isBlockhashValid` on the active RPC; `refresh` repeats the POST (not the GET) → check → preview against the same link and account and returns a new proposal; a failed refresh throws `expired`.
 - [x] T054 [US4] Implement the stale rule in `confirmOrRefresh` of `packages/shared/src/core/confirmation/useSignatureRequestHost.ts` and the received-kind `refresh` in `packages/shared/src/core/confirmation/SignatureRequestContext.tsx`; re-run the core checkpoint of T027 (frozen files unchanged and green). Depends on T052.
 - [x] T055 [US4] Implement `isStale` / `refresh` in `packages/shared/src/hooks/useSolanaPayTransactionRequest.ts`. Depends on T053, T054.
-- [ ] T056 [US4] Add `/pay/stale` (first POST ~2-minute-old blockhash, later POSTs fresh) to `scripts/devnet-solana-pay-merchant.mjs`; manual check on both apps; note results for T069.
+- [ ] T056 [US4] Add `/pay/stale` (first POST ~2-minute-old blockhash, later POSTs fresh) to `scripts/devnet-solana-pay-merchant.mjs`; manual check on both apps; note results for T069. — route added; not producible in Kora mode and not run by hand (unit tests cover it); see verification/final.md
 
 ---
 
@@ -154,7 +154,7 @@
 
 - [x] T057 [US5] Add failing cases to `packages/shared/src/hooks/useSolanaPayTransactionRequest.test.tsx`: a watch-only account (`isSignableAccount` false) → `refused('watchOnly')` and the mocked `fetch` is never called; a non-Solana active chain never reaches the hook (`wrongChain` from `classifyScanPayload`).
 - [x] T058 [US5] Implement the watch-only refusal before any request in `packages/shared/src/hooks/useSolanaPayTransactionRequest.ts` using `isSignableAccount` from `packages/shared/src/utils/account.ts`. Depends on T057.
-- [ ] T059 [US5] Manual check, quickstart §3 step 5 (and step 6, account switch mid-review → `accountChanged`); note results for T069.
+- [ ] T059 [US5] Manual check, quickstart §3 step 5 (and step 6, account switch mid-review → `accountChanged`); note results for T069. — not run by hand (owner's call, 2026-11-13); unit tests cover both; see verification/final.md
 
 ---
 
@@ -167,9 +167,9 @@
 - [x] T064 Keep `send.request.errors.transactionRequest` in both locales. No product path reaches it any more (an `https:` link is a transaction request, any other web address is `transactionRequestMalformed`), but the frozen `apps/mobile/__tests__/app/send-screens.test.tsx` scripts `readSettledPaymentLink` to return it and asserts its English text, and that file must stay byte-identical. Remove it in the first change after this feature that may edit that test. Run `node scripts/check-i18n.mjs` (the key stays referenced by that test).
 - [x] T065 Security review of the diff (`typescript-reviewer` + `security-reviewer`, ask-pattern) focused on the threats table of plan.md; fix findings with a test each.
 - [x] T066 `npx prettier --check .` and `pnpm -s check:no-secrets` clean.
-- [ ] T067 Run quickstart §2 Kora mode once (real Kora node, `KORA_RPC_URL`): confirm Kora signs a transaction whose user slot is empty and the payment lands; record whether `expo-image` drew the SVG icon on Android and how RN `fetch` handled `/pay/redirect-http` (the three items plan.md marks unverified).
+- [x] T067 Run quickstart §2 Kora mode once (real Kora node, `KORA_RPC_URL`): confirm Kora signs a transaction whose user slot is empty and the payment lands; record whether `expo-image` drew the SVG icon on Android and how RN `fetch` handled `/pay/redirect-http` (the three items plan.md marks unverified).
 - [x] T068 Final verification, the owner's "after" half: run exactly the T001 suite and the T002 inventory again; write NEW `specs/043-solana-pay-transaction-request/verification/final.md` with the same fields plus the comparison: (a) every gate green; (b) every test line in `baseline-tests-*.txt` exists in the new inventory and passes — the only allowed difference is the scan-payload assertion replaced in T007, which keeps its test name and passes; (c) `git diff --exit-code 7894953d -- <frozen list of T002>` is empty and those tests pass; (d) per-package counts before → after. Any failure here blocks the PR.
-- [ ] T069 Manual quickstart verification on devnet, both apps: §3 steps 1–7 (incl. SC-002 timing scan → review < 5 s and scan → confirmed < 30 s, and the spec 033 transfer-request QR still opening the locked Send review, SC-006); record results in `specs/043-solana-pay-transaction-request/verification/final.md`. Commit `feat: pay Solana Pay transaction requests (DEV-209)` with the verification files.
+- [ ] T069 Manual quickstart verification on devnet, both apps: §3 steps 1–7 (incl. SC-002 timing scan → review < 5 s and scan → confirmed < 30 s, and the spec 033 transfer-request QR still opening the locked Send review, SC-006); record results in `specs/043-solana-pay-transaction-request/verification/final.md`. Commit `feat: pay Solana Pay transaction requests (DEV-209)` with the verification files. — done except steps 5–7 and SC-002 timing; see verification/final.md
 
 ---
 
