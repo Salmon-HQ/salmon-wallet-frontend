@@ -33,7 +33,7 @@ export const ConfirmationButtons: React.FC<ConfirmationButtonsProps> = ({
           disabled={isRefreshing || confirmDisabled}
           testID="confirmation-hold-button"
         >
-          {confirmLabel ?? t('general.confirm')}
+          {t('general.hold_to_confirm')}
         </HoldToApproveButton>
       ) : (
         <PrimaryButton

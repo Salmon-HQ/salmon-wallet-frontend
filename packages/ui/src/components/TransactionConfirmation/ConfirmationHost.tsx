@@ -82,6 +82,9 @@ export function ConfirmationHost() {
         {request && !isSigning && (
           <TransactionConfirmation
             display={request.proposal.display}
+            requester={request.proposal.display.requester}
+            requiresHold={request.proposal.display.requiresHold}
+            confirmDisabled={request.proposal.display.confirmDisabled}
             onBack={cancel}
             onConfirm={() => void confirmOrRefresh()}
             confirmLabel={confirmLabel}

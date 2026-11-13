@@ -151,6 +151,12 @@ describe('formatBaseUnits', () => {
     expect(formatBaseUnits(-2_000_000n, 6)).toBe('2');
   });
 
+  it('writes the decimal separator of the app language, still exact', () => {
+    expect(formatBaseUnits(1_000_000n, 9, 'es')).toBe('0,001');
+    expect(formatBaseUnits(18_446_744_073_709_551_615n, 6, 'es')).toBe('18446744073709,551615');
+    expect(formatBaseUnits(1_000_000n, 9, 'en')).toBe('0.001');
+  });
+
   it('stays exact past the range a float can represent', () => {
     // u64::MAX — an unlimited SPL approval. Dividing this through a `number`
     // rounds it, and a rounded amount on an approval screen is a wrong amount.

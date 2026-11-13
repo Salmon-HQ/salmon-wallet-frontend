@@ -21,6 +21,7 @@ import { WarningNotice } from '../WarningNotice';
 import { ConfirmationDetailsCard } from './ConfirmationDetailsCard';
 import { ConfirmationExchange } from './ConfirmationExchange';
 import { ConfirmationButtons } from './ConfirmationButtons';
+import { RequesterRow } from './RequesterRow';
 import type { TransactionConfirmationProps } from './types';
 
 /**
@@ -39,6 +40,7 @@ export const TransactionConfirmation: React.FC<TransactionConfirmationProps> = (
   isRefreshing = false,
   confirmDisabled = false,
   requiresHold = false,
+  requester,
   error,
   style,
 }) => {
@@ -65,6 +67,18 @@ export const TransactionConfirmation: React.FC<TransactionConfirmationProps> = (
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* Who asks (a Solana Pay merchant) — band 1 */}
+        {requester && (
+          <Animated.View entering={bandEntering(1)} style={styles.detailsContainer}>
+            <RequesterRow
+              name={requester.name}
+              icon={requester.icon}
+              domain={requester.domain}
+              testID="confirmation-requester"
+            />
+          </Animated.View>
+        )}
+
         {/* Exchange graphic: sent token → arrow → received token — band 1 */}
         {display.exchange && (
           <Animated.View entering={bandEntering(1)} style={styles.cardsContainer}>

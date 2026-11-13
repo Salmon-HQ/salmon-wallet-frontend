@@ -15,6 +15,10 @@ import {
   type TransferRequest,
   type TransferRequestParseReason,
 } from '../blockchain/solana/transfer-request';
+import {
+  parseTransactionRequestLink,
+  type TransactionRequestLink,
+} from '../blockchain/solana/transaction-request';
 import type { BlockchainType } from '../types/blockchain';
 
 const VALIDATORS: Record<BlockchainType, (address: string) => boolean> = {
@@ -33,6 +37,7 @@ const AMOUNT_PATTERN = /^\d+(\.\d+)?$/;
 
 export type ScanClassification =
   | { kind: 'valid'; address: string; amount?: string; request?: TransferRequest }
+  | { kind: 'transactionRequest'; link: TransactionRequestLink }
   | { kind: 'invalidRequest'; reason: TransferRequestParseReason }
   | { kind: 'wrongChain' }
   | { kind: 'notAddress' };
@@ -106,6 +111,13 @@ function classifySolanaPay(raw: string, activeChain: BlockchainType): ScanClassi
       ? { kind: 'valid', address: request.recipient, amount: request.amount, request }
       : { kind: 'valid', address: request.recipient, amount: undefined };
   }
+  if (parsed.reason === 'transactionRequest') {
+    // The merchant builds the transaction (spec 043); its link must be public https.
+    const read = parseTransactionRequestLink(raw);
+    return read.ok
+      ? { kind: 'transactionRequest', link: read.link }
+      : { kind: 'invalidRequest', reason: 'transactionRequestMalformed' };
+  }
   if (parsed.reason === 'recipient') {
     const recipient = raw
       .trim()
@@ -148,11 +160,13 @@ export function classifyScanPayload(raw: string, activeChain: BlockchainType): S
 export type SettledPaymentLink =
   | { kind: 'error'; key: string }
   | { kind: 'address'; address: string }
-  | { kind: 'request'; address: string; request: TransferRequest };
+  | { kind: 'request'; address: string; request: TransferRequest }
+  | { kind: 'transactionRequest'; link: TransactionRequestLink };
 
 /**
  * Reads a pasted or scanned link for the send recipient step: the field error
- * it shows, the bare address it fills, or the transfer request it starts. Both
+ * it shows, the bare address it fills, the transfer request it starts, or the
+ * merchant a transaction request asks the wallet to contact. Both
  * recipient steps (mobile and the DOM) read a link the same way; what each
  * does with a request is its own.
  */
@@ -164,6 +178,7 @@ export function readSettledPaymentLink(
   if (outcome.kind === 'invalidRequest') {
     return { kind: 'error', key: `send.request.errors.${outcome.reason}` };
   }
+  if (outcome.kind === 'transactionRequest') return outcome;
   if (outcome.kind !== 'valid') {
     return { kind: 'error', key: 'send.request.errors.notSolanaPay' };
   }

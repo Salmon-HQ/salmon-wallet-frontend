@@ -127,6 +127,46 @@ describe('QRScanner', () => {
     });
   });
 
+  it('hands a transaction request to a scanner that accepts them', () => {
+    const onScan = jest.fn();
+    const link = { url: 'https://merchant.example/pay', host: 'merchant.example' };
+    mockClassify.mockReturnValueOnce({ kind: 'transactionRequest', link });
+
+    render(
+      <QRScanner
+        visible
+        blockchain="solana"
+        acceptTransactionRequests
+        onScan={onScan}
+        onClose={jest.fn()}
+      />
+    );
+
+    scanFrame('solana:https://merchant.example/pay');
+
+    expect(onScan).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: 'solana:https://merchant.example/pay',
+        transactionRequest: link,
+      })
+    );
+  });
+
+  it('says a transaction request opens only from Send elsewhere', () => {
+    const onScan = jest.fn();
+    const link = { url: 'https://merchant.example/pay', host: 'merchant.example' };
+    mockClassify.mockReturnValueOnce({ kind: 'transactionRequest', link });
+
+    render(<QRScanner visible blockchain="solana" onScan={onScan} onClose={jest.fn()} />);
+
+    scanFrame('solana:https://merchant.example/pay');
+
+    expect(onScan).not.toHaveBeenCalled();
+    expect(screen.getByTestId('qr-scanner-error').props.children).toBe(
+      'send.request.errors.paymentLinkNotHere'
+    );
+  });
+
   it('rejects an invalid payload, keeps scanning, then accepts a valid one', () => {
     const onScan = jest.fn();
     mockClassify.mockReturnValueOnce({ kind: 'notAddress' });

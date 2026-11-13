@@ -11,6 +11,7 @@
     "nfts": "NFTs"
   },
   "general": {
+    "hold_to_confirm": "Hold to confirm",
     "address": "Address",
     "name_or_address": "Name or \"{{token}}\" Address",
     "seed_phrase": "Seed Phrase",
@@ -755,6 +756,7 @@
     "sendSummary": "{{amount}} {{symbol}} to {{recipient}}",
     "errors": {
       "nftNotOwned": "This NFT is no longer in your wallet. We've removed it from your list.",
+      "proposalKind": "This kind of transaction cannot be confirmed here.",
       "insufficientFeeSol": "You need a small amount of SOL to pay the network fee. Add SOL to this account and try again.",
       "insufficientFunds": "Insufficient balance for this transaction.",
       "expired": "The network took too long to confirm. Try again.",
@@ -876,7 +878,9 @@
         "amount": "The request names an invalid amount",
         "splToken": "The request names an invalid token",
         "reference": "The request carries an invalid reference",
-        "memoTooLong": "The request carries a memo that is too long"
+        "memoTooLong": "The request carries a memo that is too long",
+        "transactionRequestMalformed": "This payment link is malformed",
+        "paymentLinkNotHere": "This is a payment link. Open it from Send."
       },
       "memo": "On-chain note"
     },
@@ -996,6 +1000,37 @@
       "active": "Active",
       "deactivating": "Deactivating",
       "inactive": "Inactive"
+    }
+  },
+  "solanaPay": {
+    "contacting": "Contacting merchant…",
+    "preparing": "Preparing payment…",
+    "reviewTitle": "Review payment",
+    "paying": "Paying {{label}}",
+    "receiptTitle": "Payment sent",
+    "merchantMessage": "The merchant says: {{message}}",
+    "message": "Message",
+    "feePaidBy": "Paid by {{address}}",
+    "notEnoughSolForFee": "Not enough SOL for the network fee",
+    "refreshed": "The merchant updated this payment. Check it again.",
+    "retry": "Try again",
+    "errors": {
+      "watchOnly": "This account can only watch. Switch to an account with keys to pay.",
+      "malformedLink": "This payment link is malformed.",
+      "unreachable": "The merchant could not be reached. Check your connection and try again.",
+      "merchantError": "The merchant could not prepare this payment.",
+      "unreadable": "The merchant answered something the wallet cannot read.",
+      "malformedIcon": "The merchant's details are malformed.",
+      "malformedTransaction": "The merchant sent a transaction the wallet cannot read.",
+      "invalidSignature": "A signature on this transaction does not match. Nothing was signed.",
+      "notForThisAccount": "This transaction does not ask for this account's signature.",
+      "alreadySigned": "This transaction already carries a signature for this account. Nothing was signed.",
+      "missingSignature": "This transaction still needs another party's signature, so it is not safe to sign.",
+      "staleOrWrongNetwork": "This payment expired or is meant for another network.",
+      "expired": "This payment expired. Nothing was sent.",
+      "accountChanged": "The account changed after the merchant prepared this payment. Nothing was signed.",
+      "networkUnavailable": "The Solana network could not be reached. Check your connection and try again.",
+      "unexpected": "Something went wrong while preparing this payment. Try again."
     }
   },
   "phrase_check": {

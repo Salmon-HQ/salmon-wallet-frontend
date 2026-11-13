@@ -60,6 +60,19 @@ describe('parseTransferRequest', () => {
     });
   });
 
+  it('calls a web address that is not https a malformed transaction request', () => {
+    for (const link of [
+      'solana:http://merchant.example/pay',
+      'solana:http%3A%2F%2Fmerchant.example%2Fpay',
+      'solana:ftp://merchant.example/pay',
+    ]) {
+      expect(parseTransferRequest(link)).toEqual({
+        ok: false,
+        reason: 'transactionRequestMalformed',
+      });
+    }
+  });
+
   it('names the part it could not read', () => {
     expect(parseTransferRequest('solana:not-an-address')).toEqual({
       ok: false,

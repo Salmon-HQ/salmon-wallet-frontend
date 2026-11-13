@@ -76,8 +76,27 @@ describe('classifyScanPayload', () => {
       reason: 'amount',
     });
     expect(classifyScanPayload('solana:https%3A%2F%2Fexample.com%2Fpay', 'solana')).toEqual({
-      kind: 'invalidRequest',
-      reason: 'transactionRequest',
+      kind: 'transactionRequest',
+      link: { url: 'https://example.com/pay', host: 'example.com' },
+    });
+  });
+
+  it('refuses a transaction request whose web address is not public https', () => {
+    for (const raw of [
+      'solana:http://merchant.example/pay',
+      'solana:https://192.168.1.10/pay',
+      'solana:https://localhost/pay',
+    ]) {
+      expect(classifyScanPayload(raw, 'solana')).toEqual({
+        kind: 'invalidRequest',
+        reason: 'transactionRequestMalformed',
+      });
+    }
+  });
+
+  it('keeps a transaction request off a non-Solana chain', () => {
+    expect(classifyScanPayload('solana:https://merchant.example/pay', 'bitcoin')).toEqual({
+      kind: 'wrongChain',
     });
   });
 
@@ -161,6 +180,22 @@ describe('readSettledPaymentLink', () => {
       recipient: SOLANA_ADDRESS,
       amount: '1.5',
       splToken: USDC,
+    });
+  });
+
+  it('hands over a transaction request with its merchant link', () => {
+    expect(
+      readSettledPaymentLink('solana:https%3A%2F%2Fmerchant.example%2Fpay%3Forder%3D7', 'solana')
+    ).toEqual({
+      kind: 'transactionRequest',
+      link: { url: 'https://merchant.example/pay?order=7', host: 'merchant.example' },
+    });
+  });
+
+  it('says a transaction request that is not public https is malformed', () => {
+    expect(readSettledPaymentLink('solana:http://merchant.example/pay', 'solana')).toEqual({
+      kind: 'error',
+      key: 'send.request.errors.transactionRequestMalformed',
     });
   });
 });

@@ -26,7 +26,6 @@ import type {
   V1TransactionConfig,
 } from '@solana/kit';
 import { address } from '@solana/addresses';
-import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
 import { fetchAndMergeNetworkConfigs } from '../hooks/useAvailableNetworks';
 import {
   buildOffchainMessageV1,
@@ -36,6 +35,7 @@ import {
   signSiwsMessage,
 } from '../blockchain/solana';
 import { sendExpectingOutcome } from '../blockchain/solana/confirm';
+import { opensWithAdvanceNonce } from '../blockchain/solana/transaction-request-checks';
 import { assertSiwsTextBoundToOrigin } from '../blockchain/solana/sign-in';
 import {
   signBytesWith,
@@ -303,11 +303,7 @@ function isValidUtf8(bytes: Uint8Array): boolean {
   }
 }
 
-/**
- * True when the message opens with System `AdvanceNonceAccount` (instruction
- * 4), the mark of a durable-nonce transaction. The runtime ignores bytes after
- * the instruction tag, so only the first four are compared.
- */
+/** True when the message is a durable-nonce transaction (see `opensWithAdvanceNonce`). */
 function usesDurableNonce(encodedMessage: string): boolean {
   let message: ParsedSolanaTransaction['message'];
   try {
@@ -317,21 +313,7 @@ function usesDurableNonce(encodedMessage: string): boolean {
     // reports one it cannot read as malformed.
     return false;
   }
-  const [program, data] =
-    'instructions' in message
-      ? [message.instructions[0]?.programAddressIndex, message.instructions[0]?.data]
-      : [
-          message.instructionHeaders[0]?.programAccountIndex,
-          message.instructionPayloads[0]?.instructionData,
-        ];
-  return (
-    program !== undefined &&
-    message.staticAccounts[program] === SYSTEM_PROGRAM_ADDRESS &&
-    data?.[0] === 4 &&
-    data[1] === 0 &&
-    data[2] === 0 &&
-    data[3] === 0
-  );
+  return opensWithAdvanceNonce(message);
 }
 
 export function getDAppTransactionRequestSummary(

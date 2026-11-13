@@ -28,6 +28,7 @@ import {
   type SendRecipient,
   type SendToken,
   type StartFromRequestResult,
+  type TransactionRequestLink,
   type TransferRequest,
   type RecipientOption,
 } from '@salmon/shared';
@@ -75,6 +76,8 @@ export interface StepRecipientProps {
    * (spec 033 FR-026). The side panel has no camera, so paste is its scan.
    */
   onRequest?: (request: TransferRequest) => StartFromRequestResult;
+  /** A pasted Solana Pay transaction request opens the merchant flow (spec 043). */
+  onTransactionRequest?: (link: TransactionRequestLink) => void;
 }
 
 export function StepRecipient({
@@ -90,6 +93,7 @@ export function StepRecipient({
   onSelectToken,
   nft,
   onRequest,
+  onTransactionRequest,
 }: StepRecipientProps) {
   const { t } = useTranslation();
   const semantic = useSemantic();
@@ -142,10 +146,16 @@ export function StepRecipient({
         setAddress(outcome.address);
         return;
       }
-      // A flow that takes no requests (an NFT send) says so rather than
-      // quietly dropping the amount and memo the link asked for.
-      if (!onRequest) {
-        setRequestError('send.request.errors.transactionRequest');
+      // A flow that takes no payment links (an NFT send) says so rather than
+      // quietly dropping what the link asked for.
+      if (!onRequest || !onTransactionRequest) {
+        setRequestError('send.request.errors.paymentLinkNotHere');
+        return;
+      }
+      // The merchant flow takes over; the field is clear if the user returns.
+      if (outcome.kind === 'transactionRequest') {
+        setAddress('');
+        onTransactionRequest(outcome.link);
         return;
       }
       const started = onRequest(outcome.request);
@@ -160,7 +170,7 @@ export function StepRecipient({
         );
       }
     },
-    [onRequest]
+    [onRequest, onTransactionRequest]
   );
   useSettledPaymentLink(address, handleSettledLink);
 

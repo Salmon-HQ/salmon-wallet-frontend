@@ -37,6 +37,26 @@ export type {
   TransferRequestParseReason,
   TransferRequestParseResult,
 } from './transfer-request';
+// Solana Pay transaction requests (a merchant builds the transaction, spec 043)
+export {
+  TransactionRequestError,
+  fetchMerchantDetails,
+  fetchMerchantTransaction,
+  parseTransactionRequestLink,
+  setMerchantFetch,
+} from './transaction-request';
+export type {
+  TransactionRequestLink,
+  TransactionRequestLinkResult,
+  TransactionRequestRefusal,
+  MerchantDetails,
+  MerchantTransactionResponse,
+} from './transaction-request';
+export {
+  assertReceivedTransactionSignable,
+  prepareMerchantTransaction,
+} from './transaction-request-checks';
+export type { PreparedMerchantTransaction } from './transaction-request-checks';
 export { findTransferRequestSettlement } from './transfer-request-settlement';
 export type {
   TransferRequestSettlement,

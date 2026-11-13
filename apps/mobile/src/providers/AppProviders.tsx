@@ -9,8 +9,10 @@ import {
   QueryClientProvider,
   registerSeedVault,
   setApiPlatform,
+  setMerchantFetch,
   ThemeProvider,
 } from '@salmon/shared';
+import { fetch as expoFetch } from 'expo/fetch';
 import { useFonts } from 'expo-font';
 import { useState, type ReactNode } from 'react';
 import { AppState, Platform, useColorScheme } from 'react-native';
@@ -24,6 +26,11 @@ import { deauthorizeSeed, SEED_VAULT_MAX_PER_REQUEST, seedVaultBridge } from '..
 // The backend's availability gate reads the platform on every request
 // (spec 018); named once, before any screen asks for anything.
 setApiPlatform(Platform.OS === 'ios' ? 'ios' : 'android');
+
+// Solana Pay merchants (spec 043) are asked through expo/fetch, which honours
+// `redirect: 'error'`; React Native's own fetch follows every redirect, to
+// plain http or a device on the local network included.
+setMerchantFetch(expoFetch as unknown as typeof fetch);
 
 // Seed Vault wallets (spec 037) sign through the device's Seed Vault, which
 // only Android has; everywhere else they refuse to sign as unavailable.

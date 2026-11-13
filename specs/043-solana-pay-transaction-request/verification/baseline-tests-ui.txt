@@ -1,0 +1,612 @@
+packages/ui/src/components/AccountAvatar/AccountAvatar.test.tsx › AccountAvatar draws the initials when there is no picture › passed
+packages/ui/src/components/AccountAvatar/AccountAvatar.test.tsx › AccountAvatar draws the picture, and falls back to the initials when it fails to load › passed
+packages/ui/src/components/AccountAvatarPanel/AccountAvatarPanel.test.tsx › AccountAvatarPanel selection state exposes the strip as tabs and says which one is chosen › passed
+packages/ui/src/components/AccountAvatarPanel/AccountAvatarPanel.test.tsx › AccountAvatarPanel selection state keeps the save action disabled until the choice actually changes, then hands the pick to the caller › passed
+packages/ui/src/components/AccountAvatarPanel/AccountAvatarPanel.test.tsx › AccountAvatarPanel selection state says which avatar is chosen, not only which one is ringed › passed
+packages/ui/src/components/AccountsPanel/AccountsPanel.test.tsx › AccountsPanel active account announces which account is active instead of relying on the fill alone › passed
+packages/ui/src/components/AccountsPanel/AccountsPanel.test.tsx › AccountsPanel active account leaves the inactive account unselected and named plainly › passed
+packages/ui/src/components/AccountsPanel/AccountsPanel.test.tsx › AccountsPanel active account names the icon-only row actions › passed
+packages/ui/src/components/AccountsPanel/AccountsPanel.test.tsx › AccountsPanel active account reads the light ink when the mode is light › passed
+packages/ui/src/components/AccountsPanel/AccountsPanel.test.tsx › AccountsPanel active account selects the row on press, and only the row — the inline actions do not select › passed
+packages/ui/src/components/ActivityPage/ActivityPage.test.tsx › ActivityPage groups the rows by day › passed
+packages/ui/src/components/ActivityPage/ActivityPage.test.tsx › ActivityPage is titled Activity, with the subtitle mobile shows › passed
+packages/ui/src/components/ActivityPage/ActivityPage.test.tsx › ActivityPage offers the four filters and keeps only the matching rows › passed
+packages/ui/src/components/ActivityPage/ActivityPage.test.tsx › ActivityPage opens a row as a sheet over the list, and the list stays › passed
+packages/ui/src/components/ActivityPage/ActivityPage.test.tsx › ActivityPage reads the live mode: the ground takes the light ramp › passed
+packages/ui/src/components/ActivityPage/ActivityPage.test.tsx › ActivityPage says the filter is the reason when a filtered slice is empty › passed
+packages/ui/src/components/ActivityPage/ActivityPage.test.tsx › ActivityPage shows the skeleton while loading and the retry when it failed › passed
+packages/ui/src/components/AddressAddPanel/AddressAddPanel.test.tsx › AddressAddPanel commits the contact through the save control › passed
+packages/ui/src/components/AddressAddPanel/AddressAddPanel.test.tsx › AddressAddPanel keeps save disabled until the label and the address are both filled › passed
+packages/ui/src/components/AddressBookPanel/AddressBookPanel.test.tsx › AddressBookPanel names a mainnet contact in full too › passed
+packages/ui/src/components/AddressBookPanel/AddressBookPanel.test.tsx › AddressBookPanel names the environment of a non-mainnet contact, never the chain alone › passed
+packages/ui/src/components/AddressCopyRow/AddressCopyRow.test.tsx › AddressCopyRow reads the live mode: in light the address takes light's ink › passed
+packages/ui/src/components/AddressCopyRow/AddressCopyRow.test.tsx › AddressCopyRow truncates the address and copies the whole of it › passed
+packages/ui/src/components/AddressEditPanel/AddressEditPanel.test.tsx › AddressEditPanel commits the edit against the original address through the save control › passed
+packages/ui/src/components/AddressEditPanel/AddressEditPanel.test.tsx › AddressEditPanel disables save when the label is emptied and enables it again when refilled › passed
+packages/ui/src/components/AddressEditPanel/AddressEditPanel.test.tsx › AddressEditPanel names the environment of a non-mainnet contact › passed
+packages/ui/src/components/AddressForm/AddressForm.test.tsx › AddressForm holds save while the form cannot save, and surfaces a refused save › passed
+packages/ui/src/components/AddressForm/AddressForm.test.tsx › AddressForm names the network and commits through the save control › passed
+packages/ui/src/components/AppearanceSelector/AppearanceSelector.test.tsx › AppearanceSelector lists the three preferences, marks the active one and reports a pick › passed
+packages/ui/src/components/AuthFlow/CreateWalletPage.test.tsx › CreateWalletPage seed-phrase copy copies the phrase, counts down to the clear and holds the button until then › passed
+packages/ui/src/components/AuthFlow/PasswordPage.test.tsx › PasswordPage account setup errors blames the connection, not the seed phrase, when the server is unreachable › passed
+packages/ui/src/components/AuthFlow/PasswordPage.test.tsx › PasswordPage account setup errors still points at the seed phrase for a non-network failure › passed
+packages/ui/src/components/AuthFlow/PasswordPage.test.tsx › PasswordPage account setup errors treats a server-side failure as a seed-phrase error, not a network one › passed
+packages/ui/src/components/AuthFlow/PasswordPage.test.tsx › PasswordPage protecting a wallet that has no password keeps the wallet when the sheet is cancelled › passed
+packages/ui/src/components/AuthFlow/PasswordPage.test.tsx › PasswordPage protecting a wallet that has no password lists the addresses for the owner to recognise › passed
+packages/ui/src/components/AuthFlow/PasswordPage.test.tsx › PasswordPage protecting a wallet that has no password protects the wallet with the confirmed password, creating nothing › passed
+packages/ui/src/components/AuthFlow/PasswordPage.test.tsx › PasswordPage protecting a wallet that has no password removes the wallet only once the sheet is confirmed › passed
+packages/ui/src/components/AuthFlow/PasswordPage.test.tsx › PasswordPage protecting a wallet that has no password says so when the wallet could not be protected › passed
+packages/ui/src/components/AuthFlow/PasswordPage.test.tsx › PasswordPage reserved slots reserves the strength meter and error slots before the first keystroke › passed
+packages/ui/src/components/AuthFlow/PasswordPage.test.tsx › PasswordPage reserved slots reveals the strength meter in place on the first character › passed
+packages/ui/src/components/AuthFlow/SelectOptionsPage.test.tsx › SelectOptionsPage announces "Salmon" once — the wordmark is the heading, the fish is not › passed
+packages/ui/src/components/AuthFlow/SelectOptionsPage.test.tsx › SelectOptionsPage shows the fish, the wordmark and the slogan › passed
+packages/ui/src/components/AuthFlow/SuccessPage.test.tsx › SuccessPage — check derivables asks the scan for the active wallet when clicked › passed
+packages/ui/src/components/AuthFlow/SuccessPage.test.tsx › SuccessPage — check derivables shows the wait over this page while the scan runs, then the answer › passed
+packages/ui/src/components/AuthFlow/SuccessPage.test.tsx › SuccessPage — check derivables still enters the wallet › passed
+packages/ui/src/components/BackupPanel/BackupPanel.test.tsx › BackupPanel reveal gate covers the phrase with opaque bedrock, not a translucent scrim, in both modes › passed
+packages/ui/src/components/BackupPanel/BackupPanel.test.tsx › BackupPanel reveal gate opens the same password gate from the keyboard as from a click › passed
+packages/ui/src/components/BackupPanel/BackupPanel.test.tsx › BackupPanel seed copy failure clears the warning once a retry succeeds › passed
+packages/ui/src/components/BackupPanel/BackupPanel.test.tsx › BackupPanel seed copy failure says when Salmon clears the clipboard once the copy succeeded › passed
+packages/ui/src/components/BackupPanel/BackupPanel.test.tsx › BackupPanel seed copy failure shows no warning when the clipboard write succeeds › passed
+packages/ui/src/components/BackupPanel/BackupPanel.test.tsx › BackupPanel seed copy failure warns when the clipboard write fails so the user does not assume the seed was copied › passed
+packages/ui/src/components/BackupPanel/BackupPanel.test.tsx › BackupPanel seed reveal does not hand over the phrase to whoever is holding an unlocked session › passed
+packages/ui/src/components/BackupPanel/BackupPanel.test.tsx › BackupPanel seed reveal keeps the phrase hidden when the password is wrong › passed
+packages/ui/src/components/BackupPanel/BackupPanel.test.tsx › BackupPanel seed reveal says the clipboard is readable by other apps before the seed goes into it › passed
+packages/ui/src/components/BalanceHeader/BalanceHeader.test.tsx › BalanceHeader draws the block and its controls in dark › passed
+packages/ui/src/components/BalanceHeader/BalanceHeader.test.tsx › BalanceHeader draws the block and its controls in light › passed
+packages/ui/src/components/BalanceHeader/BalanceHeader.test.tsx › BalanceHeader prints the native quantity, with an em-dash for the unpriced 24h change › passed
+packages/ui/src/components/BalanceHeader/BalanceHeader.test.tsx › BalanceHeader slides the amount and sinks the change on a page change, and cuts under reduced motion › passed
+packages/ui/src/components/BalanceHeader/BalanceHeader.test.tsx › BalanceHeader turns the page on a horizontal wheel, and ignores a vertical one › passed
+packages/ui/src/components/BalanceHeader/BalanceHeader.test.tsx › BalanceHeader turns the page on an arrow key, and from the chain selector › passed
+packages/ui/src/components/BalanceHeader/ChainSelector.test.tsx › ChainSelector does not report a tap on the chain already active › passed
+packages/ui/src/components/BalanceHeader/ChainSelector.test.tsx › ChainSelector labels every tab with the chain name alone on mainnet › passed
+packages/ui/src/components/BalanceHeader/ChainSelector.test.tsx › ChainSelector names the environment on a single non-mainnet chain › passed
+packages/ui/src/components/BalanceHeader/ChainSelector.test.tsx › ChainSelector renders nothing for a single mainnet chain — nothing to say, nothing to switch to › passed
+packages/ui/src/components/BalanceHeader/ChainSelector.test.tsx › ChainSelector reports the tapped tab › passed
+packages/ui/src/components/BalanceHeader/ChainSelector.test.tsx › ChainSelector takes the underline colour from the active chain, not the shared accent › passed
+packages/ui/src/components/BarChart/BarChart.test.tsx › BarChart draws each value as a share of the tallest, the newest lit › passed
+packages/ui/src/components/BlockList/BlockList.test.tsx › BlockList draws each block with its own kit component, in order › passed
+packages/ui/src/components/BlockList/BlockList.test.tsx › BlockList — composed blocks nests a card's own blocks inside it, with rows, figures, dividers and bars › passed
+packages/ui/src/components/BottomSheetContainer/BottomSheetContainer.test.tsx › BottomSheetContainer draws the drag handle from the mode-correct token, both modes › passed
+packages/ui/src/components/BottomSheetContainer/BottomSheetContainer.test.tsx › BottomSheetContainer fires onClosed once the exit has actually left, under reduced motion › passed
+packages/ui/src/components/BottomSheetContainer/BottomSheetContainer.test.tsx › BottomSheetContainer parent and child a click on the backdrop under the child closes both, nothing returns › passed
+packages/ui/src/components/BottomSheetContainer/BottomSheetContainer.test.tsx › BottomSheetContainer parent and child the parent yields while the child is up, and comes back once it has left › passed
+packages/ui/src/components/BottomSheetContainer/BottomSheetContainer.test.tsx › BottomSheetContainer parent whose content unmounts with the child inside leaves for good when dismissed under a child that never ran its exit › passed
+packages/ui/src/components/BottomSheetContainer/BottomSheetContainer.test.tsx › BottomSheetContainer renders content and the dark backdrop token when visible › passed
+packages/ui/src/components/BottomSheetContainer/BottomSheetContainer.test.tsx › BottomSheetContainer renders nothing when not visible › passed
+packages/ui/src/components/BottomSheetContainer/BottomSheetContainer.test.tsx › BottomSheetContainer requests close on a backdrop click › passed
+packages/ui/src/components/BottomSheetContainer/BottomSheetContainer.test.tsx › BottomSheetContainer requests close on the platform Escape signal, and is swallowed when not dismissible › passed
+packages/ui/src/components/BottomSheetContainer/BottomSheetContainer.test.tsx › BottomSheetContainer rises from the closed position: 100% on the first paint, 0 one frame later › passed
+packages/ui/src/components/BottomSheetContainer/BottomSheetContainer.test.tsx › BottomSheetContainer rises the same way when it was already mounted closed — the path every sheet takes › passed
+packages/ui/src/components/BottomSheetContainer/BottomSheetContainer.test.tsx › BottomSheetContainer stays open on a backdrop click when not dismissible › passed
+packages/ui/src/components/BottomSheetContainer/BottomSheetContainer.test.tsx › BottomSheetContainer tells the sheets it opens what height it is drawn at › passed
+packages/ui/src/components/BottomSheetContainer/SheetTitle.test.tsx › SheetTitle draws the dark-mode ink › passed
+packages/ui/src/components/BottomSheetContainer/SheetTitle.test.tsx › SheetTitle is a block in the gutter, so it centres on the sheet as mobile's Text does › passed
+packages/ui/src/components/BottomSheetContainer/SheetTitle.test.tsx › SheetTitle renders the leading element inline before the title › passed
+packages/ui/src/components/BottomSheetContainer/SheetTitle.test.tsx › SheetTitle renders the subtitle under the title, centred in the secondary voice › passed
+packages/ui/src/components/BottomSheetContainer/SheetTitle.test.tsx › SheetTitle takes the light-mode ink when the mode is light › passed
+packages/ui/src/components/BrandMark/Wordmark.test.tsx › Wordmark carries its own name for a screen reader, as the heading of the screen › passed
+packages/ui/src/components/BrandMark/Wordmark.test.tsx › Wordmark centres itself and pins its own gap, whatever slot it lands in › passed
+packages/ui/src/components/BrandMark/Wordmark.test.tsx › Wordmark draws at the token the text it replaced was set from › passed
+packages/ui/src/components/Button/PrimaryButton.test.tsx › PrimaryButton draws the salmon fill and forwards testID to data-testid › passed
+packages/ui/src/components/Button/PrimaryButton.test.tsx › PrimaryButton fires onPress when clicked › passed
+packages/ui/src/components/Button/PrimaryButton.test.tsx › PrimaryButton is keyboard operable › passed
+packages/ui/src/components/Button/PrimaryButton.test.tsx › PrimaryButton shows the spinner instead of the label while loading › passed
+packages/ui/src/components/Button/PrimaryButton.test.tsx › PrimaryButton switches to the disabled ground and drops the flesh/specular when disabled › passed
+packages/ui/src/components/Button/PrimaryButton.test.tsx › PrimaryButton takes different grounds and ink in each mode › passed
+packages/ui/src/components/Button/PrimaryButton.test.tsx › PrimaryButton under reduce motion collapses the press transition to none › passed
+packages/ui/src/components/Button/SecondaryButton.test.tsx › SecondaryButton draws the danger-fill plane › passed
+packages/ui/src/components/Button/SecondaryButton.test.tsx › SecondaryButton draws the outlined default tone › passed
+packages/ui/src/components/Button/SecondaryButton.test.tsx › SecondaryButton fires onPress when clicked › passed
+packages/ui/src/components/Button/SecondaryButton.test.tsx › SecondaryButton is keyboard operable › passed
+packages/ui/src/components/Button/SecondaryButton.test.tsx › SecondaryButton takes the mode-specific edge and ink tokens › passed
+packages/ui/src/components/Button/TextButton.test.tsx › TextButton draws the accent ink with no background › passed
+packages/ui/src/components/Button/TextButton.test.tsx › TextButton fires onPress when clicked › passed
+packages/ui/src/components/Button/TextButton.test.tsx › TextButton is keyboard operable › passed
+packages/ui/src/components/Button/TextButton.test.tsx › TextButton takes a custom color override › passed
+packages/ui/src/components/Button/TextButton.test.tsx › TextButton takes different ink in each mode › passed
+packages/ui/src/components/Card/Card.test.tsx › Card announces as a link when the press opens a URL › passed
+packages/ui/src/components/Card/Card.test.tsx › Card becomes a button and fires when pressed › passed
+packages/ui/src/components/Card/Card.test.tsx › Card dims while pressed and returns on release › passed
+packages/ui/src/components/Card/Card.test.tsx › Card draws nothing of its own in the clear tone, for content that only needs the layout › passed
+packages/ui/src/components/Card/Card.test.tsx › Card draws the dark ground from the active tokens › passed
+packages/ui/src/components/Card/Card.test.tsx › Card lights the featured tone with a salmon glow from its top-right corner › passed
+packages/ui/src/components/Card/Card.test.tsx › Card never shrinks below its content inside a flex column › passed
+packages/ui/src/components/Card/Card.test.tsx › Card stacks its children when given a gap, as the mobile View does › passed
+packages/ui/src/components/Card/Card.test.tsx › Card takes the light ground when the mode is light › passed
+packages/ui/src/components/Chip/Chip.test.tsx › Chip announces and fills the selected filter › passed
+packages/ui/src/components/Chip/Chip.test.tsx › Chip fires onPress when clicked › passed
+packages/ui/src/components/Chip/Chip.test.tsx › Chip never fills in the outline variant, selected or not › passed
+packages/ui/src/components/Chip/Chip.test.tsx › Chip takes the light ground when the mode is light › passed
+packages/ui/src/components/Chip/Chip.test.tsx › ChipGroup reports the chosen key and marks exactly one chip selected › passed
+packages/ui/src/components/ConfirmDialog/ConfirmDialog.test.tsx › ConfirmDialog: the safe path is the default one confirms through the password gate when one is required › passed
+packages/ui/src/components/ConfirmDialog/ConfirmDialog.test.tsx › ConfirmDialog: the safe path is the default one draws no buttons on an acknowledge-only sheet › passed
+packages/ui/src/components/ConfirmDialog/ConfirmDialog.test.tsx › ConfirmDialog: the safe path is the default one draws the detail above the message › passed
+packages/ui/src/components/ConfirmDialog/ConfirmDialog.test.tsx › ConfirmDialog: the safe path is the default one is a sheet, on the <dialog> element › passed
+packages/ui/src/components/ConfirmDialog/ConfirmDialog.test.tsx › ConfirmDialog: the safe path is the default one puts Cancel ahead of the destructive action in reading and tab order › passed
+packages/ui/src/components/ConfirmDialog/ConfirmDialog.test.tsx › ConfirmDialog: the safe path is the default one puts the ordinary confirmation last, as the primary › passed
+packages/ui/src/components/ConfirmDialog/ConfirmDialog.test.tsx › ConfirmDialog: the safe path is the default one stands on opaque bedrock when asked to, and on the thermocline otherwise › passed
+packages/ui/src/components/ConfirmDialog/ConfirmDialog.test.tsx › ConfirmDialog: the safe path is the default one states the danger with a glyph as well as with colour › passed
+packages/ui/src/components/CopyTick/CopyTick.test.tsx › CopyTick keeps both icons mounted so the crossfade can run in either direction › passed
+packages/ui/src/components/CopyTick/CopyTick.test.tsx › CopyTick shows the copy affordance and hides the tick while idle › passed
+packages/ui/src/components/CopyTick/CopyTick.test.tsx › CopyTick shows the tick and hides the copy affordance while copied › passed
+packages/ui/src/components/CopyTick/CopyTick.test.tsx › CopyTick travels on the vocabulary: opacity over swell, nothing bounces › passed
+packages/ui/src/components/CurrencySelector/CurrencySelector.test.tsx › CurrencySelector — search lists every currency until the user types › passed
+packages/ui/src/components/CurrencySelector/CurrencySelector.test.tsx › CurrencySelector — search narrows the list to what the query names, and selects from it › passed
+packages/ui/src/components/CurrencySelector/CurrencySelector.test.tsx › CurrencySelector — search says so when nothing matches › passed
+packages/ui/src/components/DAppApproval/AppIdentity.test.tsx › AppIdentity states it even when the site sent no name › passed
+packages/ui/src/components/DAppApproval/AppIdentity.test.tsx › AppIdentity states the whole hostname, tail included › passed
+packages/ui/src/components/DAppApproval/DAppConnectApprovalView.test.tsx › DAppConnectApprovalView shows the origin, the wallet address in full, and routes both buttons › passed
+packages/ui/src/components/DAppApproval/DAppConnectApprovalView.test.tsx › DAppConnectApprovalView shows the scheme and port of an origin that does not use the defaults › passed
+packages/ui/src/components/DAppApproval/DAppConnectApprovalView.test.tsx › DAppConnectApprovalView stands on bedrock in the live mode with the mark in the brand accent › passed
+packages/ui/src/components/DAppApproval/DAppConnectApprovalView.test.tsx › DAppConnectApprovalView takes a key press only after Approve has held the focus for the arming delay › passed
+packages/ui/src/components/DAppApproval/DAppConnectApprovalView.test.tsx › DAppConnectApprovalView tells assistive technology how to turn a waiting Approve on › passed
+packages/ui/src/components/DAppApproval/DAppSignInApprovalView.test.tsx › DAppSignInApprovalView blocks approval and explains when the request could not be prepared › passed
+packages/ui/src/components/DAppApproval/DAppSignInApprovalView.test.tsx › DAppSignInApprovalView notes the OCMS-envelope path when isOffchainMessage is set › passed
+packages/ui/src/components/DAppApproval/DAppSignInApprovalView.test.tsx › DAppSignInApprovalView renders the wallet-built SIWS fields › passed
+packages/ui/src/components/DAppApproval/DAppSignInApprovalView.test.tsx › DAppSignInApprovalView shows the mismatch banner and blocks approval when the dApp claimed another domain › passed
+packages/ui/src/components/DAppApproval/DAppSignInApprovalView.test.tsx › DAppSignInApprovalView stands on bedrock and reads the live mode — light inks in light › passed
+packages/ui/src/components/DAppApproval/DAppSignMessageApprovalView.test.tsx › DAppSignMessageApprovalView does not run the tx-lookalike guard and leaves Sign enabled when no data bytes are provided › passed
+packages/ui/src/components/DAppApproval/DAppSignMessageApprovalView.test.tsx › DAppSignMessageApprovalView draws the verbatim message on an opaque shelf that follows the mode › passed
+packages/ui/src/components/DAppApproval/DAppSignMessageApprovalView.test.tsx › DAppSignMessageApprovalView falls back to the raw message text and disables Sign when the OCMS buffer fails to parse › passed
+packages/ui/src/components/DAppApproval/DAppSignMessageApprovalView.test.tsx › DAppSignMessageApprovalView leaves the account card out when no account can sign › passed
+packages/ui/src/components/DAppApproval/DAppSignMessageApprovalView.test.tsx › DAppSignMessageApprovalView names the account that signs › passed
+packages/ui/src/components/DAppApproval/DAppSignMessageApprovalView.test.tsx › DAppSignMessageApprovalView renders the parsed OCMS content and required signers when requiredSigners is set › passed
+packages/ui/src/components/DAppApproval/DAppSignMessageApprovalView.test.tsx › DAppSignMessageApprovalView shows a blocking warning and disables Sign when the message bytes are a transaction lookalike › passed
+packages/ui/src/components/DAppApproval/DAppTransactionApprovalView.test.tsx › DAppTransactionApprovalView cannot be approved while the preview is still running › passed
+packages/ui/src/components/DAppApproval/DAppTransactionApprovalView.test.tsx › DAppTransactionApprovalView demands a deliberate hold when the transaction grants a spending permission › passed
+packages/ui/src/components/DAppApproval/DAppTransactionApprovalView.test.tsx › DAppTransactionApprovalView demands a hold when the effects could not be established at all › passed
+packages/ui/src/components/DAppApproval/DAppTransactionApprovalView.test.tsx › DAppTransactionApprovalView demands a hold when the preview settled with no answer › passed
+packages/ui/src/components/DAppApproval/DAppTransactionApprovalView.test.tsx › DAppTransactionApprovalView holds back a key press on Hold to Approve until it has had the focus a moment › passed
+packages/ui/src/components/DAppApproval/DAppTransactionApprovalView.test.tsx › DAppTransactionApprovalView keeps the ordinary button for a transaction the preview understood › passed
+packages/ui/src/components/DAppApproval/DAppTransactionApprovalView.test.tsx › DAppTransactionApprovalView leaves the overview unqualified for a single transaction › passed
+packages/ui/src/components/DAppApproval/DAppTransactionApprovalView.test.tsx › DAppTransactionApprovalView names the account that signs, as the current wallet when it has no name › passed
+packages/ui/src/components/DAppApproval/DAppTransactionApprovalView.test.tsx › DAppTransactionApprovalView network mismatch surfaces the mismatch and refuses approval when the request targets another network › passed
+packages/ui/src/components/DAppApproval/DAppTransactionApprovalView.test.tsx › DAppTransactionApprovalView says the overview covers only the first transaction of a batch › passed
+packages/ui/src/components/DAppApproval/DAppTransactionApprovalView.test.tsx › DAppTransactionApprovalView shows every technical field and, in light, the decode error in the danger ink › passed
+packages/ui/src/components/DAppApproval/TransactionEffectsCard.test.tsx › TransactionEffectsCard calls out an unlimited spending permission and names the spender › passed
+packages/ui/src/components/DAppApproval/TransactionEffectsCard.test.tsx › TransactionEffectsCard distinguishes a transaction that would fail from one that changes nothing › passed
+packages/ui/src/components/DAppApproval/TransactionEffectsCard.test.tsx › TransactionEffectsCard edges a failing transaction in the danger ink of the live mode › passed
+packages/ui/src/components/DAppApproval/TransactionEffectsCard.test.tsx › TransactionEffectsCard never renders an unavailable preview as an empty list of changes › passed
+packages/ui/src/components/DAppApproval/TransactionEffectsCard.test.tsx › TransactionEffectsCard says a preview held for a program it cannot read may move assets it does not list › passed
+packages/ui/src/components/DAppApproval/TransactionEffectsCard.test.tsx › TransactionEffectsCard says it is still simulating rather than showing nothing › passed
+packages/ui/src/components/DAppApproval/TransactionEffectsCard.test.tsx › TransactionEffectsCard shows the movements of a held account change as usual, with its own reason › passed
+packages/ui/src/components/DAppApproval/TransactionEffectsCard.test.tsx › TransactionEffectsCard shows what a program it cannot read simulated as a simulation, then the reason › passed
+packages/ui/src/components/DAppApproval/TransactionEffectsCard.test.tsx › TransactionEffectsCard shows what leaves and what enters, with the sign as its own glyph › passed
+packages/ui/src/components/DAppApproval/TransactionEffectsCard.test.tsx › TransactionEffectsCard warns that a durable-nonce signature never expires › passed
+packages/ui/src/components/DAppApproval/useApprovalArming.test.tsx › useApprovalArming arms on focus moving in the window, for a person who does not use a pointer › passed
+packages/ui/src/components/DAppApproval/useApprovalArming.test.tsx › useApprovalArming disarms when the window loses focus and re-arms only after the delay and a move › passed
+packages/ui/src/components/DAppApproval/useApprovalArming.test.tsx › useApprovalArming ignores pointer movement from before the delay ran out › passed
+packages/ui/src/components/DAppApproval/useApprovalArming.test.tsx › useApprovalArming stays unarmed after the delay until the pointer moves in the window › passed
+packages/ui/src/components/DAppApproval/useApprovalArming.test.tsx › useApprovalArming takes a click only once the pointer comes onto Approve after moving › passed
+packages/ui/src/components/DAppApproval/useApprovalArming.test.tsx › useApprovalArming takes no click until the window has been in front for the arming delay › passed
+packages/ui/src/components/DataAttribution/DataAttribution.test.tsx › DataAttribution draws nothing when the network owes no credit › passed
+packages/ui/src/components/DataAttribution/DataAttribution.test.tsx › DataAttribution draws the credit verbatim as a link to the provider, in a new tab › passed
+packages/ui/src/components/DepthBackground/DepthBackground.test.tsx › DepthBackground: the ramp draws the gradient ramp from the mode-active tokens › passed
+packages/ui/src/components/DepthBackground/DepthBackground.test.tsx › DepthBackground: the ramp draws the light ramp when the mode is light › passed
+packages/ui/src/components/DepthBackground/DepthBackground.test.tsx › DepthBackground: the ramp is one still layer — nothing to animate, nothing under it › passed
+packages/ui/src/components/DerivedAccountCard/DerivedAccountCardSkeleton.test.tsx › DerivedAccountCard says which card is chosen, and takes the light ground in light › passed
+packages/ui/src/components/DerivedAccountCard/DerivedAccountCardSkeleton.test.tsx › DerivedAccountCardSkeleton stands in with the card’s own ground, so the handover does not jump › passed
+packages/ui/src/components/DerivedAccountsSheet/DerivedAccountsSheet.test.tsx › DerivedAccountsSheet adds nothing until the user says so, and never names a derivation index › passed
+packages/ui/src/components/DerivedAccountsSheet/DerivedAccountsSheet.test.tsx › DerivedAccountsSheet answers "not now" through the same dismissal every other exit uses › passed
+packages/ui/src/components/DerivedAccountsSheet/DerivedAccountsSheet.test.tsx › DerivedAccountsSheet arrives with every find checked, in dark › passed
+packages/ui/src/components/DerivedAccountsSheet/DerivedAccountsSheet.test.tsx › DerivedAccountsSheet arrives with every find checked, in light › passed
+packages/ui/src/components/DerivedAccountsSheet/DerivedAccountsSheet.test.tsx › DerivedAccountsSheet treats an empty scan as a real answer, not as nothing at all › passed
+packages/ui/src/components/DerivedAccountsSheet/DerivedAccountsSheet.test.tsx › DerivedAccountsSheet waits instead of asking while the scan the user asked for runs › passed
+packages/ui/src/components/ExplorerLinkButton/ExplorerLinkButton.test.tsx › ExplorerLinkButton opens a sheet of explorers to pick from, and the pick opens that one › passed
+packages/ui/src/components/ExplorerLinkButton/ExplorerLinkButton.test.tsx › ExplorerLinkButton opens the default explorer in a new tab when there is no menu › passed
+packages/ui/src/components/ExplorerLinkButton/ExplorerLinkButton.test.tsx › ExplorerLinkButton says the open failed, under the button that was pressed › passed
+packages/ui/src/components/FactsCard/FactsCard.test.tsx › FactsCard draws the title over every fact, in order › passed
+packages/ui/src/components/FactsCard/FactsCard.test.tsx › FactsCard is only the facts when it carries no title › passed
+packages/ui/src/components/FactsCard/FactsCard.test.tsx › FactsCard passes a row testID through, so a single fact can be selected › passed
+packages/ui/src/components/FactsCard/FactsCard.test.tsx › FactsCard renders an empty card rather than nothing when it has no facts yet › passed
+packages/ui/src/components/FadeThrough/FadeThrough.test.tsx › FadeThrough chooses the instant cut under reduce motion › passed
+packages/ui/src/components/FadeThrough/FadeThrough.test.tsx › FadeThrough plays the entrance with full motion › passed
+packages/ui/src/components/FadeThrough/FadeThrough.test.tsx › FadeThrough remounts the content when the key changes, so the entrance replays › passed
+packages/ui/src/components/FleshBackground/FleshBackground.test.tsx › FleshBackground (DOM) an explicit color prop overrides the theme-active band › passed
+packages/ui/src/components/FleshBackground/FleshBackground.test.tsx › FleshBackground (DOM) draws the dark band from the active tokens by default › passed
+packages/ui/src/components/FleshBackground/FleshBackground.test.tsx › FleshBackground (DOM) renders the marbled drawing › passed
+packages/ui/src/components/FleshBackground/FleshBackground.test.tsx › FleshBackground (DOM) the band is theme-invariant by ruling — same ink in both modes › passed
+packages/ui/src/components/HoldToApproveButton/HoldToApproveButton.test.tsx › HoldToApproveButton abandons the hold when the pointer leaves before it completes › passed
+packages/ui/src/components/HoldToApproveButton/HoldToApproveButton.test.tsx › HoldToApproveButton approves once the pointer has been held long enough › passed
+packages/ui/src/components/HoldToApproveButton/HoldToApproveButton.test.tsx › HoldToApproveButton cannot be held while disabled › passed
+packages/ui/src/components/HoldToApproveButton/HoldToApproveButton.test.tsx › HoldToApproveButton commits immediately from the keyboard, which must never be gated behind a held key › passed
+packages/ui/src/components/HoldToApproveButton/HoldToApproveButton.test.tsx › HoldToApproveButton does not approve on a plain pointer click › passed
+packages/ui/src/components/HomeTabOrderSheet/HomeTabOrderSheet.test.tsx › HomeTabOrderSheet lists the tabs Home offers, in dark › passed
+packages/ui/src/components/HomeTabOrderSheet/HomeTabOrderSheet.test.tsx › HomeTabOrderSheet lists the tabs Home offers, in light › passed
+packages/ui/src/components/HomeTabOrderSheet/HomeTabOrderSheet.test.tsx › HomeTabOrderSheet moves a row with the keyboard, which is the fallback a drag has no answer for › passed
+packages/ui/src/components/HomeTabOrderSheet/HomeTabOrderSheet.test.tsx › HomeTabOrderSheet offers a remove control on a Powerup tab, and on nothing else › passed
+packages/ui/src/components/HomeTabOrderSheet/HomeTabOrderSheet.test.tsx › HomeTabOrderSheet reports the new order as the row is dropped — there is no Save › passed
+packages/ui/src/components/Icon/Icon.test.tsx › the blockchain marks (DOM) default to the mode's secondary ink — dark outside a provider › passed
+packages/ui/src/components/Icon/Icon.test.tsx › the blockchain marks (DOM) draw a square box of the given size and take the caller ink › passed
+packages/ui/src/components/Icon/Icon.test.tsx › the blockchain marks (DOM) keep their own viewBox — a mark is drawn, not fitted › passed
+packages/ui/src/components/IconBubble/IconBubble.test.tsx › IconBubble becomes a labelled button when given an onPress › passed
+packages/ui/src/components/IconBubble/IconBubble.test.tsx › IconBubble carries the flesh texture on every accent fill, pressable or not, and never on another ground › passed
+packages/ui/src/components/IconBubble/IconBubble.test.tsx › IconBubble draws the bubble at the sizes the redesign uses, unscaled › passed
+packages/ui/src/components/IconBubble/IconBubble.test.tsx › IconBubble draws the light ground when the mode is light › passed
+packages/ui/src/components/IconBubble/IconBubble.test.tsx › IconBubble draws the outline tone as an edge with nothing behind it › passed
+packages/ui/src/components/IconBubble/IconBubble.test.tsx › IconBubble drops the press scale under reduced motion, and keeps the specular a step › passed
+packages/ui/src/components/IconBubble/IconBubble.test.tsx › IconBubble hands the glyph the tone ink › passed
+packages/ui/src/components/IconBubble/IconBubble.test.tsx › IconBubble is keyboard-operable and scales down while pressed › passed
+packages/ui/src/components/IconBubble/IconBubble.test.tsx › IconBubble paints a string child with the tone ink rather than leaving it default › passed
+packages/ui/src/components/IconBubble/IconBubble.test.tsx › IconBubble stays an inert well with no button role while it has no onPress › passed
+packages/ui/src/components/IconBubble/IconBubble.test.tsx › IconBubble switches a disabled control to the crest ground instead of dimming the fill › passed
+packages/ui/src/components/IconBubble/IconBubble.test.tsx › IconBubble takes its ground from the tone and its shape from the shape › passed
+packages/ui/src/components/IconBubble/IconBubble.test.tsx › IconBubble takes the smaller card corner when the frame asks for r12, and ignores it on a circle › passed
+packages/ui/src/components/InputAddress/RecipientInput.test.tsx › RecipientInput — the verdict, drawn marks a judged address with the state ink, on the edge and the glyph › passed
+packages/ui/src/components/InputAddress/RecipientInput.test.tsx › RecipientInput — the verdict, drawn pastes the clipboard into the caller, trimmed › passed
+packages/ui/src/components/InputAddress/RecipientInput.test.tsx › RecipientInput — the verdict, drawn reads the live mode — the success ink is light green in light › passed
+packages/ui/src/components/InputAddress/RecipientInput.test.tsx › RecipientInput — the verdict, drawn shows no mark while idle or while the validator is still working › passed
+packages/ui/src/components/InputAddress/RecipientInput.test.tsx › RecipientInput — the verdict, drawn takes the caller prefix for its own test ids › passed
+packages/ui/src/components/KeyValueRow/KeyValueRow.test.tsx › KeyValueRow defaults the value to primary ink and the label to secondary, in both modes › passed
+packages/ui/src/components/KeyValueRow/KeyValueRow.test.tsx › KeyValueRow renders a node value and the trailing action as they arrive › passed
+packages/ui/src/components/KeyValueRow/KeyValueRow.test.tsx › KeyValueRow renders the pair and inks the value by tone › passed
+packages/ui/src/components/ListRow/ListRow.test.tsx › ListRow forwards accessibilityRole="link" for a row that opens an external URL › passed
+packages/ui/src/components/ListRow/ListRow.test.tsx › ListRow is keyboard-operable when pressable › passed
+packages/ui/src/components/ListRow/ListRow.test.tsx › ListRow names itself with the subtitle so identical titles stay distinguishable › passed
+packages/ui/src/components/ListRow/ListRow.test.tsx › ListRow renders leading, title, subtitle and trailing, and presses › passed
+packages/ui/src/components/ListRow/ListRow.test.tsx › ListRow takes its title ink from the active mode › passed
+packages/ui/src/components/LoadingScreen/LoadingScreen.ground.test.tsx › the ground under a full-screen wait keeps the wait inside the dApp approval flow on flat bedrock › passed
+packages/ui/src/components/LoadingScreen/LoadingScreen.ground.test.tsx › the ground under a full-screen wait mounts no ground when there is no wait to stand in it › passed
+packages/ui/src/components/LoadingScreen/LoadingScreen.ground.test.tsx › the ground under a full-screen wait stands the wait in the same water as the screen that follows it › passed
+packages/ui/src/components/LoadingScreen/LoadingScreen.ground.test.tsx › the wave does not make a reduce-motion user wait out a wave they cannot see › passed
+packages/ui/src/components/LoadingScreen/LoadingScreen.ground.test.tsx › the wave gives the wave a visible source — the mark that emits it › passed
+packages/ui/src/components/LoadingScreen/LoadingScreen.ground.test.tsx › the wave holds until the front in flight has left the screen, then ebbs › passed
+packages/ui/src/components/LoadingScreen/LoadingScreen.ground.test.tsx › the wave keeps the pulsing mark out of the dApp approval flow — the Bedrock Rule wins › passed
+packages/ui/src/components/LoadingScreen/LoadingScreen.ground.test.tsx › the wave leaves the words and the tips exactly where they are › passed
+packages/ui/src/components/LoadingScreen/LoadingScreen.ground.test.tsx › the wave leaves the words to carry the state under reduced motion › passed
+packages/ui/src/components/LoadingScreen/LoadingScreen.ground.test.tsx › the wave shows no progress track — this screen has never known a percentage › passed
+packages/ui/src/components/LoadingScreen/LoadingScreen.ground.test.tsx › the wave shows the tips on every wait, and lets one surface suppress them › passed
+packages/ui/src/components/LoadingScreen/LoadingScreen.ground.test.tsx › the wave still leaves on a real wave when the work resolved before the mark landed › passed
+packages/ui/src/components/LoadingScreen/LoadingScreen.ground.test.tsx › the wave still lets a surface opt out of showing anything living through itself › passed
+packages/ui/src/components/LoadingScreen/LoadingScreen.ground.test.tsx › the wave treats every wait as water, not just the one that opted in › passed
+packages/ui/src/components/LockScreen/LockScreen.test.tsx › LockScreen keeps the forgot affordance in `body`, against the field it escapes from › passed
+packages/ui/src/components/LockScreen/LockScreen.test.tsx › LockScreen mounts the water column behind the stack › passed
+packages/ui/src/components/LockScreen/LockScreen.test.tsx › LockScreen parks the release until the wait reports its last wave has left › passed
+packages/ui/src/components/LockScreen/LockScreen.test.tsx › LockScreen puts the throttle notice in `assist` and disables the button in place › passed
+packages/ui/src/components/LockScreen/LockScreen.test.tsx › LockScreen puts the wrong-password error in `assist`, moving nothing › passed
+packages/ui/src/components/LockScreen/LockScreen.test.tsx › LockScreen reads the live mode: in light the title and the field take light's inks › passed
+packages/ui/src/components/NftCard/NftCard.test.tsx › NftCard draws the name band over the art in dark › passed
+packages/ui/src/components/NftCard/NftCard.test.tsx › NftCard draws the name band over the art in light › passed
+packages/ui/src/components/NftCard/NftCard.test.tsx › NftCard falls back to a surface, never a salmon fill, when there is no art › passed
+packages/ui/src/components/NftCard/NftCard.test.tsx › NftCard lets the browser skip images that are far from the viewport › passed
+packages/ui/src/components/NftDetailPage/NftDetailPage.test.tsx › NftDetailPage drops the actions — gone, not greyed — for a wallet that can never sign › passed
+packages/ui/src/components/NftDetailPage/NftDetailPage.test.tsx › NftDetailPage ends on the receipt, and the one control leaves it › passed
+packages/ui/src/components/NftDetailPage/NftDetailPage.test.tsx › NftDetailPage is mobile’s nft/[id]: description as the subtitle, attributes, details, the two actions › passed
+packages/ui/src/components/NftDetailPage/NftDetailPage.test.tsx › NftDetailPage offers neither Send nor Burn for an NFT its issuer froze, and says why › passed
+packages/ui/src/components/NftDetailPage/NftDetailPage.test.tsx › NftDetailPage paints its own water in the dark mode › passed
+packages/ui/src/components/NftDetailPage/NftDetailPage.test.tsx › NftDetailPage paints its own water in the light mode › passed
+packages/ui/src/components/NftDetailPage/NftDetailPage.test.tsx › NftDetailPage reviews the burn with the lookup table cost and confirms only with a preview › passed
+packages/ui/src/components/NftDetailPage/NftDetailPage.test.tsx › NftDetailPage shows the piece on the burn review, filled when it has no image › passed
+packages/ui/src/components/NftDetailPage/NftDetailPage.test.tsx › NftDetailPage waits on the wave while the burn lands and settles, and shows the receipt once it has left › passed
+packages/ui/src/components/NftsTab/NftsTab.test.tsx › NftsTab distinguishes a failed load from an empty collection › passed
+packages/ui/src/components/NftsTab/NftsTab.test.tsx › NftsTab draws one grid on the active network, in dark › passed
+packages/ui/src/components/NftsTab/NftsTab.test.tsx › NftsTab draws one grid on the active network, in light › passed
+packages/ui/src/components/NftsTab/NftsTab.test.tsx › NftsTab reports its own scroll offset so the host can fade the seam › passed
+packages/ui/src/components/NftsTab/NftsTab.test.tsx › NftsTab shows the placeholder grid while it loads, never an empty state › passed
+packages/ui/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout content: a screen with an assist and no secondary puts the assist over the action › passed
+packages/ui/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout content: leaves an unused slot empty rather than collapsing it › passed
+packages/ui/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout content: reserves every slot at that variant’s table height › passed
+packages/ui/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout defaults to identity, so unlock and welcome need not ask for it › passed
+packages/ui/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout does not move a slot when an optional control is revealed › passed
+packages/ui/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout draws the mark from the vector at the grid’s size, never from a raster › passed
+packages/ui/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout hides a reserved control from assistive tech rather than merely fading it › passed
+packages/ui/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout holds the two families’ control bands at one height › passed
+packages/ui/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout identity: a screen with an assist and no secondary puts the assist over the action › passed
+packages/ui/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout identity: centres the mark band on the middle of the surface › passed
+packages/ui/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout identity: leaves an unused slot empty rather than collapsing it › passed
+packages/ui/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout identity: reserves every slot at that variant’s table height › passed
+packages/ui/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout lock: centres the mark band on the middle of the surface › passed
+packages/ui/src/components/OnboardingLayout/OnboardingLayout.test.tsx › OnboardingLayout sinks the column and leaves the ground where it is › passed
+packages/ui/src/components/PaymentsPage/PaymentsPage.test.tsx › PaymentsPage draws the clock when the hook offers the history, before the other two › passed
+packages/ui/src/components/PaymentsPage/PaymentsPage.test.tsx › PaymentsPage draws the form inside the ask sheet when it is open › passed
+packages/ui/src/components/PaymentsPage/PaymentsPage.test.tsx › PaymentsPage draws the sheet with the code, the facts and the controls when open › passed
+packages/ui/src/components/PaymentsPage/PaymentsPage.test.tsx › PaymentsPage hides Pay when the hook offers none › passed
+packages/ui/src/components/PaymentsPage/PaymentsPage.test.tsx › PaymentsPage renders rows with their state and opens one on press › passed
+packages/ui/src/components/PaymentsPage/PaymentsPage.test.tsx › PaymentsPage renders the two actions over the empty list, and no form › passed
+packages/ui/src/components/PaymentsPage/PaymentsPage.test.tsx › PaymentsPage shows the unavailable state instead of the actions › passed
+packages/ui/src/components/PendingActivityBanner/PendingActivityBanner.test.tsx › PendingActivityBanner labels each outcome, so state is never carried by colour alone › passed
+packages/ui/src/components/PendingActivityBanner/PendingActivityBanner.test.tsx › PendingActivityBanner offers dismissal only once an entry has resolved › passed
+packages/ui/src/components/PendingActivityBanner/PendingActivityBanner.test.tsx › PendingActivityBanner reads the live mode: in light a row sits on the light crest › passed
+packages/ui/src/components/PendingActivityBanner/PendingActivityBanner.test.tsx › PendingActivityBanner renders nothing when there is nothing in flight › passed
+packages/ui/src/components/PendingValue/PendingValue.test.tsx › PendingValue breathes while pending and rests at full opacity afterwards › passed
+packages/ui/src/components/PendingValue/PendingValue.test.tsx › PendingValue does not remount the value when the refresh returns the same number › passed
+packages/ui/src/components/PendingValue/PendingValue.test.tsx › PendingValue keeps the value on screen while it is being recalculated › passed
+packages/ui/src/components/PendingValue/PendingValue.test.tsx › PendingValue sits at the dimmed end of the breath under reduce motion › passed
+packages/ui/src/components/PhraseBackupSheet/PhraseBackupSheet.test.tsx › PhraseBackupSheet (DOM) asks before showing anything secret, and starts on Confirm now › passed
+packages/ui/src/components/PhraseBackupSheet/PhraseBackupSheet.test.tsx › PhraseBackupSheet (DOM) offers the copy on the phrase step, held while the countdown runs › passed
+packages/ui/src/components/PhraseBackupSheet/PhraseBackupSheet.test.tsx › PhraseBackupSheet (DOM) offers the four words of a question and answers with the one chosen › passed
+packages/ui/src/components/PhraseBackupSheet/PhraseBackupSheet.test.tsx › PhraseBackupSheet (DOM) shows the phrase, and the miss when the last answer was wrong › passed
+packages/ui/src/components/PhraseBackupSheet/PhraseBackupSheet.test.tsx › PhraseBackupSheet (DOM) takes the password with the phrase still hidden › passed
+packages/ui/src/components/Pill/Pill.test.tsx › Pill inks a gain, a fall and a status each in its own token › passed
+packages/ui/src/components/Pill/Pill.test.tsx › Pill shows the status dot only when asked › passed
+packages/ui/src/components/PortfolioSubTabs/PortfolioSubTabs.test.tsx › PortfolioSubTabs fires onOrderPress when the order button is pressed › passed
+packages/ui/src/components/PortfolioSubTabs/PortfolioSubTabs.test.tsx › PortfolioSubTabs renders the tabs and the order button, and reports a tab change › passed
+packages/ui/src/components/PowerupsPage/PowerupsPage.test.tsx › PowerupsPage draws Core and Community, and nothing else › passed
+packages/ui/src/components/PowerupsPage/PowerupsPage.test.tsx › PowerupsPage offers to take an installed Powerup away instead › passed
+packages/ui/src/components/PowerupsPage/PowerupsPage.test.tsx › PowerupsPage opens an entry’s detail in the same sheet and installs from it › passed
+packages/ui/src/components/PowerupsPage/PowerupsPage.test.tsx › PowerupsPage opens straight onto the detail of the Powerup it was opened on › passed
+packages/ui/src/components/PowerupsPage/PowerupsPage.test.tsx › PowerupsPage the row’s own control installs in place, without opening the detail › passed
+packages/ui/src/components/PressSpecular/PressSpecular.test.tsx › the press specular on the DOM buttons drops the opacity transition to a step under reduce motion › passed
+packages/ui/src/components/PressSpecular/PressSpecular.test.tsx › the press specular on the DOM buttons is decorative, never a hit target › passed
+packages/ui/src/components/PressSpecular/PressSpecular.test.tsx › the press specular on the DOM buttons is transparent at rest and opaque while pressed › passed
+packages/ui/src/components/PressSpecular/PressSpecular.test.tsx › the press specular on the DOM buttons records the touch point so the highlight centres on the pointer › passed
+packages/ui/src/components/PriceChart/PriceChart.test.tsx › PriceChart draws the skeleton, never a series, while nothing has resolved › passed
+packages/ui/src/components/PriceChart/PriceChart.test.tsx › PriceChart keeps the drawn series and attenuates it while the next period is in flight › passed
+packages/ui/src/components/PriceChart/PriceChart.test.tsx › PriceChart resamples every series to one point count so two periods morph, not cut › passed
+packages/ui/src/components/PriceChart/PriceChart.test.tsx › PriceChart says a failed load in the dark mode’s secondary ink › passed
+packages/ui/src/components/PriceChart/PriceChart.test.tsx › PriceChart says a failed load in the light mode’s secondary ink › passed
+packages/ui/src/components/PriceChart/PriceChart.test.tsx › PriceChart selects the period with an underline row — the same travelling rule as the sub-tabs › passed
+packages/ui/src/components/PrivateKeyPanel/PrivateKeyPanel.test.tsx › PrivateKeyPanel copy copies the key and says when Salmon clears the clipboard › passed
+packages/ui/src/components/PrivateKeyPanel/PrivateKeyPanel.test.tsx › PrivateKeyPanel key exhibition surface exhibits the key on bedrock, not on a translucent card, in both modes › passed
+packages/ui/src/components/PrivateKeyPanel/PrivateKeyPanel.test.tsx › PrivateKeyPanel key exhibition surface exposes the cover as a real button with a name that promises the gate › passed
+packages/ui/src/components/PrivateKeyPanel/PrivateKeyPanel.test.tsx › PrivateKeyPanel reveal does not hand over the private key to whoever is holding an unlocked session › passed
+packages/ui/src/components/PrivateKeyPanel/PrivateKeyPanel.test.tsx › PrivateKeyPanel reveal keeps the key hidden when the password is wrong › passed
+packages/ui/src/components/PrivateKeyPanel/PrivateKeyPanel.test.tsx › PrivateKeyPanel reveal says the clipboard is readable by other apps before the key goes into it › passed
+packages/ui/src/components/PrivateKeyPanel/PrivateKeyPanel.test.tsx › PrivateKeyPanel reveal shows the key once the password is re-entered › passed
+packages/ui/src/components/ProgressBar/ProgressBar.test.tsx › ProgressBar fills its share of the track and announces it › passed
+packages/ui/src/components/ProgressBar/ProgressBar.test.tsx › ProgressBar never fills past either end › passed
+packages/ui/src/components/QRCode/QRCode.test.tsx › QRCode brand knockout centres the mark on a knockout in the code ground and forces level H › passed
+packages/ui/src/components/QRCode/QRCode.test.tsx › QRCode brand knockout draws nothing over a plain code › passed
+packages/ui/src/components/ReceiptScreen/ReceiptScreen.test.tsx › ReceiptScreen — exchange tone renders the exchange graphic with both token marks and the received tick › passed
+packages/ui/src/components/ReceiptScreen/ReceiptScreen.test.tsx › ReceiptScreen — exchange tone renders the graphic receipt for a single-token summary and fires continue › passed
+packages/ui/src/components/ReceiptScreen/ReceiptScreen.test.tsx › ReceiptScreen — exchange tone shows the full-screen wait while settling, then the receipt once it clears › passed
+packages/ui/src/components/ReceiptScreen/ReceiptScreen.test.tsx › ReceiptScreen — reduced motion collapses the exchange reveal to a cut instead of animating › passed
+packages/ui/src/components/ReceiptScreen/ReceiptScreen.test.tsx › ReceiptScreen — transfer tone draws the seal ink from the active mode, in both modes › passed
+packages/ui/src/components/ReceiptScreen/ReceiptScreen.test.tsx › ReceiptScreen — transfer tone prefers the explorer link over a generic secondary, and disables the primary while settling › passed
+packages/ui/src/components/ReceiptScreen/ReceiptScreen.test.tsx › ReceiptScreen — transfer tone renders the CORE 07 composition: seal, title, body, receipt rows, and both actions › passed
+packages/ui/src/components/ReceiveSheet/ReceiveSheet.test.tsx › ReceiveSheet QR brand mark centers the salmon mark on a knockout over a level-H code › passed
+packages/ui/src/components/ReceiveSheet/ReceiveSheet.test.tsx › ReceiveSheet chain identity names the chain in a labelled badge › passed
+packages/ui/src/components/ReceiveSheet/ReceiveSheet.test.tsx › ReceiveSheet chain identity shows no written address — the code is the address, the button hands it over › passed
+packages/ui/src/components/ReceiveSheet/ReceiveSheet.test.tsx › ReceiveSheet chain identity warns that only assets on that chain may be sent to this address › passed
+packages/ui/src/components/ReceiveSheet/ReceiveSheet.test.tsx › ReceiveSheet environment and mode frames the code in the live primary ink — dark in light mode › passed
+packages/ui/src/components/ReceiveSheet/ReceiveSheet.test.tsx › ReceiveSheet environment and mode names the environment under the code off mainnet › passed
+packages/ui/src/components/RevealCover/RevealCover.test.tsx › RevealCover is an opaque bedrock button that names what it hides and reports the press › passed
+packages/ui/src/components/RevealCover/RevealCover.test.tsx › RevealCover keeps the bedrock in light — the gate is never a scrim › passed
+packages/ui/src/components/ScalesBackground/ScalesBackground.test.tsx › ScalesBackground (DOM) draws the deep field as a repeating background-image data URI › passed
+packages/ui/src/components/ScalesBackground/ScalesBackground.test.tsx › ScalesBackground (DOM) the deep field fades downward via a mask rather than to nothing › passed
+packages/ui/src/components/ScalesBackground/ScalesBackground.test.tsx › ScalesBackground (DOM) the refraction sweep masks the sweep gradient with the tile instead of painting it › passed
+packages/ui/src/components/ScalesBackground/ScalesBackground.test.tsx › ScalesBackground (DOM) the stroke differs between modes, reading the active tokens › passed
+packages/ui/src/components/ScreenHeader/ScreenHeader.test.tsx › ScreenHeader defaults the back label to the shared "go back" key mobile uses › passed
+packages/ui/src/components/ScreenHeader/ScreenHeader.test.tsx › ScreenHeader draws no back well at all when there is no onBack, in the titled layout › passed
+packages/ui/src/components/ScreenHeader/ScreenHeader.test.tsx › ScreenHeader draws the step indicator centred, in the untitled layout › passed
+packages/ui/src/components/ScreenHeader/ScreenHeader.test.tsx › ScreenHeader fires onBack when the well is pressed › passed
+packages/ui/src/components/ScreenHeader/ScreenHeader.test.tsx › ScreenHeader is keyboard-operable: focus then Enter fires onBack › passed
+packages/ui/src/components/ScreenHeader/ScreenHeader.test.tsx › ScreenHeader puts the back well and the title on one row, the subtitle under it › passed
+packages/ui/src/components/ScreenHeader/ScreenHeader.test.tsx › ScreenHeader takes a custom back label › passed
+packages/ui/src/components/ScreenHeader/ScreenHeader.test.tsx › ScreenHeader takes the light title ink when the mode is light › passed
+packages/ui/src/components/SearchField/SearchField.test.tsx › SearchField draws the dark ground from the active tokens › passed
+packages/ui/src/components/SearchField/SearchField.test.tsx › SearchField overrides the accessible name with accessibilityLabel › passed
+packages/ui/src/components/SearchField/SearchField.test.tsx › SearchField reports the typed value through onChangeText › passed
+packages/ui/src/components/SearchField/SearchField.test.tsx › SearchField takes the light ground when the mode is light › passed
+packages/ui/src/components/SearchField/SearchField.test.tsx › SearchField uses the placeholder as the accessible name unless overridden › passed
+packages/ui/src/components/SectionLabel/SectionLabel.test.tsx › SectionLabel announces as a heading, as mobile does with accessibilityRole="header" › passed
+packages/ui/src/components/SectionLabel/SectionLabel.test.tsx › SectionLabel carries a figure at the end of its line, inked by tone › passed
+packages/ui/src/components/SectionLabel/SectionLabel.test.tsx › SectionLabel draws the dark and light ink from the active tokens › passed
+packages/ui/src/components/SectionLabel/SectionLabel.test.tsx › SectionLabel gives the caps variant a heading level › passed
+packages/ui/src/components/SectionLabel/SectionLabel.test.tsx › SectionLabel gives the group variant a heading level › passed
+packages/ui/src/components/SectionLabel/SectionLabel.test.tsx › SectionLabel gives the title variant a heading level › passed
+packages/ui/src/components/SectionLabel/SectionLabel.test.tsx › SectionLabel sizes each variant off the type scale › passed
+packages/ui/src/components/SectionLabel/SectionLabel.test.tsx › SectionLabel uppercases the caps variant and leaves the others alone › passed
+packages/ui/src/components/SecurityPanel/SecurityPanel.test.tsx › SecurityPanel announces a validation error politely rather than assertively › passed
+packages/ui/src/components/SecurityPanel/SecurityPanel.test.tsx › SecurityPanel announces the success message politely rather than assertively › passed
+packages/ui/src/components/SecurityPanel/SecurityPanel.test.tsx › SecurityPanel answers "how protected am I" first, then reaches recovery, then locks › passed
+packages/ui/src/components/SecurityPanel/SecurityPanel.test.tsx › SecurityPanel keeps the change-password control disabled until all three fields are filled › passed
+packages/ui/src/components/SecurityPanel/SecurityPanel.test.tsx › SecurityPanel runs onPasswordChanged after a successful password change › passed
+packages/ui/src/components/SeedPhrase/SeedPhraseEntry.test.tsx › SeedPhraseEntry draws twelve boxes in three columns by default › passed
+packages/ui/src/components/SeedPhrase/SeedPhraseEntry.test.tsx › SeedPhraseEntry fills every box from a paste into any one of them › passed
+packages/ui/src/components/SeedPhrase/SeedPhraseEntry.test.tsx › SeedPhraseEntry grows to a denser twenty-four grid rather than a taller one › passed
+packages/ui/src/components/SeedPhrase/SeedPhraseEntry.test.tsx › SeedPhraseEntry grows to twenty-four when the thirteenth word is typed by hand › passed
+packages/ui/src/components/SeedPhrase/SeedPhraseEntry.test.tsx › SeedPhraseEntry keeps a wrong-length paste and reports how many words arrived › passed
+packages/ui/src/components/SeedPhrase/SeedPhraseEntry.test.tsx › SeedPhraseEntry keeps the word where it was typed and moves focus on space › passed
+packages/ui/src/components/SeedPhrase/SeedPhraseEntry.test.tsx › SeedPhraseEntry lowercases on input, because a capitalised word is an invalid mnemonic › passed
+packages/ui/src/components/SeedPhrase/SeedPhraseEntry.test.tsx › SeedPhraseEntry renders the index and its salmon period without putting either in the value › passed
+packages/ui/src/components/SeedPhrase/SeedPhraseEntry.test.tsx › SeedPhraseEntry returns to the previous box on backspace in an empty one › passed
+packages/ui/src/components/SeedPhrase/SeedPhraseEntry.test.tsx › SeedPhraseEntry stays put on backspace when the box still has a word in it › passed
+packages/ui/src/components/SeedPhrase/SeedWordGrid.test.tsx › SeedWordGrid numbers every cell so an index is never read as part of the phrase › passed
+packages/ui/src/components/SeedPhrase/SeedWordGrid.test.tsx › SeedWordGrid rests every word on an opaque bedrock cell, never a translucent one › passed
+packages/ui/src/components/SeedPhrase/SeedWordGrid.test.tsx › SeedWordGrid rests on light's bedrock when the mode is light — still opaque › passed
+packages/ui/src/components/SendPage/SendFailure.test.tsx › draws the detail line only when the chain said more than the message › passed
+packages/ui/src/components/SendPage/SendFailure.test.tsx › offers no retry when the outcome is unknown: a retry could send twice › passed
+packages/ui/src/components/SendPage/SendPage.test.tsx › SendPage — four steps, and the verb between them a pasted request with an amount goes straight to review, locked (spec 033 US3) › passed
+packages/ui/src/components/SendPage/SendPage.test.tsx › SendPage — four steps, and the verb between them a pasted request without an amount lands on the amount step › passed
+packages/ui/src/components/SendPage/SendPage.test.tsx › SendPage — four steps, and the verb between them a request for a token the account does not hold stays on the recipient step › passed
+packages/ui/src/components/SendPage/SendPage.test.tsx › SendPage — four steps, and the verb between them opens on the recipient with no entrance — the page is what arrives › passed
+packages/ui/src/components/SendPage/SendPage.test.tsx › SendPage — four steps, and the verb between them sends the collectible through useNftTransfer, waits on the wave, then lands on the receipt › passed
+packages/ui/src/components/SendPage/SendPage.test.tsx › SendPage — four steps, and the verb between them skips the amount for a collectible — recipient goes straight to review › passed
+packages/ui/src/components/SendPage/SendPage.test.tsx › SendPage — four steps, and the verb between them the transfer of a pasted request carries its memo and references › passed
+packages/ui/src/components/SendPage/SendPage.test.tsx › SendPage — four steps, and the verb between them walks recipient → amount → review, floating each step that arrives › passed
+packages/ui/src/components/SendPage/SendPage.test.tsx › SendPage — the passage holds the receipt back until the wait reports its last wave has left › passed
+packages/ui/src/components/SendPage/SendPage.test.tsx › SendPage — the passage paints the failure surface off the live mode › passed
+packages/ui/src/components/SendPage/SendPage.test.tsx › SendPage — the passage reports a failure on the surface the wait stood on, with retry and the way out › passed
+packages/ui/src/components/SendPage/SendPage.test.tsx › SendPage — the passage says "unconfirmed", never "failed", when the broadcast outcome is unknown › passed
+packages/ui/src/components/SendPage/SendPage.test.tsx › SendPage — the passage shows the wave wait while the transaction is in flight › passed
+packages/ui/src/components/SendPage/StepAmount.test.tsx › StepAmount keeps Review shut on an amount finer than the token › passed
+packages/ui/src/components/SendPage/StepAmount.test.tsx › StepAmount opens Review on an amount inside the balance › passed
+packages/ui/src/components/SendPage/StepAmount.test.tsx › StepAmount takes no digit past the token's decimal places › passed
+packages/ui/src/components/SendPage/StepAmount.test.tsx › StepAmount takes no separator for a token with no decimals › passed
+packages/ui/src/components/SendPage/StepReview.test.tsx › StepReview address row shows no second address row when "To" already is the address › passed
+packages/ui/src/components/SendPage/StepReview.test.tsx › StepReview address row shows the address under a contact name › passed
+packages/ui/src/components/SendPage/StepReview.test.tsx › StepReview for a collectible never offers it again when the outcome is unknown › passed
+packages/ui/src/components/SendPage/StepReview.test.tsx › StepReview for a collectible offers the send again after an ordinary failure › passed
+packages/ui/src/components/SendPage/StepReview.test.tsx › StepReview with a payment request a balance under the request blocks the commit and never swaps the token › passed
+packages/ui/src/components/SendPage/StepReview.test.tsx › StepReview with a payment request shows who asked and what for, and offers no token change › passed
+packages/ui/src/components/SendPage/StepReview.test.tsx › StepReview with a payment request without a request the token stays changeable › passed
+packages/ui/src/components/SendPage/StepReview.test.tsx › StepReview with a recipient no key controls shows no warning for an ordinary recipient › passed
+packages/ui/src/components/SendPage/StepReview.test.tsx › StepReview with a recipient no key controls warns about an off-curve recipient without blocking the commit › passed
+packages/ui/src/components/SettingsPanelStack/SettingsPanelStack.test.tsx › SettingsPanelStack — a panel raises the wait on the stack lets a panel close the whole settings surface › passed
+packages/ui/src/components/SettingsPanelStack/SettingsPanelStack.test.tsx › SettingsPanelStack — a panel raises the wait on the stack opens straight onto a seeded panel, without flashing the root first › passed
+packages/ui/src/components/SettingsPanelStack/SettingsPanelStack.test.tsx › SettingsPanelStack — a panel raises the wait on the stack shows the wait the panel asked for › passed
+packages/ui/src/components/SettingsPanelStack/SettingsPanelStack.test.tsx › SettingsPanelStack — a rebuilt registry does not remount the panel keeps the open panel’s state when the parent re-renders › passed
+packages/ui/src/components/SettingsPanelStack/SettingsPanelStack.test.tsx › SettingsPanelStack — a toggle row announces once "settings.analytics" is a switch and not also a button › passed
+packages/ui/src/components/SettingsPanelStack/SettingsPanelStack.test.tsx › SettingsPanelStack — a toggle row announces once "settings.analytics" keeps its e2e handle on the control › passed
+packages/ui/src/components/SettingsPanelStack/SettingsPanelStack.test.tsx › SettingsPanelStack — a toggle row announces once "settings.developer_networks" is a switch and not also a button › passed
+packages/ui/src/components/SettingsPanelStack/SettingsPanelStack.test.tsx › SettingsPanelStack — a toggle row announces once "settings.developer_networks" keeps its e2e handle on the control › passed
+packages/ui/src/components/SettingsPanelStack/SettingsPanelStack.test.tsx › SettingsPanelStack — a toggle row announces once "settings.unverified_tokens" is a switch and not also a button › passed
+packages/ui/src/components/SettingsPanelStack/SettingsPanelStack.test.tsx › SettingsPanelStack — a toggle row announces once "settings.unverified_tokens" keeps its e2e handle on the control › passed
+packages/ui/src/components/SettingsPanelStack/SettingsPanelStack.test.tsx › SettingsPanelStack — a toggle row announces once flips each switch through the shared toggle handlers › passed
+packages/ui/src/components/SettingsPanelStack/SettingsPanelStack.test.tsx › SettingsPanelStack — menu routing clicking "settings.about" pushes panel-about › passed
+packages/ui/src/components/SettingsPanelStack/SettingsPanelStack.test.tsx › SettingsPanelStack — menu routing clicking "settings.address_book" pushes panel-addressBook › passed
+packages/ui/src/components/SettingsPanelStack/SettingsPanelStack.test.tsx › SettingsPanelStack — menu routing clicking "settings.appearance" pushes panel-appearance › passed
+packages/ui/src/components/SettingsPanelStack/SettingsPanelStack.test.tsx › SettingsPanelStack — menu routing clicking "settings.backup" pushes panel-backup › passed
+packages/ui/src/components/SettingsPanelStack/SettingsPanelStack.test.tsx › SettingsPanelStack — menu routing clicking "settings.currency" pushes panel-currency › passed
+packages/ui/src/components/SettingsPanelStack/SettingsPanelStack.test.tsx › SettingsPanelStack — menu routing clicking "settings.display_language" pushes panel-language › passed
+packages/ui/src/components/SettingsPanelStack/SettingsPanelStack.test.tsx › SettingsPanelStack — menu routing clicking "settings.help_support" pushes panel-support › passed
+packages/ui/src/components/SettingsPanelStack/SettingsPanelStack.test.tsx › SettingsPanelStack — menu routing clicking "settings.private_key" pushes panel-privateKey › passed
+packages/ui/src/components/SettingsPanelStack/SettingsPanelStack.test.tsx › SettingsPanelStack — menu routing clicking "settings.profile_picture" pushes panel-avatar › passed
+packages/ui/src/components/SettingsPanelStack/SettingsPanelStack.test.tsx › SettingsPanelStack — menu routing clicking "settings.select_explorer" pushes panel-explorer › passed
+packages/ui/src/components/SettingsPanelStack/SettingsPanelStack.test.tsx › SettingsPanelStack — menu routing clicking "settings.trusted_apps" pushes panel-trustedApps › passed
+packages/ui/src/components/SettingsPanelStack/SettingsPanelStack.test.tsx › SettingsPanelStack — menu routing runs the danger actions instead of pushing a screen › passed
+packages/ui/src/components/SettingsPanelStack/SettingsPanelStack.test.tsx › SettingsPanelStack — menu routing states the current choice beside a choosable row › passed
+packages/ui/src/components/SettingsPanelStack/SettingsPanelStack.test.tsx › SettingsPanelStack — the screen reads the mode draws the danger label in the light danger ink under light › passed
+packages/ui/src/components/SettingsSelectorList/SettingsSelectorList.test.tsx › SettingsSelectorList — a row per choice, the chosen one marked draws one pressable row per option, named by its label › passed
+packages/ui/src/components/SettingsSelectorList/SettingsSelectorList.test.tsx › SettingsSelectorList — a row per choice, the chosen one marked marks only the active option with the check › passed
+packages/ui/src/components/SettingsSelectorList/SettingsSelectorList.test.tsx › SettingsSelectorList — a row per choice, the chosen one marked selects an option when it is activated › passed
+packages/ui/src/components/SettingsSelectorList/SettingsSelectorList.test.tsx › SettingsSelectorList — a row per choice, the chosen one marked stands in for the rows while loading, and names the wait › passed
+packages/ui/src/components/ShimmerRect/ShimmerRect.test.tsx › ShimmerRect grounds the container on the dark skeleton base › passed
+packages/ui/src/components/ShimmerRect/ShimmerRect.test.tsx › ShimmerRect never starts the loop under reduced motion, parking the band off-view › passed
+packages/ui/src/components/ShimmerRect/ShimmerRect.test.tsx › ShimmerRect runs the band as a keyframe animation by default › passed
+packages/ui/src/components/ShimmerRect/ShimmerRect.test.tsx › ShimmerRect takes the light skeleton base when the mode is light › passed
+packages/ui/src/components/SinkFloat/SinkFloat.test.tsx › SinkFloat arrives from depth: the float rises from the shared enter scale › passed
+packages/ui/src/components/SinkFloat/SinkFloat.test.tsx › SinkFloat carries the travel, the depth and the two clocks as styles, so overrides need no new stylesheet › passed
+packages/ui/src/components/SinkFloat/SinkFloat.test.tsx › SinkFloat cuts instantly under reduce motion — and still changes › passed
+packages/ui/src/components/SinkFloat/SinkFloat.test.tsx › SinkFloat does not hold anything on first mount — nothing sank, so it just floats › passed
+packages/ui/src/components/SinkFloat/SinkFloat.test.tsx › SinkFloat holds the outgoing content while it sinks, then changes after the beat › passed
+packages/ui/src/components/SinkFloat/SinkFloat.test.tsx › SinkFloat recedes on the way out — the half that was missing, when the exit only slid and dimmed › passed
+packages/ui/src/components/SinkFloat/SinkFloat.test.tsx › SinkFloat spends the per-call clock when the caller overrides it › passed
+packages/ui/src/components/SkeletonRow/SkeletonRow.test.tsx › SkeletonRow draws the dark skeleton ground inside its shimmer rects › passed
+packages/ui/src/components/SkeletonRow/SkeletonRow.test.tsx › SkeletonRow renders a single row, exposing testID and label › passed
+packages/ui/src/components/SkeletonRow/SkeletonRow.test.tsx › SkeletonRow renders one Card per count › passed
+packages/ui/src/components/SkeletonRow/SkeletonRow.test.tsx › SkeletonRow renders one shimmer rect per placeholder — leading mark, title and subtitle › passed
+packages/ui/src/components/SkeletonRow/SkeletonRow.test.tsx › SkeletonRow takes a different ground in light mode › passed
+packages/ui/src/components/SkrPage/SkrPage.test.tsx › SkrPage draws the blocks shared builds from the owner's position › passed
+packages/ui/src/components/StakeAccountsPage/StakeAccountsPage.test.tsx › StakeAccountsPage puts the body in a titled panel with a way back › passed
+packages/ui/src/components/StatTile/StatTile.test.tsx › StatGrid gives every figure an equal share of the row › passed
+packages/ui/src/components/StatTile/StatTile.test.tsx › StatTile closes the value line with a note at the end, in its tone › passed
+packages/ui/src/components/StatTile/StatTile.test.tsx › StatTile inks a gain with the change-positive token › passed
+packages/ui/src/components/StatTile/StatTile.test.tsx › StatTile keeps the value on one line and ends it with an ellipsis rather than overflowing › passed
+packages/ui/src/components/StatTile/StatTile.test.tsx › StatTile reads its digits in the font's own widths, not table columns › passed
+packages/ui/src/components/StatTile/StatTile.test.tsx › StatTile sets its pill beside the figure, centred on the tile › passed
+packages/ui/src/components/StatTile/StatTile.test.tsx › StatTile shows the label in capitals, the value with its unit, and the caption › passed
+packages/ui/src/components/StateBlock/StateBlock.test.tsx › StateBlock announces as an alert only in the error tone › passed
+packages/ui/src/components/StateBlock/StateBlock.test.tsx › StateBlock carries no alert role for the empty tone › passed
+packages/ui/src/components/StateBlock/StateBlock.test.tsx › StateBlock renders a retry control that fires onRetry › passed
+packages/ui/src/components/StateBlock/StateBlock.test.tsx › StateBlock renders the body only when given › passed
+packages/ui/src/components/StateBlock/StateBlock.test.tsx › StateBlock takes a different title ink in light mode › passed
+packages/ui/src/components/StateBlock/StateBlock.test.tsx › StateBlock takes the dark title ink from the active tokens › passed
+packages/ui/src/components/SwapPage/SwapPage.test.tsx › SwapPage draws both token rows, the amount and the review control, from the hook › passed
+packages/ui/src/components/SwapPage/SwapPage.test.tsx › SwapPage draws the blocker as a warning › passed
+packages/ui/src/components/SwapPage/SwapPage.test.tsx › SwapPage replaces the form with the wallet state when the backend refused the caller › passed
+packages/ui/src/components/SwapPage/SwapPage.test.tsx › SwapPage says there is nothing to swap when the wallet holds no token, instead of an empty form › passed
+packages/ui/src/components/SwapPage/SwapPage.test.tsx › SwapPage shows the build error as a notice and the open picker as a sheet › passed
+packages/ui/src/components/Thermocline/Thermocline.test.tsx › Thermocline (DOM) prefers-reduced-transparency collapses to the opaque plane › passed
+packages/ui/src/components/Thermocline/Thermocline.test.tsx › Thermocline (DOM) renders the tint — the translucent ink alone, scrim always painted › passed
+packages/ui/src/components/Thermocline/Thermocline.test.tsx › Thermocline (DOM) takes the light scrim when the mode is light › passed
+packages/ui/src/components/Thermocline/Thermocline.test.tsx › Thermocline (DOM) the membrane field is retired — no field layer renders (2026-09-01) › passed
+packages/ui/src/components/Thermocline/Thermocline.test.tsx › Thermocline (DOM) the thick tier is the same material, tinted thicker › passed
+packages/ui/src/components/Toggle/Toggle.test.tsx › Toggle fires onValueChange with the flipped value on click › passed
+packages/ui/src/components/Toggle/Toggle.test.tsx › Toggle reads its checked state from `value` › passed
+packages/ui/src/components/TokenAbout/TokenAbout.test.tsx › TokenAbout copies the full contract address from the row that prints the short one › passed
+packages/ui/src/components/TokenAbout/TokenAbout.test.tsx › TokenAbout reads the description in the dark mode’s secondary ink › passed
+packages/ui/src/components/TokenAbout/TokenAbout.test.tsx › TokenAbout reads the description in the light mode’s secondary ink › passed
+packages/ui/src/components/TokenAbout/TokenAbout.test.tsx › TokenAbout renders nothing when the asset has nothing to say › passed
+packages/ui/src/components/TokenDetailPage/TokenDetailContent.test.tsx › TokenDetailContent answers the selected window with the chart’s own first and last point › passed
+packages/ui/src/components/TokenDetailPage/TokenDetailContent.test.tsx › TokenDetailContent differs by data only: Bitcoin has no contract to copy, a Solana token does › passed
+packages/ui/src/components/TokenDetailPage/TokenDetailContent.test.tsx › TokenDetailContent gives both assets the same blocks in the same order — mobile’s token/[id] › passed
+packages/ui/src/components/TokenDetailPage/TokenDetailContent.test.tsx › TokenDetailContent inks the amount from the dark mode › passed
+packages/ui/src/components/TokenDetailPage/TokenDetailContent.test.tsx › TokenDetailContent inks the amount from the light mode › passed
+packages/ui/src/components/TokenDetailPage/TokenDetailContent.test.tsx › TokenDetailContent offers Send on this token only when the host hands it a handler › passed
+packages/ui/src/components/TokenList/TokenListItem.test.tsx › TokenListItem draws the secondary line as one text run that ellipsises at its end › passed
+packages/ui/src/components/TokenMarketData/TokenMarketData.test.tsx › TokenMarketData renders nothing without data and a card of rows with it › passed
+packages/ui/src/components/TransactionConfirmation/ConfirmationHost.test.tsx › ConfirmationHost covers the panel with the confirmation and wires the controls to core › passed
+packages/ui/src/components/TransactionConfirmation/ConfirmationHost.test.tsx › ConfirmationHost draws nothing while no proposal is parked › passed
+packages/ui/src/components/TransactionConfirmation/ConfirmationHost.test.tsx › ConfirmationHost holds the cover until the wave has left, then removes it › passed
+packages/ui/src/components/TransactionConfirmation/ConfirmationHost.test.tsx › ConfirmationHost replaces the confirmation with the wave while core signs › passed
+packages/ui/src/components/TransactionConfirmation/ConfirmationHost.test.tsx › ConfirmationHost shows the receipt in the same cover once the wave is gone, and closes on its button › passed
+packages/ui/src/components/TransactionConfirmation/TransactionConfirmation.test.tsx › TransactionConfirmation draws the exchange, every fee as its own line, and the attribution verbatim › passed
+packages/ui/src/components/TransactionConfirmation/TransactionConfirmation.test.tsx › TransactionConfirmation folds the advanced rows behind the disclosure and reveals them on press › passed
+packages/ui/src/components/TransactionConfirmation/TransactionConfirmation.test.tsx › TransactionConfirmation refuses a second press while a rebuild is in flight › passed
+packages/ui/src/components/TransactionConfirmation/TransactionConfirmation.test.tsx › TransactionConfirmation reports a failed signature as an alert above the controls › passed
+packages/ui/src/components/TransactionConfirmation/TransactionConfirmation.test.tsx › TransactionConfirmation wires the controls and labels confirm from the host › passed
+packages/ui/src/components/TransactionDetail/TransactionDetail.test.tsx › TransactionDetail copies the hash and reports it › passed
+packages/ui/src/components/TransactionDetail/TransactionDetail.test.tsx › TransactionDetail draws a transfer as the tokens that moved and a receipt with the counterparty › passed
+packages/ui/src/components/TransactionDetail/TransactionDetail.test.tsx › TransactionDetail names the verb, the status and the meta facts › passed
+packages/ui/src/components/TransactionDetail/TransactionDetail.test.tsx › TransactionDetail offers the explorer always and share only when there is a handler › passed
+packages/ui/src/components/TransactionDetail/TransactionDetail.test.tsx › TransactionDetail reads the live mode: in light the title takes light's ink › passed
+packages/ui/src/components/TransactionDetail/TransactionDetail.test.tsx › TransactionDetail shows the technical card only under developer mode › passed
+packages/ui/src/components/UnderlineTabs/UnderlineTabs.test.tsx › UnderlineTabs clicking an arrow scrolls the row toward that edge › passed
+packages/ui/src/components/UnderlineTabs/UnderlineTabs.test.tsx › UnderlineTabs gives a tab a line height in pixels, not a bare multiplier › passed
+packages/ui/src/components/UnderlineTabs/UnderlineTabs.test.tsx › UnderlineTabs hovering an overflowing row at rest shows only the trailing arrow › passed
+packages/ui/src/components/UnderlineTabs/UnderlineTabs.test.tsx › UnderlineTabs ignores a horizontal wheel while the row is not overflowing › passed
+packages/ui/src/components/UnderlineTabs/UnderlineTabs.test.tsx › UnderlineTabs jumps to the ends with Home / End › passed
+packages/ui/src/components/UnderlineTabs/UnderlineTabs.test.tsx › UnderlineTabs keeps the scroll arrows out of the accessibility tree and the tab order › passed
+packages/ui/src/components/UnderlineTabs/UnderlineTabs.test.tsx › UnderlineTabs marks the active tab selected and reports the chosen key on click › passed
+packages/ui/src/components/UnderlineTabs/UnderlineTabs.test.tsx › UnderlineTabs moves and selects with ArrowRight / ArrowLeft (roving tabindex) › passed
+packages/ui/src/components/UnderlineTabs/UnderlineTabs.test.tsx › UnderlineTabs never mounts two DOM shapes: the scroller is always present › passed
+packages/ui/src/components/UnderlineTabs/UnderlineTabs.test.tsx › UnderlineTabs shows both arrows once the row has scrolled past the start › passed
+packages/ui/src/components/UnderlineTabs/UnderlineTabs.test.tsx › UnderlineTabs shows no scroll arrows when the row fits, even while hovered › passed
+packages/ui/src/components/UnderlineTabs/UnderlineTabs.test.tsx › UnderlineTabs shows only the leading arrow once the row rests at the end › passed
+packages/ui/src/components/UnderlineTabs/UnderlineTabs.test.tsx › UnderlineTabs snaps the tabs clear of the arrows instead of reserving room for them › passed
+packages/ui/src/components/UnderlineTabs/UnderlineTabs.test.tsx › UnderlineTabs while the set is still being read a tab that joins before `settled` gets no motion; one that joins after does › passed
+packages/ui/src/components/ValueActionsRow/ValueActionsRow.test.tsx › ValueActionsRow draws no control group when there are no controls › passed
+packages/ui/src/components/ValueActionsRow/ValueActionsRow.test.tsx › ValueActionsRow draws the text first and pins the controls to the trailing edge › passed
+packages/ui/src/components/WalletFamily/WalletFamily.test.tsx › WalletFamily draws the parent, then every derived card on the rail › passed
+packages/ui/src/components/WalletFamily/WalletFamily.test.tsx › WalletFamily is only the parent when nothing was derived from it › passed
+packages/ui/src/components/WalletHeader/WalletHeader.test.tsx › WalletHeader announces the copy confirmation and reverts to the copy label › passed
+packages/ui/src/components/WalletHeader/WalletHeader.test.tsx › WalletHeader keeps the tick mounted while the account line speaks the verb › passed
+packages/ui/src/components/WalletHeader/WalletHeader.test.tsx › WalletHeader names the environment off mainnet and stays silent on it, in dark › passed
+packages/ui/src/components/WalletHeader/WalletHeader.test.tsx › WalletHeader names the environment off mainnet and stays silent on it, in light › passed
+packages/ui/src/components/WalletHeader/WalletHeader.test.tsx › WalletHeader paints the refresh control only when a host supplies one › passed
+packages/ui/src/components/WalletHeader/WalletHeader.test.tsx › WalletHeader speaks the verb at chrome depth, taking the number from shared › passed
+packages/ui/src/components/WalletInitErrorScreen/WalletInitErrorScreen.test.tsx › WalletInitErrorScreen reads the live mode: in light the gate sits on the light abyss › passed
+packages/ui/src/components/WalletInitErrorScreen/WalletInitErrorScreen.test.tsx › WalletInitErrorScreen says the funds are safe and retries on the one action › passed
+packages/ui/src/components/WalletsScreen/WalletsScreen.test.tsx › WalletsScreen offers the rescan only on a seed wallet, and the rename on every wallet › passed
+packages/ui/src/components/WalletsScreen/WalletsScreen.test.tsx › WalletsScreen reads the light ink when the mode is light › passed
+packages/ui/src/components/WalletsScreen/WalletsScreen.test.tsx › WalletsScreen selects a wallet on press and leaves; includes and excludes through the trailing control › passed
+packages/ui/src/components/WalletsScreen/WalletsScreen.test.tsx › WalletsScreen sits a derived wallet under its parent, on the rail, with the subtitle, and no index › passed
+packages/ui/src/components/WalletsScreen/WalletsScreen.test.tsx › WalletsScreen sums only the included wallets and says how many that is › passed
+packages/ui/src/components/WarningNotice/WarningNotice.test.tsx › WarningNotice centres the icon on the first line: the title is exactly as tall as the icon › passed
+packages/ui/src/components/WarningNotice/WarningNotice.test.tsx › WarningNotice renders no action container when no action is given › passed
+packages/ui/src/components/WarningNotice/WarningNotice.test.tsx › WarningNotice renders the optional action slot and keeps it interactive › passed
+packages/ui/src/components/WarningNotice/WarningNotice.test.tsx › WarningNotice renders title and body, and announces as an alert › passed
+packages/ui/src/components/WarningNotice/WarningNotice.test.tsx › WarningNotice takes the danger accent by default, in the dark tokens › passed
+packages/ui/src/components/WarningNotice/WarningNotice.test.tsx › WarningNotice takes the warning accent for the warning tone, in light mode › passed
+packages/ui/src/components/WaterColumn/WaterColumn.test.tsx › WaterColumn asks its host for a stacking context, so the negative layer cannot fall behind the ground › passed
+packages/ui/src/components/WaterColumn/WaterColumn.test.tsx › WaterColumn paints two layers behind the content and swallows no pointer events › passed
+packages/ui/src/components/WaterColumn/WaterColumn.test.tsx › the surfaces the water column must never reach keeps the seed EXHIBITION (CreateWalletPage) on opaque bedrock › passed
+packages/ui/src/components/WaterColumn/WaterColumn.test.tsx › the surfaces the water column must never reach leaves the skeleton of a card in a grid plain, because a skeleton is content › passed
+packages/ui/src/components/WaterColumn/WaterColumn.test.tsx › the surfaces the water column must never reach leaves the skeleton of a row in a list plain, because a skeleton is content › passed
+packages/ui/src/components/WaterColumn/WaterColumn.test.tsx › the surfaces the water column must never reach lets seed ENTRY (RecoverWalletPage) stand in the water › passed
+packages/ui/src/components/WaterColumn/WaterColumn.test.tsx › the surfaces the water column must never reach mounts no field on the approval views › passed
+packages/ui/src/components/WaterColumn/WaterColumn.test.tsx › the surfaces the water column must never reach mounts no field on the sheet chrome › passed
+packages/ui/src/hooks/useSecretClipboard.test.tsx › secretClipboard on the extension clears on the return to the panel once 60 s have passed › passed
+packages/ui/src/hooks/useSecretClipboard.test.tsx › secretClipboard on the extension clears the phrase 60 s after the copy while the panel is open › passed
+packages/ui/src/hooks/useSecretClipboard.test.tsx › secretClipboard on the extension leaves what the user copied since alone › passed
+packages/ui/src/motion/SlideStack.test.tsx › SlideStack a pop slides the old screen out over the new one, to the right › passed
+packages/ui/src/motion/SlideStack.test.tsx › SlideStack a push slides the new screen in over the old one, then drops the old one › passed
+packages/ui/src/motion/SlideStack.test.tsx › SlideStack is a cut under reduce motion › passed
+packages/ui/src/motion/sinkAndFloat.test.ts › the sink and the float on the DOM a float cancels the sink the element is still holding, before it starts › passed
+packages/ui/src/motion/sinkAndFloat.test.ts › the sink and the float on the DOM animates nothing under reduce motion — the change is a cut › passed
+packages/ui/src/motion/sinkAndFloat.test.ts › the sink and the float on the DOM animates nothing where the Web Animations API is absent › passed
+packages/ui/src/motion/sinkAndFloat.test.ts › the sink and the float on the DOM brings the light back on the accelerating curve, not the travel one › passed
+packages/ui/src/motion/sinkAndFloat.test.ts › the sink and the float on the DOM floats in from the shared depth, on the shared clock › passed
+packages/ui/src/motion/sinkAndFloat.test.ts › the sink and the float on the DOM sinks away to the shared depth on the shared exit clock › passed
+packages/ui/src/motion/sinkAndFloat.test.ts › the sink and the float on the DOM takes the caller overrides › passed
+packages/ui/src/motion/useReducedMotion.test.tsx › useReducedMotion defaults to full motion when matchMedia does not exist › passed
+packages/ui/src/motion/useReducedMotion.test.tsx › useReducedMotion follows the setting when it changes mid-session › passed
+packages/ui/src/motion/useReducedMotion.test.tsx › useReducedMotion is false when the OS asks for full motion › passed
+packages/ui/src/motion/useReducedMotion.test.tsx › useReducedMotion reads the OS setting on mount › passed
+packages/ui/src/motion/useReducedMotion.test.tsx › useReducedMotion unsubscribes on unmount › passed
+packages/ui/src/theme/ThemeProvider.test.tsx › SalmonThemeProvider follows the system scheme while the preference is "system" › passed
+packages/ui/src/theme/ThemeProvider.test.tsx › SalmonThemeProvider persists a changed preference › passed
+packages/ui/src/theme/ThemeProvider.test.tsx › SalmonThemeProvider reads a stored preference back and lets it win over the system scheme › passed
+packages/ui/src/theme/ThemeProvider.test.tsx › SalmonThemeProvider writes the tokens onto the root and rewrites them when the mode changes › passed
+packages/ui/src/theme/cssVars.test.ts › semanticToCssVars differs between the modes on the token paths the resolver differs on › passed
+packages/ui/src/theme/cssVars.test.ts › semanticToCssVars names the paths the way the tokens are written › passed
+packages/ui/src/theme/cssVars.test.ts › semanticToCssVars turns every leaf into exactly one variable › passed
+packages/ui/src/theme/cssVars.test.ts › semanticToCssVars writes numeric tokens as strings a stylesheet can read › passed
+packages/ui/src/theme/fieldShell.test.tsx › every field wears the shared shell PasswordInput › passed
+packages/ui/src/theme/fieldShell.test.tsx › every field wears the shared shell SearchField › passed
+packages/ui/src/theme/fieldShell.test.tsx › every field wears the shared shell TextInput › passed
+packages/ui/src/theme/fieldShell.test.tsx › every field wears the shared shell leaves the inner input unringed — the box around it is the ring’s subject › passed
+packages/ui/src/theme/fieldShell.test.tsx › every field wears the shared shell stands the accent edge down while the field is in error › passed

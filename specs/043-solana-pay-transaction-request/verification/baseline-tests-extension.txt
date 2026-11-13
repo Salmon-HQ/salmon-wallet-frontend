@@ -1,0 +1,210 @@
+apps/extension/src/analytics.test.ts › build routing posts a store install to production › passed
+apps/extension/src/analytics.test.ts › build routing posts an unpacked install to staging › passed
+apps/extension/src/analytics.test.ts › build routing posts to staging when the browser cannot say how it was installed › passed
+apps/extension/src/analytics.test.ts › closing or hiding the window does not send when the window becomes visible › passed
+apps/extension/src/analytics.test.ts › closing or hiding the window starts the send synchronously on pagehide › passed
+apps/extension/src/analytics.test.ts › closing or hiding the window starts the send synchronously when the window becomes hidden › passed
+apps/extension/src/analytics.test.ts › isDAppApprovalLaunch is true only when the hash carries both an origin and a request › passed
+apps/extension/src/analytics.test.ts › startExtensionAnalytics reports no open from an approval window › passed
+apps/extension/src/analytics.test.ts › startExtensionAnalytics reports no open under a consent given before the v2 text › passed
+apps/extension/src/analytics.test.ts › startExtensionAnalytics reports one open from a window that is not an approval › passed
+apps/extension/src/analytics.test.ts › startExtensionAnalytics stops sending when another window withdraws consent › passed
+apps/extension/src/background.test.ts › after the user turns a site down does not hold back a site whose request failed rather than being rejected › passed
+apps/extension/src/background.test.ts › after the user turns a site down does not hold back a site whose request the user approved › passed
+apps/extension/src/background.test.ts › after the user turns a site down holds back the tab too, whatever origin it moves on to › passed
+apps/extension/src/background.test.ts › after the user turns a site down refuses the same site for a while when the user closes its window › passed
+apps/extension/src/background.test.ts › after the user turns a site down refuses the same site for a while when the user rejects it › passed
+apps/extension/src/background.test.ts › after the user turns a site down serves another site meanwhile › passed
+apps/extension/src/background.test.ts › after the user turns a site down serves the site again once the cool-down is over › passed
+apps/extension/src/background.test.ts › approval routing answers a trusted origin connect from storage without opening any approval UI › passed
+apps/extension/src/background.test.ts › approval routing answers only the protocol error shape when the approval window closes without a response › passed
+apps/extension/src/background.test.ts › approval routing relays the approval UI answer back to the origin and closes the popup › passed
+apps/extension/src/background.test.ts › approval routing routes a sign request to an approval popup carrying the payload and origin › passed
+apps/extension/src/background.test.ts › approval routing routes a signAllTransactions request to an approval popup carrying the payload and origin › passed
+apps/extension/src/background.test.ts › approval routing routes a signAndSendTransaction request to an approval popup carrying the payload and origin › passed
+apps/extension/src/background.test.ts › approval routing routes a signIn request to an approval popup carrying the payload and origin › passed
+apps/extension/src/background.test.ts › approval routing routes a signOffchain request to an approval popup carrying the payload and origin › passed
+apps/extension/src/background.test.ts › approval routing routes a signTransaction request to an approval popup carrying the payload and origin › passed
+apps/extension/src/background.test.ts › malformed and untrusted input answers an unknown method with the fixed protocol error and never opens an approval popup › passed
+apps/extension/src/background.test.ts › malformed and untrusted input drops an approval-channel answer with an unknown request id without responding to anyone › passed
+apps/extension/src/background.test.ts › malformed and untrusted input ignores a request whose origin is  rather than a web origin › passed
+apps/extension/src/background.test.ts › malformed and untrusted input ignores a request whose origin is chrome-extension://abc rather than a web origin › passed
+apps/extension/src/background.test.ts › malformed and untrusted input ignores a request whose origin is https://evil.example/path rather than a web origin › passed
+apps/extension/src/background.test.ts › malformed and untrusted input ignores a request whose origin is null rather than a web origin › passed
+apps/extension/src/background.test.ts › malformed and untrusted input ignores messages from a different extension without crashing or responding › passed
+apps/extension/src/background.test.ts › malformed and untrusted input ignores messages on an unknown channel without crashing or invoking any approval flow › passed
+apps/extension/src/background.test.ts › malformed and untrusted input survives a malformed contentscript message (missing data) without crashing or responding › passed
+apps/extension/src/background.test.ts › privileged channels answer only the extension pages does not serve the stash to a content script › passed
+apps/extension/src/background.test.ts › privileged channels answer only the extension pages does not take an approval answer from a content script › passed
+apps/extension/src/background.test.ts › stash channel session hygiene drops the derived key when the lock alarm fires so an unlocked session cannot outlive the timeout › passed
+apps/extension/src/background.test.ts › storage access restricts storage.local to the extension's own pages › passed
+apps/extension/src/background.test.ts › what an unapproved origin can make the wallet do answers a silent connect only for the account the site was approved with › passed
+apps/extension/src/background.test.ts › what an unapproved origin can make the wallet do answers a silent reconnect without opening any window › passed
+apps/extension/src/background.test.ts › what an unapproved origin can make the wallet do asks again when a site approved with another account connects › passed
+apps/extension/src/background.test.ts › what an unapproved origin can make the wallet do keeps a site connected for its account after a network switch › passed
+apps/extension/src/background.test.ts › what an unapproved origin can make the wallet do lets the origin ask again when its window could not be opened › passed
+apps/extension/src/background.test.ts › what an unapproved origin can make the wallet do names the account it checked in the approval window it opens › passed
+apps/extension/src/background.test.ts › what an unapproved origin can make the wallet do opens one approval window in total, whichever origins ask › passed
+apps/extension/src/background.test.ts › what an unapproved origin can make the wallet do opens one approval window when requests arrive together › passed
+apps/extension/src/background.test.ts › what an unapproved origin can make the wallet do opens one approval window, however many requests an origin sends › passed
+apps/extension/src/background.test.ts › what an unapproved origin can make the wallet do opens the window where Chrome chooses when the edge position is refused › passed
+apps/extension/src/background.test.ts › what an unapproved origin can make the wallet do refuses a sign request after a switch to an account the site was not approved for › passed
+apps/extension/src/background.test.ts › what an unapproved origin can make the wallet do refuses a signAllTransactions request after a switch to an account the site was not approved for › passed
+apps/extension/src/background.test.ts › what an unapproved origin can make the wallet do refuses a signOffchain request after a switch to an account the site was not approved for › passed
+apps/extension/src/background.test.ts › what an unapproved origin can make the wallet do refuses a signTransaction request after a switch to an account the site was not approved for › passed
+apps/extension/src/background.test.ts › what an unapproved origin can make the wallet do refuses a signing request from an origin the user never approved › passed
+apps/extension/src/background.test.ts › what an unapproved origin can make the wallet do still lets signIn through, since connecting is part of what it does › passed
+apps/extension/src/entrypoints/popup/App.test.tsx › Extension popup inactivity lock clears a secret left on the clipboard from the root › passed
+apps/extension/src/entrypoints/popup/App.test.tsx › Extension popup inactivity lock clears session cache and locks accounts on inactivity timeout › passed
+apps/extension/src/entrypoints/popup/App.test.tsx › Extension popup inactivity lock clears session cache and locks accounts when the popup closes › passed
+apps/extension/src/entrypoints/popup/App.test.tsx › Extension popup inactivity lock configures inactivity lock when wallet is unlocked and has accounts › passed
+apps/extension/src/entrypoints/popup/App.test.tsx › Extension popup with a wallet stored without a password ignores a lock from another window while the wallet waits for its password › passed
+apps/extension/src/entrypoints/popup/App.test.tsx › Extension popup with a wallet stored without a password opens normally once the wallet has a password › passed
+apps/extension/src/entrypoints/popup/App.test.tsx › Extension popup with a wallet stored without a password opens on the password screen listing its addresses, and on nothing else › passed
+apps/extension/src/entrypoints/popup/App.test.tsx › Extension popup with a wallet stored without a password removes the wallet the way the lock screen resets it › passed
+apps/extension/src/entrypoints/popup/App.test.tsx › Extension popup with a wallet stored without a password runs no inactivity lock while the wallet waits for its password › passed
+apps/extension/src/entrypoints/popup/App.test.tsx › Extension popup with a wallet stored without a password stays on the password screen even when the wallet reads as locked › passed
+apps/extension/src/entrypoints/popup/useLockAcrossWindows.test.ts › useLockAcrossWindows does not lock the others when a window locks because it is closing › passed
+apps/extension/src/entrypoints/popup/useLockAcrossWindows.test.ts › useLockAcrossWindows does not lock the others when a window opens already locked › passed
+apps/extension/src/entrypoints/popup/useLockAcrossWindows.test.ts › useLockAcrossWindows does not pass on a lock it received › passed
+apps/extension/src/entrypoints/popup/useLockAcrossWindows.test.ts › useLockAcrossWindows locks every other unlocked window when one window locks › passed
+apps/extension/src/entrypoints/popup/useLockAcrossWindows.test.ts › useLockAcrossWindows — a wallet list changed in another window does nothing more once its window has closed › passed
+apps/extension/src/entrypoints/popup/useLockAcrossWindows.test.ts › useLockAcrossWindows — a wallet list changed in another window leaves a locked window alone: unlocking reads the list anyway › passed
+apps/extension/src/entrypoints/popup/useLockAcrossWindows.test.ts › useLockAcrossWindows — a wallet list changed in another window leaves alone a list its own window wrote, before its state has caught up › passed
+apps/extension/src/entrypoints/popup/useLockAcrossWindows.test.ts › useLockAcrossWindows — a wallet list changed in another window leaves alone the window that emptied the list, which already holds nothing › passed
+apps/extension/src/entrypoints/popup/useLockAcrossWindows.test.ts › useLockAcrossWindows — a wallet list changed in another window leaves alone the window whose list already matches, such as the one that wrote it › passed
+apps/extension/src/entrypoints/popup/useLockAcrossWindows.test.ts › useLockAcrossWindows — a wallet list changed in another window locks the window it cannot re-read, without locking the one that made the change › passed
+apps/extension/src/entrypoints/popup/useLockAcrossWindows.test.ts › useLockAcrossWindows — a wallet list changed in another window makes every other window forget its wallets when the list is emptied, locked ones too › passed
+apps/extension/src/entrypoints/popup/useLockAcrossWindows.test.ts › useLockAcrossWindows — a wallet list changed in another window re-reads the wallets of a window whose list is behind storage › passed
+apps/extension/src/entrypoints/popup/useLockAcrossWindows.test.ts › useLockAcrossWindows — a wallet list changed in another window reads only string ids from the stored list › passed
+apps/extension/src/entrypoints/popup/useLockAcrossWindows.test.ts › useLockAcrossWindows — callbacks that change between renders subscribes once and calls the latest callbacks › passed
+apps/extension/src/lib/SalmonAddress.test.ts › SalmonAddress — known-irreducible failures (no bn.js in page scope) FAILS on a legacy Transaction where the wallet is only the fee payer › passed
+apps/extension/src/lib/SalmonAddress.test.ts › SalmonAddress — known-irreducible failures (no bn.js in page scope) FAILS on other.equals(wallet.publicKey) — the real key reads its own _bn › passed
+apps/extension/src/lib/SalmonAddress.test.ts › SalmonAddress — known-irreducible failures (no bn.js in page scope) happens to SURVIVE a legacy Transaction where the wallet sorts first › passed
+apps/extension/src/lib/SalmonAddress.test.ts › SalmonAddress — page tampering cannot be frozen, and every accessor survives an indexed write anyway › passed
+apps/extension/src/lib/SalmonAddress.test.ts › SalmonAddress — patterns that work is a 32-byte Uint8Array holding the address bytes › passed
+apps/extension/src/lib/SalmonAddress.test.ts › SalmonAddress — patterns that work rejects a malformed address exactly where new PublicKey() did › passed
+apps/extension/src/lib/SalmonAddress.test.ts › SalmonAddress — patterns that work stringifies and serializes to base58 › passed
+apps/extension/src/lib/SalmonAddress.test.ts › SalmonAddress — patterns that work supports PublicKey.findProgramAddressSync([wallet.publicKey.toBuffer()], …) › passed
+apps/extension/src/lib/SalmonAddress.test.ts › SalmonAddress — patterns that work supports SystemProgram.transfer({ fromPubkey: wallet.publicKey }) › passed
+apps/extension/src/lib/SalmonAddress.test.ts › SalmonAddress — patterns that work supports compiling a v0 message with the wallet as fee payer › passed
+apps/extension/src/lib/SalmonAddress.test.ts › SalmonAddress — patterns that work supports new PublicKey(wallet.publicKey) › passed
+apps/extension/src/lib/SalmonAddress.test.ts › SalmonAddress — patterns that work supports new PublicKey(wallet.publicKey.toBytes()) › passed
+apps/extension/src/lib/SalmonAddress.test.ts › SalmonAddress — patterns that work supports new PublicKey(wallet.publicKey.toString()) › passed
+apps/extension/src/lib/SalmonAddress.test.ts › SalmonAddress — patterns that work supports wallet.publicKey.equals(other) › passed
+apps/extension/src/lib/SalmonAddress.test.ts › SalmonAddress — wallet-standard read path exposes the address and bytes the adapter builds accounts from › passed
+apps/extension/src/lib/SolanaProvider.test.ts › SolanaProvider bytes-native surface signAllTransactionsBytes handles v1 wires, filling only the wallet slot in each › passed
+apps/extension/src/lib/SolanaProvider.test.ts › SolanaProvider bytes-native surface signAllTransactionsBytes rejects a wrong-length signature › passed
+apps/extension/src/lib/SolanaProvider.test.ts › SolanaProvider bytes-native surface signAllTransactionsBytes signs every transaction with the shared signature and preserves co-signer slots › passed
+apps/extension/src/lib/SolanaProvider.test.ts › SolanaProvider bytes-native surface signAndSendTransactionBytes forwards the input wire bytes verbatim › passed
+apps/extension/src/lib/SolanaProvider.test.ts › SolanaProvider bytes-native surface signTransactionBytes fills the wallet slot and leaves the message and co-signer slot untouched › passed
+apps/extension/src/lib/SolanaProvider.test.ts › SolanaProvider bytes-native surface signTransactionBytes rejects a wrong-length signature › passed
+apps/extension/src/lib/SolanaProvider.test.ts › SolanaProvider bytes-native surface signTransactionBytes signs a v1 transaction and preserves the co-signer slot byte-for-byte › passed
+apps/extension/src/lib/SolanaProvider.test.ts › SolanaProvider request payloads exposes the connected address as the injected address object › passed
+apps/extension/src/lib/SolanaProvider.test.ts › SolanaProvider request payloads keeps the method names and param keys the extension side parses › passed
+apps/extension/src/lib/SolanaProvider.test.ts › SolanaProvider.signAndSendTransaction forwards a legacy transaction with the co-signer signature intact › passed
+apps/extension/src/lib/SolanaProvider.test.ts › SolanaProvider.signAndSendTransaction forwards a versioned transaction with the co-signer signature intact › passed
+apps/extension/src/lib/SolanaProvider.test.ts › SolanaProvider.signTransaction — signature write-back rejects a malformed signature length › passed
+apps/extension/src/lib/SolanaProvider.test.ts › SolanaProvider.signTransaction — signature write-back rejects a signature for a key the transaction does not require › passed
+apps/extension/src/lib/SolanaProvider.test.ts › SolanaProvider.signTransaction — signature write-back signAllTransactions writes each signature into its own transaction › passed
+apps/extension/src/lib/SolanaProvider.test.ts › SolanaProvider.signTransaction — signature write-back writes into a legacy transaction byte-identically to web3.js signing › passed
+apps/extension/src/lib/SolanaProvider.test.ts › SolanaProvider.signTransaction — signature write-back writes into a versioned transaction byte-identically to web3.js signing › passed
+apps/extension/src/lib/injected.test.ts › injected entrypoint aliases the provider as window.solana for legacy dApps › passed
+apps/extension/src/lib/injected.test.ts › injected entrypoint exposes the provider as window.salmon › passed
+apps/extension/src/lib/injected.test.ts › injected entrypoint keeps both handles non-writable and non-configurable › passed
+apps/extension/src/pages/dapp/DAppConnectPage.test.tsx › DAppConnectPage analytics counts an approved connection before answering, with no props › passed
+apps/extension/src/pages/dapp/DAppConnectPage.test.tsx › DAppConnectPage analytics records nothing when the connection could not be granted › passed
+apps/extension/src/pages/dapp/DAppConnectPage.test.tsx › DAppConnectPage analytics records nothing when the user denies › passed
+apps/extension/src/pages/dapp/DAppConnectPage.test.tsx › DAppConnectPage disables the approval view when no address or networkId is available › passed
+apps/extension/src/pages/dapp/DAppConnectPage.test.tsx › DAppConnectPage renders the approval view with dApp metadata when available › passed
+apps/extension/src/pages/dapp/DAppConnectPage.test.tsx › DAppConnectPage renders without throwing when metadata is null › passed
+apps/extension/src/pages/dapp/DAppSignInApprovalPage.test.tsx › DAppSignInApprovalPage analytics counts an approved sign-in as a signed message before answering, with no props › passed
+apps/extension/src/pages/dapp/DAppSignInApprovalPage.test.tsx › DAppSignInApprovalPage analytics records nothing when signing fails › passed
+apps/extension/src/pages/dapp/DAppSignInApprovalPage.test.tsx › DAppSignInApprovalPage analytics records nothing when the approval is refused before signing › passed
+apps/extension/src/pages/dapp/DAppSignInApprovalPage.test.tsx › DAppSignInApprovalPage analytics records nothing when the user rejects › passed
+apps/extension/src/pages/dapp/DAppSignInApprovalPage.test.tsx › DAppSignInApprovalPage approves via the shared sign-in path and returns the result payload › passed
+apps/extension/src/pages/dapp/DAppSignInApprovalPage.test.tsx › DAppSignInApprovalPage sends a user-rejection error to the background and dismisses on reject › passed
+apps/extension/src/pages/dapp/DAppSignInApprovalPage.test.tsx › DAppSignInApprovalPage sends only the fixed protocol string when sign-in fails, never the raw error › passed
+apps/extension/src/pages/dapp/DAppSignInApprovalPage.test.tsx › DAppSignInApprovalPage sends the fixed unavailable-account error when approving without a Solana account › passed
+apps/extension/src/pages/dapp/DAppSignMessageApprovalPage.test.tsx › DAppSignMessageApprovalPage analytics counts an approved message before answering, with no props › passed
+apps/extension/src/pages/dapp/DAppSignMessageApprovalPage.test.tsx › DAppSignMessageApprovalPage analytics counts an approved off-chain message before answering, with no props › passed
+apps/extension/src/pages/dapp/DAppSignMessageApprovalPage.test.tsx › DAppSignMessageApprovalPage analytics records nothing when signing fails › passed
+apps/extension/src/pages/dapp/DAppSignMessageApprovalPage.test.tsx › DAppSignMessageApprovalPage analytics records nothing when the approval is refused before signing › passed
+apps/extension/src/pages/dapp/DAppSignMessageApprovalPage.test.tsx › DAppSignMessageApprovalPage analytics records nothing when the user rejects › passed
+apps/extension/src/pages/dapp/DAppSignMessageApprovalPage.test.tsx › DAppSignMessageApprovalPage approves a legacy sign request via the raw sign path (unchanged) › passed
+apps/extension/src/pages/dapp/DAppSignMessageApprovalPage.test.tsx › DAppSignMessageApprovalPage approves a signOffchain request via the OCMS approval path and returns the payload › passed
+apps/extension/src/pages/dapp/DAppSignMessageApprovalPage.test.tsx › DAppSignMessageApprovalPage disables the view when message data is missing › passed
+apps/extension/src/pages/dapp/DAppSignMessageApprovalPage.test.tsx › DAppSignMessageApprovalPage passes data and requiredSigners to the view for a signOffchain request › passed
+apps/extension/src/pages/dapp/DAppSignMessageApprovalPage.test.tsx › DAppSignMessageApprovalPage passes raw data (banner path) but no requiredSigners on the legacy sign method › passed
+apps/extension/src/pages/dapp/DAppSignMessageApprovalPage.test.tsx › DAppSignMessageApprovalPage refuses without showing the request when another account is active › passed
+apps/extension/src/pages/dapp/DAppSignMessageApprovalPage.test.tsx › DAppSignMessageApprovalPage renders sign-message view with metadata and decoded message › passed
+apps/extension/src/pages/dapp/DAppSignMessageApprovalPage.test.tsx › DAppSignMessageApprovalPage renders without throwing when metadata is null › passed
+apps/extension/src/pages/dapp/DAppSignMessageApprovalPage.test.tsx › DAppSignMessageApprovalPage sends a user-rejection error to the background and dismisses on reject › passed
+apps/extension/src/pages/dapp/DAppSignMessageApprovalPage.test.tsx › DAppSignMessageApprovalPage sends only the fixed protocol string when signing fails, never the raw error › passed
+apps/extension/src/pages/dapp/DAppSignMessageApprovalPage.test.tsx › DAppSignMessageApprovalPage sends the fixed missing-data error when approving a request without message data › passed
+apps/extension/src/pages/dapp/DAppSignMessageApprovalPage.test.tsx › DAppSignMessageApprovalPage sends the fixed unavailable-account error when approving without a Solana account › passed
+apps/extension/src/pages/dapp/DAppSignMessageApprovalPage.test.tsx › DAppSignMessageApprovalPage tells the view which account signs › passed
+apps/extension/src/pages/dapp/DAppTransactionApprovalPage.test.tsx › DAppTransactionApprovalPage analytics counts an approved signAllTransactions request once before answering, with no props › passed
+apps/extension/src/pages/dapp/DAppTransactionApprovalPage.test.tsx › DAppTransactionApprovalPage analytics counts an approved signAndSendTransaction request once before answering, with no props › passed
+apps/extension/src/pages/dapp/DAppTransactionApprovalPage.test.tsx › DAppTransactionApprovalPage analytics counts an approved signTransaction request once before answering, with no props › passed
+apps/extension/src/pages/dapp/DAppTransactionApprovalPage.test.tsx › DAppTransactionApprovalPage analytics records nothing when signing or sending fails › passed
+apps/extension/src/pages/dapp/DAppTransactionApprovalPage.test.tsx › DAppTransactionApprovalPage analytics records nothing when the approval is refused before signing › passed
+apps/extension/src/pages/dapp/DAppTransactionApprovalPage.test.tsx › DAppTransactionApprovalPage analytics records nothing when the user rejects › passed
+apps/extension/src/pages/dapp/DAppTransactionApprovalPage.test.tsx › DAppTransactionApprovalPage disables the view when networkId is missing › passed
+apps/extension/src/pages/dapp/DAppTransactionApprovalPage.test.tsx › DAppTransactionApprovalPage names no signing account when there is no account › passed
+apps/extension/src/pages/dapp/DAppTransactionApprovalPage.test.tsx › DAppTransactionApprovalPage network mismatch accepts devnet on solana-devnet › passed
+apps/extension/src/pages/dapp/DAppTransactionApprovalPage.test.tsx › DAppTransactionApprovalPage network mismatch accepts mainnet on solana-mainnet › passed
+apps/extension/src/pages/dapp/DAppTransactionApprovalPage.test.tsx › DAppTransactionApprovalPage network mismatch accepts mainnet-beta on solana-mainnet › passed
+apps/extension/src/pages/dapp/DAppTransactionApprovalPage.test.tsx › DAppTransactionApprovalPage network mismatch accepts solana-devnet on solana-devnet › passed
+apps/extension/src/pages/dapp/DAppTransactionApprovalPage.test.tsx › DAppTransactionApprovalPage network mismatch accepts solana-mainnet on solana-mainnet › passed
+apps/extension/src/pages/dapp/DAppTransactionApprovalPage.test.tsx › DAppTransactionApprovalPage network mismatch accepts solana:devnet on solana-devnet › passed
+apps/extension/src/pages/dapp/DAppTransactionApprovalPage.test.tsx › DAppTransactionApprovalPage network mismatch accepts solana:mainnet on solana-mainnet › passed
+apps/extension/src/pages/dapp/DAppTransactionApprovalPage.test.tsx › DAppTransactionApprovalPage network mismatch accepts solana:testnet on solana-testnet › passed
+apps/extension/src/pages/dapp/DAppTransactionApprovalPage.test.tsx › DAppTransactionApprovalPage network mismatch accepts testnet on solana-testnet › passed
+apps/extension/src/pages/dapp/DAppTransactionApprovalPage.test.tsx › DAppTransactionApprovalPage network mismatch refuses a request built for another network instead of failing at send time › passed
+apps/extension/src/pages/dapp/DAppTransactionApprovalPage.test.tsx › DAppTransactionApprovalPage network mismatch still refuses bitcoin-devnet on Solana Devnet › passed
+apps/extension/src/pages/dapp/DAppTransactionApprovalPage.test.tsx › DAppTransactionApprovalPage network mismatch still refuses mainnet on Solana Devnet › passed
+apps/extension/src/pages/dapp/DAppTransactionApprovalPage.test.tsx › DAppTransactionApprovalPage network mismatch still refuses solana:mainnet on Solana Devnet › passed
+apps/extension/src/pages/dapp/DAppTransactionApprovalPage.test.tsx › DAppTransactionApprovalPage network mismatch still refuses testnet on Solana Devnet › passed
+apps/extension/src/pages/dapp/DAppTransactionApprovalPage.test.tsx › DAppTransactionApprovalPage network mismatch still refuses unknown on Solana Devnet › passed
+apps/extension/src/pages/dapp/DAppTransactionApprovalPage.test.tsx › DAppTransactionApprovalPage passes the pending preview through instead of rendering an empty change list › passed
+apps/extension/src/pages/dapp/DAppTransactionApprovalPage.test.tsx › DAppTransactionApprovalPage refuses without showing the request when another account is active › passed
+apps/extension/src/pages/dapp/DAppTransactionApprovalPage.test.tsx › DAppTransactionApprovalPage renders the approval view with metadata and decoded transaction details › passed
+apps/extension/src/pages/dapp/DAppTransactionApprovalPage.test.tsx › DAppTransactionApprovalPage renders without throwing when metadata is null and surfaces parsing errors › passed
+apps/extension/src/pages/dapp/DAppTransactionApprovalPage.test.tsx › DAppTransactionApprovalPage tells the view which account signs › passed
+apps/extension/src/pages/dapp/useDAppApproval.test.ts › trackDAppApproval never throws into the approval, even when tracking fails › passed
+apps/extension/src/pages/home/HomePage.test.tsx › HomePage shell draws the header, the balance, the sub-tabs and the content region, in that order › passed
+apps/extension/src/pages/home/HomePage.test.tsx › HomePage shell mounts the ground once, behind the screen, rather than per tab › passed
+apps/extension/src/pages/home/HomePage.test.tsx › HomePage shell offers the NFTs tab on Solana — and no Home / Collectibles tab bar › passed
+apps/extension/src/pages/home/HomePage.test.tsx › HomePage — a watch-only account sees only its assets and NFTs: no Powerup tab, no + › passed
+apps/extension/src/pages/home/HomePage.test.tsx › HomePage — a watch-only account shows an installed Powerup and the + to a signing account › passed
+apps/extension/src/pages/home/HomePage.test.tsx › HomePage — the derived-accounts sheet is mounted where the user is answers the rescan the user asked for on Wallets, and nothing on Home › passed
+apps/extension/src/pages/home/HomePage.test.tsx › HomePage — the derived-accounts sheet is mounted where the user is waits for a rescan on Wallets, not on Home › passed
+apps/extension/src/pages/home/useHomeNftFlow.test.ts › useHomeNftFlow signs with the active network's Solana account › passed
+apps/extension/src/pages/lock/LockPage.test.tsx › Extension LockPage clears any cached session key as soon as the lock screen mounts › passed
+apps/extension/src/pages/lock/LockPage.test.tsx › Extension LockPage never reads the derived vault key out of the stash after an unlock › passed
+apps/extension/src/pages/lock/LockPage.test.tsx › Extension LockPage requires explicit re-authentication on the lock screen, never a cached key › passed
+apps/extension/src/utils/page-response.test.ts › toPageResponse drops anything else a result carries, so an account object never reaches the page › passed
+apps/extension/src/utils/page-response.test.ts › toPageResponse passes a connection through as its method and public key only › passed
+apps/extension/src/utils/page-response.test.ts › toPageResponse passes a rejection through as its id and error text › passed
+apps/extension/src/utils/page-response.test.ts › toPageResponse passes every field a signing result carries › passed
+apps/extension/src/wallet-standard/wallet-standard.test.ts › SalmonWallet advertises the Wallet Standard name "Salmon" as a public integration contract (spec 004 FR-006/SC-004) › passed
+apps/extension/src/wallet-standard/wallet-standard.test.ts › SalmonWallet clears accounts and emits change when the provider disconnects › passed
+apps/extension/src/wallet-standard/wallet-standard.test.ts › SalmonWallet connects through the provider, exposes the account, and emits a change event › passed
+apps/extension/src/wallet-standard/wallet-standard.test.ts › SalmonWallet delegates signMessage to the provider for the connected account › passed
+apps/extension/src/wallet-standard/wallet-standard.test.ts › SalmonWallet delegates signOffchainMessage to the provider and returns the PR#92 output shape › passed
+apps/extension/src/wallet-standard/wallet-standard.test.ts › SalmonWallet exposes the expected wallet-standard identity, chains, and features › passed
+apps/extension/src/wallet-standard/wallet-standard.test.ts › SalmonWallet passes canonical network solana:devnet to every transaction signing path › passed
+apps/extension/src/wallet-standard/wallet-standard.test.ts › SalmonWallet passes canonical network solana:mainnet to every transaction signing path › passed
+apps/extension/src/wallet-standard/wallet-standard.test.ts › SalmonWallet passes canonical network solana:testnet to every transaction signing path › passed
+apps/extension/src/wallet-standard/wallet-standard.test.ts › SalmonWallet rejects signMessage for an account it does not own › passed
+apps/extension/src/wallet-standard/wallet-standard.test.ts › SalmonWallet rejects signOffchainMessage for an account it does not own › passed
+apps/extension/src/wallet-standard/wallet-standard.test.ts › SalmonWallet rejects signOffchainMessage for an unsupported message version › passed
+apps/extension/src/wallet-standard/wallet-standard.test.ts › SalmonWallet signIn connects a not-yet-connected wallet and returns the SolanaSignInOutput shape › passed
+apps/extension/src/wallet-standard/wallet-standard.test.ts › SalmonWallet signIn forwards the input and surfaces signedMessageFormat on the OCMS path (PR#93) › passed
+apps/extension/src/wallet-standard/wallet-standard.test.ts › initialize registers a SalmonWallet wrapping the injected provider › passed
+apps/extension/src/wallet-standard/wallet-standard.test.ts › registerWallet dispatches wallet-standard:register-wallet so an already-listening app receives the wallet › passed
+apps/extension/src/wallet-standard/wallet-standard.test.ts › registerWallet registers with an app that announces readiness later via wallet-standard:app-ready › passed
+apps/extension/src/wallet-standard/wallet-standard.test.ts › the network a chain maps to maps solana:devnet to the wallet id solana-devnet › passed
+apps/extension/src/wallet-standard/wallet-standard.test.ts › the network a chain maps to maps solana:mainnet to the wallet id solana-mainnet › passed
+apps/extension/src/wallet-standard/wallet-standard.test.ts › the network a chain maps to maps solana:testnet to the wallet id solana-testnet › passed

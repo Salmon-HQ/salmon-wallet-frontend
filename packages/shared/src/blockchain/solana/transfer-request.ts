@@ -28,6 +28,7 @@ export interface TransferRequest {
 export type TransferRequestParseReason =
   | 'notSolanaPay'
   | 'transactionRequest'
+  | 'transactionRequestMalformed'
   | 'recipient'
   | 'amount'
   | 'splToken'
@@ -77,8 +78,12 @@ export function parseTransferRequest(raw: string): TransferRequestParseResult {
 
   const recipient = decode(rawPath);
   if (recipient === null) return { ok: false, reason: 'recipient' };
-  // SPEC 1.1: a transaction request is `solana:<https link>`; v1 pays transfer requests only.
-  if (/^https?:\/\//i.test(recipient)) return { ok: false, reason: 'transactionRequest' };
+  // SPEC 1.1: a transaction request is `solana:<https link>`, read by
+  // `transaction-request.ts`; any other web address is a malformed one.
+  if (/^https:\/\//i.test(recipient)) return { ok: false, reason: 'transactionRequest' };
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(recipient)) {
+    return { ok: false, reason: 'transactionRequestMalformed' };
+  }
   if (!isAddress(recipient)) return { ok: false, reason: 'recipient' };
 
   const request: TransferRequest = { recipient, references: [] };

@@ -17,11 +17,18 @@ import {
   getCompiledTransactionMessageEncoder,
   getSignatureFromTransaction,
   getTransactionDecoder,
+  isSolanaError,
 } from '@solana/kit';
-import type { Commitment, Signature, TransactionMessageBytes } from '@solana/kit';
+import type { Blockhash, Commitment, Signature, TransactionMessageBytes } from '@solana/kit';
 import { signTransactionWith, type SolanaSigner } from '../../blockchain/solana/signing';
-import { confirmSolanaSignature, sendExpectingOutcome } from '../../blockchain/solana/confirm';
+import {
+  confirmSolanaSignature,
+  sendExpectingOutcome,
+  SolanaOutcomeUnknownError,
+} from '../../blockchain/solana/confirm';
 import type { SolanaRpc, SolanaRpcSubscriptions } from '../../blockchain/solana/networks';
+import { TransactionRequestError } from '../../blockchain/solana/transaction-request';
+import { assertReceivedTransactionSignable } from '../../blockchain/solana/transaction-request-checks';
 import {
   assertSolanaTransactionMatches,
   assertSwapPaysWallet,
@@ -134,6 +141,86 @@ export async function signAndSendSolanaTransaction(
     value.lastValidBlockHeight,
     { commitment }
   );
+
+  return signature;
+}
+
+/**
+ * A still-valid blockhash expires within this many blocks of now, so a wait
+ * bounded here is never early; at worst "expired" comes a little later.
+ */
+const RECEIVED_LIFETIME_BLOCKS = 150n;
+
+/**
+ * Signs and broadcasts a transaction someone else built and may already have
+ * signed — a Solana Pay merchant and its fee sponsor (spec 043,
+ * contracts/received-proposal.md) — then waits for confirmation.
+ *
+ * Nothing in the bytes changes but the user's own signature slot: a sponsor's
+ * signature covers the fee payer and the blockhash, so re-stamping either (as
+ * `signAndSendSolanaTransaction` does) would break it. The checks run again
+ * on the exact bytes, as the last thing before the key is used.
+ *
+ * @param account - The active signing account and its RPC clients.
+ * @param transactionBase64 - The wire transaction exactly as reviewed.
+ * @param signer - The address the transaction was requested for.
+ * @returns The confirmed signature.
+ * @throws TransactionRequestError - `accountChanged`, `expired`, or a check's
+ *   reason; nothing is signed or sent.
+ * @throws SolanaOutcomeUnknownError - When the transaction may have landed.
+ */
+export async function sendReceivedSolanaTransaction(
+  account: SolanaBroadcaster,
+  transactionBase64: string,
+  signer: string,
+  options: SolanaBroadcastOptions = {}
+): Promise<Signature> {
+  if (String(account.signer.address) !== signer) {
+    throw new TransactionRequestError('accountChanged');
+  }
+  const commitment = options.commitment ?? 'confirmed';
+  const decoded = getTransactionDecoder().decode(
+    new Uint8Array(Buffer.from(transactionBase64, 'base64'))
+  );
+  await assertReceivedTransactionSignable(decoded, signer);
+
+  const rpc = account.getRpc();
+  const { lifetimeToken } = getCompiledTransactionMessageDecoder().decode(decoded.messageBytes);
+  const { value: valid } = await rpc
+    .isBlockhashValid(lifetimeToken as Blockhash, { commitment })
+    .send();
+  if (!valid) throw new TransactionRequestError('expired');
+  // Asked before the send: once the bytes may be on their way, no read may
+  // fail as a plain error, or the host would offer a second payment.
+  const blockHeight = await rpc.getBlockHeight({ commitment }).send();
+
+  const signed = await signTransactionWith(account.signer, decoded);
+
+  const signature = await sendExpectingOutcome(
+    () =>
+      rpc
+        .sendTransaction(getBase64EncodedWireTransaction(signed), {
+          encoding: 'base64',
+          preflightCommitment: commitment,
+          skipPreflight: options.skipPreflight ?? false,
+        })
+        .send(),
+    getSignatureFromTransaction(signed)
+  );
+
+  try {
+    await confirmSolanaSignature(
+      { rpc, rpcSubscriptions: account.getRpcSubscriptions() },
+      signature,
+      blockHeight + RECEIVED_LIFETIME_BLOCKS,
+      { commitment }
+    );
+  } catch (error) {
+    // The chain's own verdict (failed, expired) is final; anything else after
+    // the send says nothing about whether the payment landed.
+    if (error instanceof SolanaOutcomeUnknownError || isSolanaError(error)) throw error;
+    throw new SolanaOutcomeUnknownError(signature);
+  }
 
   return signature;
 }

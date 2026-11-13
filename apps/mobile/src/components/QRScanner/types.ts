@@ -1,4 +1,4 @@
-import type { BlockchainType, TransferRequest } from '@salmon/shared';
+import type { BlockchainType, TransactionRequestLink, TransferRequest } from '@salmon/shared';
 
 /**
  * Data returned when a QR code is scanned and validated for the active chain
@@ -12,6 +12,12 @@ export interface QRScanResult {
   amount?: string;
   /** The Solana Pay transfer request the code carried, when it asked for more than an address */
   request?: TransferRequest;
+  /**
+   * A Solana Pay transaction request (spec 043): the merchant builds the
+   * payment, so there is no address to fill and `address` is empty. Only a
+   * scanner opened with `acceptTransactionRequests` hands one over.
+   */
+  transactionRequest?: TransactionRequestLink;
 }
 
 /**
@@ -24,6 +30,8 @@ export interface QRScannerProps {
   blockchain: BlockchainType;
   /** Callback fired when a QR code is scanned and validated */
   onScan: (result: QRScanResult) => void;
+  /** Send's scanner takes merchant links; any other scanner says to open them from Send. */
+  acceptTransactionRequests?: boolean;
   /** Callback fired when the scanner is closed */
   onClose: () => void;
   /** Optional title displayed in the scanner header */

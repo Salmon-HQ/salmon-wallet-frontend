@@ -125,6 +125,16 @@ jest.mock('./ConfirmationExchange', () => {
   };
 });
 
+// The identity row has its own suite; here it only has to be placed.
+jest.mock('./RequesterRow', () => {
+  const { Text: RNText } = require('react-native');
+  return {
+    RequesterRow: ({ name, domain, testID }: { name: string; domain: string; testID: string }) => (
+      <RNText testID={testID}>{`${name} · ${domain}`}</RNText>
+    ),
+  };
+});
+
 jest.mock('./ConfirmationButtons', () => {
   const { View: RNView } = require('react-native');
   return {
@@ -235,6 +245,21 @@ describe('TransactionConfirmation — every fee is its own line, the provider is
     expect(getByTestId('confirmation-error').props.children).toBe('transaction.errors.networkBusy');
     expect(queryByTestId('confirmation-error')).toBeTruthy();
     expect(renderScreen().queryByTestId('confirmation-error')).toBeNull();
+  });
+});
+
+describe('TransactionConfirmation — who asks', () => {
+  it('draws no identity row when nobody but the wallet asks', () => {
+    expect(renderScreen().queryByTestId('confirmation-requester')).toBeNull();
+  });
+
+  it('names the merchant that asks above the details', () => {
+    const { getByTestId } = renderScreen({
+      requester: { name: 'Corner Café', icon: null, domain: 'merchant.example' },
+    });
+    expect(getByTestId('confirmation-requester').props.children).toBe(
+      'Corner Café · merchant.example'
+    );
   });
 });
 

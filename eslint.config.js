@@ -178,6 +178,22 @@ export default [
       ],
     },
   },
+  // Shared and mobile code runs on Hermes, while their tests run on Node: an
+  // API only Node has passes every test and breaks on the phone. Hermes's Intl
+  // has no formatToParts (spec 043 shipped one to a device; the payment failed).
+  {
+    files: ['packages/shared/**/*.{ts,tsx}', 'apps/mobile/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-properties': [
+        'error',
+        {
+          property: 'formatToParts',
+          message:
+            'Hermes has no Intl formatToParts. Derive the part from format() output instead (see decimalSeparator in packages/shared/src/utils/formatting.ts).',
+        },
+      ],
+    },
+  },
   // @solana/web3.js is gone from every production path in this repo. This
   // errors when one comes back, instead of drifting back in one import at a
   // time.
@@ -219,8 +235,19 @@ export default [
   // door is `requestSignature` from core/confirmation, which renders Salmon's
   // confirmation and only then signs and broadcasts. `packages/shared/src/
   // powerups/boundary.test.ts` asserts this block fires on a fixture.
+  //
+  // A Powerup's screens live outside `powerups/`: each app's Powerups entry
+  // registers them (mobile `src/powerups/index.ts`, the kit `src/powerups.ts`,
+  // the extension `pages/home/powerupBodies.tsx`), so they are listed here.
   {
-    files: ['packages/shared/src/powerups/**/*.{ts,tsx}'],
+    files: [
+      '**/powerups/**/*.{ts,tsx}',
+      'packages/ui/src/powerups.ts',
+      'packages/ui/src/components/{PowerupsPage,MemoPage,SwapPage,SkrPage,PaymentsPage}/**/*.{ts,tsx}',
+      'apps/mobile/src/screens/{MemoTab,PaymentsTab,SwapTab,SkrTab}.tsx',
+      'apps/mobile/src/components/PowerupsCatalog/**/*.{ts,tsx}',
+      'apps/extension/src/pages/home/powerupBodies.tsx',
+    ],
     ignores: ['**/*.test.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
@@ -233,6 +260,12 @@ export default [
                 '**/core/signing/**',
                 '**/core/broadcast',
                 '**/core/broadcast/**',
+                // Core's received-transaction door and the flow that uses it
+                // sign bytes no declaration describes (spec 043).
+                '**/core/confirmation/received',
+                '**/hooks/useSolanaPayTransactionRequest',
+                '**/SolanaPayRequestSheet',
+                '**/SolanaPayRequestSheet/**',
                 '**/crypto',
                 '**/crypto/**',
                 '**/storage',
@@ -243,6 +276,29 @@ export default [
               ],
               message:
                 'A Powerup never signs, stores or broadcasts: propose through requestSignature() from core/confirmation (spec 027 §2).',
+            },
+            {
+              // The same doors by name through a barrel (hooks, core, the
+              // package root, a relative parent), should one ever re-export
+              // them (spec 043).
+              regex:
+                '(^|/)(hooks|core|confirmation)(/index)?$|^@salmon/shared$|^\\.\\.(/\\.\\.)*(/index)?$',
+              importNames: [
+                'useRequestReceivedSignature',
+                'ReceivedSignatureContext',
+                'useSolanaPayTransactionRequest',
+                'useSolanaPayRequest',
+              ],
+              message:
+                'A Powerup never signs bytes it did not declare: propose through requestSignature() from core/confirmation (spec 043).',
+            },
+            {
+              // The merchant flow's twin mounts that door: not through a
+              // components barrel (the app's, the kit's, a parent) either.
+              regex: '(^|/)components(/index)?$|^@salmon/ui$|^\\.\\.?(/\\.\\.)*(/index)?$',
+              importNames: ['SolanaPayRequest', 'SolanaPayRequestSheet'],
+              message:
+                'A Powerup never signs bytes it did not declare: propose through requestSignature() from core/confirmation (spec 043).',
             },
           ],
           paths: [

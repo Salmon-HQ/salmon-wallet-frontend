@@ -48,6 +48,12 @@ export interface DAppTransactionDisplayInput {
   feeSol: string | null;
   transactionCount: number;
   parsingError: string | null;
+  /** Who asks (a Solana Pay merchant): drawn as the identity, replacing the site row. */
+  requester?: ProposalDisplay['requester'];
+  /** The requester's own words, shown in full as plain text. */
+  message?: string;
+  /** The fee payer, when known: someone other than the signer turns the fee into "paid by". */
+  feePayer?: string;
 }
 
 function amountRow(t: Translate, amount: bigint, decimals: number, asset: string): ConfirmationRow {
@@ -117,7 +123,7 @@ export function dappTransactionDisplay(
 ): ProposalDisplay {
   const { effects } = input;
   const rows: ConfirmationRow[] = [
-    { label: t('dapp.requesting_site'), value: input.origin },
+    ...(input.requester ? [] : [{ label: t('dapp.requesting_site'), value: input.origin }]),
     { label: t('dapp.wallet_address'), value: formatSigningAccount(input.signingAccount) },
   ];
   let warning: ProposalDisplay['warning'];
@@ -159,9 +165,21 @@ export function dappTransactionDisplay(
     };
   }
 
-  if (input.feeSol) rows.push({ label: t('dapp.transaction_fee'), value: `${input.feeSol} SOL` });
+  if (input.message) rows.push({ label: t('solanaPay.message'), value: input.message });
+
+  const sponsor =
+    input.feePayer && input.feePayer !== input.signingAccount.address ? input.feePayer : null;
+  if (sponsor) {
+    rows.push({
+      label: t('dapp.transaction_fee'),
+      value: t('solanaPay.feePaidBy', { address: getShortAddress(sponsor, 4) ?? sponsor }),
+    });
+  } else if (input.feeSol) {
+    rows.push({ label: t('dapp.transaction_fee'), value: `${input.feeSol} SOL` });
+  }
 
   return {
+    ...(input.requester ? { requester: input.requester } : {}),
     title: t('dapp.transaction_title'),
     rows,
     advancedRows:

@@ -335,4 +335,12 @@ export type {
   ConfirmationDetailsCardPropsBase,
   ConfirmationExchangePropsBase,
   TransactionConfirmationPropsBase,
+  RequesterRowPropsBase,
 } from './transaction-confirmation';
+export { requesterIconSource } from './transaction-confirmation';
+
+// Solana Pay transaction request: the merchant sheet (spec 043)
+export type {
+  SolanaPayRequestPropsBase,
+  SolanaPayRequestSheetPropsBase,
+} from './solana-pay-request-sheet';
