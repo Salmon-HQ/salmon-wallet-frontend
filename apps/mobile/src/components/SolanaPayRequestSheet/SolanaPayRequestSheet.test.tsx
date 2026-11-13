@@ -42,6 +42,9 @@ function mockButton({
 jest.mock('../Button/SecondaryButton', () => ({ SecondaryButton: mockButton }));
 jest.mock('../Button/PrimaryButton', () => ({ PrimaryButton: mockButton }));
 jest.mock('../Spinner', () => ({ Spinner: () => null }));
+jest.mock('../../../hooks/useBottomSheetChrome', () => ({
+  useBottomSheetChrome: () => ({ compactContentBottomPadding: 0 }),
+}));
 jest.mock('../WarningNotice', () => ({
   WarningNotice: ({ title, children }: { title: string; children?: React.ReactNode }) => {
     const RN = require('react-native');

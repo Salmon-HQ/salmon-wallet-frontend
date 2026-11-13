@@ -10,6 +10,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { fontFamilyNative, fontSize, s, spacing, vs, type Semantic } from '@salmon/shared';
 
+import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { BottomSheetContainer } from '../BottomSheetContainer';
 import { PrimaryButton } from '../Button/PrimaryButton';
@@ -30,10 +31,11 @@ export function SolanaPayRequestSheet({
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
   const semantic = useSemantic();
+  const { compactContentBottomPadding } = useBottomSheetChrome();
 
   return (
     <BottomSheetContainer visible={visible} onClose={onClose} testID="solana-pay-sheet">
-      <View style={styles.content}>
+      <View style={[styles.content, { paddingBottom: compactContentBottomPadding }]}>
         <RequesterRow
           name={merchant.label}
           icon={merchant.icon}
@@ -74,7 +76,11 @@ export function SolanaPayRequestSheet({
 
 const stylesFor = (t: Semantic) =>
   StyleSheet.create({
-    content: { gap: vs(spacing.lg) },
+    content: {
+      paddingHorizontal: s(spacing.screenGutter),
+      paddingTop: vs(spacing.md),
+      gap: vs(spacing.lg),
+    },
     status: {
       flexDirection: 'row',
       alignItems: 'center',
