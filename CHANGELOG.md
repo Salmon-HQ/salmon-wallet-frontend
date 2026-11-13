@@ -16,6 +16,7 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 - Salmon refuses to sign a merchant transaction with an invalid signature, a missing signature from another party, or no place for your account, and says why.
 - If the payment expires before you confirm, Salmon asks the merchant for a new one and shows it again if anything changed.
 - Watch-only accounts cannot pay a payment link.
+- Fixed: amounts and fees on payment and dApp reviews used a period as the decimal separator in Spanish.
 
 ## extension 0.19.0 — unreleased
 
@@ -31,6 +32,7 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 - Salmon refuses to sign a merchant transaction with an invalid signature, a missing signature from another party, or no place for your account, and says why.
 - If the payment expires before you confirm, Salmon asks the merchant for a new one and shows it again if anything changed.
 - Watch-only accounts cannot pay a payment link.
+- Fixed: amounts and fees on payment and dApp reviews used a period as the decimal separator in Spanish.
 - The extension can pay only merchants whose site accepts requests from other websites (CORS); mobile has no such limit.
 
 ## extension 0.18.0 — 2026-10-28
