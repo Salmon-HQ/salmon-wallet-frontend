@@ -261,6 +261,8 @@ export { useSecretCopied } from './useSecretCopied';
 export { usePhraseBackupSheet } from './usePhraseBackupSheet';
 export type { PhraseBackupStep, UsePhraseBackupSheetResult } from './usePhraseBackupSheet';
 export type { PasswordConfirmState, UsePasswordConfirmParams } from './usePasswordConfirm';
+export { useNftsGrid } from './useNftsGrid';
+export type { UseNftsGridParams } from './useNftsGrid';
 export { useRecoveryPhraseEntry } from './useRecoveryPhraseEntry';
 export { useSetupPasswordForm } from './useSetupPasswordForm';
 export type { UseSetupPasswordFormParams } from './useSetupPasswordForm';

@@ -21,10 +21,19 @@ jest.mock('@salmon/shared', () => ({
   // happens to read is what used to break this suite every time the tab
   // reached for one more.
   ...jest.requireActual('../test-utils/themeTokens'),
-  canonicalNftToSolanaNftData: (nft: unknown) => nft,
+  // The real grid hook; the three modules it reads are replaced below, where
+  // it imports them from.
+  ...jest.requireActual('../../../packages/shared/src/hooks/useNftsGrid'),
   getShortAddress: () => 'Owne...r111',
+}));
+jest.mock('../../../packages/shared/src/contexts/AccountsContext', () => ({
   useAccountsContext: () => mockUseAccountsContext(),
+}));
+jest.mock('../../../packages/shared/src/hooks/useSolanaNfts', () => ({
   useSolanaNfts: (...args: unknown[]) => mockUseSolanaNfts(...args),
+}));
+jest.mock('../../../packages/shared/src/utils/nft', () => ({
+  canonicalNftToSolanaNftData: (nft: unknown) => nft,
 }));
 
 // A passthrough spy: the real block still renders (the retry below presses

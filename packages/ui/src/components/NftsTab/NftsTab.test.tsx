@@ -33,15 +33,18 @@ const nftsResult = {
   refresh: vi.fn(async () => {}),
 };
 
-vi.mock('@salmon/shared', async () => {
-  const actual = await vi.importActual<Record<string, unknown>>('@salmon/shared');
-  return {
-    ...actual,
-    useAccountsContext: () => [accountsState, {}],
-    useSolanaNfts: () => nftsResult,
-    canonicalNftToSolanaNftData: (nft: { mint: string; name: string }) => nft,
-  };
-});
+// The grid's state is `useNftsGrid` in shared, which reads these three modules
+// directly, so they are replaced where it imports them from.
+vi.mock('../../../../shared/src/contexts/AccountsContext', () => ({
+  useAccountsContext: () => [accountsState, {}],
+}));
+vi.mock('../../../../shared/src/hooks/useSolanaNfts', () => ({
+  useSolanaNfts: () => nftsResult,
+}));
+vi.mock('../../../../shared/src/utils/nft', async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  canonicalNftToSolanaNftData: (nft: { mint: string; name: string }) => nft,
+}));
 
 function stubMatchMedia() {
   vi.stubGlobal(
