@@ -120,7 +120,7 @@ import { fileURLToPath } from 'node:url';
 // `TrustedAppsSelector` twins is `usePendingAction` in shared.
 // 2026-11-18, later: 2495 → 2487. The `TransactionDetail` barrels re-exported
 // three props types nothing read.
-export const CROSS_PLATFORM_CLONE_LINES_MAX = 2354;
+export const CROSS_PLATFORM_CLONE_LINES_MAX = 2263;
 
 /**
  * The ceiling for every clone that is not cross-platform, in lines (same

@@ -9,7 +9,7 @@
  */
 import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { APPEARANCE_OPTIONS, type AppearancePreference, type IconGlyphProps } from '@salmon/shared';
+import { appearanceRows, type AppearanceRow, type IconGlyphProps } from '@salmon/shared';
 
 import { CircleHalfIcon, MoonIcon, SunIcon, iconSize } from '../../icons';
 import { IconBubble } from '../IconBubble';
@@ -17,12 +17,7 @@ import { SettingsPanelContent } from '../SettingsPanelContent';
 import { SettingsSelectorList } from '../SettingsSelectorList';
 import type { AppearanceSelectorProps } from './types';
 
-interface AppearanceOption {
-  preference: AppearancePreference;
-  label: string;
-  hint?: string;
-  icon: React.ComponentType<IconGlyphProps>;
-}
+type AppearanceOption = AppearanceRow<React.ComponentType<IconGlyphProps>>;
 
 /** The platform's glyph for each shared option name. */
 const GLYPHS: Record<'circleHalf' | 'sun' | 'moon', React.ComponentType<IconGlyphProps>> = {
@@ -41,19 +36,7 @@ export function AppearanceSelector({
 }: AppearanceSelectorProps): React.ReactElement {
   const { t } = useTranslation();
 
-  const options: AppearanceOption[] = useMemo(
-    () =>
-      APPEARANCE_OPTIONS.map((option) => ({
-        preference: option.preference,
-        icon: GLYPHS[option.glyph],
-        label: t(option.labelKey, option.fallback),
-        hint:
-          option.preference === 'system'
-            ? t('settings.appearance_system_hint', 'Follows your device')
-            : undefined,
-      })),
-    [t]
-  );
+  const options = useMemo(() => appearanceRows(GLYPHS, t), [t]);
 
   const handleSelect = useCallback(
     (item: AppearanceOption) => onSelectPreference(item.preference),

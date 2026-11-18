@@ -179,6 +179,7 @@ export {
   // Price performance
   isPositivePerformance,
 } from './formatting';
+export { tokenRowDisplay } from './tokenRowDisplay';
 
 // Decimal & unit conversion utilities
 export {
@@ -394,7 +395,8 @@ export { MAX_RECENTS, recipientOptions } from './recipientOptions';
 export type { RecipientOption, RecipientOptions } from './recipientOptions';
 export { RESAMPLE_POINTS, buildLinePath, getDataBounds, resampleYs } from './priceChartPath';
 export type { ChartBounds } from './priceChartPath';
-export { APPEARANCE_OPTIONS } from './appearanceOptions';
+export { APPEARANCE_OPTIONS, appearanceRows } from './appearanceOptions';
+export type { AppearanceRow } from './appearanceOptions';
 export type { AppearanceOption } from './appearanceOptions';
 export type { ActivityFilter, ActivityGroup, ActivityRow } from './activityRows';
 export type {
@@ -412,6 +414,7 @@ export type {
 } from './nft';
 export {
   ACCOUNT_ADD_METHODS,
+  accountAddMethods,
   ACCOUNT_ADD_STEP_TITLE_KEYS,
   ACCOUNT_ADD_STEP_SUBTITLE_KEYS,
 } from './accountAddPanelCopy';

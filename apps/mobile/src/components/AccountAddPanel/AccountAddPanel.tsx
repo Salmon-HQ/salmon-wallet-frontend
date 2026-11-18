@@ -32,7 +32,7 @@ import {
   useAccountAddFlow,
   getShortAddress,
   NETWORK_DISPLAY,
-  ACCOUNT_ADD_METHODS,
+  accountAddMethods,
   ACCOUNT_ADD_STEP_TITLE_KEYS,
   ACCOUNT_ADD_STEP_SUBTITLE_KEYS,
   type AccountAddMethodId,
@@ -156,22 +156,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     'watch-only': EyeIcon,
     'seed-vault': VaultIcon,
   };
-  const methodHandlers: Record<AccountAddMethodId, () => void> = {
-    derive: flow.selectDerive,
-    import: flow.selectImport,
-    'private-key': flow.selectImportPrivateKey,
-    'watch-only': flow.selectImportWatchOnly,
-    'seed-vault': () => void flow.selectSeedVault(),
-  };
-  const methods = ACCOUNT_ADD_METHODS.filter(
-    (method) =>
-      (method.id !== 'derive' || flow.canDerive) &&
-      (method.id !== 'seed-vault' || flow.canUseSeedVault)
-  ).map((method) => ({
-    ...method,
-    icon: methodIcons[method.id],
-    onPress: methodHandlers[method.id],
-  }));
+  const methods = accountAddMethods(flow, methodIcons);
 
   const renderSelectMethod = () =>
     methods.map((method) => (

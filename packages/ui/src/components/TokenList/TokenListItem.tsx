@@ -18,12 +18,8 @@ import {
   fontFamily,
   fontSize,
   fontWeight,
-  formatLargeNumber,
-  formatTokenAmount,
-  getLabelValue,
-  hiddenValue,
-  showPercentage,
   spacing,
+  tokenRowDisplay,
   useCurrencyContext,
   type Semantic,
 } from '@salmon/shared';
@@ -51,42 +47,21 @@ export function TokenListItem({
   const { t } = useTranslation();
   const semantic = useSemantic();
   const [, { formatValue }] = useCurrencyContext();
-  const { name, symbol, logo, price, uiAmount, usdBalance, last24HoursChange } = token;
+  const { name, symbol, logo } = token;
 
   const handlePress = useCallback(() => onPress?.(token), [onPress, token]);
 
-  const percentageChange = last24HoursChange?.perc ?? 0;
-  const changeColor = semantic.change[getLabelValue(percentageChange)];
-
-  const displayPrice = hiddenBalance ? hiddenValue : price != null ? formatValue(price) : null;
-  const displayPercentage = last24HoursChange ? showPercentage(percentageChange) : null;
-  const displayUsdValue = hiddenBalance
-    ? hiddenValue
-    : usdBalance != null
-      ? formatValue(usdBalance)
-      : null;
-
-  // A holding of 28,896.26376 BONK printed in full pushes the ticker off the
-  // row. `formatLargeNumber` is the repo's compact renderer: K/M/B above a
-  // thousand, full precision below it, so a dust balance still reads digit for
-  // digit.
-  const numericAmount = typeof uiAmount === 'string' ? parseFloat(uiAmount) : uiAmount;
-  const compactAmount = Number.isFinite(numericAmount)
-    ? formatLargeNumber(numericAmount as number)
-    : formatTokenAmount(uiAmount);
-  const displayTokenAmount = hiddenBalance ? hiddenValue : `${compactAmount} ${symbol || ''}`;
-
-  // What the screen reader is told, masked exactly like the pixels are.
-  const spokenAmount = hiddenBalance ? hiddenValue : uiAmount;
-  const spokenPrice = hiddenBalance ? hiddenValue : price;
-
-  const hasTail = !!displayPrice || !!displayPercentage;
-  const tickerSegment = symbol ? (hasTail ? `${symbol} · ` : symbol) : null;
-  const changeSegment = displayPercentage
-    ? displayPrice
-      ? ` · ${displayPercentage}`
-      : displayPercentage
-    : null;
+  const {
+    changeTone,
+    displayPrice,
+    displayUsdValue,
+    displayTokenAmount,
+    spokenAmount,
+    spokenPrice,
+    tickerSegment,
+    changeSegment,
+  } = tokenRowDisplay(token, hiddenBalance, formatValue);
+  const changeColor = semantic.change[changeTone];
 
   // One text run, ellipsised at its end — as mobile's single-line Text. Three
   // flex segments with the ticker as the shrinkable one rendered "S$104.48"
