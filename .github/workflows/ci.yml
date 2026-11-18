@@ -67,37 +67,6 @@ jobs:
           node --test scripts/check-hidden-unicode.test.mjs
           pnpm check:hidden-unicode
 
-      # test:coverage, not test: every package carries a coverage floor in its
-      # vitest/jest config (a ratchet — set just under the measured value, only
-      # ever raised), so a PR that drops below fails here.
-      - name: Typecheck, lint (zero warnings), test with coverage floor
-        run: pnpm turbo run typecheck lint test:coverage
-
-      # Typecheck does not exercise the bundler: a deleted barrel or a bad
-      # entrypoint import only surfaces in `wxt build`. Cheap, and it is what
-      # the release workflow runs.
-      - name: Extension builds (chrome-mv3)
-        run: pnpm --filter @salmon/extension build
-
-      # A new permission disables the extension for every user until they
-      # accept it; the baseline turns that into a reviewed line in the diff.
-      - name: Manifest permissions match the baseline
-        run: pnpm check:manifest
-
-      # The off switch must keep working whatever .env.production says: with
-      # VITE_POWERUPS=off every Powerups entry is aliased to its empty twin, so
-      # no Powerup code or copy may reach the zip (spec 027 §3). It is the build
-      # we ship if a store rejects a Powerup.
-      - name: Powerups compiled out of the Powerups-off extension
-        run: |
-          VITE_POWERUPS=off pnpm --filter @salmon/extension build
-          pnpm check:powerups-bundle apps/extension/dist/chrome-mv3
-
-      # Same reason for mobile: Metro resolves imports the type checker never
-      # sees. Exports the iOS bundle to a scratch dir and keeps nothing.
-      - name: Mobile bundles (Metro)
-        run: pnpm --filter @salmon/mobile export:check
-
       # The OTA guard (apps/mobile/AGENTS.md): when the native surface has
       # moved since the last built binary, expo.version must have moved too,
       # or an update would reach binaries that cannot run it.
@@ -137,6 +106,59 @@ jobs:
         run: |
           node --test scripts/check-e2e-selectors.test.mjs
           node scripts/check-e2e-selectors.mjs
+
+      # Every step above reads the tree and takes seconds; they run first so a
+      # broken rule is reported before the minutes of tests and builds below.
+
+      # test:coverage, not test: every package carries a coverage floor in its
+      # vitest/jest config (a ratchet — set just under the measured value, only
+      # ever raised), so a PR that drops below fails here.
+      - name: Typecheck, lint (zero warnings), test with coverage floor
+        run: pnpm turbo run typecheck lint test:coverage
+
+      # Typecheck does not exercise the bundler: a deleted barrel or a bad
+      # entrypoint import only surfaces in `wxt build`. Cheap, and it is what
+      # the release workflow runs.
+      - name: Extension builds (chrome-mv3)
+        run: pnpm --filter @salmon/extension build
+
+      # A new permission disables the extension for every user until they
+      # accept it; the baseline turns that into a reviewed line in the diff.
+      - name: Manifest permissions match the baseline
+        run: pnpm check:manifest
+
+      # The off switch must keep working whatever .env.production says: with
+      # VITE_POWERUPS=off every Powerups entry is aliased to its empty twin, so
+      # no Powerup code or copy may reach the zip (spec 027 §3). It is the build
+      # we ship if a store rejects a Powerup.
+      - name: Powerups compiled out of the Powerups-off extension
+        run: |
+          VITE_POWERUPS=off pnpm --filter @salmon/extension build
+          pnpm check:powerups-bundle apps/extension/dist/chrome-mv3
+
+      # Same reason for mobile: Metro resolves imports the type checker never
+      # sees. Exports the iOS bundle to a scratch dir and keeps nothing.
+      - name: Mobile bundles (Metro)
+        run: pnpm --filter @salmon/mobile export:check
+
+  audit:
+    name: dependency audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      # Reads the lockfile and asks the registry for known advisories; nothing
+      # is installed. Fails on a high or critical one. The fix is a minimum
+      # version under `pnpm.overrides`, within the same major.
+      - name: No high or critical advisory in the lockfile
+        run: pnpm check:audit
 
   zizmor:
     name: workflow security lint

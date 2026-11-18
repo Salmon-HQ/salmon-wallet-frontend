@@ -22,7 +22,7 @@ updates:
         update-types: [minor, patch]
     # Majors need a human decision in a wallet; they arrive as separate PRs.
     ignore:
-      # Expo SDK owns these versions (currently SDK 57; `npx expo install --check`
+      # Expo SDK owns these versions (`npx expo install --check`
       # in apps/mobile lists the expected ones). Bumping them out of
       # band breaks the native build silently; they move only in a deliberate
       # SDK migration.
@@ -39,8 +39,7 @@ updates:
       - dependency-name: react-dom
       - dependency-name: expo*
         update-types: [version-update:semver-major]
-      # jest is pinned by jest-expo (SDK 55 ships jest 29 internals); it moves
-      # with the SDK, not on its own.
+      # jest is pinned by jest-expo; it moves with the SDK, not on its own.
       - dependency-name: jest
         update-types: [version-update:semver-major]
       - dependency-name: '@types/jest'

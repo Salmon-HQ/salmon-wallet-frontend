@@ -156,6 +156,9 @@ Package names: `@salmon/shared`, `@salmon/ui`, `@salmon/mobile`,
 - Import cycles: `pnpm check:cycles` (madge, strict in CI). Two modules
   that need each other at run time share a third one they both import;
   `import type` does not count.
+- Known vulnerabilities: `pnpm check:audit` (strict in CI). No high or
+  critical advisory in the lockfile. The fix is a minimum version under
+  `pnpm.overrides`, within the same major.
 - One Solana kit: `pnpm check:single-kit` (strict in CI) after adding or
   upgrading a dependency. The lockfile holds one version of `@solana/kit`
   and of each `@solana-program/*` client, because a second kit adds about

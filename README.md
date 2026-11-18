@@ -221,6 +221,7 @@ pnpm check:i18n                         # EN/ES keys in sync, no orphans
 pnpm check:parity                       # the extension is the mobile app on the DOM (see docs/ARCHITECTURE.md)
 pnpm check:dead-code                    # no unused export or file, every import declared where it is used (knip)
 pnpm check:cycles                       # no import cycle at run time (madge)
+pnpm check:audit                        # no high or critical advisory in the lockfile
 pnpm check:single-kit                   # one version of @solana/kit and of each @solana-program client in the lockfile
 pnpm check:manifest                     # extension permissions match the reviewed baseline (after an extension build)
 pnpm check:no-secrets                   # nothing that looks like a seed phrase or a keypair in tracked files
