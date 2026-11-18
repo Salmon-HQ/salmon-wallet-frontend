@@ -6,12 +6,12 @@
  * a heading and a line of copy, not a warning: nothing here failed.
  */
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import { Image, View, StyleSheet } from 'react-native';
 import { GlobeIcon, TrashIcon, iconSize } from '../../icons';
 import { useTranslation } from 'react-i18next';
 
-import { type TrustedAppItem, type Semantic, spacing } from '@salmon/shared';
+import { type TrustedAppItem, type Semantic, spacing, usePendingAction } from '@salmon/shared';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { IconBubble } from '../IconBubble';
 import { ListRow } from '../ListRow';
@@ -26,19 +26,8 @@ export function TrustedAppsSelector({ apps, onRevokeApp, onBack }: TrustedAppsSe
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
   const { text, status } = useSemantic();
-  const [revoking, setRevoking] = useState<string | null>(null);
-
-  const handleRevoke = useCallback(
-    async (domain: string) => {
-      setRevoking(domain);
-      try {
-        await onRevokeApp(domain);
-      } finally {
-        setRevoking(null);
-      }
-    },
-    [onRevokeApp]
-  );
+  const { pending, run: handleRevoke } = usePendingAction(onRevokeApp);
+  const revoking = pending?.[0] ?? null;
 
   const renderAppRow = useCallback(
     (app: TrustedAppItem) => {

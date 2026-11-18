@@ -116,7 +116,9 @@ import { fileURLToPath } from 'node:url';
 // twins: the merchant's words as the notice body and a Retry button. Pure
 // JSX: which failures may retry, the reason's key and the 80-character cut
 // are decided in `useSolanaPayTransactionRequest` / `transaction-request.ts`.
-export const CROSS_PLATFORM_CLONE_LINES_MAX = 2513;
+// 2026-11-18: 2513 → 2495. The revoke-in-flight state of both
+// `TrustedAppsSelector` twins is `usePendingAction` in shared.
+export const CROSS_PLATFORM_CLONE_LINES_MAX = 2495;
 
 /**
  * The ceiling for every clone that is not cross-platform, in lines (same

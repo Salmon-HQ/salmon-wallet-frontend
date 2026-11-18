@@ -6,9 +6,9 @@
  * name and domain stacked, a revoke trash trailing. The empty state is a
  * heading and a line of copy, not a warning: nothing here failed.
  */
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { spacing, type TrustedAppItem } from '@salmon/shared';
+import { spacing, usePendingAction, type TrustedAppItem } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
 import { GlobeIcon, TrashIcon, iconSize } from '../../icons';
@@ -29,19 +29,8 @@ export function TrustedAppsSelector({
 }: TrustedAppsSelectorProps): React.ReactElement {
   const { t } = useTranslation();
   const { text, status } = useSemantic();
-  const [revoking, setRevoking] = useState<string | null>(null);
-
-  const handleRevoke = useCallback(
-    async (domain: string) => {
-      setRevoking(domain);
-      try {
-        await onRevokeApp(domain);
-      } finally {
-        setRevoking(null);
-      }
-    },
-    [onRevokeApp]
-  );
+  const { pending, run: handleRevoke } = usePendingAction(onRevokeApp);
+  const revoking = pending?.[0] ?? null;
 
   const renderAppRow = useCallback(
     (app: TrustedAppItem) => (

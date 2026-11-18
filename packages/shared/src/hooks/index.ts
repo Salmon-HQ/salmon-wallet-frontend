@@ -64,6 +64,8 @@ export { useCopyFeedback } from './useCopyFeedback';
 export type { CopyFeedbackKey, UseCopyFeedbackResult } from './useCopyFeedback';
 
 export { useExplorerLink } from './useExplorerLink';
+export { usePendingAction } from './usePendingAction';
+export type { UsePendingActionResult } from './usePendingAction';
 export type {
   ExplorerLinkRow,
   ExplorerLinkTranslate,
