@@ -14,6 +14,8 @@ import {
   createERC721Token,
   createERC1155Token,
 } from '../../utils/tokens';
+import { AccountWithoutSolanaFeatures } from '../AccountWithoutSolanaFeatures';
+import { summarizeBalance } from '../portfolioTotals';
 import type { FeeEstimateResult } from '../../types/send';
 import type { ValidationResult } from '../../types/validation';
 import type { EthereumAccountBalance, EthereumWalletBalance } from '../../types/balance';
@@ -76,7 +78,14 @@ export type EthereumBalance = EthereumWalletBalance;
  * Note: Balance and transaction methods are designed to work with external API services
  * or will be implemented in separate service modules.
  */
-export class EthereumAccount {
+function toTransferToken(token: string, opts?: EthereumAccountTransferOptions) {
+  if (isNativeEth(token) || opts?.tokenType === 'native') return createNativeToken();
+  if (opts?.tokenType === 'erc721') return createERC721Token(token, opts?.symbol);
+  if (opts?.tokenType === 'erc1155') return createERC1155Token(token, opts?.symbol);
+  return createERC20Token(token, opts?.decimals ?? 18, opts?.symbol);
+}
+
+export class EthereumAccount extends AccountWithoutSolanaFeatures {
   /** Network configuration */
   readonly network: EthereumNetwork;
 
@@ -109,6 +118,7 @@ export class EthereumAccount {
    * @param options - Account configuration options
    */
   constructor(options: EthereumAccountOptions) {
+    super();
     this.network = options.network;
     this.index = options.index;
     this.path = options.path;
@@ -208,45 +218,11 @@ export class EthereumAccount {
   }
 
   /**
-   * Reduces priced items into the portfolio 24h delta. Items without
-   * `priceChange24h` contribute their USD balance unchanged.
-   */
-  private calculateLast24HoursChange(balances: EthereumBalanceItem[], usdTotal: number): number {
-    if (!usdTotal || usdTotal === 0) return 0;
-
-    let previousTotal = 0;
-    balances.forEach((balance) => {
-      if (
-        balance.usdBalance &&
-        balance.priceChange24h !== undefined &&
-        balance.priceChange24h !== null
-      ) {
-        const priceChangeFactor = 1 + balance.priceChange24h / 100;
-        const previousBalance = balance.usdBalance / priceChangeFactor;
-        previousTotal += previousBalance;
-      } else if (balance.usdBalance) {
-        previousTotal += balance.usdBalance;
-      }
-    });
-
-    return previousTotal === 0 ? 0 : usdTotal - previousTotal;
-  }
-
-  /**
    * Returns the complete wallet balance. Pricing comes from the
    * salmon-api server-side; the client only sums totals.
    */
   async getBalance(): Promise<EthereumWalletBalance> {
-    const items = await this.fetchEthereumBalance();
-
-    const hasAnyPrice = items.some((item) => item.usdBalance !== undefined);
-    if (!hasAnyPrice) {
-      return { usdTotal: 0, last24HoursChange: 0, items };
-    }
-
-    const usdTotal = items.reduce((currentValue, next) => (next.usdBalance || 0) + currentValue, 0);
-    const last24HoursChange = this.calculateLast24HoursChange(items, usdTotal);
-    return { usdTotal, last24HoursChange, items };
+    return summarizeBalance(await this.fetchEthereumBalance());
   }
 
   /**
@@ -388,19 +364,7 @@ export class EthereumAccount {
     opts?: EthereumAccountTransferOptions
   ): Promise<{ txId: string }> {
     const wallet = await this.getConnection();
-
-    let transferToken;
-    if (isNativeEth(token) || opts?.tokenType === 'native') {
-      transferToken = createNativeToken();
-    } else if (opts?.tokenType === 'erc721') {
-      transferToken = createERC721Token(token, opts?.symbol);
-    } else if (opts?.tokenType === 'erc1155') {
-      transferToken = createERC1155Token(token, opts?.symbol);
-    } else {
-      transferToken = createERC20Token(token, opts?.decimals ?? 18, opts?.symbol);
-    }
-
-    const result = await ethSendTransaction(wallet, to, transferToken, amount, opts);
+    const result = await ethSendTransaction(wallet, to, toTransferToken(token, opts), amount, opts);
     return { txId: result.txHash };
   }
 
@@ -420,99 +384,15 @@ export class EthereumAccount {
     opts?: EthereumAccountTransferOptions
   ): Promise<FeeEstimateResult | null> {
     const provider = await this.getProvider();
-
-    let transferToken;
-    if (isNativeEth(token) || opts?.tokenType === 'native') {
-      transferToken = createNativeToken();
-    } else if (opts?.tokenType === 'erc721') {
-      transferToken = createERC721Token(token, opts?.symbol);
-    } else if (opts?.tokenType === 'erc1155') {
-      transferToken = createERC1155Token(token, opts?.symbol);
-    } else {
-      transferToken = createERC20Token(token, opts?.decimals ?? 18, opts?.symbol);
-    }
-
-    const estimate = await ethEstimateTransferFee(provider, to, transferToken, amount, opts);
+    const estimate = await ethEstimateTransferFee(
+      provider,
+      to,
+      toTransferToken(token, opts),
+      amount,
+      opts
+    );
     const feeInEth = formatAmount(estimate.estimatedFee, 18);
     return { fee: feeInEth };
-  }
-
-  // ============================================================================
-  // Unsupported Methods (throw 'method_not_supported')
-  // ============================================================================
-
-  /**
-   * Gets domain for this account (ENS).
-   * Will be implemented in a separate service.
-   *
-   * @throws 'method_not_supported'
-   */
-  async getDomain(): Promise<never> {
-    throw 'method_not_supported';
-  }
-
-  /**
-   * Gets domain from an address (ENS reverse lookup).
-   * Will be implemented in a separate service.
-   *
-   * @param _address - Address (unused)
-   * @throws 'method_not_supported'
-   */
-  async getDomainFromPublicKey(_address: string): Promise<never> {
-    throw 'method_not_supported';
-  }
-
-  /**
-   * Gets address from a domain (ENS lookup).
-   * Will be implemented in a separate service.
-   *
-   * @param _domain - Domain name (unused)
-   * @throws 'method_not_supported'
-   */
-  async getPublicKeyFromDomain(_domain: string): Promise<never> {
-    throw 'method_not_supported';
-  }
-
-  /**
-   * Gets all NFTs for this account.
-   * Will be implemented in a separate service.
-   *
-   * @returns null
-   */
-  async getAllNfts(): Promise<null> {
-    return null;
-  }
-
-  /**
-   * Gets available tokens.
-   * Will be implemented in a separate service.
-   *
-   * @throws 'method_not_supported'
-   */
-  async getAvailableTokens(): Promise<never> {
-    throw 'method_not_supported';
-  }
-
-  /**
-   * Gets featured tokens.
-   * Will be implemented in a separate service.
-   *
-   * @throws 'method_not_supported'
-   */
-  async getFeaturedTokens(): Promise<never> {
-    throw 'method_not_supported';
-  }
-
-  /**
-   * Calculates transfer fee.
-   * Returns null for Ethereum (gas is calculated at transaction creation time).
-   *
-   * @param _tokenAddress - Token address (unused)
-   * @param _amount - Transfer amount (unused)
-   * @returns null
-   */
-  async calculateTransferFee(_tokenAddress?: string, _amount?: number): Promise<null> {
-    return null;
   }
 
   // ============================================================================
