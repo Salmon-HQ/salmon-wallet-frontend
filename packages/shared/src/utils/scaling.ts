@@ -10,8 +10,9 @@
  * Chrome extension side panels).
  */
 
-export const DESIGN_WIDTH = 440;
-export const DESIGN_HEIGHT = 956;
+import { createScalers, DESIGN_HEIGHT, DESIGN_WIDTH } from './scalingCore';
+
+export { DESIGN_HEIGHT, DESIGN_WIDTH };
 
 // Cap dimensions at design size so scaling never exceeds 1.0x on web.
 // Without this cap, a 1440px browser window produces a 3.27x scale factor,
@@ -37,15 +38,4 @@ const getDimensions = (): { width: number; height: number } => {
   return { width: DESIGN_WIDTH, height: DESIGN_HEIGHT };
 };
 
-const scale = (size: number): number => (getDimensions().width / DESIGN_WIDTH) * size;
-export const s = scale;
-
-const verticalScale = (size: number): number => (getDimensions().height / DESIGN_HEIGHT) * size;
-export const vs = verticalScale;
-
-const moderateScale = (size: number, factor = 0.5): number => size + (scale(size) - size) * factor;
-export const ms = moderateScale;
-
-const moderateVerticalScale = (size: number, factor = 0.5): number =>
-  size + (verticalScale(size) - size) * factor;
-export const mvs = moderateVerticalScale;
+export const { s, vs, ms, mvs } = createScalers(getDimensions);

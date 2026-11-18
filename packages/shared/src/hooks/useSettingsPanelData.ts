@@ -14,12 +14,12 @@
  */
 import { useMemo } from 'react';
 
+import { useAddressBookNetworkAdapter } from './useAddressBookNetworkAdapter';
 import { useAddressbook } from './useAddressbook';
 import { useAvailableNetworks } from './useAvailableNetworks';
 import { useUserConfig } from './useUserConfig';
 import { toAddressBookItems } from '../settings/items';
-import type { AddressBookNetwork, NetworkAdapter } from '../types/address';
-import type { BlockchainType, NetworkId } from '../types/blockchain';
+import type { NetworkId } from '../types/blockchain';
 import type { AddressBookItem } from '../types/settings';
 import type { Account } from '../types/account';
 
@@ -73,26 +73,7 @@ export function useSettingsPanelData({
     activeNetworkId: networkId as NetworkId | null | undefined,
   });
 
-  const networkAdapter: NetworkAdapter = useMemo(
-    () => ({
-      getNetwork: async (id: string): Promise<AddressBookNetwork | undefined> => {
-        const found = allNetworks.find((n) => n.id === id);
-        if (!found) return undefined;
-        return {
-          id: found.id,
-          name: found.name,
-          blockchain: found.id.split('-')[0] as BlockchainType,
-        };
-      },
-      getNetworks: async (): Promise<AddressBookNetwork[]> =>
-        allNetworks.map((n) => ({
-          id: n.id,
-          name: n.name,
-          blockchain: n.id.split('-')[0] as BlockchainType,
-        })),
-    }),
-    [allNetworks]
-  );
+  const networkAdapter = useAddressBookNetworkAdapter(allNetworks);
 
   const [
     { contacts, isLoading: addressBookLoading, error: addressBookError },

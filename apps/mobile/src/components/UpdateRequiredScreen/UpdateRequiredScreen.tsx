@@ -12,18 +12,10 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import {
-  componentSizes,
-  fontFamilyNative,
-  fontSize,
-  ms,
-  s,
-  spacing,
-  vs,
-  type Semantic,
-} from '@salmon/shared';
+import { type Semantic } from '@salmon/shared';
 import { PrimaryButton } from '../Button';
 import { useThemedStyles } from '../../theme/useThemedStyles';
+import { blockingScreenStyles } from '../../theme/blockingScreenStyles';
 import type { UpdateRequiredScreenProps } from './types';
 
 export type { UpdateRequiredScreenProps };
@@ -46,7 +38,7 @@ export function UpdateRequiredScreen({
       {/* The screen's committing action is the shared button, as on the
           wallet-init gate. Height is the only override. */}
       <PrimaryButton
-        style={styles.storeButton}
+        style={styles.action}
         onPress={onOpenStore}
         testID="update-required-open-store"
       >
@@ -56,32 +48,4 @@ export function UpdateRequiredScreen({
   );
 }
 
-const stylesFor = (t: Semantic) =>
-  StyleSheet.create({
-    container: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: s(spacing['2xl']),
-      backgroundColor: t.depth.abyss,
-    },
-    title: {
-      fontFamily: fontFamilyNative.semiBold,
-      fontSize: ms(fontSize.title),
-      color: t.text.primary,
-      textAlign: 'center',
-      marginBottom: vs(spacing.md),
-    },
-    body: {
-      fontFamily: fontFamilyNative.regular,
-      fontSize: ms(fontSize.body),
-      color: t.text.secondary,
-      textAlign: 'center',
-      marginBottom: vs(spacing['2xl']),
-    },
-    // Size only. Radius, fill, border, bezel and material belong to the button.
-    storeButton: {
-      minHeight: vs(componentSizes.buttonHeightMedium),
-      height: vs(componentSizes.buttonHeightMedium),
-    },
-  });
+const stylesFor = (t: Semantic) => StyleSheet.create(blockingScreenStyles(t));

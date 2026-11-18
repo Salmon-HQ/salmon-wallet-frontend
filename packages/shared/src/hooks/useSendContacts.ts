@@ -13,9 +13,8 @@
 import { useMemo } from 'react';
 import { useAccountsContext } from '../contexts/AccountsContext';
 import { useAvailableNetworks } from './useAvailableNetworks';
+import { useAddressBookNetworkAdapter } from './useAddressBookNetworkAdapter';
 import { useAddressbook } from './useAddressbook';
-import type { NetworkAdapter, AddressBookNetwork } from '../types/address';
-import type { BlockchainType } from '../types/blockchain';
 import type { UseSendContactsResult } from '../types/ui/send-sheet';
 
 // ============================================================================
@@ -42,26 +41,7 @@ export function useSendContacts(senderAddress: string): UseSendContactsResult {
     },
   });
 
-  const networkAdapter: NetworkAdapter = useMemo(
-    () => ({
-      getNetwork: async (id: string): Promise<AddressBookNetwork | undefined> => {
-        const found = allNetworks.find((n) => n.id === id);
-        if (!found) return undefined;
-        return {
-          id: found.id,
-          name: found.name,
-          blockchain: found.id.split('-')[0] as BlockchainType,
-        };
-      },
-      getNetworks: async (): Promise<AddressBookNetwork[]> =>
-        allNetworks.map((n) => ({
-          id: n.id,
-          name: n.name,
-          blockchain: n.id.split('-')[0] as BlockchainType,
-        })),
-    }),
-    [allNetworks]
-  );
+  const networkAdapter = useAddressBookNetworkAdapter(allNetworks);
 
   const [{ contacts: allContacts, isLoading }] = useAddressbook({ networkAdapter });
 

@@ -128,7 +128,7 @@ export const CROSS_PLATFORM_CLONE_LINES_MAX = 2487;
  * design asks for these to exist twice, so the number only goes down —
  * extract the helper, lower the constant in the same commit.
  */
-export const SAME_SIDE_CLONE_LINES_MAX = 1162;
+export const SAME_SIDE_CLONE_LINES_MAX = 1056;
 
 /** Twins whose folders are not named the same. mobile folder → DOM folder(s). */
 export const MAP = {
