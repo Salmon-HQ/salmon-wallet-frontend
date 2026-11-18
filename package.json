@@ -124,7 +124,8 @@
       "@solana-name-service/sns-sdk-kit>@solana-program/token": "0.16.1"
     },
     "patchedDependencies": {
-      "expo-camera@58.0.14": "patches/expo-camera@58.0.14.patch"
+      "expo-camera@58.0.14": "patches/expo-camera@58.0.14.patch",
+      "react-native-fast-crypto@3.0.0": "patches/react-native-fast-crypto@3.0.0.patch"
     }
   }
 }

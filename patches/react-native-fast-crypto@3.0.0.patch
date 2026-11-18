@@ -1,0 +1,13 @@
+diff --git a/ios/RNFastCrypto.h b/ios/RNFastCrypto.h
+index 0a8f93d..f855626 100644
+--- a/ios/RNFastCrypto.h
++++ b/ios/RNFastCrypto.h
+@@ -1,5 +1,7 @@
+ 
+-#if __has_include("RCTBridgeModule.h")
++#if __has_include(<React/RCTBridgeModule.h>)
++#import <React/RCTBridgeModule.h>
++#elif __has_include("RCTBridgeModule.h")
+ #import "RCTBridgeModule.h"
+ #else
+ #import <RCTBridgeModule.h>
