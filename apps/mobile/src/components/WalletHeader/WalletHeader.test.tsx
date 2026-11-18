@@ -98,42 +98,46 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 44, bottom: 0, left: 0, right: 0 }),
 }));
 
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
-  borderRadius: { full: 9999, r3: 12, r4: 16 },
-  borderWidth: { actionButton: 0.5, thin: 1 },
-  fontFamilyNative: { bold: 'System', semiBold: 'System', medium: 'System' },
-  fontScaleCap: { chrome: 1.2 },
-  fontSize: { micro: 10, caption: 12, body: 14 },
-  fontWeight: { medium: '500', semibold: '600', bold: '700' },
-  letterSpacing: { normal: 0, label: 0.3 },
-  componentSizes: { walletHeaderRowHeight: 38 },
-  spacing: { headerPadding: 20, screenGutter: 20, screenTop: 0, base: 12, sm: 8, xs: 4 },
-  motionMs: { feedbackHold: 1500, drift: 280, ebb: 180, stagger: 24, swell: 300 },
-  motionEasing: {
-    sink: { native: [0.4, 0, 1, 1] },
-    settle: { native: [0.25, 1, 0.5, 1] },
-  },
-  resolveMotionMs: (ms: number) => ms,
-  ms: (value: number) => value,
-  s: (value: number) => value,
-  vs: (value: number) => value,
-  getShortAddress: (value: string, size = 4) => `${value.slice(0, size)}...${value.slice(-size)}`,
-  getNetworkLabel: (id: string) => (id === 'solana-devnet' ? 'Devnet' : null),
-  normalizeIpfsUrl: jest.requireActual('@salmon/shared/src/utils/url').normalizeIpfsUrl,
-  // The address width follows the provider's flag, not a prop; off here.
-  useDeveloperMode: () => false,
-  // The real palette rather than a four-key stub: the thumb and the avatar
-  // are `IconBubble`s now, and the bubble reads every tone's ground at module
-  // load, so a hand-listed subset breaks on a tone this file never renders.
-  semantic: jest.requireActual('@salmon/shared/src/theme/semantic').semantic,
-  // The task chrome and the Home shell are the real modules (their own suites
-  // cover them); this file needs them present, not faked.
-  ...jest.requireActual('@salmon/shared/src/contexts/TaskChromeContext'),
-  useHomeShell: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').useHomeShell,
-  mapBalanceToToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').mapBalanceToToken,
-  buildBitcoinToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').buildBitcoinToken,
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
+    borderRadius: { full: 9999, r3: 12, r4: 16 },
+    borderWidth: { actionButton: 0.5, thin: 1 },
+    fontFamilyNative: { bold: 'System', semiBold: 'System', medium: 'System' },
+    fontScaleCap: { chrome: 1.2 },
+    fontSize: { micro: 10, caption: 12, body: 14 },
+    fontWeight: { medium: '500', semibold: '600', bold: '700' },
+    letterSpacing: { normal: 0, label: 0.3 },
+    componentSizes: { walletHeaderRowHeight: 38 },
+    spacing: { headerPadding: 20, screenGutter: 20, screenTop: 0, base: 12, sm: 8, xs: 4 },
+    motionMs: { feedbackHold: 1500, drift: 280, ebb: 180, stagger: 24, swell: 300 },
+    motionEasing: {
+      sink: { native: [0.4, 0, 1, 1] },
+      settle: { native: [0.25, 1, 0.5, 1] },
+    },
+    resolveMotionMs: (ms: number) => ms,
+    ms: (value: number) => value,
+    s: (value: number) => value,
+    vs: (value: number) => value,
+    getShortAddress: (value: string, size = 4) => `${value.slice(0, size)}...${value.slice(-size)}`,
+    getNetworkLabel: (id: string) => (id === 'solana-devnet' ? 'Devnet' : null),
+    normalizeIpfsUrl: jest.requireActual('@salmon/shared/src/utils/url').normalizeIpfsUrl,
+    // The address width follows the provider's flag, not a prop; off here.
+    useDeveloperMode: () => false,
+    // The real palette rather than a four-key stub: the thumb and the avatar
+    // are `IconBubble`s now, and the bubble reads every tone's ground at module
+    // load, so a hand-listed subset breaks on a tone this file never renders.
+    semantic: jest.requireActual('@salmon/shared/src/theme/semantic').semantic,
+    // The task chrome and the Home shell are the real modules (their own suites
+    // cover them); this file needs them present, not faked.
+    ...jest.requireActual('@salmon/shared/src/contexts/TaskChromeContext'),
+    useHomeShell: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').useHomeShell,
+    mapBalanceToToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell')
+      .mapBalanceToToken,
+    buildBitcoinToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell')
+      .buildBitcoinToken,
+  })
+);
 
 import { WalletHeader } from './WalletHeader';
 

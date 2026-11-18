@@ -1,21 +1,23 @@
 // The shared barrel reaches the Solana ESM packages, which this Jest config
 // does not transform. Only the tokens ScalesBackground touches matter here.
-jest.mock('@salmon/shared', () => ({
-  seigaihaTile: { width: 40, height: 20 },
-  seigaihaTiledPaths: ['M0 0 L40 0', 'M0 10 L40 10'],
-  semantic: {
-    scales: {
-      deepFieldStroke: 'rgba(255,255,255,0.06)',
-      deepFieldScale: 1,
-      deepFieldFloor: 0.3,
-      fishStroke: 'rgba(0,0,0,0.2)',
-      fishScale: 0.75,
-      refractionScale: 0.5,
-      refractionSweep: ['#ff0000', '#00ff00', '#0000ff'],
-      refractionOpacity: 0.08,
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    seigaihaTile: { width: 40, height: 20 },
+    seigaihaTiledPaths: ['M0 0 L40 0', 'M0 10 L40 10'],
+    semantic: {
+      scales: {
+        deepFieldStroke: 'rgba(255,255,255,0.06)',
+        deepFieldScale: 1,
+        deepFieldFloor: 0.3,
+        fishStroke: 'rgba(0,0,0,0.2)',
+        fishScale: 0.75,
+        refractionScale: 0.5,
+        refractionSweep: ['#ff0000', '#00ff00', '#0000ff'],
+        refractionOpacity: 0.08,
+      },
     },
-  },
-}));
+  })
+);
 
 import { render } from '@testing-library/react-native';
 import React from 'react';

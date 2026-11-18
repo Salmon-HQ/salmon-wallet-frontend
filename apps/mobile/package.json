@@ -7,7 +7,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint app hooks src --ext .ts,.tsx --ignore-pattern '**/*.js' --max-warnings 0",
+    "lint": "eslint app hooks src __tests__ test-utils --ext .ts,.tsx --ignore-pattern '**/*.js' --max-warnings 0",
     "test": "node --no-warnings ../../node_modules/jest/bin/jest.js --passWithNoTests",
     "test:watch": "node --no-warnings ../../node_modules/jest/bin/jest.js --watch",
     "test:coverage": "node --no-warnings ../../node_modules/jest/bin/jest.js --coverage",
@@ -92,7 +92,6 @@
   "devDependencies": {
     "@expo/fingerprint": "0.21.10",
     "@react-native/jest-preset": "0.88.1",
-    "@solana/kit": "^8.4.0",
     "@tanstack/react-query": "5.104.0",
     "@testing-library/react-native": "^13.3.3",
     "@types/jest": "^30.0.0",

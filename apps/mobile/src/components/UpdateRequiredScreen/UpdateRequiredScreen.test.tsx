@@ -8,18 +8,20 @@ jest.mock('react-i18next', () => ({
 // The @salmon/shared barrel drags the ESM-only @solana/kit into Jest; the
 // theme modules the screen draws from are runtime-agnostic, so they are
 // loaded directly (the PowerupsFab test's convention).
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('@salmon/shared/src/theme/spacing'),
-  ...jest.requireActual('@salmon/shared/src/theme/shadows'),
-  ...jest.requireActual('@salmon/shared/src/theme/flesh'),
-  ...jest.requireActual('@salmon/shared/src/theme/typography'),
-  ...jest.requireActual('@salmon/shared/src/theme/durations'),
-  ...jest.requireActual('@salmon/shared/src/theme/brand'),
-  semantic: jest.requireActual('@salmon/shared/src/theme/semantic').semantic,
-  s: (value: number) => value,
-  vs: (value: number) => value,
-  ms: (value: number) => value,
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('@salmon/shared/src/theme/spacing'),
+    ...jest.requireActual('@salmon/shared/src/theme/shadows'),
+    ...jest.requireActual('@salmon/shared/src/theme/flesh'),
+    ...jest.requireActual('@salmon/shared/src/theme/typography'),
+    ...jest.requireActual('@salmon/shared/src/theme/durations'),
+    ...jest.requireActual('@salmon/shared/src/theme/brand'),
+    semantic: jest.requireActual('@salmon/shared/src/theme/semantic').semantic,
+    s: (value: number) => value,
+    vs: (value: number) => value,
+    ms: (value: number) => value,
+  })
+);
 
 jest.mock('../../theme/useThemedStyles', () => ({
   useThemedStyles: (stylesFor: (t: unknown) => unknown) =>

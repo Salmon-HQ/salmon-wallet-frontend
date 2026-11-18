@@ -13,10 +13,11 @@
 import { render, screen } from '@testing-library/react-native';
 import { StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 
-// The real barrel drags in @solana/kit, which jest-expo will not transform;
-// the theme folder imports nothing the transform chokes on, so the real
-// tokens stand in for it.
-jest.mock('@salmon/shared', () => jest.requireActual('../../../test-utils/themeTokens'));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith(
+    jest.requireActual('../../../test-utils/themeTokens')
+  )
+);
 
 jest.mock('../../../hooks/useSecretScreen', () => ({
   useSecretScreen: jest.fn(),

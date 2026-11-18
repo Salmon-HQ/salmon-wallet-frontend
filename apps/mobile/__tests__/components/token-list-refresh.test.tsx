@@ -15,10 +15,12 @@ import React from 'react';
 import { RefreshControl } from 'react-native';
 import { act, render } from '@testing-library/react-native';
 
-jest.mock('@salmon/shared', () => ({
-  semantic: { accent: { ink: '#FF5C45' } },
-  spacing: { sm: 8 },
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../test-utils/sharedWith').sharedWith({
+    semantic: { accent: { ink: '#FF5C45' } },
+    spacing: { sm: 8 },
+  })
+);
 jest.mock('../../src/components/TokenList/TokenListItem', () => 'TokenListItem');
 jest.mock('../../src/components/SkeletonRow', () => ({ SkeletonRow: 'SkeletonRow' }));
 

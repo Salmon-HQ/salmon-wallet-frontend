@@ -5,14 +5,16 @@ import { semantic } from '@salmon/shared';
 
 import { ConfirmSheet } from './ConfirmSheet';
 
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('../../../test-utils/themeTokens'),
-  // Passthrough: the real scaling helpers read Dimensions at import time,
-  // which needs a native bridge this suite does not have.
-  vs: (value: number) => value,
-  // The gate's state is real: the password check is what this sheet is for.
-  ...jest.requireActual('@salmon/shared/src/hooks/usePasswordConfirm'),
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('../../../test-utils/themeTokens'),
+    // Passthrough: the real scaling helpers read Dimensions at import time,
+    // which needs a native bridge this suite does not have.
+    vs: (value: number) => value,
+    // The gate's state is real: the password check is what this sheet is for.
+    ...jest.requireActual('@salmon/shared/src/hooks/usePasswordConfirm'),
+  })
+);
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string, fallback?: string) => fallback ?? key }),

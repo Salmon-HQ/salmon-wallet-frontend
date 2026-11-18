@@ -6,16 +6,18 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react-native';
 
-jest.mock('@salmon/shared', () => ({
-  spacing: { md: 14 },
-  fontFamilyNative: { bold: 'Font-Bold' },
-  fontSize: { bodyLg: 16 },
-  lineHeight: { snug: 1.2 },
-  s: (value: number) => value,
-  semantic: { text: { primary: '#fff' } },
-  formatLargeNumber: (value: number) => String(value),
-  useCurrencyContext: () => [{}, { formatValue: (value: number) => `$${value}` }],
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    spacing: { md: 14 },
+    fontFamilyNative: { bold: 'Font-Bold' },
+    fontSize: { bodyLg: 16 },
+    lineHeight: { snug: 1.2 },
+    s: (value: number) => value,
+    semantic: { text: { primary: '#fff' } },
+    formatLargeNumber: (value: number) => String(value),
+    useCurrencyContext: () => [{}, { formatValue: (value: number) => `$${value}` }],
+  })
+);
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (_key: string, fallback?: string) => fallback ?? _key }),

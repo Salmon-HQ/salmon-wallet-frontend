@@ -15,36 +15,38 @@
 import React from 'react';
 import { render, fireEvent, within } from '@testing-library/react-native';
 
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('@salmon/shared/src/theme'),
-  // The motion constants are real too: the drag geometry is arithmetic on
-  // them, and a mocked-away `DRAG_FOLLOW` would make every travel assertion
-  // below read `NaN` and pass for the wrong reason.
-  ...jest.requireActual('@salmon/shared/src/motion'),
-  s: (value: number) => value,
-  vs: (value: number) => value,
-  ms: (value: number) => value,
-  hiddenValue: '••••',
-  getLabelValue: (value: number) => (value >= 0 ? 'positive' : 'negative'),
-  showPercentage: (value: number) => `${value}%`,
-  // The real rule, not a stub: a test network is anything the mirror map does
-  // not name as a mainnet, and the headline off mainnet is the native unit.
-  isMainnetNetworkId: (id: string) => id.endsWith('-mainnet'),
-  formatLargeNumber: (value: number) => String(value),
-  NETWORK_DISPLAY: {
-    'solana-mainnet': { symbol: 'SOL', name: 'Solana', blockchain: 'solana' },
-    'solana-devnet': { symbol: 'SOL', name: 'Solana Devnet', blockchain: 'solana' },
-    'bitcoin-mainnet': { symbol: 'BTC', name: 'Bitcoin', blockchain: 'bitcoin' },
-    'bitcoin-testnet': { symbol: 'BTC', name: 'Bitcoin Testnet', blockchain: 'bitcoin' },
-  },
-  useCurrencyContext: () => [
-    {},
-    {
-      formatValue: (value: number) => `$${value}`,
-      formatChange: (value: number) => (value >= 0 ? `+$${value}` : `-$${Math.abs(value)}`),
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('@salmon/shared/src/theme'),
+    // The motion constants are real too: the drag geometry is arithmetic on
+    // them, and a mocked-away `DRAG_FOLLOW` would make every travel assertion
+    // below read `NaN` and pass for the wrong reason.
+    ...jest.requireActual('@salmon/shared/src/motion'),
+    s: (value: number) => value,
+    vs: (value: number) => value,
+    ms: (value: number) => value,
+    hiddenValue: '••••',
+    getLabelValue: (value: number) => (value >= 0 ? 'positive' : 'negative'),
+    showPercentage: (value: number) => `${value}%`,
+    // The real rule, not a stub: a test network is anything the mirror map does
+    // not name as a mainnet, and the headline off mainnet is the native unit.
+    isMainnetNetworkId: (id: string) => id.endsWith('-mainnet'),
+    formatLargeNumber: (value: number) => String(value),
+    NETWORK_DISPLAY: {
+      'solana-mainnet': { symbol: 'SOL', name: 'Solana', blockchain: 'solana' },
+      'solana-devnet': { symbol: 'SOL', name: 'Solana Devnet', blockchain: 'solana' },
+      'bitcoin-mainnet': { symbol: 'BTC', name: 'Bitcoin', blockchain: 'bitcoin' },
+      'bitcoin-testnet': { symbol: 'BTC', name: 'Bitcoin Testnet', blockchain: 'bitcoin' },
     },
-  ],
-}));
+    useCurrencyContext: () => [
+      {},
+      {
+        formatValue: (value: number) => `$${value}`,
+        formatChange: (value: number) => (value >= 0 ? `+$${value}` : `-$${Math.abs(value)}`),
+      },
+    ],
+  })
+);
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({

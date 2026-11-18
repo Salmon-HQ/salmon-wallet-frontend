@@ -2,12 +2,14 @@ import React from 'react';
 import { render, screen } from '@testing-library/react-native';
 import type { KitBlock } from '@salmon/shared';
 
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('@salmon/shared/src/theme'),
-  ...jest.requireActual('@salmon/shared/src/kit/createBlockList'),
-  s: (value: number) => value,
-  vs: (value: number) => value,
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('@salmon/shared/src/theme'),
+    ...jest.requireActual('@salmon/shared/src/kit/createBlockList'),
+    s: (value: number) => value,
+    vs: (value: number) => value,
+  })
+);
 const leaf = (name: string) => () => {
   const { Text } = jest.requireActual('react-native');
   return { [name]: ({ testID }: { testID?: string }) => <Text testID={testID}>{name}</Text> };

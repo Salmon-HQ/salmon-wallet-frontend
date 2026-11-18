@@ -22,18 +22,17 @@ jest.mock('react-i18next', () => ({
 // not transform. The one-line stand-in matches the real implementation, which
 // shared's own Vitest suite covers.
 jest.mock('../../../../../packages/shared/src/crypto/mnemonic', () => ({
+  ...jest.requireActual('../../../../../packages/shared/src/crypto/mnemonic'),
   normalizeMnemonic: (phrase: string) => phrase.trim().toLowerCase().replace(/\s+/g, ' '),
 }));
 
-// The real barrel drags in @solana/kit, which jest-expo will not transform;
-// the theme folder and the seed-phrase utils (with mnemonic mocked above)
-// import nothing the transform chokes on, so the real implementations stand
-// in for the barrel.
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('../../../test-utils/themeTokens'),
-  ...jest.requireActual('../../../../../packages/shared/src/utils/seed-phrase'),
-  ...jest.requireActual('../../../../../packages/shared/src/hooks/useSeedPhraseEntryLogic'),
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('../../../test-utils/themeTokens'),
+    ...jest.requireActual('../../../../../packages/shared/src/utils/seed-phrase'),
+    ...jest.requireActual('../../../../../packages/shared/src/hooks/useSeedPhraseEntryLogic'),
+  })
+);
 
 jest.mock('../../../hooks/useSecretScreen', () => ({
   useSecretScreen: jest.fn(),

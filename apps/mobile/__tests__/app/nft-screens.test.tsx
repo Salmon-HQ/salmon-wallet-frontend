@@ -79,35 +79,37 @@ jest.mock('react-i18next', () => {
 /** What the flow judged about the destination, scripted per test. */
 const mockRecipientWarning: { key: string | null; calls: unknown[][] } = { key: null, calls: [] };
 
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('../../test-utils/themeTokens'),
-  useRecipientWarning: (...args: unknown[]) => {
-    mockRecipientWarning.calls.push(args);
-    return mockRecipientWarning.key;
-  },
-  // The components barrel is imported whole, so exports that have nothing to
-  // do with these screens still have to exist.
-  ...jest.requireActual('../../../../packages/shared/src/motion/crest'),
-  getSatRarityColor: () => '#ffffff',
-  getShortAddress: (value: string) => (value ? `${value.slice(0, 4)}…${value.slice(-4)}` : null),
-  isSignableAccount: () => mockIsSignable,
-  isSolanaNft: (nft: { blockchain: string }) => nft.blockchain === 'solana',
-  isFrozenNft: (nft: { blockchain?: string; frozen?: boolean } | null) =>
-    nft?.blockchain === 'solana' && nft.frozen === true,
-  isBitcoinNft: (nft: { blockchain: string }) => nft.blockchain === 'bitcoin',
-  formatRawAmount: () => '0.005',
-  trackEvent: jest.fn(),
-  tabularNums: { native: { fontVariant: ['tabular-nums'] } },
-  ...jest.requireActual('../../../../packages/shared/src/hooks/useValidationDirty'),
-  useAddressValidation: () => ({
-    validationState: 'valid',
-    isValidating: false,
-    isValid: true,
-    resolvedAddress: null,
-    message: null,
-    messageType: null,
-  }),
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('../../test-utils/themeTokens'),
+    useRecipientWarning: (...args: unknown[]) => {
+      mockRecipientWarning.calls.push(args);
+      return mockRecipientWarning.key;
+    },
+    // The components barrel is imported whole, so exports that have nothing to
+    // do with these screens still have to exist.
+    ...jest.requireActual('../../../../packages/shared/src/motion/crest'),
+    getSatRarityColor: () => '#ffffff',
+    getShortAddress: (value: string) => (value ? `${value.slice(0, 4)}…${value.slice(-4)}` : null),
+    isSignableAccount: () => mockIsSignable,
+    isSolanaNft: (nft: { blockchain: string }) => nft.blockchain === 'solana',
+    isFrozenNft: (nft: { blockchain?: string; frozen?: boolean } | null) =>
+      nft?.blockchain === 'solana' && nft.frozen === true,
+    isBitcoinNft: (nft: { blockchain: string }) => nft.blockchain === 'bitcoin',
+    formatRawAmount: () => '0.005',
+    trackEvent: jest.fn(),
+    tabularNums: { native: { fontVariant: ['tabular-nums'] } },
+    ...jest.requireActual('../../../../packages/shared/src/hooks/useValidationDirty'),
+    useAddressValidation: () => ({
+      validationState: 'valid',
+      isValidating: false,
+      isValid: true,
+      resolvedAddress: null,
+      message: null,
+      messageType: null,
+    }),
+  })
+);
 
 jest.mock('../../src/contexts/NftFlowContext', () => ({
   useNftFlow: () => mockFlow,

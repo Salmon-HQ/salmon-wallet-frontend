@@ -3,9 +3,11 @@ import { render, screen, within } from '@testing-library/react-native';
 
 import { MwaRequestDetails } from './MwaRequestDetails';
 
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('../../test-utils/themeTokens'),
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('../../test-utils/themeTokens'),
+  })
+);
 
 // The bubble rides reanimated, which has no worklets runtime in Jest; it is
 // only the site's mark here.

@@ -23,41 +23,43 @@ jest.mock('react-native-reanimated', () => {
 });
 
 // The real barrel pulls in @solana/kit, which jest-expo cannot transform.
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('@salmon/shared/src/theme/durations'),
-  colors: {
-    text: { primary: '#fff', secondary: '#aaa', tertiary: '#888' },
-    palette: { amber: '#cc0' },
-    border: { subtle: 'rgba(255, 255, 255, 0.15)' },
-  },
-  semantic: {
-    status: { warning: '#FFB020', warningTint: '#330', danger: '#F00' },
-    text: { primary: '#fff', secondary: '#aaa', tertiary: '#888' },
-  },
-  valueInkFor: () => ({ primary: '#fff', success: '#0f0', danger: '#f00', secondary: '#aaa' }),
-  fontScaleCap: { dense: 1.2, chrome: 1.2 },
-  componentSizes: { confirmationDetailRowHeight: 38 },
-  fontSize: { sm: 14, body: 14, bodyLg: 16, headline: 24 },
-  fontFamilyNative: { semiBold: 'System', medium: 'System', bold: 'System', extraBold: 'System' },
-  borderRadius: { md: 12 },
-  letterSpacing: { normal: 0, slight: 0, snug: -0.12 },
-  lineHeight: { condensed: 1.2, snug: 1.4, normal: 1.5 },
-  opacity: { faint: 0.05, soft: 0.8 },
-  spacing: {
-    xs: 4,
-    sm: 8,
-    md: 12,
-    base: 16,
-    lg: 16,
-    '2xl': 24,
-    '3xl': 32,
-    '4xl': 40,
-    headerPadding: 20,
-  },
-  ms: (value: number) => value,
-  s: (value: number) => value,
-  vs: (value: number) => value,
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('@salmon/shared/src/theme/durations'),
+    colors: {
+      text: { primary: '#fff', secondary: '#aaa', tertiary: '#888' },
+      palette: { amber: '#cc0' },
+      border: { subtle: 'rgba(255, 255, 255, 0.15)' },
+    },
+    semantic: {
+      status: { warning: '#FFB020', warningTint: '#330', danger: '#F00' },
+      text: { primary: '#fff', secondary: '#aaa', tertiary: '#888' },
+    },
+    valueInkFor: () => ({ primary: '#fff', success: '#0f0', danger: '#f00', secondary: '#aaa' }),
+    fontScaleCap: { dense: 1.2, chrome: 1.2 },
+    componentSizes: { confirmationDetailRowHeight: 38 },
+    fontSize: { sm: 14, body: 14, bodyLg: 16, headline: 24 },
+    fontFamilyNative: { semiBold: 'System', medium: 'System', bold: 'System', extraBold: 'System' },
+    borderRadius: { md: 12 },
+    letterSpacing: { normal: 0, slight: 0, snug: -0.12 },
+    lineHeight: { condensed: 1.2, snug: 1.4, normal: 1.5 },
+    opacity: { faint: 0.05, soft: 0.8 },
+    spacing: {
+      xs: 4,
+      sm: 8,
+      md: 12,
+      base: 16,
+      lg: 16,
+      '2xl': 24,
+      '3xl': 32,
+      '4xl': 40,
+      headerPadding: 20,
+    },
+    ms: (value: number) => value,
+    s: (value: number) => value,
+    vs: (value: number) => value,
+  })
+);
 
 jest.mock('../WarningNotice', () => {
   const { Text, View } = jest.requireActual('react-native');

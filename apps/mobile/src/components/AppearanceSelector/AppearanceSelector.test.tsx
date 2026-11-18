@@ -8,12 +8,14 @@ import { render, screen, fireEvent } from '@testing-library/react-native';
 // Same mock shape as SettingsScreenLayout.test.tsx: the header's step
 // indicator reads `motionEasing` at module scope, so the real durations ride
 // alongside the theme tokens.
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('../../../test-utils/themeTokens'),
-  ...jest.requireActual('@salmon/shared/src/theme/durations'),
-  // The option list is real: it is what the three rows are built from.
-  ...jest.requireActual('@salmon/shared/src/utils/appearanceOptions'),
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('../../../test-utils/themeTokens'),
+    ...jest.requireActual('@salmon/shared/src/theme/durations'),
+    // The option list is real: it is what the three rows are built from.
+    ...jest.requireActual('@salmon/shared/src/utils/appearanceOptions'),
+  })
+);
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (_key: string, fallback?: string) => fallback ?? _key }),
 }));

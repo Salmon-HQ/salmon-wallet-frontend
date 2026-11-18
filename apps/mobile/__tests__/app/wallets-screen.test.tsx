@@ -110,8 +110,7 @@ jest.mock('react-i18next', () => {
 // modules) internally import `useBalance`, `useUserConfig` and
 // `useWalletTotals` by relative path — those three are mocked here at their
 // own file path, the same treatment `utils/account` gets, because their real
-// implementations reach `@solana/kit` / `@tanstack/react-query` machinery
-// jest-expo will not transform. Jest's module registry keys mocks by
+// implementations need a query client and a network. Jest's module registry keys mocks by
 // resolved path, so this intercepts them regardless of how a caller spells
 // the relative import.
 jest.mock('../../../../packages/shared/src/hooks/useBalance', () => ({
@@ -127,11 +126,9 @@ jest.mock('../../../../packages/shared/src/hooks/useWalletTotals', () => ({
 }));
 
 jest.mock('@salmon/shared', () => {
-  // `account-secret` is pure type-level work, so the real predicates can run;
-  // `utils/account` cannot be required here (it reaches @solana/kit, which
-  // jest-expo will not transform), so its one helper is stood in for.
+  // `account-secret` is pure type-level work, so the real predicates run.
   const actualSecret = jest.requireActual('../../../../packages/shared/src/utils/account-secret');
-  return {
+  return require('../../test-utils/sharedWith').sharedWith({
     ...jest.requireActual('../../test-utils/themeTokens'),
     // Developer mode lives in shared now; the screen reads it through the barrel.
     useUnverifiedTokens: () => false,
@@ -163,7 +160,7 @@ jest.mock('@salmon/shared', () => {
     ],
     ContentLoader: () => null,
     Rect: () => null,
-  };
+  });
 });
 
 // The sheet has its own suite; what this one reads is the wiring — that the

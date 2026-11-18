@@ -72,48 +72,52 @@ jest.mock('@salmon/shared/src/contexts/AccountsContext', () => ({
   useAccountsContext: () => [accountState, {}],
 }));
 
-jest.mock('@salmon/shared', () => ({
-  // The phrase check (DEV-208) is never due here.
-  usePhraseBackup: () => ({
-    needsBackup: false,
-    requireBackup: async () => true,
-    openBackup: () => {},
-    markUnconfirmed: async () => {},
-  }),
-  // The confirmation provider and host are core's own (their own suites);
-  // the layout only has to mount them.
-  SignatureRequestProvider: ({ children }: { children: React.ReactNode }) => children,
-  isSignableSolanaAccount: () => false,
-  useUserConfig: userConfig,
-  MIRROR_NETWORK_IDS: { 'solana-mainnet': 'solana-devnet' },
-  ensureMirrorNetworks: jest.fn(async () => []),
-  useAccountsContext: () => [
-    accountState,
-    {
-      unlockAccounts: jest.fn(),
-      unlockWithCachedKey: jest.fn(),
-      removeAllAccounts: jest.fn(),
-      editAccount: jest.fn(),
-    },
-  ],
-  getStashItem: jest.fn(),
-  // The task chrome and the Home shell are the real modules (their own suites
-  // cover them); this file needs them present, not faked.
-  ...jest.requireActual('@salmon/shared/src/contexts/TaskChromeContext'),
-  ...jest.requireActual('@salmon/shared/src/contexts/DeveloperModeContext'),
-  useHomeShell: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').useHomeShell,
-  // Nothing installed: the Powerup tabs are their own suite.
-  useNetworkPowerups: () => ({ enabled: ['memo'], disabled: {}, providers: {} }),
-  allowlistForDevice: (allowlist: unknown) => allowlist,
-  useInstalledPowerups: () => ({
-    installed: [],
-    isInstalled: () => false,
-    install: jest.fn(),
-    uninstall: jest.fn(),
-  }),
-  mapBalanceToToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').mapBalanceToToken,
-  buildBitcoinToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').buildBitcoinToken,
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../test-utils/sharedWith').sharedWith({
+    // The phrase check (DEV-208) is never due here.
+    usePhraseBackup: () => ({
+      needsBackup: false,
+      requireBackup: async () => true,
+      openBackup: () => {},
+      markUnconfirmed: async () => {},
+    }),
+    // The confirmation provider and host are core's own (their own suites);
+    // the layout only has to mount them.
+    SignatureRequestProvider: ({ children }: { children: React.ReactNode }) => children,
+    isSignableSolanaAccount: () => false,
+    useUserConfig: userConfig,
+    MIRROR_NETWORK_IDS: { 'solana-mainnet': 'solana-devnet' },
+    ensureMirrorNetworks: jest.fn(async () => []),
+    useAccountsContext: () => [
+      accountState,
+      {
+        unlockAccounts: jest.fn(),
+        unlockWithCachedKey: jest.fn(),
+        removeAllAccounts: jest.fn(),
+        editAccount: jest.fn(),
+      },
+    ],
+    getStashItem: jest.fn(),
+    // The task chrome and the Home shell are the real modules (their own suites
+    // cover them); this file needs them present, not faked.
+    ...jest.requireActual('@salmon/shared/src/contexts/TaskChromeContext'),
+    ...jest.requireActual('@salmon/shared/src/contexts/DeveloperModeContext'),
+    useHomeShell: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').useHomeShell,
+    // Nothing installed: the Powerup tabs are their own suite.
+    useNetworkPowerups: () => ({ enabled: ['memo'], disabled: {}, providers: {} }),
+    allowlistForDevice: (allowlist: unknown) => allowlist,
+    useInstalledPowerups: () => ({
+      installed: [],
+      isInstalled: () => false,
+      install: jest.fn(),
+      uninstall: jest.fn(),
+    }),
+    mapBalanceToToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell')
+      .mapBalanceToToken,
+    buildBitcoinToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell')
+      .buildBitcoinToken,
+  })
+);
 
 jest.mock('@salmon/shared/src/hooks/useHomeTabOrder', () => ({
   useHomeTabOrder: (defaults: string[]) => ({ order: defaults, setOrder: jest.fn() }),

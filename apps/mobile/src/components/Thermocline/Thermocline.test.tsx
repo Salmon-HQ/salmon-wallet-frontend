@@ -7,16 +7,18 @@ const CREST = '#111624';
 const THIN = 'rgba(11, 15, 25, 0.48)';
 const THICK = 'rgba(11, 15, 25, 0.66)';
 
-jest.mock('@salmon/shared', () => ({
-  semantic: {
-    surface: {
-      raised: RAISED,
-      crest: CREST,
-      membraneThin: THIN,
-      membraneThick: THICK,
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    semantic: {
+      surface: {
+        raised: RAISED,
+        crest: CREST,
+        membraneThin: THIN,
+        membraneThick: THICK,
+      },
     },
-  },
-}));
+  })
+);
 
 import { Thermocline } from './Thermocline';
 

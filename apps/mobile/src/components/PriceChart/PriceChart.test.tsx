@@ -1,35 +1,37 @@
 // The shared barrel reaches the Solana ESM packages, which this Jest config
 // does not transform. Only the tokens PriceChart touches matter here.
-jest.mock('@salmon/shared', () => ({
-  ContentLoader: () => null,
-  Rect: () => null,
-  spacing: { xs: 4, sm: 8, screenGutter: 20 },
-  borderRadius: { full: 999 },
-  fontFamilyNative: { bold: 'Font-Bold' },
-  fontWeight: { bold: '700' },
-  isPositivePerformance: () => true,
-  PRICE_CHART_PERIODS: ['1H', '1D', '1W', '1M', '3M', '1Y'],
-  fontSize: { body: 16 },
-  s: (size: number) => size,
-  motionMs: { drift: 280, tide: 720 },
-  CHART_PULSE_MS: 720,
-  opacity: { faint: 0.4, soft: 0.7, full: 1 },
-  semantic: {
-    status: { success: '#0f0', danger: '#f00' },
-    accent: { tint: '#fee' },
-    text: { accent: '#f88', primary: '#fff', secondary: '#aaa' },
-    skeleton: { base: '#111', highlight: '#222' },
-  },
-  motionEasing: {
-    current: { native: [0.32, 0.72, 0, 1] },
-    settle: { native: [0.22, 1, 0.36, 1] },
-    sink: { native: [0.4, 0, 1, 1] },
-    swellIn: { native: [0.34, 1.14, 0.64, 1] },
-  },
-  resolveMotionMs: (ms: number, reduced: boolean) => (reduced ? 0 : ms),
-  // The curve math is real: bounds and resampling are what the path is made of.
-  ...jest.requireActual('@salmon/shared/src/utils/priceChartPath'),
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ContentLoader: () => null,
+    Rect: () => null,
+    spacing: { xs: 4, sm: 8, screenGutter: 20 },
+    borderRadius: { full: 999 },
+    fontFamilyNative: { bold: 'Font-Bold' },
+    fontWeight: { bold: '700' },
+    isPositivePerformance: () => true,
+    PRICE_CHART_PERIODS: ['1H', '1D', '1W', '1M', '3M', '1Y'],
+    fontSize: { body: 16 },
+    s: (size: number) => size,
+    motionMs: { drift: 280, tide: 720 },
+    CHART_PULSE_MS: 720,
+    opacity: { faint: 0.4, soft: 0.7, full: 1 },
+    semantic: {
+      status: { success: '#0f0', danger: '#f00' },
+      accent: { tint: '#fee' },
+      text: { accent: '#f88', primary: '#fff', secondary: '#aaa' },
+      skeleton: { base: '#111', highlight: '#222' },
+    },
+    motionEasing: {
+      current: { native: [0.32, 0.72, 0, 1] },
+      settle: { native: [0.22, 1, 0.36, 1] },
+      sink: { native: [0.4, 0, 1, 1] },
+      swellIn: { native: [0.34, 1.14, 0.64, 1] },
+    },
+    resolveMotionMs: (ms: number, reduced: boolean) => (reduced ? 0 : ms),
+    // The curve math is real: bounds and resampling are what the path is made of.
+    ...jest.requireActual('@salmon/shared/src/utils/priceChartPath'),
+  })
+);
 
 // The period selector is the kit's UnderlineTabs, whose own tokens the partial
 // mock above does not carry; nothing here renders the selector.

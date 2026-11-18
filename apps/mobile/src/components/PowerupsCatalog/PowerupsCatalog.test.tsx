@@ -6,18 +6,20 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
 
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('@salmon/shared/src/theme'),
-  ...jest.requireActual('@salmon/shared/src/types/ui/card'),
-  powerupBadgeTier: jest.requireActual('@salmon/shared/src/utils/powerupBadgeTier')
-    .powerupBadgeTier,
-  s: (value: number) => value,
-  vs: (value: number) => value,
-  ms: (value: number) => value,
-  getNetworkName: (network: string) => network,
-  ...jest.requireActual('@salmon/shared/src/types/ui/key-value-row'),
-  ...jest.requireActual('@salmon/shared/src/utils/powerupFacts'),
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('@salmon/shared/src/theme'),
+    ...jest.requireActual('@salmon/shared/src/types/ui/card'),
+    powerupBadgeTier: jest.requireActual('@salmon/shared/src/utils/powerupBadgeTier')
+      .powerupBadgeTier,
+    s: (value: number) => value,
+    vs: (value: number) => value,
+    ms: (value: number) => value,
+    getNetworkName: (network: string) => network,
+    ...jest.requireActual('@salmon/shared/src/types/ui/key-value-row'),
+    ...jest.requireActual('@salmon/shared/src/utils/powerupFacts'),
+  })
+);
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({

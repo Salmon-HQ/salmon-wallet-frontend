@@ -22,19 +22,21 @@ jest.mock('../../../hooks/useSecretClipboard', () => ({
   secretClipboard: { copy: (text: string) => mockSecretCopy(text) },
 }));
 
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
-  ...jest.requireActual('@salmon/shared/src/hooks/usePrivateKeyPanelLogic'),
-  ...jest.requireActual('@salmon/shared/src/utils/networkDisplay'),
-  // The real design tokens: the panel composes kit blocks that read far more
-  // of them than a hand-listed subset can keep up with.
-  ...jest.requireActual('../../../test-utils/themeTokens'),
-  getShortAddress: (address: string) => address.slice(0, 8),
-  getAccountKeysForNetwork: () => [
-    { path: "m/44'/501'/0'/0'", address: FAKE_ADDRESS, privateKey: FAKE_PRIVATE_KEY },
-  ],
-  useAccountsContext: () => [{ activeAccount: {} }, { checkPassword: mockCheckPassword }],
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
+    ...jest.requireActual('@salmon/shared/src/hooks/usePrivateKeyPanelLogic'),
+    ...jest.requireActual('@salmon/shared/src/utils/networkDisplay'),
+    // The real design tokens: the panel composes kit blocks that read far more
+    // of them than a hand-listed subset can keep up with.
+    ...jest.requireActual('../../../test-utils/themeTokens'),
+    getShortAddress: (address: string) => address.slice(0, 8),
+    getAccountKeysForNetwork: () => [
+      { path: "m/44'/501'/0'/0'", address: FAKE_ADDRESS, privateKey: FAKE_PRIVATE_KEY },
+    ],
+    useAccountsContext: () => [{ activeAccount: {} }, { checkPassword: mockCheckPassword }],
+  })
+);
 // No worklets runtime in Jest: the kit's animated blocks need plain-JS
 // stand-ins.
 jest.mock('react-native-reanimated', () => {

@@ -24,25 +24,27 @@ const mockActiveAccount: { secret: { kind: string; mnemonic?: string } } = {
   secret: { kind: 'mnemonic', mnemonic: TEST_PHRASE },
 };
 
-jest.mock('@salmon/shared', () => ({
-  // The phrase check (DEV-208) is never due here.
-  usePhraseBackup: () => ({
-    needsBackup: false,
-    requireBackup: async () => true,
-    openBackup: () => {},
-    markUnconfirmed: async () => {},
-  }),
-  ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
-  ...jest.requireActual('@salmon/shared/src/hooks/useBackupPanelLogic'),
-  ...jest.requireActual('@salmon/shared/src/utils/account-secret'),
-  // The real design tokens: the panel composes kit blocks that read far more
-  // of them than a hand-listed subset can keep up with.
-  ...jest.requireActual('../../../test-utils/themeTokens'),
-  useAccountsContext: () => [
-    { activeAccount: mockActiveAccount },
-    { checkPassword: mockCheckPassword },
-  ],
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    // The phrase check (DEV-208) is never due here.
+    usePhraseBackup: () => ({
+      needsBackup: false,
+      requireBackup: async () => true,
+      openBackup: () => {},
+      markUnconfirmed: async () => {},
+    }),
+    ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
+    ...jest.requireActual('@salmon/shared/src/hooks/useBackupPanelLogic'),
+    ...jest.requireActual('@salmon/shared/src/utils/account-secret'),
+    // The real design tokens: the panel composes kit blocks that read far more
+    // of them than a hand-listed subset can keep up with.
+    ...jest.requireActual('../../../test-utils/themeTokens'),
+    useAccountsContext: () => [
+      { activeAccount: mockActiveAccount },
+      { checkPassword: mockCheckPassword },
+    ],
+  })
+);
 // No worklets runtime in Jest: the kit's animated blocks need plain-JS
 // stand-ins.
 jest.mock('react-native-reanimated', () => {

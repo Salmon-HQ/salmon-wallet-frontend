@@ -281,6 +281,24 @@ export default [
       ],
     },
   },
+  // A mobile test that mocks `@salmon/shared` starts from the real package
+  // (`test-utils/sharedWith.ts`) and names only what it controls. A mock that
+  // lists the package's exports by hand breaks the day the screen reads one
+  // more, and lets a test pass on an export that silently arrives undefined.
+  {
+    files: ['apps/mobile/**/*.test.{ts,tsx}', 'apps/mobile/__tests__/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "CallExpression[callee.object.name='jest'][callee.property.name='mock'][arguments.0.value='@salmon/shared'] > ArrowFunctionExpression > :matches(ObjectExpression, CallExpression[callee.object.name='jest'])",
+          message:
+            "Build the mock on the real package: jest.mock('@salmon/shared', () => require('<path>/test-utils/sharedWith').sharedWith({ ... })).",
+        },
+      ],
+    },
+  },
   // The Powerups boundary (spec 027 §2): a Powerup proposes, core signs. Nothing
   // under a `powerups/` folder — shared, the kit or an app — may reach key
   // material, the vault, the signing entry point or the RPC send path. The one

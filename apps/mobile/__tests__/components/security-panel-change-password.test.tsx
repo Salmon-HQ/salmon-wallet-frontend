@@ -22,23 +22,25 @@ jest.mock('react-i18next', () => ({
 
 // SecurityPanel only needs tokens + the accounts context from the barrel; the
 // real barrel pulls @solana/kit, which Jest cannot parse.
-jest.mock('@salmon/shared', () => ({
-  // The real design tokens: the panel and the kit blocks it composes read far
-  // more of them than a hand-listed subset can keep up with.
-  ...jest.requireActual('../../test-utils/themeTokens'),
-  // The form's state is real — it is what this suite exercises; the vault
-  // call it makes is the mocked context's.
-  ...jest.requireActual('../../../../packages/shared/src/hooks/useChangePassword'),
-  PASSWORD_CONSTRAINTS: { MIN_LENGTH: 8, MAX_LENGTH: 64 },
-  validatePassword: () => ({ strength: 'strong', isValid: true }),
-  getPasswordIssue: () => null,
-  useAccountsContext: () => [
-    // A password exists, so locking is allowed — the guard the button shares
-    // with the auto-lock.
-    { requiredLock: true },
-    { changePassword: mockChangePassword, lockAccounts: mockLockAccounts },
-  ],
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../test-utils/sharedWith').sharedWith({
+    // The real design tokens: the panel and the kit blocks it composes read far
+    // more of them than a hand-listed subset can keep up with.
+    ...jest.requireActual('../../test-utils/themeTokens'),
+    // The form's state is real — it is what this suite exercises; the vault
+    // call it makes is the mocked context's.
+    ...jest.requireActual('../../../../packages/shared/src/hooks/useChangePassword'),
+    PASSWORD_CONSTRAINTS: { MIN_LENGTH: 8, MAX_LENGTH: 64 },
+    validatePassword: () => ({ strength: 'strong', isValid: true }),
+    getPasswordIssue: () => null,
+    useAccountsContext: () => [
+      // A password exists, so locking is allowed — the guard the button shares
+      // with the auto-lock.
+      { requiredLock: true },
+      { changePassword: mockChangePassword, lockAccounts: mockLockAccounts },
+    ],
+  })
+);
 
 // No worklets runtime in Jest: the kit's animated blocks (IconBubble, Card's
 // pressable form) need plain-JS stand-ins.

@@ -6,37 +6,39 @@ const mockClassify = jest.fn();
 const mockRequestPermission = jest.fn();
 var mockPermission: { granted: boolean; canAskAgain: boolean } | null;
 
-jest.mock('@salmon/shared', () => ({
-  // "Deep Water" semantic tokens. Components read these directly now.
-  semantic: {
-    accent: { fill: '#FF5C45', onFill: '#070911', ink: '#FF5C45', tint: 'rgba(255,92,69,0.1)' },
-    text: {
-      primary: '#F6F8FB',
-      secondary: '#A7B1C4',
-      tertiary: '#8B96AD',
-      disabled: '#6F7B95',
-      accent: '#FF5C45',
-      onAccent: '#070911',
-      onGlass: '#F6F8FB',
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    // "Deep Water" semantic tokens. Components read these directly now.
+    semantic: {
+      accent: { fill: '#FF5C45', onFill: '#070911', ink: '#FF5C45', tint: 'rgba(255,92,69,0.1)' },
+      text: {
+        primary: '#F6F8FB',
+        secondary: '#A7B1C4',
+        tertiary: '#8B96AD',
+        disabled: '#6F7B95',
+        accent: '#FF5C45',
+        onAccent: '#070911',
+        onGlass: '#F6F8FB',
+      },
+      border: { default: '#58637B', raised: '#6F7B95', strong: '#8B96AD' },
+      surface: { shelf: '#10131C', raised: '#161C2D', crest: '#1B2233', bedrock: '#0B0F19' },
+      status: { success: '#33D6A6', danger: '#FF6B85', warning: '#FFB020' },
+      state: { hover: 'rgba(199,211,232,0.06)', press: 'rgba(199,211,232,0.10)' },
+      scanner: {
+        ground: '#000',
+        frame: '#111',
+        corner: '#222',
+        hint: '#ccc',
+        ink: '#fff',
+      },
     },
-    border: { default: '#58637B', raised: '#6F7B95', strong: '#8B96AD' },
-    surface: { shelf: '#10131C', raised: '#161C2D', crest: '#1B2233', bedrock: '#0B0F19' },
-    status: { success: '#33D6A6', danger: '#FF6B85', warning: '#FFB020' },
-    state: { hover: 'rgba(199,211,232,0.06)', press: 'rgba(199,211,232,0.10)' },
-    scanner: {
-      ground: '#000',
-      frame: '#111',
-      corner: '#222',
-      hint: '#ccc',
-      ink: '#fff',
-    },
-  },
-  spacing: { xs: 4, sm: 8, md: 12, lg: 16, '2xl': 24, '3xl': 28, '5xl': 40 },
-  borderRadius: { lg: 16 },
-  fontFamilyNative: { semiBold: 'System' },
-  fontSize: { bodyLg: 18, heading: 20, title: 24 },
-  fontWeight: { semibold: '600' },
-}));
+    spacing: { xs: 4, sm: 8, md: 12, lg: 16, '2xl': 24, '3xl': 28, '5xl': 40 },
+    borderRadius: { lg: 16 },
+    fontFamilyNative: { semiBold: 'System' },
+    fontSize: { bodyLg: 18, heading: 20, title: 24 },
+    fontWeight: { semibold: '600' },
+  })
+);
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({

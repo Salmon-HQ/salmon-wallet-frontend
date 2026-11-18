@@ -27,19 +27,21 @@ jest.mock('react-i18next', () => ({
 // this component draws from are runtime-agnostic, so they are loaded
 // directly (PowerupsFab.test.tsx's convention). `s`/`vs` are stubbed to
 // identity — the test asserts the *shape* of the style, not scaled pixels.
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('@salmon/shared/src/theme/spacing'),
-  ...jest.requireActual('@salmon/shared/src/theme/typography'),
-  // `onBack` mounts an IconBubble → usePressMotion, which reads `motionMs`
-  // unconditionally on every render (not just on press).
-  ...jest.requireActual('@salmon/shared/src/theme/durations'),
-  // StepIndicator (imported by ScreenHeader for the step-count row) reads
-  // `colors.step.*` at module scope.
-  colors: jest.requireActual('@salmon/shared/src/theme/colors').colors,
-  semantic: jest.requireActual('@salmon/shared/src/theme/semantic').semantic,
-  s: (value: number) => value,
-  vs: (value: number) => value,
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('@salmon/shared/src/theme/spacing'),
+    ...jest.requireActual('@salmon/shared/src/theme/typography'),
+    // `onBack` mounts an IconBubble → usePressMotion, which reads `motionMs`
+    // unconditionally on every render (not just on press).
+    ...jest.requireActual('@salmon/shared/src/theme/durations'),
+    // StepIndicator (imported by ScreenHeader for the step-count row) reads
+    // `colors.step.*` at module scope.
+    colors: jest.requireActual('@salmon/shared/src/theme/colors').colors,
+    semantic: jest.requireActual('@salmon/shared/src/theme/semantic').semantic,
+    s: (value: number) => value,
+    vs: (value: number) => value,
+  })
+);
 
 // `onBack` mounts an IconBubble, which reads press motion off Reanimated —
 // no worklets runtime in Jest, so it needs the same plain-JS stand-in as

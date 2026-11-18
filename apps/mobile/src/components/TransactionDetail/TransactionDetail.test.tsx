@@ -39,30 +39,32 @@ jest.mock('../../utils/haptics', () => ({
   NotificationFeedbackType: { Success: 'success' },
 }));
 
-jest.mock('@salmon/shared', () => ({
-  // The real tokens: the detail is built from the kit now, and every
-  // primitive it composes reads a different corner of the theme. Listing
-  // tokens by hand is how this mock used to break on an unrelated change.
-  ...jest.requireActual('../../../test-utils/themeTokens'),
-  ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
-  // The display tables and derivations are real: the verb and the status
-  // ink are what this detail is built from.
-  ...jest.requireActual('@salmon/shared/src/utils/transactionDisplay'),
-  ...jest.requireActual('@salmon/shared/src/hooks/useTransactionDetailDerived'),
-  ...jest.requireActual('@salmon/shared/src/utils/transactionDeveloperRows'),
-  useDeveloperMode: () => mockDeveloperMode,
-  formatBlockNumber: (value: number) => value.toString(),
-  formatDateTime: (value: number) => `date:${value}`,
-  formatRawAmount: (amount: string | number, decimals: number) =>
-    `${Number(amount) / 10 ** decimals}`,
-  getShortAddress: (value: string, size = 4) => `${value.slice(0, size)}...${value.slice(-size)}`,
-  getBlockchainFromNetworkId: (networkId: string) => {
-    if (networkId.startsWith('bitcoin')) return 'bitcoin';
-    if (networkId.startsWith('ethereum')) return 'ethereum';
-    return 'solana';
-  },
-  truncateHash: (value: string) => `hash:${value.slice(0, 8)}`,
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    // The real tokens: the detail is built from the kit now, and every
+    // primitive it composes reads a different corner of the theme. Listing
+    // tokens by hand is how this mock used to break on an unrelated change.
+    ...jest.requireActual('../../../test-utils/themeTokens'),
+    ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
+    // The display tables and derivations are real: the verb and the status
+    // ink are what this detail is built from.
+    ...jest.requireActual('@salmon/shared/src/utils/transactionDisplay'),
+    ...jest.requireActual('@salmon/shared/src/hooks/useTransactionDetailDerived'),
+    ...jest.requireActual('@salmon/shared/src/utils/transactionDeveloperRows'),
+    useDeveloperMode: () => mockDeveloperMode,
+    formatBlockNumber: (value: number) => value.toString(),
+    formatDateTime: (value: number) => `date:${value}`,
+    formatRawAmount: (amount: string | number, decimals: number) =>
+      `${Number(amount) / 10 ** decimals}`,
+    getShortAddress: (value: string, size = 4) => `${value.slice(0, size)}...${value.slice(-size)}`,
+    getBlockchainFromNetworkId: (networkId: string) => {
+      if (networkId.startsWith('bitcoin')) return 'bitcoin';
+      if (networkId.startsWith('ethereum')) return 'ethereum';
+      return 'solana';
+    },
+    truncateHash: (value: string) => `hash:${value.slice(0, 8)}`,
+  })
+);
 
 // No worklets runtime in Jest: the kit's pressable bubble pulls reanimated in,
 // so the animated touchable, the press hook and the two textures need

@@ -10,30 +10,32 @@ import { render } from '@testing-library/react-native';
 import { View } from 'react-native';
 import type { Token } from '@salmon/shared';
 
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('@salmon/shared/src/theme'),
-  ...jest.requireActual('@salmon/shared/src/types/ui/card'),
-  s: (value: number) => value,
-  vs: (value: number) => value,
-  ms: (value: number) => value,
-  hiddenValue: '••••',
-  getLabelValue: (value: number) => (value >= 0 ? 'positive' : 'negative'),
-  showPercentage: (value: number) => `${value >= 0 ? '+' : ''}${value}%`,
-  formatTokenAmount: (value: unknown) => String(value),
-  formatLargeNumber: (value: number) =>
-    value >= 1_000_000
-      ? `${(value / 1_000_000).toFixed(2)}M`
-      : value >= 1_000
-        ? `${(value / 1_000).toFixed(2)}K`
-        : String(value),
-  useCurrencyContext: () => [
-    {},
-    {
-      formatValue: (value: number) => `$${value}`,
-      formatChange: (value: number) => `${value >= 0 ? '+' : ''}$${value}`,
-    },
-  ],
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('@salmon/shared/src/theme'),
+    ...jest.requireActual('@salmon/shared/src/types/ui/card'),
+    s: (value: number) => value,
+    vs: (value: number) => value,
+    ms: (value: number) => value,
+    hiddenValue: '••••',
+    getLabelValue: (value: number) => (value >= 0 ? 'positive' : 'negative'),
+    showPercentage: (value: number) => `${value >= 0 ? '+' : ''}${value}%`,
+    formatTokenAmount: (value: unknown) => String(value),
+    formatLargeNumber: (value: number) =>
+      value >= 1_000_000
+        ? `${(value / 1_000_000).toFixed(2)}M`
+        : value >= 1_000
+          ? `${(value / 1_000).toFixed(2)}K`
+          : String(value),
+    useCurrencyContext: () => [
+      {},
+      {
+        formatValue: (value: number) => `$${value}`,
+        formatChange: (value: number) => `${value >= 0 ? '+' : ''}$${value}`,
+      },
+    ],
+  })
+);
 
 // Interpolating `t`: the masked-label assertions below are about what lands
 // in `{{amount}}` / `{{price}}`, which a fallback-only stub throws away.

@@ -20,15 +20,17 @@ jest.mock('../../hooks/useSecretClipboard', () => ({
   secretClipboard: { copy: (text: string) => mockSecretCopy(text) },
 }));
 
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('../../test-utils/themeTokens'),
-  generateMnemonic: () => PHRASE,
-  generateValidationPositions: () => [1, 2, 3],
-  validateMnemonicWords: () => ({ isValid: false, results: [] }),
-  setStashItem: jest.fn(),
-  useSecretCopied: jest.requireActual('@salmon/shared/src/hooks/useSecretCopied').useSecretCopied,
-  STASH_KEYS: { PENDING_MNEMONIC: 'pending-mnemonic' },
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('../../test-utils/themeTokens'),
+    generateMnemonic: () => PHRASE,
+    generateValidationPositions: () => [1, 2, 3],
+    validateMnemonicWords: () => ({ isValid: false, results: [] }),
+    setStashItem: jest.fn(),
+    useSecretCopied: jest.requireActual('@salmon/shared/src/hooks/useSecretCopied').useSecretCopied,
+    STASH_KEYS: { PENDING_MNEMONIC: 'pending-mnemonic' },
+  })
+);
 
 jest.mock('../../src/icons', () => ({
   CheckCircleIcon: () => null,

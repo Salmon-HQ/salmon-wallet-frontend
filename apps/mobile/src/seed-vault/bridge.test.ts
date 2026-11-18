@@ -16,19 +16,6 @@ jest.mock('@solana-mobile/seed-vault-lib', () => ({
   SeedVaultPermissionAndroid: 'com.solanamobile.seedvault.ACCESS_SEED_VAULT',
 }));
 
-jest.mock('@salmon/shared', () => {
-  class SeedVaultError extends Error {
-    reason: string;
-    constructor(why: string) {
-      super(why);
-      this.name = 'SeedVaultError';
-      this.reason = why;
-    }
-  }
-  const isSeedVaultError = (e: unknown) => e instanceof SeedVaultError;
-  return { __esModule: true, SeedVaultError, isSeedVaultError };
-});
-
 import { Buffer } from 'buffer';
 
 import {

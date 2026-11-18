@@ -43,9 +43,11 @@ jest.mock('react-native-reanimated', () => {
 // The float region re-keys itself on focus; there is no navigator here.
 jest.mock('expo-router', () => ({ useFocusEffect: () => {} }));
 
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('../../../test-utils/themeTokens'),
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('../../../test-utils/themeTokens'),
+  })
+);
 
 const mockKeyboardHeight = jest.fn(() => 0);
 jest.mock('../../../hooks/useKeyboardHeight', () => ({

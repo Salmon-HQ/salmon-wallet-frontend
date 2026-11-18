@@ -20,10 +20,12 @@ jest.mock('expo-router', () => ({
   router: { replace: (...args: unknown[]) => mockReplace(...args) },
 }));
 
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('../../test-utils/themeTokens'),
-  useCheckDerivables: () => mockUseCheckDerivables(),
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('../../test-utils/themeTokens'),
+    useCheckDerivables: () => mockUseCheckDerivables(),
+  })
+);
 
 jest.mock('../../src/components', () => {
   const React = require('react');

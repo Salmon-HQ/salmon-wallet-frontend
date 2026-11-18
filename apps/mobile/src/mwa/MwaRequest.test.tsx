@@ -9,12 +9,9 @@ const mockAddress = 'AKnL4NNf3DGWZJS6cPknBuEGnVsV4A4m5tgebLHaRSZ9';
 const mockOrigin = 'https://dapp.example';
 const mockToken = new Uint8Array([7, 7, 7, 7]);
 
-// `@solana/kit` is ESM Jest cannot load; the MWA helpers only use it inside
-// the signing functions, which these tests never reach.
-jest.mock('@solana/kit', () => ({}));
 jest.mock('@salmon/shared', () => {
   const mwa = jest.requireActual('@salmon/shared/src/utils/mwa');
-  return {
+  return require('../../test-utils/sharedWith').sharedWith({
     // The phrase check (DEV-208) is never due here.
     usePhraseBackup: () => ({
       needsBackup: false,
@@ -50,7 +47,7 @@ jest.mock('@salmon/shared', () => {
       },
       {},
     ],
-  };
+  });
 });
 
 jest.mock('@solana-mobile/mobile-wallet-adapter-walletlib', () => ({

@@ -46,65 +46,67 @@ jest.mock('../../src/contexts/DerivedAccountsContext', () => ({
   useDerivedAccounts: () => ({ status: { scanningAccountId: null }, rescan: jest.fn() }),
 }));
 
-jest.mock('@salmon/shared', () => ({
-  // The phrase check (DEV-208) is never due here.
-  usePhraseBackup: () => ({
-    needsBackup: false,
-    requireBackup: async () => true,
-    openBackup: () => {},
-    markUnconfirmed: async () => {},
-  }),
-  // The confirmation provider and host are core's own (their own suites);
-  // the layout only has to mount them.
-  SignatureRequestProvider: ({ children }: { children: React.ReactNode }) => children,
-  isSignableSolanaAccount: () => false,
-  // The providers the layout mounts live in shared now; the task chrome is the
-  // real one, developer mode is pass-through (its flags are mocked below).
-  ...jest.requireActual('@salmon/shared/src/contexts/TaskChromeContext'),
-  // Pass-through, plus a probe: it is mounted inside `TaskChromeProvider` and
-  // outside the lock overlay, so it can report the surface count across the
-  // release without unmounting with the gate.
-  DeveloperModeProvider: ({ children }: { children: React.ReactNode }) => {
-    const ReactActual = require('react');
-    const { Text } = require('react-native');
-    const { useTaskChrome } = jest.requireActual('@salmon/shared/src/contexts/TaskChromeContext');
-    const Probe = () => {
-      const { surfaceKey, isCovered } = useTaskChrome();
-      // Every commit is recorded, not just the last: the defect this guards
-      // is an intermediate commit, and `act()` flushes effects before any
-      // assertion can see one.
-      surfaceTrace.push(`${surfaceKey}:${isCovered ? 'covered' : 'open'}`);
+jest.mock('@salmon/shared', () =>
+  require('../../test-utils/sharedWith').sharedWith({
+    // The phrase check (DEV-208) is never due here.
+    usePhraseBackup: () => ({
+      needsBackup: false,
+      requireBackup: async () => true,
+      openBackup: () => {},
+      markUnconfirmed: async () => {},
+    }),
+    // The confirmation provider and host are core's own (their own suites);
+    // the layout only has to mount them.
+    SignatureRequestProvider: ({ children }: { children: React.ReactNode }) => children,
+    isSignableSolanaAccount: () => false,
+    // The providers the layout mounts live in shared now; the task chrome is the
+    // real one, developer mode is pass-through (its flags are mocked below).
+    ...jest.requireActual('@salmon/shared/src/contexts/TaskChromeContext'),
+    // Pass-through, plus a probe: it is mounted inside `TaskChromeProvider` and
+    // outside the lock overlay, so it can report the surface count across the
+    // release without unmounting with the gate.
+    DeveloperModeProvider: ({ children }: { children: React.ReactNode }) => {
+      const ReactActual = require('react');
+      const { Text } = require('react-native');
+      const { useTaskChrome } = jest.requireActual('@salmon/shared/src/contexts/TaskChromeContext');
+      const Probe = () => {
+        const { surfaceKey, isCovered } = useTaskChrome();
+        // Every commit is recorded, not just the last: the defect this guards
+        // is an intermediate commit, and `act()` flushes effects before any
+        // assertion can see one.
+        surfaceTrace.push(`${surfaceKey}:${isCovered ? 'covered' : 'open'}`);
+        return ReactActual.createElement(
+          Text,
+          { testID: 'surface-key' },
+          `${surfaceKey}:${isCovered ? 'covered' : 'open'}`
+        );
+      };
       return ReactActual.createElement(
-        Text,
-        { testID: 'surface-key' },
-        `${surfaceKey}:${isCovered ? 'covered' : 'open'}`
+        ReactActual.Fragment,
+        null,
+        ReactActual.createElement(Probe),
+        children
       );
-    };
-    return ReactActual.createElement(
-      ReactActual.Fragment,
-      null,
-      ReactActual.createElement(Probe),
-      children
-    );
-  },
-  useUserConfig: () => ({
-    developerNetworks: false,
-    toggleDeveloperNetworks: jest.fn(),
-    showUnverifiedTokens: false,
-    setShowUnverifiedTokens: jest.fn(),
-  }),
-  MIRROR_NETWORK_IDS: { 'solana-mainnet': 'solana-devnet' },
-  ensureMirrorNetworks: jest.fn(async () => []),
-  useAccountsContext: () => [
-    accountState,
-    {
-      unlockAccounts: jest.fn(async () => true),
-      unlockWithCachedKey: jest.fn(),
-      removeAllAccounts: jest.fn(),
     },
-  ],
-  getStashItem: jest.fn(),
-}));
+    useUserConfig: () => ({
+      developerNetworks: false,
+      toggleDeveloperNetworks: jest.fn(),
+      showUnverifiedTokens: false,
+      setShowUnverifiedTokens: jest.fn(),
+    }),
+    MIRROR_NETWORK_IDS: { 'solana-mainnet': 'solana-devnet' },
+    ensureMirrorNetworks: jest.fn(async () => []),
+    useAccountsContext: () => [
+      accountState,
+      {
+        unlockAccounts: jest.fn(async () => true),
+        unlockWithCachedKey: jest.fn(),
+        removeAllAccounts: jest.fn(),
+      },
+    ],
+    getStashItem: jest.fn(),
+  })
+);
 
 jest.mock('../../src/contexts/BiometricContext', () => ({
   BiometricProvider: ({ children }: { children: React.ReactNode }) => children,

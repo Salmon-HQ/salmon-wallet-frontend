@@ -15,17 +15,19 @@ const mockUseAccountsContext = jest.fn();
 /** Every `StateBlock` render, so a state's composition is asserted, not its markup. */
 const mockStateBlockProps: Array<Record<string, unknown>> = [];
 
-jest.mock('@salmon/shared', () => ({
-  // The kit primitives the tab composes evaluate their stylesheets at module
-  // scope, so the theme has to be real: hand-listing the tokens a component
-  // happens to read is what used to break this suite every time the tab
-  // reached for one more.
-  ...jest.requireActual('../test-utils/themeTokens'),
-  // The real grid hook; the three modules it reads are replaced below, where
-  // it imports them from.
-  ...jest.requireActual('../../../packages/shared/src/hooks/useNftsGrid'),
-  getShortAddress: () => 'Owne...r111',
-}));
+jest.mock('@salmon/shared', () =>
+  require('../test-utils/sharedWith').sharedWith({
+    // The kit primitives the tab composes evaluate their stylesheets at module
+    // scope, so the theme has to be real: hand-listing the tokens a component
+    // happens to read is what used to break this suite every time the tab
+    // reached for one more.
+    ...jest.requireActual('../test-utils/themeTokens'),
+    // The real grid hook; the three modules it reads are replaced below, where
+    // it imports them from.
+    ...jest.requireActual('../../../packages/shared/src/hooks/useNftsGrid'),
+    getShortAddress: () => 'Owne...r111',
+  })
+);
 jest.mock('../../../packages/shared/src/contexts/AccountsContext', () => ({
   useAccountsContext: () => mockUseAccountsContext(),
 }));

@@ -7,16 +7,18 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
 
-jest.mock('@salmon/shared', () => ({
-  overflowEdges: jest.requireActual('@salmon/shared/src/utils/overflowEdges').overflowEdges,
-  ...jest.requireActual('@salmon/shared/src/theme/spacing'),
-  ...jest.requireActual('@salmon/shared/src/theme/typography'),
-  ...jest.requireActual('@salmon/shared/src/theme/durations'),
-  semantic: jest.requireActual('@salmon/shared/src/theme/semantic').semantic,
-  withAlpha: jest.requireActual('@salmon/shared/src/theme/withAlpha').withAlpha,
-  s: (value: number) => value,
-  vs: (value: number) => value,
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    overflowEdges: jest.requireActual('@salmon/shared/src/utils/overflowEdges').overflowEdges,
+    ...jest.requireActual('@salmon/shared/src/theme/spacing'),
+    ...jest.requireActual('@salmon/shared/src/theme/typography'),
+    ...jest.requireActual('@salmon/shared/src/theme/durations'),
+    semantic: jest.requireActual('@salmon/shared/src/theme/semantic').semantic,
+    withAlpha: jest.requireActual('@salmon/shared/src/theme/withAlpha').withAlpha,
+    s: (value: number) => value,
+    vs: (value: number) => value,
+  })
+);
 
 jest.mock('react-native-reanimated', () => {
   const ReactActual = require('react');

@@ -40,7 +40,8 @@ jest.mock('expo-font', () => ({
 jest.mock('expo-router', () => {
   const React = require('react');
   const MockStack = ({ children }: { children?: React.ReactNode }) => <>{children}</>;
-  MockStack.Screen = ({ children }: { children?: React.ReactNode }) => <>{children}</>;
+  const MockScreen = ({ children }: { children?: React.ReactNode }) => <>{children}</>;
+  MockStack.Screen = MockScreen;
 
   return {
     Stack: MockStack,
@@ -126,7 +127,7 @@ jest.mock('@salmon/shared', () => {
     accent: { ink: '#FF5C45' },
   };
 
-  return {
+  return require('../test-utils/sharedWith').sharedWith({
     PhraseBackupProvider: ({ children }: { children: React.ReactNode }) => children,
     // The phrase check (DEV-208) is never due here.
     usePhraseBackup: () => ({
@@ -163,7 +164,7 @@ jest.mock('@salmon/shared', () => {
     fontSize: { xs: 10, sm: 12 },
     fontWeight: { semibold: '600' },
     spacing: { xs: 4, sm: 8, md: 12 },
-  };
+  });
 });
 
 describe('RootLayout mobile lock lifecycle', () => {

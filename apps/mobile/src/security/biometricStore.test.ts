@@ -20,10 +20,12 @@ jest.mock('i18next', () => ({ __esModule: true, default: { t: (key: string) => k
 // The real seal, not a stub: these tests arm and then unlock, so the crypto
 // they exercise has to be the crypto that ships. The package barrel itself
 // cannot be loaded here — it pulls Solana Kit, which is ESM-only under Jest.
-jest.mock('@salmon/shared', () => ({
-  __esModule: true,
-  ...jest.requireActual('../../../../packages/shared/src/crypto/biometric-seal'),
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../test-utils/sharedWith').sharedWith({
+    __esModule: true,
+    ...jest.requireActual('../../../../packages/shared/src/crypto/biometric-seal'),
+  })
+);
 
 import * as SecureStoreModule from '../../utils/secureStore';
 import * as LocalAuthModule from '../../utils/localAuthentication';

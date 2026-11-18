@@ -12,10 +12,12 @@ jest.mock('react-i18next', () => ({
 
 // The real barrel pulls in @solana/kit, which jest-expo cannot transform.
 // Only the two layout tokens this pair reads are needed here.
-jest.mock('@salmon/shared', () => ({
-  spacing: { md: 12 },
-  vs: (value: number) => value,
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    spacing: { md: 12 },
+    vs: (value: number) => value,
+  })
+);
 
 jest.mock('../Button', () => {
   const { Text: RNText } = require('react-native');

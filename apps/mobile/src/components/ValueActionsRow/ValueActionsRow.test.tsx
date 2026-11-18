@@ -2,7 +2,11 @@ import React from 'react';
 import { Text } from 'react-native';
 import { render, screen } from '@testing-library/react-native';
 
-jest.mock('@salmon/shared', () => jest.requireActual('../../../test-utils/themeTokens'));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith(
+    jest.requireActual('../../../test-utils/themeTokens')
+  )
+);
 
 import { ValueActionsRow } from './ValueActionsRow';
 

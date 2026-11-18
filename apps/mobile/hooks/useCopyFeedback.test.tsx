@@ -17,10 +17,12 @@ jest
   .spyOn(AccessibilityInfo, 'isReduceMotionEnabled')
   .mockImplementation(() => mockReducedMotion());
 
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('@salmon/shared/src/theme'),
-  ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
-}));
+jest.mock('@salmon/shared', () =>
+  require('../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('@salmon/shared/src/theme'),
+    ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
+  })
+);
 
 import { motionMs } from '@salmon/shared/src/theme';
 

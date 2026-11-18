@@ -40,33 +40,35 @@ jest.mock('../../src/contexts/DerivedAccountsContext', () => ({
   useDerivedAccounts: () => ({ status: { scanningAccountId: null }, rescan: jest.fn() }),
 }));
 
-jest.mock('@salmon/shared', () => ({
-  // The phrase check (DEV-208) is never due here.
-  usePhraseBackup: () => ({
-    needsBackup: false,
-    requireBackup: async () => true,
-    openBackup: () => {},
-    markUnconfirmed: async () => {},
-  }),
-  // The confirmation provider and host are core's own (their own suites);
-  // the layout only has to mount them.
-  SignatureRequestProvider: ({ children }: { children: React.ReactNode }) => children,
-  isSignableSolanaAccount: () => false,
-  // The providers the layout mounts live in shared now; the task chrome is the
-  // real one, developer mode is pass-through (its flags are mocked below).
-  ...jest.requireActual('@salmon/shared/src/contexts/TaskChromeContext'),
-  DeveloperModeProvider: ({ children }: { children: React.ReactNode }) => children,
-  useUserConfig: () => ({
-    developerNetworks: false,
-    toggleDeveloperNetworks: jest.fn(),
-    showUnverifiedTokens: false,
-    setShowUnverifiedTokens: jest.fn(),
-  }),
-  MIRROR_NETWORK_IDS: { 'solana-mainnet': 'solana-devnet' },
-  ensureMirrorNetworks: jest.fn(async () => []),
-  useAccountsContext: () => [{ locked: false }, {}],
-  getStashItem: jest.fn(),
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../test-utils/sharedWith').sharedWith({
+    // The phrase check (DEV-208) is never due here.
+    usePhraseBackup: () => ({
+      needsBackup: false,
+      requireBackup: async () => true,
+      openBackup: () => {},
+      markUnconfirmed: async () => {},
+    }),
+    // The confirmation provider and host are core's own (their own suites);
+    // the layout only has to mount them.
+    SignatureRequestProvider: ({ children }: { children: React.ReactNode }) => children,
+    isSignableSolanaAccount: () => false,
+    // The providers the layout mounts live in shared now; the task chrome is the
+    // real one, developer mode is pass-through (its flags are mocked below).
+    ...jest.requireActual('@salmon/shared/src/contexts/TaskChromeContext'),
+    DeveloperModeProvider: ({ children }: { children: React.ReactNode }) => children,
+    useUserConfig: () => ({
+      developerNetworks: false,
+      toggleDeveloperNetworks: jest.fn(),
+      showUnverifiedTokens: false,
+      setShowUnverifiedTokens: jest.fn(),
+    }),
+    MIRROR_NETWORK_IDS: { 'solana-mainnet': 'solana-devnet' },
+    ensureMirrorNetworks: jest.fn(async () => []),
+    useAccountsContext: () => [{ locked: false }, {}],
+    getStashItem: jest.fn(),
+  })
+);
 
 jest.mock('../../src/contexts/BiometricContext', () => ({
   BiometricProvider: ({ children }: { children: React.ReactNode }) => children,

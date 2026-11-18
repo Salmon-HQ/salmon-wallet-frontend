@@ -24,9 +24,11 @@ jest.mock('react-native-reanimated', () => {
   };
 });
 
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('../../../test-utils/themeTokens'),
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('../../../test-utils/themeTokens'),
+  })
+);
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({

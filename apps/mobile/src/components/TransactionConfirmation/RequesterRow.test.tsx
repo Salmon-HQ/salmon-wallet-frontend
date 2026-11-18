@@ -5,10 +5,12 @@
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('../../../test-utils/themeTokens'),
-  ...jest.requireActual('@salmon/shared/src/types/ui/transaction-confirmation'),
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('../../../test-utils/themeTokens'),
+    ...jest.requireActual('@salmon/shared/src/types/ui/transaction-confirmation'),
+  })
+);
 
 jest.mock('expo-image', () => {
   const ReactActual = require('react');

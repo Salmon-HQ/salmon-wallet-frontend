@@ -30,67 +30,69 @@ const developerModeState = { developerNetworks: false, showUnverifiedTokens: fal
 const mockRemoveAllAccounts = jest.fn(async () => {});
 const mockDisarm = jest.fn(async () => {});
 
-jest.mock('@salmon/shared', () => ({
-  // Removing a wallet asks the vault for key material; the screen only decides
-  // whether the confirmation shows a password field.
-  useAccountRemoval: () => ({
-    requiresPassword: false,
-    validatePassword: jest.fn(),
-    remove: jest.fn(),
-  }),
-  // The devnet-to-mainnet passage is `useDeveloperModeToggles`'s own concern
-  // (tested there); this fakes it wired to the same two spies so the row's
-  // wiring is still checked here.
-  useDeveloperModeToggles: () => ({
-    developerNetworks: developerModeState.developerNetworks,
-    showUnverifiedTokens: developerModeState.showUnverifiedTokens,
-    handleToggleDeveloperNetworks: () => {
-      void mockToggleDeveloperNetworks({
-        activeNetworkId: 'solana-devnet',
+jest.mock('@salmon/shared', () =>
+  require('../../test-utils/sharedWith').sharedWith({
+    // Removing a wallet asks the vault for key material; the screen only decides
+    // whether the confirmation shows a password field.
+    useAccountRemoval: () => ({
+      requiresPassword: false,
+      validatePassword: jest.fn(),
+      remove: jest.fn(),
+    }),
+    // The devnet-to-mainnet passage is `useDeveloperModeToggles`'s own concern
+    // (tested there); this fakes it wired to the same two spies so the row's
+    // wiring is still checked here.
+    useDeveloperModeToggles: () => ({
+      developerNetworks: developerModeState.developerNetworks,
+      showUnverifiedTokens: developerModeState.showUnverifiedTokens,
+      handleToggleDeveloperNetworks: () => {
+        void mockToggleDeveloperNetworks({
+          activeNetworkId: 'solana-devnet',
+          changeNetwork: mockChangeNetwork,
+        });
+      },
+      handleToggleUnverifiedTokens: (show: boolean) => {
+        void mockSetShowUnverifiedTokens(show);
+      },
+    }),
+    fontFamilyNative: { regular: 'System', bold: 'System' },
+    fontSize: { body: 15 },
+    s: (value: number) => value,
+    vs: (value: number) => value,
+    spacing: { screenGutter: 20, xl: 20 },
+    semantic: {
+      text: { secondary: '#A7B1C4', tertiary: '#8B96AD' },
+      status: { danger: '#FF6B85', dangerTint: '#3A1420' },
+      border: { default: '#58637B' },
+      accent: { ink: '#FF5C45' },
+    },
+    getSettingsItemTestId: (id: string) => `settings-item-${id}`,
+    // The real table: the screen is one rendering of it, so the rows under test
+    // are the rows that ship.
+    ...jest.requireActual('../../../../packages/shared/src/settings/registry'),
+    useAccountsContext: () => [
+      {
+        activeAccount: null,
+        activeBlockchainAccount: null,
+        networkId: 'solana-devnet',
+        accounts: [],
+      },
+      {
+        removeAllAccounts: mockRemoveAllAccounts,
+        removeAccount: jest.fn(),
         changeNetwork: mockChangeNetwork,
-      });
-    },
-    handleToggleUnverifiedTokens: (show: boolean) => {
-      void mockSetShowUnverifiedTokens(show);
-    },
-  }),
-  fontFamilyNative: { regular: 'System', bold: 'System' },
-  fontSize: { body: 15 },
-  s: (value: number) => value,
-  vs: (value: number) => value,
-  spacing: { screenGutter: 20, xl: 20 },
-  semantic: {
-    text: { secondary: '#A7B1C4', tertiary: '#8B96AD' },
-    status: { danger: '#FF6B85', dangerTint: '#3A1420' },
-    border: { default: '#58637B' },
-    accent: { ink: '#FF5C45' },
-  },
-  getSettingsItemTestId: (id: string) => `settings-item-${id}`,
-  // The real table: the screen is one rendering of it, so the rows under test
-  // are the rows that ship.
-  ...jest.requireActual('../../../../packages/shared/src/settings/registry'),
-  useAccountsContext: () => [
-    {
-      activeAccount: null,
-      activeBlockchainAccount: null,
-      networkId: 'solana-devnet',
-      accounts: [],
-    },
-    {
-      removeAllAccounts: mockRemoveAllAccounts,
-      removeAccount: jest.fn(),
-      changeNetwork: mockChangeNetwork,
-    },
-  ],
-  useAnalyticsConsent: () => ({ consent: false, setConsent: jest.fn() }),
-  useCurrencyContext: () => [{ currency: 'usd' }],
-  useUserConfig: () => ({
-    developerNetworks: false,
-    toggleDeveloperNetworks: jest.fn(),
-    explorer: { name: 'Solscan' },
-  }),
-  useTheme: () => ({ preference: mockThemePreference }),
-}));
+      },
+    ],
+    useAnalyticsConsent: () => ({ consent: false, setConsent: jest.fn() }),
+    useCurrencyContext: () => [{ currency: 'usd' }],
+    useUserConfig: () => ({
+      developerNetworks: false,
+      toggleDeveloperNetworks: jest.fn(),
+      explorer: { name: 'Solscan' },
+    }),
+    useTheme: () => ({ preference: mockThemePreference }),
+  })
+);
 
 jest.mock('../../src/icons', () => {
   const { View } = require('react-native');

@@ -20,23 +20,25 @@ jest.mock('../../utils/haptics', () => ({
   ImpactFeedbackStyle: { Light: 'light' },
 }));
 
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
-  // `IconBubble` and `KeyValueRow` pull tokens (componentSizes, fontScaleCap,
-  // tabularNums, semantic.*, borderRadius.r3/r4/full, …) this row never used
-  // to reach directly — the shared token mock is the one place that keeps
-  // all of them (plus the motion vocabulary the mobile wrapper hook reads)
-  // in sync, with `s`/`ms`/`vs` as identities instead of the real
-  // `Dimensions`-backed scalers.
-  ...jest.requireActual('../../../test-utils/themeTokens'),
-  getShortAddress: (value: string, size = 4) => `${value.slice(0, size)}...${value.slice(-size)}`,
-  // The row prints the address through the shared helper now; same shape as the stub above.
-  truncatedAddress: (value: string, truncate: 'short' | 'medium' | 'long' | false) => {
-    if (truncate === false) return value;
-    const size = { short: 4, medium: 6, long: 8 }[truncate];
-    return `${value.slice(0, size)}...${value.slice(-size)}`;
-  },
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
+    // `IconBubble` and `KeyValueRow` pull tokens (componentSizes, fontScaleCap,
+    // tabularNums, semantic.*, borderRadius.r3/r4/full, …) this row never used
+    // to reach directly — the shared token mock is the one place that keeps
+    // all of them (plus the motion vocabulary the mobile wrapper hook reads)
+    // in sync, with `s`/`ms`/`vs` as identities instead of the real
+    // `Dimensions`-backed scalers.
+    ...jest.requireActual('../../../test-utils/themeTokens'),
+    getShortAddress: (value: string, size = 4) => `${value.slice(0, size)}...${value.slice(-size)}`,
+    // The row prints the address through the shared helper now; same shape as the stub above.
+    truncatedAddress: (value: string, truncate: 'short' | 'medium' | 'long' | false) => {
+      if (truncate === false) return value;
+      const size = { short: 4, medium: 6, long: 8 }[truncate];
+      return `${value.slice(0, size)}...${value.slice(-size)}`;
+    },
+  })
+);
 
 // No worklets runtime in Jest: `IconBubble`'s animated touchable and its
 // press hook need plain-JS stand-ins (same shape as `IconBubble.test.tsx`).

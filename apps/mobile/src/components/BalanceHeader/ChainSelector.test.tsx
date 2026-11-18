@@ -7,15 +7,18 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('@salmon/shared/src/theme'),
-  s: (value: number) => value,
-  vs: (value: number) => value,
-  ms: (value: number) => value,
-  // Real derivation, not a stub: it is what each tab's label is built on.
-  getChainSelectorTabs: jest.requireActual('@salmon/shared/src/utils/network').getChainSelectorTabs,
-  overflowEdges: jest.requireActual('@salmon/shared/src/utils/overflowEdges').overflowEdges,
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('@salmon/shared/src/theme'),
+    s: (value: number) => value,
+    vs: (value: number) => value,
+    ms: (value: number) => value,
+    // Real derivation, not a stub: it is what each tab's label is built on.
+    getChainSelectorTabs: jest.requireActual('@salmon/shared/src/utils/network')
+      .getChainSelectorTabs,
+    overflowEdges: jest.requireActual('@salmon/shared/src/utils/overflowEdges').overflowEdges,
+  })
+);
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({

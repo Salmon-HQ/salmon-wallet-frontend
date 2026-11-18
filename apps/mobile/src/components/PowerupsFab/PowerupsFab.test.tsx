@@ -9,18 +9,20 @@ jest.mock('react-i18next', () => ({
 // theme modules the component draws from are runtime-agnostic, so they are
 // loaded directly (the FleshBackground test's convention). `shadows` pulls
 // in nothing extra, so it is safe to require directly too.
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('@salmon/shared/src/theme/spacing'),
-  ...jest.requireActual('@salmon/shared/src/theme/shadows'),
-  ...jest.requireActual('@salmon/shared/src/theme/flesh'),
-  ...jest.requireActual('@salmon/shared/src/theme/typography'),
-  // The plus turns 45 degrees when the launcher opens, so the component now
-  // reads the motion vocabulary (`motionMs`, `motionEasing`, `resolveMotionMs`).
-  ...jest.requireActual('@salmon/shared/src/theme/durations'),
-  ...jest.requireActual('@salmon/shared/src/theme/brand'),
-  semantic: jest.requireActual('@salmon/shared/src/theme/semantic').semantic,
-  s: (value: number) => value,
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('@salmon/shared/src/theme/spacing'),
+    ...jest.requireActual('@salmon/shared/src/theme/shadows'),
+    ...jest.requireActual('@salmon/shared/src/theme/flesh'),
+    ...jest.requireActual('@salmon/shared/src/theme/typography'),
+    // The plus turns 45 degrees when the launcher opens, so the component now
+    // reads the motion vocabulary (`motionMs`, `motionEasing`, `resolveMotionMs`).
+    ...jest.requireActual('@salmon/shared/src/theme/durations'),
+    ...jest.requireActual('@salmon/shared/src/theme/brand'),
+    semantic: jest.requireActual('@salmon/shared/src/theme/semantic').semantic,
+    s: (value: number) => value,
+  })
+);
 
 // Same minimal Reanimated stand-in as usePressMotion.test.tsx / the
 // HeaderContent suite: no worklets runtime in Jest, so the hook's shared

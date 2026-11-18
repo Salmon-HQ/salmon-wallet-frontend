@@ -5,7 +5,11 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
 
-jest.mock('@salmon/shared', () => ({ ...jest.requireActual('../../../test-utils/themeTokens') }));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('../../../test-utils/themeTokens'),
+  })
+);
 
 import { Toggle } from './Toggle';
 

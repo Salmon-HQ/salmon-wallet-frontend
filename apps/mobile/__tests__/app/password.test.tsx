@@ -58,30 +58,32 @@ jest.mock('react-native-reanimated', () => {
   };
 });
 
-jest.mock('@salmon/shared', () => ({
-  // The phrase check (DEV-208) is never due here.
-  usePhraseBackup: () => ({
-    needsBackup: false,
-    requireBackup: async () => true,
-    openBackup: () => {},
-    markUnconfirmed: async () => {},
-  }),
-  // Real tokens rather than a hand-listed subset — see test-utils/themeTokens.
-  ...jest.requireActual('../../test-utils/themeTokens'),
-  // The real wait-exit hook: the passage into the wait composes it.
-  ...jest.requireActual('../../../../packages/shared/src/hooks/useWaitExit'),
-  // The real form hook: the checks and the wait it raises are what the tests assert.
-  ...jest.requireActual('../../../../packages/shared/src/hooks/useSetupPasswordForm'),
-  createAccount: (...args: unknown[]) => mockCreateAccount(...args),
-  generateAccountName: () => 'Account 3',
-  getMirrorNetworks: jest.fn().mockResolvedValue({ 'solana-mainnet': 'solana-devnet' }),
-  getScanNetworks: jest.fn().mockResolvedValue(['solana-mainnet']),
-  getStashItem: (...args: unknown[]) => mockGetStashItem(...args),
-  removeStashItem: (...args: unknown[]) => mockRemoveStashItem(...args),
-  STASH_KEYS: { PENDING_MNEMONIC: 'pending-mnemonic' },
-  trackOnboardingEvent: jest.fn(async () => undefined),
-  useAccountsContext: () => mockUseAccountsContext(),
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../test-utils/sharedWith').sharedWith({
+    // The phrase check (DEV-208) is never due here.
+    usePhraseBackup: () => ({
+      needsBackup: false,
+      requireBackup: async () => true,
+      openBackup: () => {},
+      markUnconfirmed: async () => {},
+    }),
+    // Real tokens rather than a hand-listed subset — see test-utils/themeTokens.
+    ...jest.requireActual('../../test-utils/themeTokens'),
+    // The real wait-exit hook: the passage into the wait composes it.
+    ...jest.requireActual('../../../../packages/shared/src/hooks/useWaitExit'),
+    // The real form hook: the checks and the wait it raises are what the tests assert.
+    ...jest.requireActual('../../../../packages/shared/src/hooks/useSetupPasswordForm'),
+    createAccount: (...args: unknown[]) => mockCreateAccount(...args),
+    generateAccountName: () => 'Account 3',
+    getMirrorNetworks: jest.fn().mockResolvedValue({ 'solana-mainnet': 'solana-devnet' }),
+    getScanNetworks: jest.fn().mockResolvedValue(['solana-mainnet']),
+    getStashItem: (...args: unknown[]) => mockGetStashItem(...args),
+    removeStashItem: (...args: unknown[]) => mockRemoveStashItem(...args),
+    STASH_KEYS: { PENDING_MNEMONIC: 'pending-mnemonic' },
+    trackOnboardingEvent: jest.fn(async () => undefined),
+    useAccountsContext: () => mockUseAccountsContext(),
+  })
+);
 
 jest.mock('../../src/components', () => {
   const React = require('react');

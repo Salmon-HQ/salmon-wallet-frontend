@@ -10,19 +10,21 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
 
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('@salmon/shared/src/theme'),
-  ...jest.requireActual('@salmon/shared/src/types/ui/card'),
-  // The rows and the selection are shared logic, not a platform's: the real
-  // hook runs here so the sheet is tested against the contract both twins use.
-  ...jest.requireActual('@salmon/shared/src/hooks/useDerivedFindRows'),
-  s: (value: number) => value,
-  vs: (value: number) => value,
-  ms: (value: number) => value,
-  getInitials: (name: string) => name.slice(0, 2).toUpperCase(),
-  getShortAddress: (value: string) => `${value.slice(0, 4)}…${value.slice(-4)}`,
-  useAccountsContext: () => [{ accounts: [{ id: 'w1' }] }],
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('@salmon/shared/src/theme'),
+    ...jest.requireActual('@salmon/shared/src/types/ui/card'),
+    // The rows and the selection are shared logic, not a platform's: the real
+    // hook runs here so the sheet is tested against the contract both twins use.
+    ...jest.requireActual('@salmon/shared/src/hooks/useDerivedFindRows'),
+    s: (value: number) => value,
+    vs: (value: number) => value,
+    ms: (value: number) => value,
+    getInitials: (name: string) => name.slice(0, 2).toUpperCase(),
+    getShortAddress: (value: string) => `${value.slice(0, 4)}…${value.slice(-4)}`,
+    useAccountsContext: () => [{ accounts: [{ id: 'w1' }] }],
+  })
+);
 
 jest.mock('react-i18next', () => {
   const dictionary = require('../../../../../packages/shared/src/locales/en/translation.json');

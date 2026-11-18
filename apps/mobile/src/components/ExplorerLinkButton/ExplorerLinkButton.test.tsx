@@ -19,17 +19,19 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('../../../test-utils/themeTokens'),
-  ...jest.requireActual('@salmon/shared/src/hooks/useExplorerLink'),
-  ...jest.requireActual('@salmon/shared/src/config/explorers'),
-  useParentSheetHeight: () => undefined,
-  useSheetParent: () => null,
-  ...jest.requireActual('@salmon/shared/src/contexts/useSheetTurn'),
-  ...jest.requireActual('@salmon/shared/src/hooks/useHeldSheetSize'),
-  SheetParentContext: jest.requireActual('@salmon/shared/src/contexts/SheetHeightContext')
-    .SheetParentContext,
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('../../../test-utils/themeTokens'),
+    ...jest.requireActual('@salmon/shared/src/hooks/useExplorerLink'),
+    ...jest.requireActual('@salmon/shared/src/config/explorers'),
+    useParentSheetHeight: () => undefined,
+    useSheetParent: () => null,
+    ...jest.requireActual('@salmon/shared/src/contexts/useSheetTurn'),
+    ...jest.requireActual('@salmon/shared/src/hooks/useHeldSheetSize'),
+    SheetParentContext: jest.requireActual('@salmon/shared/src/contexts/SheetHeightContext')
+      .SheetParentContext,
+  })
+);
 
 // No worklets runtime in Jest: the outlined button pulls reanimated in
 // through the kit's press motion, so both need plain-JS stand-ins.
