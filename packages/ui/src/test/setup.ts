@@ -1,4 +1,4 @@
-import { configure } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { afterEach } from 'vitest';
 // The storage module itself, not the `@salmon/shared` barrel: importing the
 // barrel here would evaluate it before a test file's `vi.mock` of it, and
@@ -18,5 +18,8 @@ configure({ asyncUtilTimeout: 5000 });
 // with it empty.
 initStorage({ platform: 'extension', adapter: createLocalStorageAdapter() });
 afterEach(() => {
+  // Whatever a test rendered is unmounted here, for every file: a test that
+  // leaves its tree mounted hands the next one two of each element.
+  cleanup();
   if (typeof window !== 'undefined') window.localStorage.clear();
 });

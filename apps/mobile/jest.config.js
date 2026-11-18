@@ -6,6 +6,11 @@ module.exports = {
   // locally. Same headroom as the Vitest configs.
   testTimeout: 20000,
   setupFilesAfterEnv: ['./jest.setup.js'],
+  // Call counts start at zero in every test, and tests run in a new order on
+  // every run: a test that only passes after another one fails here, with
+  // the seed printed to reproduce it (`--seed=<n>`).
+  clearMocks: true,
+  randomize: true,
   // Besides React Native and Expo, the ESM-only packages `@salmon/shared`
   // imports: with them transformed, a test can load the real barrel
   // (`test-utils/sharedWith.ts`).

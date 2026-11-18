@@ -116,6 +116,12 @@ jest.mock('../components/TransactionConfirmation', () => ({
   },
 }));
 
+// The calling app verifies unless a test says otherwise; an answer one test
+// queued and did not use is dropped here, not handed to the next test.
+beforeEach(() => {
+  jest.mocked(verifyCallingPackage).mockReset().mockResolvedValue(true);
+});
+
 describe('MwaRequest — sign messages', () => {
   // The extension names the signing account on its sign screen; the mobile
   // sheet named only the site and the text.
@@ -213,9 +219,6 @@ describe('MwaRequest — connect and sign in', () => {
  */
 describe('MwaRequest — later requests from an unverified app', () => {
   const account = { getReceiveAddress: () => mockAddress } as never;
-  beforeEach(() => {
-    jest.mocked(verifyCallingPackage).mockReset().mockResolvedValue(true);
-  });
   const signed = (type: 'SIGN_MESSAGES' | 'SIGN_TRANSACTIONS') => (
     <MwaRequest
       account={account}
@@ -296,9 +299,6 @@ describe('MwaRequest — later requests from an unverified app', () => {
  */
 describe('MwaRequest — what the identity check is given', () => {
   const account = { getReceiveAddress: () => mockAddress } as never;
-  beforeEach(() => {
-    jest.mocked(verifyCallingPackage).mockReset().mockResolvedValue(true);
-  });
   const request = (type: string, identityUri: string) =>
     ({
       __type: type,

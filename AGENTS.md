@@ -305,6 +305,12 @@ keep, and `scripts/check-dom-parity.mjs` enforces:
   the failure is user-relevant.
 - Prefer unit and integration coverage in the owning package before adding
   E2E coverage — E2E is slower and flakier per bug caught.
+- Tests run in a random order on every run, in every package, and call
+  counts start at zero in each test. A test sets the state it needs in
+  `beforeEach` and restores what it changed outside its own tree (globals,
+  prototypes, storage, `Platform.OS`, queued `mock…Once` answers). A failure
+  prints its seed: replay it with `--seed=<n>` (Jest) or
+  `--sequence.seed=<n>` (Vitest).
 - Backend-dependent E2E tests may target `../salmon-wallet-backend` running in Docker.
   Before adding one, check whether `../salmon-wallet-backend` already covers the
   behavior to avoid redundant tests.

@@ -386,15 +386,16 @@ function renderScreen(ui: React.ReactElement) {
   return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
 }
 
-describe('home sub-tabs', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockStoredTabOrder = null;
-    mockDeveloperNetworks.on = false;
-    networksState.networkId = 'solana-mainnet';
-    networksState.allNetworks = [{ id: 'solana-mainnet', name: 'Solana' }];
-  });
+// One starting state for every test in the file, whichever ran before it.
+beforeEach(() => {
+  mockStoredTabOrder = null;
+  mockDeveloperNetworks.on = false;
+  networksState.networkId = 'solana-mainnet';
+  networksState.allNetworks = [{ id: 'solana-mainnet', name: 'Solana' }];
+  Object.assign(mockAccount, { watchOnly: false, installed: [] });
+});
 
+describe('home sub-tabs', () => {
   it('does not offer the NFTs tab on Bitcoin', () => {
     networksState.networkId = 'bitcoin-mainnet';
     networksState.allNetworks = [
@@ -598,9 +599,6 @@ describe('home sub-tabs', () => {
 
 describe('home developer networks', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    mockDeveloperNetworks.on = false;
-    networksState.networkId = 'solana-mainnet';
     networksState.allNetworks = [
       { id: 'solana-mainnet', name: 'Solana' },
       { id: 'solana-devnet', name: 'Solana Devnet' },
@@ -675,14 +673,6 @@ describe('home surfacing', () => {
     return { ...view, surfaceTo: (key: number) => view.rerender(tree(key)) };
   }
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockStoredTabOrder = null;
-    mockDeveloperNetworks.on = false;
-    networksState.networkId = 'solana-mainnet';
-    networksState.allNetworks = [{ id: 'solana-mainnet', name: 'Solana' }];
-  });
-
   it('lets only the screen speak when it comes back, however it was left', () => {
     const { surfaceTo } = renderAtSurface(1);
 
@@ -712,10 +702,6 @@ describe('home surfacing', () => {
 });
 
 describe('home for a watch-only account', () => {
-  afterEach(() => {
-    Object.assign(mockAccount, { watchOnly: false, installed: [] });
-  });
-
   it('shows an installed Powerup and the + to a signing account', () => {
     mockAccount.installed = ['memo'];
     renderScreen(<HomeScreen />);

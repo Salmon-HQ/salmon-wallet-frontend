@@ -605,6 +605,14 @@ describe('useAvailableNetworks Hook', () => {
 describe('fetchAndMergeNetworkConfigs endpoint validation', () => {
   const MAINNET = 'solana-mainnet';
 
+  // A merge writes into the shared network table; every test hands it back
+  // as compiled, so none depends on which ran before it.
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    SOLANA_NETWORKS[MAINNET].config.nodeUrl = 'https://api.mainnet-beta.solana.com';
+    delete SOLANA_NETWORKS[MAINNET].config.wsUrl;
+  });
+
   it.each([
     ['javascript:', 'javascript:alert(1)'],
     ['data:', 'data:text/plain,x'],
@@ -632,11 +640,6 @@ describe('fetchAndMergeNetworkConfigs endpoint validation', () => {
       await fetchAndMergeNetworkConfigs();
       return SOLANA_NETWORKS[MAINNET].config.nodeUrl;
     };
-    afterEach(() => {
-      vi.unstubAllEnvs();
-      SOLANA_NETWORKS[MAINNET].config.nodeUrl = DEFAULT;
-    });
-
     it.each([
       'https://salmon-mainnet-1.mainnet.rpcpool.com/token',
       'https://api.mainnet-beta.solana.com',
@@ -733,11 +736,6 @@ describe('fetchAndMergeNetworkConfigs endpoint validation', () => {
 
   describe('a validator on this machine', () => {
     const local = { nodeUrl: 'http://localhost:8899', wsUrl: 'ws://127.0.0.1:8900' };
-    afterEach(() => {
-      vi.unstubAllEnvs();
-      SOLANA_NETWORKS[MAINNET].config.nodeUrl = 'https://api.mainnet-beta.solana.com';
-      delete SOLANA_NETWORKS[MAINNET].config.wsUrl;
-    });
 
     it('is accepted over plain http in a build that declares itself local', async () => {
       vi.stubEnv('VITE_SALMON_ENV', 'local');

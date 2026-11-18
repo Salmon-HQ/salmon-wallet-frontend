@@ -78,6 +78,11 @@ function stubOverflowMetrics(overflowing = true): { scrollBy: ReturnType<typeof 
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  // `stubOverflowMetrics` writes on the shared prototype; removing the
+  // properties hands the next test jsdom's own.
+  for (const key of ['clientWidth', 'scrollWidth', 'scrollBy', 'scrollTo']) {
+    delete (HTMLElement.prototype as unknown as Record<string, unknown>)[key];
+  }
 });
 
 describe('UnderlineTabs', () => {
