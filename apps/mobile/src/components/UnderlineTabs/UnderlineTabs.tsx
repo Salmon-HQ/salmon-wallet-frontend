@@ -41,6 +41,7 @@ import {
   type LayoutChangeEvent,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
+  type ScrollViewInstance,
 } from 'react-native';
 import Animated, {
   Easing,
@@ -227,7 +228,7 @@ export const UnderlineTabs: React.FC<UnderlineTabsProps> = ({
   const [layouts, setLayouts] = useState<Record<string, TabLayoutMeasure>>({});
   const [containerWidth, setContainerWidth] = useState(0);
   const [scrollOffset, setScrollOffset] = useState(0);
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
   const hasMeasuredActive = useRef(false);
   const underlineX = useSharedValue(0);
   const underlineWidth = useSharedValue(UNDERLINE_WIDTH);

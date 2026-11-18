@@ -13,6 +13,7 @@ import {
   StyleProp,
   ViewStyle,
   type LayoutChangeEvent,
+  type ViewInstance,
 } from 'react-native';
 import { BlurTargetView } from 'expo-blur';
 import Reanimated, {
@@ -194,7 +195,7 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
   const { surface } = useSemantic();
-  const blurTargetRef = useRef<View>(null);
+  const blurTargetRef = useRef<ViewInstance>(null);
   const [isRendered, setIsRendered] = useState(visible);
 
   // The ceiling a sheet opens with is the ceiling it keeps (`useHeldSheetSize`).

@@ -73,7 +73,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Keyboard, Linking, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Keyboard, Linking, StyleSheet, Text, View, type TextInputInstance } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useWaitPassage } from '../../src/utils/useWaitPassage';
 import { useEnrolmentPassword } from '../../src/contexts/EnrolmentPasswordContext';
@@ -174,7 +174,7 @@ export default function PasswordScreen() {
   const { exiting: waitExiting } = useWaitPassage(isLoading);
 
   // Refs
-  const confirmPasswordRef = useRef<TextInput>(null);
+  const confirmPasswordRef = useRef<TextInputInstance>(null);
   /**
    * Where to go once the wait has fully left the screen. Set on success
    * instead of navigating immediately — navigation unmounts the wait, and an

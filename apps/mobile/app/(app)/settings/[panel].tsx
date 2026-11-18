@@ -6,12 +6,8 @@
  * are real stack entries with the platform's back gesture, instead of panels
  * pushed onto a stack the gate owned.
  *
- * The segment is `[panel]`, not `[screen]`: `screen` is the key React
- * Navigation and expo-router use to address a nested navigator's child, and
- * expo-router strips it from the params while building the push action
- * (`global-state/routing.js`, `getPayloadFromStateRoute`). A `[screen]`
- * segment therefore mounts with empty params — every row bounced back to the
- * list. `__tests__/app/settings-route-param.test.tsx` pins this.
+ * `__tests__/app/settings-route-param.test.tsx` pins that the pushed panel
+ * name reaches this route.
  *
  * Every panel body pulls its own data through `useSettingsPanelRegistry`
  * (accounts, address book, networks, currency), so this route renders the same

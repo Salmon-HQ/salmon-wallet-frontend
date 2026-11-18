@@ -36,6 +36,7 @@ import {
   Text,
   TextInput,
   View,
+  type ViewInstance,
 } from 'react-native';
 import Animated from 'react-native-reanimated';
 
@@ -138,8 +139,8 @@ export function LockContent({
   // dead. A screen-reader user is carried to the notice when it arrives and
   // back to the button when the wait ends, so the state change is never
   // silent.
-  const throttleRef = useRef<View>(null);
-  const unlockRef = useRef<View>(null);
+  const throttleRef = useRef<ViewInstance>(null);
+  const unlockRef = useRef<ViewInstance>(null);
   const wasThrottled = useRef(false);
 
   useEffect(() => {
@@ -148,7 +149,7 @@ export function LockContent({
     const target = throttled ? throttleRef.current : unlockRef.current;
     if (!target) return;
     const handle = findNodeHandle(target);
-    if (handle !== null) AccessibilityInfo.setAccessibilityFocus(handle);
+    if (handle != null) AccessibilityInfo.setAccessibilityFocus(handle);
   }, [throttled]);
 
   // Track if we've already auto-prompted biometric for this lock session

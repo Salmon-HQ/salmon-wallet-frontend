@@ -24,7 +24,7 @@
  * Screenshot protection rides on `SeedWordInput`'s `useSecretScreen`, so it
  * cannot be lost by composing the boxes differently.
  */
-import { StyleSheet, View, type TextInput } from 'react-native';
+import { StyleSheet, View, type TextInputInstance } from 'react-native';
 import { spacing, useSeedPhraseEntryLogic } from '@salmon/shared';
 
 import { SeedWordInput } from './SeedWordInput';
@@ -48,7 +48,12 @@ export function SeedPhraseEntry({
   // pixel-identical. Closing the last 68 would take the box under a 44pt
   // touch target; do it only if the band itself ever gets tighter.
   const { dense, columns, setRef, focus, handleChange, handleBackspace } =
-    useSeedPhraseEntryLogic<TextInput>({ words, onChange, onLengthChange, onPasteRejected });
+    useSeedPhraseEntryLogic<TextInputInstance>({
+      words,
+      onChange,
+      onLengthChange,
+      onPasteRejected,
+    });
 
   const handleKeyPress = (index: number, key: string) => {
     if (key === 'Backspace') handleBackspace(index);

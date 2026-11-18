@@ -91,7 +91,7 @@ const cache = new WeakMap<StyleFactory<never>, Partial<Record<ThemeMode, unknown
  * component defeats the cache: a new identity every render is a new entry and
  * a fresh `StyleSheet.create` each time.
  */
-export function useThemedStyles<T extends StyleSheet.NamedStyles<T>>(
+export function useThemedStyles<T extends Parameters<typeof StyleSheet.create>[0]>(
   factory: (t: Semantic) => T
 ): T {
   const { mode, semantic } = useThemeOrDeepWater();

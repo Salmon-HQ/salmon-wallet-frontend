@@ -77,6 +77,15 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
     return withPowerupsFlag({ filePath: SHARED_POWERUPS_ENTRY, type: 'sourceFile' });
   }
 
+  // React Native 0.88 and Expo SDK 58 publish entries only through their
+  // "exports" maps (react-native/asset-registry, @react-native/asset-utils,
+  // expo/dom/global), unresolvable while unstable_enablePackageExports is
+  // disabled above. Exports stay on for these packages alone.
+  if (/^(@?react-native|@?expo|expo-[^/]+)\//.test(moduleName)) {
+    const withExports = { ...context, unstable_enablePackageExports: true };
+    return (originalResolveRequest ?? context.resolveRequest)(withExports, moduleName, platform);
+  }
+
   // Fix for rpc-websockets: package only has "browser" and "node" export conditions,
   // but React Native needs explicit resolution. Use the browser build for mobile.
   // See: https://github.com/solana-labs/solana-web3.js/issues/1981

@@ -167,7 +167,7 @@ function given(state: Record<string, unknown>, request: unknown) {
 beforeEach(() => {
   jest.clearAllMocks();
   mockVerification.current = 'verified';
-  jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+  jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
 });
 
 describe('MwaHost — a devnet dApp on a mainnet wallet', () => {

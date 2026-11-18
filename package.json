@@ -82,8 +82,9 @@
       }
     },
     "overrides": {
-      "react": "19.2.3",
-      "react-dom": "19.2.3",
+      "react": "19.3.0",
+      "react-dom": "19.3.0",
+      "react-test-renderer": "19.3.0",
       "tar": ">=7.5.7",
       "@xmldom/xmldom": ">=0.8.15 <0.9",
       "node-forge": ">=1.4.0 <2",
@@ -112,7 +113,7 @@
       "@solana-name-service/sns-sdk-kit>@solana-program/token": "0.16.1"
     },
     "patchedDependencies": {
-      "expo-camera@57.0.5": "patches/expo-camera@57.0.5.patch"
+      "expo-camera@58.0.14": "patches/expo-camera@58.0.14.patch"
     }
   }
 }

@@ -14,6 +14,10 @@ module.exports = {
     // The Powerups entry is a subpath the package does not publish; the
     // bundlers alias it (see metro.config.js), so the tests map it the same way.
     '^@salmon/shared/powerups$': '<rootDir>/../../packages/shared/src/powerups',
+    // The package's `exports` names a CommonJS file it does not ship, which
+    // Jest 30 follows; Metro takes the `react-native` entry, so tests do too.
+    '^@solana-mobile/mobile-wallet-adapter-walletlib$':
+      '<rootDir>/../../node_modules/@solana-mobile/mobile-wallet-adapter-walletlib/lib/esm/index.native.js',
   },
   testPathIgnorePatterns: ['/node_modules/', '/.expo/'],
   // Ratchet: floors sit just under the measured coverage (2026-11-12) and

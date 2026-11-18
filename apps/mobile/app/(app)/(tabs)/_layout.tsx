@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, type ViewInstance } from 'react-native';
 import { BlurTargetView } from 'expo-blur';
 import { Tabs } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -36,7 +36,7 @@ export default function TabLayout() {
   const mode = useThemeMode();
   const styles = useThemedStyles(stylesFor);
   const { water } = useSemantic();
-  const blurTargetRef = useRef<View>(null);
+  const blurTargetRef = useRef<ViewInstance>(null);
 
   return (
     <View style={styles.container}>

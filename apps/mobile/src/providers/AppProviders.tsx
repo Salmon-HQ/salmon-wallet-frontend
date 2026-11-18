@@ -84,7 +84,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
       <PendingTransactionsProvider>
         <AccountsProvider>
           <CurrencyProvider>
-            <ThemeProvider systemScheme={systemScheme === 'unspecified' ? null : systemScheme}>
+            <ThemeProvider systemScheme={systemScheme}>
               {/* Above both route groups: onboarding arms biometrics, the app
                   shell unlocks with them, and Settings toggles them. Three
                   copies of that state is how the toggle and the lock screen
