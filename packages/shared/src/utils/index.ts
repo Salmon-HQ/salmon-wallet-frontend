@@ -345,6 +345,8 @@ export { BLOCKCHAIN_TO_COINGECKO, PERIOD_TO_DAYS, coinInfoToMarketData } from '.
 // Backend `/v1/networks` is the runtime source of truth for enablement.
 export { ENABLED_BLOCKCHAINS, isBlockchainEnabled } from '../config/blockchains';
 
+export { readNetworkId } from './networkDisplay';
+
 // Derived-accounts scanning utilities (shared between mobile and extension)
 export {
   // Constants

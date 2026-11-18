@@ -120,7 +120,7 @@ import { fileURLToPath } from 'node:url';
 // `TrustedAppsSelector` twins is `usePendingAction` in shared.
 // 2026-11-18, later: 2495 → 2487. The `TransactionDetail` barrels re-exported
 // three props types nothing read.
-export const CROSS_PLATFORM_CLONE_LINES_MAX = 2487;
+export const CROSS_PLATFORM_CLONE_LINES_MAX = 2382;
 
 /**
  * The ceiling for every clone that is not cross-platform, in lines (same
@@ -128,7 +128,7 @@ export const CROSS_PLATFORM_CLONE_LINES_MAX = 2487;
  * design asks for these to exist twice, so the number only goes down —
  * extract the helper, lower the constant in the same commit.
  */
-export const SAME_SIDE_CLONE_LINES_MAX = 1056;
+export const SAME_SIDE_CLONE_LINES_MAX = 870;
 
 /** Twins whose folders are not named the same. mobile folder → DOM folder(s). */
 export const MAP = {

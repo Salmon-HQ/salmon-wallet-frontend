@@ -43,7 +43,6 @@ import {
   getMirrorNetworks,
   getScanNetworks,
   getStashItem,
-  PASSWORD_CONSTRAINTS,
   fontScaleCap,
   fontSize,
   lineHeight,
@@ -54,12 +53,9 @@ import {
   trackOnboardingEvent,
   useAccountsContext,
   usePhraseBackup,
-  validatePassword,
-  getPasswordIssue,
   componentSizes,
-  YIELD_TO_PAINT_MS,
   type Semantic,
-  passwordCheckErrorKey,
+  useSetupPasswordForm,
   isSeedVaultError,
   SeedVaultError,
 } from '@salmon/shared';
@@ -160,13 +156,31 @@ export default function PasswordScreen() {
     router.replace('/(auth)');
   }, [actions, disarmBiometric]);
 
-  // State
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isChecking, setIsChecking] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [wrongPassword, setWrongPassword] = useState(false);
+  const {
+    password,
+    confirmPassword,
+    passwordValidation,
+    isLoading,
+    setIsLoading,
+    isChecking,
+    error,
+    setError,
+    isFormValid,
+    submitDisabled,
+    handlePasswordChange,
+    handleConfirmPasswordChange,
+    begin,
+    passwordError,
+    confirmError,
+    buttonText,
+  } = useSetupPasswordForm({
+    showSingleInput,
+    protect,
+    flowType,
+    canSubmit: hasSecret,
+    checkPassword: actions.checkPassword,
+    t,
+  });
 
   // The passage into the wait: when the wait rises, the form sinks under it.
   // The auth layout owns the ground, so the whole layout may travel; the wait
@@ -189,53 +203,11 @@ export default function PasswordScreen() {
     router.replace(route);
   }, []);
 
-  // Password validation
-  const passwordValidation = validatePassword(password);
-  const passwordsMatch = password === confirmPassword && confirmPassword.length > 0;
-
-  /**
-   * Check if form is valid
-   * - For showSingleInput: just need a password to verify
-   * - For new password: need valid password that matches confirmation
-   */
-  const isFormValid = useCallback((): boolean => {
-    if (showSingleInput) {
-      // Just need a password to check
-      return password.length > 0 && hasSecret;
-    }
-    // Need valid password and matching confirmation
-    return passwordValidation.isValid && passwordsMatch && hasSecret;
-  }, [showSingleInput, password, passwordValidation.isValid, passwordsMatch, hasSecret]);
-
   /**
    * Handle back navigation
    */
   const handleBack = useCallback(() => {
     router.back();
-  }, []);
-
-  /**
-   * Handle password change
-   */
-  const handlePasswordChange = useCallback(
-    (text: string) => {
-      setPassword(text);
-      setError(null);
-
-      if (showSingleInput) {
-        // Clear wrong password error when user types
-        setWrongPassword(false);
-      }
-    },
-    [showSingleInput]
-  );
-
-  /**
-   * Handle confirm password change
-   */
-  const handleConfirmPasswordChange = useCallback((text: string) => {
-    setConfirmPassword(text);
-    setError(null);
   }, []);
 
   /**
@@ -249,39 +221,12 @@ export default function PasswordScreen() {
    * Handle form submission - create account and navigate to success
    */
   const handleSubmit = useCallback(async () => {
-    if (!isFormValid() || !hasSecret) return;
+    if (!isFormValid) return;
 
     Keyboard.dismiss();
 
-    // If showSingleInput, first verify the existing password
-    if (showSingleInput) {
-      setIsChecking(true);
-      setError(null);
-
-      try {
-        const isValidPassword = await actions.checkPassword(password);
-
-        if (!isValidPassword) {
-          setWrongPassword(true);
-          setIsChecking(false);
-          return;
-        }
-      } catch (err) {
-        console.error('Failed to check password:', err);
-        setError(t(passwordCheckErrorKey(err, 'wallet.create.invalid_password')));
-        setIsChecking(false);
-        return;
-      }
-
-      setIsChecking(false);
-    }
-
-    // Proceed to create account
-    setIsLoading(true);
-    setError(null);
-
-    // Yield to UI thread so LoadingScreen renders before heavy crypto derivation
-    await new Promise((resolve) => setTimeout(resolve, YIELD_TO_PAINT_MS));
+    // Verifies an existing password when there is one, then raises the wait
+    if (!(await begin())) return;
 
     if (protect) {
       const protectedNow = await actions.protectWallet(password);
@@ -382,59 +327,20 @@ export default function PasswordScreen() {
     }
   }, [
     isFormValid,
-    hasSecret,
+    begin,
+    setError,
+    setIsLoading,
     markUnconfirmed,
     seedVault,
     mnemonic,
     password,
     actions,
-    showSingleInput,
     protect,
     t,
     state.counter,
     flowType,
     enrolmentPassword,
   ]);
-
-  // Error states for inputs
-  const passwordIssue =
-    !showSingleInput && password.length > 0 ? getPasswordIssue(passwordValidation) : null;
-  const showConfirmError =
-    !showSingleInput &&
-    confirmPassword.length > 0 &&
-    !passwordsMatch &&
-    password.length >= PASSWORD_CONSTRAINTS.MIN_LENGTH;
-
-  // Get button text based on flow type and checking state
-  const getButtonText = () => {
-    if (isChecking) {
-      return t('wallet.create.passwordChecking') || 'Checking...';
-    }
-    if (protect) {
-      return t('wallet.protect.button');
-    }
-    if (flowType === 'create') {
-      return t('wallet.create_wallet') || 'CREATE WALLET';
-    }
-    return t('wallet.recover_wallet') || 'RECOVER ACCOUNT';
-  };
-
-  // Password error message
-  const passwordError =
-    passwordIssue === 'too_short'
-      ? t('wallet.create.password_too_short', { min: PASSWORD_CONSTRAINTS.MIN_LENGTH })
-      : passwordIssue === 'too_long'
-        ? t('wallet.create.password_too_long', { max: PASSWORD_CONSTRAINTS.MAX_LENGTH })
-        : passwordIssue === 'too_weak'
-          ? t('wallet.create.password_too_weak')
-          : wrongPassword
-            ? t('wallet.create.invalid_password') || 'Invalid Password'
-            : undefined;
-
-  // Confirm password error message
-  const confirmError = showConfirmError
-    ? t('wallet.create.passwords_dont_match') || 'Passwords do not match'
-    : undefined;
 
   // Loading screen title based on flow
   const loadingTitle = protect
@@ -609,11 +515,11 @@ export default function PasswordScreen() {
             action={
               <PrimaryButton
                 onPress={handleSubmit}
-                disabled={!isFormValid() || wrongPassword}
+                disabled={submitDisabled}
                 loading={isLoading || isChecking}
                 testID="password-submit-button"
               >
-                {getButtonText()}
+                {buttonText}
               </PrimaryButton>
             }
           />

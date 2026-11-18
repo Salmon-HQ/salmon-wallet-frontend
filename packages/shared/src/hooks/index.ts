@@ -261,6 +261,9 @@ export { useSecretCopied } from './useSecretCopied';
 export { usePhraseBackupSheet } from './usePhraseBackupSheet';
 export type { PhraseBackupStep, UsePhraseBackupSheetResult } from './usePhraseBackupSheet';
 export type { PasswordConfirmState, UsePasswordConfirmParams } from './usePasswordConfirm';
+export { useRecoveryPhraseEntry } from './useRecoveryPhraseEntry';
+export { useSetupPasswordForm } from './useSetupPasswordForm';
+export type { UseSetupPasswordFormParams } from './useSetupPasswordForm';
 export { useChangePassword } from './useChangePassword';
 export type { UseChangePasswordParams } from './useChangePassword';
 

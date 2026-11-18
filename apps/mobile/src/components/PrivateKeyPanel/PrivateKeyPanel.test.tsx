@@ -25,6 +25,7 @@ jest.mock('../../../hooks/useSecretClipboard', () => ({
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
   ...jest.requireActual('@salmon/shared/src/hooks/usePrivateKeyPanelLogic'),
+  ...jest.requireActual('@salmon/shared/src/utils/networkDisplay'),
   // The real design tokens: the panel composes kit blocks that read far more
   // of them than a hand-listed subset can keep up with.
   ...jest.requireActual('../../../test-utils/themeTokens'),

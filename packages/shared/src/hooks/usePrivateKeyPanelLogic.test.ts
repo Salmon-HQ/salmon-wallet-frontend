@@ -163,4 +163,44 @@ describe('usePrivateKeyPanelLogic', () => {
     expect(result.current.copyFailedIndex).toBeNull();
     expect(result.current.copiedIndex).toBeNull();
   });
+
+  it('opens on the picker with several networks and on the keys with one', () => {
+    const several = renderHook(() =>
+      usePrivateKeyPanelLogic({
+        copyToClipboard: vi.fn(),
+        networks: [{ id: 'solana-mainnet' }, { id: 'bitcoin-mainnet' }],
+      })
+    );
+    expect(several.result.current.selectedNetworkId).toBeNull();
+
+    const single = renderHook(() =>
+      usePrivateKeyPanelLogic({ copyToClipboard: vi.fn(), networks: [{ id: 'solana-mainnet' }] })
+    );
+    expect(single.result.current.selectedNetworkId).toBe('solana-mainnet');
+  });
+
+  it('hides every revealed key when the network changes, either way', async () => {
+    const verifyBiometric = vi.fn(async () => true);
+    const { result } = renderHook(() =>
+      usePrivateKeyPanelLogic({
+        copyToClipboard: vi.fn(),
+        biometricAvailable: true,
+        verifyBiometric,
+        networks: [{ id: 'solana-mainnet' }, { id: 'bitcoin-mainnet' }],
+      })
+    );
+
+    act(() => result.current.handleSelectNetwork('solana-mainnet'));
+    await act(() => result.current.handleReveal(0));
+    expect(result.current.revealedIndexes.has(0)).toBe(true);
+
+    act(() => result.current.handleSelectNetwork('bitcoin-mainnet'));
+    expect(result.current.selectedNetworkId).toBe('bitcoin-mainnet');
+    expect(result.current.revealedIndexes.size).toBe(0);
+
+    await act(() => result.current.handleReveal(0));
+    act(() => result.current.handleBackToNetworks());
+    expect(result.current.selectedNetworkId).toBeNull();
+    expect(result.current.revealedIndexes.size).toBe(0);
+  });
 });

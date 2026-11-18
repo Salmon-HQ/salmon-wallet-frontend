@@ -7,7 +7,7 @@
  * `ListRow` for the network gate, `Card` for each key block — and the gate
  * itself is untouched: a reveal always costs a fresh proof of identity.
  */
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   borderRadius,
@@ -15,6 +15,7 @@ import {
   fontSize,
   getShortAddress,
   lineHeight,
+  readNetworkId,
   spacing,
   useAccountsContext,
   usePrivateKeyPanelLogic,
@@ -77,16 +78,6 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
 
   const networks = useMemo(() => buildNetworkListFromAccount(activeAccount), [activeAccount]);
 
-  const [selectedNetworkId, setSelectedNetworkId] = useState<string | null>(null);
-
-  // Auto-select if only one network
-  const effectiveNetworkId = networks.length === 1 ? networks[0].id : selectedNetworkId;
-
-  const accountKeys: AccountKeyInfo[] = useMemo(
-    () => getAccountKeysForNetwork(activeAccount, effectiveNetworkId),
-    [effectiveNetworkId, activeAccount]
-  );
-
   // The password is asked again before a private key, full spending control
   // of the account, comes into view. Reveal/copy/reauth state lives in
   // shared so this cannot drift from the mobile twin's step-2 behavior; the
@@ -99,27 +90,22 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
     copyFailedIndex,
     reauthIndex,
     setReauthIndex,
-    resetRevealState,
+    selectedNetworkId: effectiveNetworkId,
+    handleSelectNetwork,
+    handleBackToNetworks,
     handleReveal,
     handleReauthenticated,
     handleCopy,
   } = usePrivateKeyPanelLogic({
+    networks,
     // Cleared 60 s later, or on the return to the panel (useSecretClipboard).
     copyToClipboard: (privateKey) => secretClipboard.copy(privateKey),
   });
 
-  const handleSelectNetwork = useCallback(
-    (networkId: string) => {
-      setSelectedNetworkId(networkId);
-      resetRevealState();
-    },
-    [resetRevealState]
+  const accountKeys: AccountKeyInfo[] = useMemo(
+    () => getAccountKeysForNetwork(activeAccount, effectiveNetworkId),
+    [effectiveNetworkId, activeAccount]
   );
-
-  const handleBackToNetworks = useCallback(() => {
-    setSelectedNetworkId(null);
-    resetRevealState();
-  }, [resetRevealState]);
 
   // ========================================================================
   // Step 1: Network Selection
@@ -136,9 +122,8 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
           // Ids arrive canonical ('solana-mainnet', 'bitcoin-testnet'), so
           // the environment is the second segment; an id without one counts
           // as mainnet.
-          const [chain, env] = network.id.toLowerCase().split('-');
+          const { chain, env, isNonMainnet } = readNetworkId(network.id);
           const Mark = CHAIN_MARKS[chain] ?? GlobeIcon;
-          const isNonMainnet = Boolean(env) && env !== 'mainnet';
 
           return (
             <ListRow

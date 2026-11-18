@@ -10,7 +10,7 @@
  * bedrock (DESIGN.md, The Seed Phrase Rule's ground).
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { GlobeIcon, iconSize } from '../../icons';
 import { useTranslation } from 'react-i18next';
@@ -22,6 +22,7 @@ import {
   getAccountKeysForNetwork,
   getShortAddress,
   lineHeight,
+  readNetworkId,
   s,
   spacing,
   useAccountsContext,
@@ -108,17 +109,6 @@ export function PrivateKeyPanel({
 
   const [, accountActions] = useAccountsContext();
 
-  // Step management: 'selectNetwork' or 'displayKeys'
-  const [selectedNetworkId, setSelectedNetworkId] = useState<string | null>(
-    networks.length === 1 ? networks[0].id : null
-  );
-
-  // Get accounts for the selected network
-  const accountKeys: AccountKeyInfo[] = useMemo(
-    () => getAccountKeysForNetwork(activeAccount, selectedNetworkId),
-    [selectedNetworkId, activeAccount]
-  );
-
   // A private key is worse than the phrase: one tap copies full spending
   // control of the account. Reveal/copy/reauth state lives in shared so the
   // DOM twin's step-2 behavior cannot drift from this one.
@@ -129,11 +119,14 @@ export function PrivateKeyPanel({
     copyFailedIndex,
     reauthIndex,
     setReauthIndex,
-    resetRevealState,
+    selectedNetworkId,
+    handleSelectNetwork,
+    handleBackToNetworks,
     handleReveal,
     handleReauthenticated,
     handleCopy,
   } = usePrivateKeyPanelLogic({
+    networks,
     // Cleared 60 s later, or on the return to the app (useSecretClipboard).
     copyToClipboard: (privateKey) => secretClipboard.copy(privateKey),
     onCopyError: (error) => console.error('Failed to copy private key:', error),
@@ -141,24 +134,11 @@ export function PrivateKeyPanel({
     verifyBiometric,
   });
 
-  /**
-   * Handle network selection
-   */
-  const handleSelectNetwork = useCallback(
-    (networkId: string) => {
-      setSelectedNetworkId(networkId);
-      resetRevealState();
-    },
-    [resetRevealState]
+  const accountKeys: AccountKeyInfo[] = useMemo(
+    () => getAccountKeysForNetwork(activeAccount, selectedNetworkId),
+    [selectedNetworkId, activeAccount]
   );
 
-  /**
-   * Handle back from key display to network selection
-   */
-  const handleBackToNetworks = useCallback(() => {
-    setSelectedNetworkId(null);
-    resetRevealState();
-  }, [resetRevealState]);
   const currentBackAction =
     selectedNetworkId && networks.length > 1 ? handleBackToNetworks : onBack;
 
@@ -177,9 +157,8 @@ export function PrivateKeyPanel({
           // Ids arrive canonical ('solana-mainnet', 'bitcoin-testnet'), so
           // the environment is the second segment; an id without one counts
           // as mainnet, the same reading the token selector does.
-          const [chain, env] = network.id.toLowerCase().split('-');
+          const { chain, env, isNonMainnet } = readNetworkId(network.id);
           const Mark = CHAIN_MARKS[chain] ?? GlobeIcon;
-          const isNonMainnet = Boolean(env) && env !== 'mainnet';
 
           return (
             <ListRow

@@ -16,16 +16,13 @@
  */
 import {
   componentSizes,
-  distributePhrase,
   fontFamily,
   fontSize,
   lineHeight,
-  normalizeMnemonic,
-  SHORT_PHRASE,
   spacing,
-  validateMnemonic,
+  useRecoveryPhraseEntry,
 } from '@salmon/shared';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { KeyIcon } from '../../icons';
@@ -48,27 +45,17 @@ export function RecoverWalletPage({
 }: RecoverWalletPageProps): React.ReactElement {
   const { t } = useTranslation();
   const { status, text } = useSemantic();
-  // One entry per box. Twelve to begin with; a paste or a thirteenth typed
-  // word grows it to twenty-four.
-  const [words, setWords] = useState<string[]>(() => Array<string>(SHORT_PHRASE).fill(''));
-  // What was actually pasted, so the screen can say what happened rather than
-  // only that something is wrong. `null` means nothing was rejected.
-  const [pastedCount, setPastedCount] = useState<number | null>(null);
-
-  const phrase = useMemo(() => normalizeMnemonic(words.join(' ')), [words]);
-  const isComplete = words.every((word) => word.length > 0);
-  const isValidSeedPhrase = isComplete && validateMnemonic(phrase);
-
-  const handleWords = useCallback((next: string[]) => {
-    setWords(next);
-    setPastedCount(null);
-  }, []);
-
-  const handleLength = useCallback((length: number) => {
-    setWords((prev) =>
-      prev.length === length ? prev : Array.from({ length }, (_, i) => prev[i] ?? '')
-    );
-  }, []);
+  const {
+    words,
+    phrase,
+    pastedCount,
+    setPastedCount,
+    isValidSeedPhrase,
+    showInvalid,
+    handleWords,
+    handleLength,
+    paste,
+  } = useRecoveryPhraseEntry();
 
   /**
    * Paste from the clipboard. Goes through the same `distributePhrase` the
@@ -77,24 +64,16 @@ export function RecoverWalletPage({
    */
   const handlePaste = useCallback(async () => {
     try {
-      const clipboard = await navigator.clipboard.readText();
-      if (!clipboard) return;
-      const { words: pasted, fits, count } = distributePhrase(clipboard);
-      setPastedCount(fits ? null : count);
-      setWords(pasted);
+      paste(await navigator.clipboard.readText());
     } catch {
       // Clipboard API may not be available, or permission was refused.
     }
-  }, []);
+  }, [paste]);
 
   const handleNext = useCallback(() => {
     if (!isValidSeedPhrase) return;
     onComplete(phrase);
   }, [isValidSeedPhrase, onComplete, phrase]);
-
-  // Only once every box is filled — telling someone their phrase is invalid
-  // while they are still typing it is noise.
-  const showInvalid = pastedCount !== null || (isComplete && !isValidSeedPhrase);
 
   return (
     <OnboardingLayout

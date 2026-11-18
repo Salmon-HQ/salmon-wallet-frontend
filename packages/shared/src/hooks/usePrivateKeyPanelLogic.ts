@@ -22,6 +22,8 @@ import { useCallback, useState } from 'react';
 import { useCopyFeedback, type CopyFeedbackKey } from './useCopyFeedback';
 
 export interface UsePrivateKeyPanelLogicParams {
+  /** The networks the account has keys on. A single one is selected from the start. */
+  networks?: readonly { id: string }[];
   /** Copies a private key to the clipboard; platform-specific I/O. */
   copyToClipboard: (privateKey: string) => Promise<unknown>;
   /** Called when `copyToClipboard` rejects, before the failure is surfaced. */
@@ -33,6 +35,10 @@ export interface UsePrivateKeyPanelLogicParams {
 }
 
 export interface UsePrivateKeyPanelLogicResult {
+  /** The network whose keys are on screen; `null` while the picker is. */
+  selectedNetworkId: string | null;
+  handleSelectNetwork: (networkId: string) => void;
+  handleBackToNetworks: () => void;
   revealedIndexes: Set<number>;
   copiedIndex: CopyFeedbackKey | true | null;
   /** The key last copied: the screen says when Salmon clears the clipboard. */
@@ -48,12 +54,17 @@ export interface UsePrivateKeyPanelLogicResult {
   handleCopy: (privateKey: string, index: number) => Promise<void>;
 }
 
+const NO_NETWORKS: readonly { id: string }[] = [];
+
 export function usePrivateKeyPanelLogic({
+  networks = NO_NETWORKS,
   copyToClipboard,
   onCopyError,
   biometricAvailable,
   verifyBiometric,
 }: UsePrivateKeyPanelLogicParams): UsePrivateKeyPanelLogicResult {
+  const [pickedNetworkId, setPickedNetworkId] = useState<string | null>(null);
+  const selectedNetworkId = networks.length === 1 ? networks[0].id : pickedNetworkId;
   const [revealedIndexes, setRevealedIndexes] = useState<Set<number>>(new Set());
   const { copiedKey: copiedIndex, trigger: showCopied, reset: resetCopied } = useCopyFeedback();
   const [copyFailedIndex, setCopyFailedIndex] = useState<number | null>(null);
@@ -67,6 +78,20 @@ export function usePrivateKeyPanelLogic({
     setSecretCopiedIndex(null);
     setReauthIndex(null);
   }, [resetCopied]);
+
+  // Keys revealed on one network must never stay revealed on the next.
+  const handleSelectNetwork = useCallback(
+    (networkId: string) => {
+      setPickedNetworkId(networkId);
+      resetRevealState();
+    },
+    [resetRevealState]
+  );
+
+  const handleBackToNetworks = useCallback(() => {
+    setPickedNetworkId(null);
+    resetRevealState();
+  }, [resetRevealState]);
 
   const revealKey = useCallback((index: number) => {
     setRevealedIndexes((prev) => {
@@ -121,6 +146,9 @@ export function usePrivateKeyPanelLogic({
   );
 
   return {
+    selectedNetworkId,
+    handleSelectNetwork,
+    handleBackToNetworks,
     revealedIndexes,
     copiedIndex,
     secretCopiedIndex,

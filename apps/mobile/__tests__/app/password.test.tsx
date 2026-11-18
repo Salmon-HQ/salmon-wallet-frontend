@@ -70,21 +70,17 @@ jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('../../test-utils/themeTokens'),
   // The real wait-exit hook: the passage into the wait composes it.
   ...jest.requireActual('../../../../packages/shared/src/hooks/useWaitExit'),
+  // The real form hook: the checks and the wait it raises are what the tests assert.
+  ...jest.requireActual('../../../../packages/shared/src/hooks/useSetupPasswordForm'),
   createAccount: (...args: unknown[]) => mockCreateAccount(...args),
   generateAccountName: () => 'Account 3',
   getMirrorNetworks: jest.fn().mockResolvedValue({ 'solana-mainnet': 'solana-devnet' }),
   getScanNetworks: jest.fn().mockResolvedValue(['solana-mainnet']),
   getStashItem: (...args: unknown[]) => mockGetStashItem(...args),
-  PASSWORD_CONSTRAINTS: { MIN_LENGTH: 12, MAX_LENGTH: 128 },
   removeStashItem: (...args: unknown[]) => mockRemoveStashItem(...args),
   STASH_KEYS: { PENDING_MNEMONIC: 'pending-mnemonic' },
   trackOnboardingEvent: jest.fn(async () => undefined),
   useAccountsContext: () => mockUseAccountsContext(),
-  validatePassword: (value: string) => ({
-    isValid: value.length >= 12,
-    strength: value.length >= 12 ? 'strong' : 'medium',
-  }),
-  getPasswordIssue: (v: { isValid?: boolean }) => (v?.isValid ? null : 'too_short'),
 }));
 
 jest.mock('../../src/components', () => {
@@ -350,13 +346,13 @@ describe('PasswordScreen', () => {
     });
 
     // Mounted from the first frame — hidden (out of the a11y tree), not absent.
-    expect(screen.getByText('strength:medium', { includeHiddenElements: true })).toBeTruthy();
-    expect(screen.queryByText('strength:medium')).toBeNull();
+    expect(screen.getByText(/^strength:/, { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.queryByText(/^strength:/)).toBeNull();
 
     fireEvent.changeText(screen.getByPlaceholderText('wallet.create.passwordNew'), 'a');
 
     // The same slot, now revealed — nothing was added to the tree.
-    expect(screen.getByText('strength:medium')).toBeTruthy();
+    expect(screen.getByText(/^strength:/)).toBeTruthy();
   });
 
   describe('protecting a wallet stored without a password', () => {

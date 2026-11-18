@@ -22,3 +22,18 @@ export const NETWORK_DISPLAY: Record<string, NetworkDisplayInfo> = {
   'ethereum-mainnet': { symbol: 'ETH', name: 'Ethereum', blockchain: 'ethereum' },
   'ethereum-sepolia': { symbol: 'ETH', name: 'Ethereum Sepolia', blockchain: 'ethereum' },
 };
+
+/**
+ * Reads a canonical network id ('solana-mainnet', 'bitcoin-testnet'): the
+ * chain is the first segment and the environment the second. An id without an
+ * environment counts as mainnet.
+ */
+export function readNetworkId(networkId: string): {
+  chain: string;
+  env: string;
+  isNonMainnet: boolean;
+} {
+  const [chain, rawEnv] = networkId.toLowerCase().split('-');
+  const env = rawEnv || 'mainnet';
+  return { chain, env, isNonMainnet: env !== 'mainnet' };
+}
