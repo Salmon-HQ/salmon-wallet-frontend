@@ -1,2 +1,2 @@
-export { DataAttribution, default } from './DataAttribution';
+export { DataAttribution } from './DataAttribution';
 export type { DataAttributionProps } from './types';

@@ -23,8 +23,6 @@ import type { PressSpecularProps } from './types';
 
 import { useSemantic } from '../../theme/ThemeProvider';
 
-export { SPECULAR_OPACITY, SPECULAR_RADIUS };
-
 const SIZE = SPECULAR_RADIUS * 2;
 
 /**

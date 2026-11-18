@@ -481,5 +481,3 @@ const stylesFor = (t: Semantic) =>
       width: s(OVERFLOW_FADE_WIDTH),
     },
   });
-
-export default UnderlineTabs;

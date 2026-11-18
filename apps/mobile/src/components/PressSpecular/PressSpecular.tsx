@@ -23,7 +23,7 @@ import type { PressSpecularProps } from './types';
 export type { PressSpecularProps };
 
 /** DESIGN.md's 120px radius. */
-export const SPECULAR_RADIUS = 120;
+const SPECULAR_RADIUS = 120;
 /** DESIGN.md's 12%. */
 export const SPECULAR_OPACITY = 0.12;
 
@@ -68,5 +68,3 @@ const styles = StyleSheet.create({
     mixBlendMode: 'screen',
   },
 });
-
-export default PressSpecular;

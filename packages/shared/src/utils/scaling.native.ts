@@ -34,7 +34,7 @@ export const DESIGN_HEIGHT = 956;
  * @param size - Size in points (designed for iPhone 17 Pro Max)
  * @returns Scaled size for current device
  */
-export const scale = (size: number): number => (width / DESIGN_WIDTH) * size;
+const scale = (size: number): number => (width / DESIGN_WIDTH) * size;
 
 /**
  * Shorthand alias for scale()
@@ -48,7 +48,7 @@ export const s = scale;
  * @param size - Size in points (designed for iPhone 17 Pro Max)
  * @returns Scaled size for current device
  */
-export const verticalScale = (size: number): number => (height / DESIGN_HEIGHT) * size;
+const verticalScale = (size: number): number => (height / DESIGN_HEIGHT) * size;
 
 /**
  * Shorthand alias for verticalScale()
@@ -70,8 +70,7 @@ export const vs = verticalScale;
  * moderateScale(16, 0)    // 16px (no scaling)
  * moderateScale(16, 1)    // ~13.6px (full linear scaling)
  */
-export const moderateScale = (size: number, factor = 0.5): number =>
-  size + (scale(size) - size) * factor;
+const moderateScale = (size: number, factor = 0.5): number => size + (scale(size) - size) * factor;
 
 /**
  * Shorthand alias for moderateScale()
@@ -86,7 +85,7 @@ export const ms = moderateScale;
  * @param factor - Scaling factor (0-1), default 0.5
  * @returns Scaled size for current device
  */
-export const moderateVerticalScale = (size: number, factor = 0.5): number =>
+const moderateVerticalScale = (size: number, factor = 0.5): number =>
   size + (verticalScale(size) - size) * factor;
 
 /**

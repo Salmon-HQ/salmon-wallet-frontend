@@ -5,8 +5,6 @@ import type {
   TextButtonPropsBase,
 } from '@salmon/shared';
 
-export type { SecondaryButtonTone } from '@salmon/shared';
-
 export interface PrimaryButtonProps extends ButtonPropsBase {
   fullWidth?: boolean;
   style?: CSSProperties;

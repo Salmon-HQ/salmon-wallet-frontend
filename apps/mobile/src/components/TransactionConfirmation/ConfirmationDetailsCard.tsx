@@ -125,5 +125,3 @@ const stylesFor = (t: Semantic) =>
       transform: [{ rotate: '180deg' }],
     },
   });
-
-export default ConfirmationDetailsCard;

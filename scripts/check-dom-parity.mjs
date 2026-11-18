@@ -118,7 +118,9 @@ import { fileURLToPath } from 'node:url';
 // are decided in `useSolanaPayTransactionRequest` / `transaction-request.ts`.
 // 2026-11-18: 2513 → 2495. The revoke-in-flight state of both
 // `TrustedAppsSelector` twins is `usePendingAction` in shared.
-export const CROSS_PLATFORM_CLONE_LINES_MAX = 2495;
+// 2026-11-18, later: 2495 → 2487. The `TransactionDetail` barrels re-exported
+// three props types nothing read.
+export const CROSS_PLATFORM_CLONE_LINES_MAX = 2487;
 
 /**
  * The ceiling for every clone that is not cross-platform, in lines (same
@@ -126,7 +128,7 @@ export const CROSS_PLATFORM_CLONE_LINES_MAX = 2495;
  * design asks for these to exist twice, so the number only goes down —
  * extract the helper, lower the constant in the same commit.
  */
-export const SAME_SIDE_CLONE_LINES_MAX = 1195;
+export const SAME_SIDE_CLONE_LINES_MAX = 1162;
 
 /** Twins whose folders are not named the same. mobile folder → DOM folder(s). */
 export const MAP = {

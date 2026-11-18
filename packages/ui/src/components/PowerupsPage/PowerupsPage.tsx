@@ -259,5 +259,3 @@ export function PowerupsPage({
     </SlideStack>
   );
 }
-
-export default PowerupsPage;

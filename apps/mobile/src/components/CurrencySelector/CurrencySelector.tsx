@@ -77,5 +77,3 @@ export function CurrencySelector({
     </SettingsScreenLayout>
   );
 }
-
-export default CurrencySelector;

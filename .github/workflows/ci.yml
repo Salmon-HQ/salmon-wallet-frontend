@@ -108,6 +108,11 @@ jobs:
           node --test scripts/check-dom-parity.test.mjs
           node scripts/check-dom-parity.mjs
 
+      # Nothing exported that nobody imports, no file nobody reaches, no
+      # package imported without being declared where it is used (knip.json).
+      - name: Dead code and undeclared dependencies
+        run: pnpm check:dead-code
+
       # Every selector the e2e suites use still exists (spec 035): a flow on a
       # removed element fails here, naming it, not minutes into a device run.
       - name: e2e selector audit

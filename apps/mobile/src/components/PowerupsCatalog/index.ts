@@ -1,2 +1,2 @@
-export { PowerupsCatalog, default } from './PowerupsCatalog';
+export { PowerupsCatalog } from './PowerupsCatalog';
 export type { PowerupsCatalogProps } from './types';

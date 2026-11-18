@@ -12,7 +12,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 /** What Salmon tells dApps it accepts (spec 036 data-model). */
-export const MWA_CONFIG: MobileWalletAdapterConfig = {
+const MWA_CONFIG: MobileWalletAdapterConfig = {
   maxTransactionsPerSigningRequest: 10,
   maxMessagesPerSigningRequest: 10,
   supportedTransactionVersions: [0, 'legacy'],

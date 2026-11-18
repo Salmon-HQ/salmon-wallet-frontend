@@ -1,8 +1,6 @@
 import type { NftAttribute, Nft } from '../types/nft';
 import { normalizeIpfsUrl } from './url';
 
-export type { NftAttribute };
-
 // ============================================================================
 // NFT Data Types (shared between packages)
 // ============================================================================

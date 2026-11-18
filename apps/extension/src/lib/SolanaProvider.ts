@@ -48,7 +48,7 @@ export interface ConnectOptions {
 /**
  * Result from signing a transaction
  */
-export interface SignTransactionResult {
+interface SignTransactionResult {
   signature: string;
   publicKey: string;
 }
@@ -56,7 +56,7 @@ export interface SignTransactionResult {
 /**
  * Result from signing multiple transactions
  */
-export interface SignAllTransactionsResult {
+interface SignAllTransactionsResult {
   signatures: string[];
   publicKey: string;
 }
@@ -145,14 +145,14 @@ export type Network = 'solana-mainnet' | 'solana-devnet' | string;
  * this provider touches. Structural rather than imported so the injected
  * bundle carries no `@solana/web3.js`; dApps keep passing the real objects.
  */
-export interface LegacyTransactionLike {
+interface LegacyTransactionLike {
   serializeMessage(): Uint8Array;
   serialize(config?: { requireAllSignatures?: boolean; verifySignatures?: boolean }): Uint8Array;
   signatures: { publicKey: { toBase58(): string }; signature: Uint8Array | null }[];
 }
 
 /** Structural shape of a web3.js `VersionedTransaction`. */
-export interface VersionedTransactionLike {
+interface VersionedTransactionLike {
   message: {
     serialize(): Uint8Array;
     header: { numRequiredSignatures: number };

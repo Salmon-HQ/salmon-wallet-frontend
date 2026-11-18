@@ -89,8 +89,6 @@ export function TrustedAppsSelector({ apps, onRevokeApp, onBack }: TrustedAppsSe
   );
 }
 
-export default TrustedAppsSelector;
-
 const stylesFor = (t: Semantic) =>
   StyleSheet.create({
     appIcon: {

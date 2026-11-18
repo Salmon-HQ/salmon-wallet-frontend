@@ -55,10 +55,10 @@ const TXID_PATTERN = /^[0-9a-f]{64}$/i;
  * transaction may well be relayed and confirming. Never report it as a
  * failure — the user could resend funds that are already on their way.
  */
-export const BROADCAST_OUTCOME_UNKNOWN = 'BROADCAST_OUTCOME_UNKNOWN';
+const BROADCAST_OUTCOME_UNKNOWN = 'BROADCAST_OUTCOME_UNKNOWN';
 
 /** Error code for an input whose previous transaction no relay would give us. */
-export const TX_HEX_UNAVAILABLE = 'TX_HEX_UNAVAILABLE';
+const TX_HEX_UNAVAILABLE = 'TX_HEX_UNAVAILABLE';
 
 const TX_HEX_UNAVAILABLE_MESSAGE = 'transaction.errors.inputUnavailable';
 

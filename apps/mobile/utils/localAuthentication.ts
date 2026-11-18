@@ -32,5 +32,3 @@ const LocalAuthentication = {
   supportedAuthenticationTypesAsync,
   authenticateAsync,
 };
-
-export default LocalAuthentication;

@@ -1079,5 +1079,3 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     </SlideStack>
   );
 }
-
-export default HomePage;

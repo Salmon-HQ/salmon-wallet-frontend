@@ -35,6 +35,7 @@
     "extension:build:firefox:prod": "pnpm --filter @salmon/extension build:firefox:prod",
     "extension:zip:firefox": "pnpm --filter @salmon/extension zip:firefox",
     "check:i18n": "node scripts/check-i18n.mjs",
+    "check:dead-code": "knip",
     "check:parity": "node scripts/check-dom-parity.mjs",
     "check:parity:report": "node scripts/check-dom-parity.mjs --report",
     "check:parity:test": "node --test scripts/check-dom-parity.test.mjs",

@@ -58,5 +58,3 @@ export function useKeyboardLift(rest: number, gap: number) {
     paddingBottom: rest + (-height.value + gap - rest) * progress.value,
   }));
 }
-
-export default useKeyboardHeight;

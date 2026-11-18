@@ -23,7 +23,7 @@ export interface CreateWalletPageProps {
 }
 
 /** The password step of creating or recovering a wallet from a phrase. */
-export interface CreatePasswordPageProps {
+interface CreatePasswordPageProps {
   mnemonic: string;
   flowType: 'create' | 'recover';
   onCreating?: () => void;
@@ -37,7 +37,7 @@ export interface CreatePasswordPageProps {
  * back — nothing else opens until the wallet has a password, or until it is
  * removed.
  */
-export interface ProtectPasswordPageProps {
+interface ProtectPasswordPageProps {
   flowType: 'protect';
   addresses: string[];
   onSuccess: () => void;

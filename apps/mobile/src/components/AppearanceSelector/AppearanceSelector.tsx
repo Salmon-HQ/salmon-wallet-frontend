@@ -90,5 +90,3 @@ export function AppearanceSelector({
     </SettingsScreenLayout>
   );
 }
-
-export default AppearanceSelector;

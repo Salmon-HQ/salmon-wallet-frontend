@@ -181,5 +181,3 @@ const stylesFor = (t: Semantic) =>
       gap: s(spacing.md),
     },
   });
-
-export default BackupPanel;

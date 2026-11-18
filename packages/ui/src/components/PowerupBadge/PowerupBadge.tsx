@@ -45,5 +45,3 @@ export function PowerupBadge({ tier, style, testID }: PowerupBadgeProps) {
     </span>
   );
 }
-
-export default PowerupBadge;

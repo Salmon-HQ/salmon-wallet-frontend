@@ -237,7 +237,7 @@ import type {
   AccountTransactionListResponse,
 } from '../../types/transfer';
 
-export const fetchEthereumAccountBalance: EthereumAccountApiFunctions['fetchBalance'] = async (
+const fetchEthereumAccountBalance: EthereumAccountApiFunctions['fetchBalance'] = async (
   networkId,
   address
 ) => {
@@ -251,7 +251,7 @@ export const fetchEthereumAccountBalance: EthereumAccountApiFunctions['fetchBala
   }));
 };
 
-export const fetchEthereumAccountRecentTransactions: EthereumAccountApiFunctions['fetchRecentTransactions'] =
+const fetchEthereumAccountRecentTransactions: EthereumAccountApiFunctions['fetchRecentTransactions'] =
   async (networkId, address, paging?) => {
     const { nextPageToken, pageSize } = paging || {};
     const params: Record<string, string | number> = {};

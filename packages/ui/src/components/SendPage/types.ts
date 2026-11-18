@@ -8,7 +8,7 @@ import type {
   SendToken,
 } from '@salmon/shared';
 
-export type { SendStep, SendToken, BlockchainType };
+export type { SendStep, SendToken };
 
 /**
  * SendPage — the four send screens as one component (the DOM has no route

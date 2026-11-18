@@ -12,10 +12,8 @@ import type { Transaction, TransactionItemPropsBase } from '@salmon/shared';
 export type {
   TransactionType,
   TransactionDisplayStatus as TransactionStatus,
-  NftAttribute,
   TransactionTokenAmount,
   TransactionFee,
-  TransactionConfirmationStatus,
   Transaction,
 } from '@salmon/shared';
 

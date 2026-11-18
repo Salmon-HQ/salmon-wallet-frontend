@@ -4,8 +4,6 @@
  */
 export { ActivityPage } from './ActivityPage';
 export { TransactionItem } from './TransactionItem';
-export { ActivityEmptyState, ActivityErrorState, TransactionListSkeleton } from './ActivityStates';
-
 export type {
   ActivityPageProps,
   TransactionItemProps,

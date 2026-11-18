@@ -1,2 +1,2 @@
-export { PowerupBadge, default } from './PowerupBadge';
+export { PowerupBadge } from './PowerupBadge';
 export type { PowerupBadgeProps, PowerupTier } from './types';

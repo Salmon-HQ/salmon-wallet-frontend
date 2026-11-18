@@ -37,5 +37,3 @@ export function AddressEditPanel({
     />
   );
 }
-
-export default AddressEditPanel;

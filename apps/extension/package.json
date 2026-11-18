@@ -1,8 +1,6 @@
 {
   "name": "@salmon/extension",
   "version": "0.18.0",
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
   "private": true,
   "scripts": {
     "postinstall": "node -e \"try{require.resolve('wxt')}catch{process.exit(0)};require('child_process').execSync('wxt prepare',{stdio:'inherit'})\"",

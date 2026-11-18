@@ -85,5 +85,3 @@ export function useLanguage() {
     languageNames: LANGUAGE_NAMES,
   };
 }
-
-export default useLanguage;

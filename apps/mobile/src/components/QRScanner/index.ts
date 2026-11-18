@@ -7,5 +7,5 @@
  * - Web: displays a message indicating QR scanning is only available on mobile
  */
 
-export { QRScanner, QRScanner as default } from './QRScanner';
+export { QRScanner } from './QRScanner';
 export type { QRScannerProps, QRScanResult } from './types';

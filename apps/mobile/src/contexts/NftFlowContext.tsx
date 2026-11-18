@@ -27,8 +27,6 @@ import {
 
 import { useUnverifiedTokens } from './DeveloperModeContext';
 
-export type { NftSuccessKind } from '@salmon/shared';
-
 export interface NftFlowValue extends Omit<NftFlowState, 'settleAfterSend'> {
   /** The NFT the flow is about, or `null` while the list is still resolving. */
   nft: NftData | null;
@@ -122,5 +120,3 @@ export function useNftFlow(): NftFlowValue {
   if (!value) throw new Error('useNftFlow must be used inside NftFlowProvider');
   return value;
 }
-
-export default NftFlowContext;

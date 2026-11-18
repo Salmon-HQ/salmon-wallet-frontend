@@ -43,13 +43,13 @@ import type { SwapRouteExpectation } from './solana-transaction';
 /** The most rent one created token account may cost the wallet (see `assertSwapPaysWallet`). */
 export const ATA_RENT_ALLOWANCE = 2_100_000n;
 /** The network fee assumed when the node does not report one. */
-export const FEE_ALLOWANCE = 1_000_000n;
+const FEE_ALLOWANCE = 1_000_000n;
 /**
  * The most fee the simulation allows for: one signature's base fee plus the
  * priority-fee cap the byte check enforces. A larger fee the node reports is
  * the wallet's loss, not an allowance.
  */
-export const MAX_FEE_LAMPORTS = 5_000n + MAX_PRIORITY_FEE_LAMPORTS;
+const MAX_FEE_LAMPORTS = 5_000n + MAX_PRIORITY_FEE_LAMPORTS;
 
 /**
  * Refuses unless the effects are a swap of `route` for the wallet.

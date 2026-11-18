@@ -46,5 +46,3 @@ export function ChainSelector({
     />
   );
 }
-
-export default ChainSelector;

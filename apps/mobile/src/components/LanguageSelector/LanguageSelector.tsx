@@ -48,5 +48,3 @@ export function LanguageSelector({
     </SettingsScreenLayout>
   );
 }
-
-export default LanguageSelector;

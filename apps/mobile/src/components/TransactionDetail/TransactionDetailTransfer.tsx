@@ -233,5 +233,3 @@ const stylesFor = (t: Semantic) =>
       flex: 1,
     },
   });
-
-export default TransactionDetailTransfer;

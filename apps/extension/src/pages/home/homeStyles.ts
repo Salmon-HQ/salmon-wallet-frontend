@@ -69,7 +69,7 @@ export const pinnedHeaderStyle: React.CSSProperties = {
   paddingBottom: spacing.xl,
 };
 
-export const pinnedSubTabsStyle: React.CSSProperties = {
+const pinnedSubTabsStyle: React.CSSProperties = {
   marginTop: spacing.xl,
 };
 

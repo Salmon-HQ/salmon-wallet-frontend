@@ -52,5 +52,3 @@ export const PendingValue: React.FC<PendingValueProps> = ({ pending = false, chi
 
   return <Animated.View style={[style, animatedStyle]}>{children}</Animated.View>;
 };
-
-export default PendingValue;

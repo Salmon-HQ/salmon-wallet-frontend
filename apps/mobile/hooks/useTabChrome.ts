@@ -60,5 +60,3 @@ export function useTabChrome() {
     };
   }, [bottomInset, topInset, insets]);
 }
-
-export default useTabChrome;

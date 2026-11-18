@@ -144,6 +144,12 @@ Package names: `@salmon/shared`, `@salmon/ui`, `@salmon/mobile`,
   `apps/mobile/src/components`, `apps/mobile/app`, `packages/ui` or
   `packages/shared/src/types/ui`; `pnpm check:parity:report` to read
   findings without failing.
+- Dead code: `pnpm check:dead-code` (knip, strict in CI) after removing a
+  caller, adding an export or adding an import of a new package. An export
+  nobody imports is deleted, not kept for later; a package is declared in
+  the `package.json` of the workspace that imports it; one thing has one
+  exported name. Exceptions live in `knip.json`, each for a use knip cannot
+  see.
 
 ## Gates that carry a baseline — what to update when X changes
 

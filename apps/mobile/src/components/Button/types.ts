@@ -5,8 +5,6 @@ import type {
   TextButtonPropsBase,
 } from '@salmon/shared';
 
-export type { SecondaryButtonTone } from '@salmon/shared';
-
 /**
  * Actions an assistive technology can perform on the control (React Native's
  * accessibility actions). Mobile only: the hold-to-approve controls give

@@ -18,7 +18,6 @@ import type { FetchNftsFromBackendFn } from '../../types/nft';
 import { SolanaReadAccount } from './SolanaReadAccount';
 import { transactionVersionFor } from './networks';
 import type { SolanaSigner } from './signing';
-import type { ValidationResult } from './validation';
 
 /**
  * Solana signing key material, as produced by the account factories.
@@ -63,14 +62,6 @@ export interface SolanaAccountOptions {
 export type SolanaBalance = SolanaWalletBalance;
 
 // Re-export types from services for convenience
-export type {
-  SolanaTransactionPaging,
-  SolanaTransactionListResponse,
-  SolanaTransaction,
-} from './transactions';
-
-export type { ValidationResult };
-
 /**
  * A Solana account that holds key material, and is therefore the only kind
  * that can sign or move funds.

@@ -7,7 +7,6 @@
     "apps/extension": {
       "entry": [
         "src/entrypoints/**/*.{ts,tsx,html}",
-        "wxt.config.ts",
         ".playwright/**/*.{ts,mjs}",
         "src/stubs/*.ts",
         "src/polyfills/*.ts",
@@ -17,7 +16,6 @@
     },
     "apps/mobile": {
       "entry": [
-        "index.js",
         "app/**/*.{ts,tsx}",
         "plugins/*.js",
         "scripts/*.mjs",
@@ -35,23 +33,24 @@
     },
     "packages/shared": {
       "entry": [
-        "src/index.ts",
-        "src/powerups/index.ts",
         "src/powerups/index.off.ts",
         "scripts/*.mjs",
-        "src/**/*.native.{ts,tsx}"
+        "src/**/*.native.{ts,tsx}",
+        "src/blockchain/ethereum/**/*.ts"
       ],
       "project": ["src/**/*.{ts,tsx}"],
-      "ignore": ["src/blockchain/ethereum/**"],
       "ignoreDependencies": ["react-native", "react-native-fast-crypto"]
     },
     "packages/ui": {
-      "entry": ["src/index.ts", "src/powerups.ts", "src/powerups.off.ts"],
+      "entry": ["src/powerups.ts", "src/powerups.off.ts"],
       "project": ["src/**/*.{ts,tsx}"]
     },
     "packages/assets": {
-      "entry": ["src/index.ts"],
       "ignoreDependencies": ["react-native-svg"]
     }
+  },
+  "ignoreIssues": {
+    "apps/mobile/src/analytics/appAnalytics.ts": ["exports"],
+    "apps/mobile/src/components/ReceiptScreen/TransferReceipt.tsx": ["exports"]
   }
 }

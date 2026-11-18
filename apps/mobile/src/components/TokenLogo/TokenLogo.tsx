@@ -55,5 +55,3 @@ export const TokenLogo: React.FC<TokenLogoProps> = ({ uri, symbol, size, borderR
     />
   );
 };
-
-export default TokenLogo;

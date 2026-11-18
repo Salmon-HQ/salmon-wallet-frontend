@@ -758,5 +758,3 @@ export function LoadingScreen({
     </Modal>
   );
 }
-
-export default LoadingScreen;

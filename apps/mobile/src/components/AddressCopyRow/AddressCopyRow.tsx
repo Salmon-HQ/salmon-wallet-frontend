@@ -125,5 +125,3 @@ const stylesFor = (t: Semantic) =>
       justifyContent: 'center',
     },
   });
-
-export default AddressCopyRow;

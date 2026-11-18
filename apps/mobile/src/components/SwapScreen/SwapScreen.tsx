@@ -97,5 +97,3 @@ const stylesFor = (_t: Semantic) =>
       paddingTop: vs(spacing.lg),
     },
   });
-
-export default SwapScreen;

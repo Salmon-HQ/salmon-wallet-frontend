@@ -8,12 +8,9 @@ import type {
   SeedPhraseEntryPropsBase,
   SeedWordGridPropsBase,
   SeedWordInputPropsBase,
-  SeedWordValidationState,
 } from '@salmon/shared';
 import type { Ref } from 'react';
 import type { TextInputInstance, TextInputKeyPressEvent } from 'react-native';
-
-export type ValidationState = SeedWordValidationState;
 
 export type SeedWordGridProps = SeedWordGridPropsBase;
 

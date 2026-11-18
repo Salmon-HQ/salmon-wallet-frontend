@@ -87,5 +87,3 @@ const styles = StyleSheet.create({
     gap: vs(spacing.screenGutter),
   },
 });
-
-export default PaymentsScreen;

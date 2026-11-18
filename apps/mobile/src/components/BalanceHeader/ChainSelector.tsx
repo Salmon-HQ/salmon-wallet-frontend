@@ -49,5 +49,3 @@ export const ChainSelector: React.FC<ChainSelectorProps> = ({
     />
   );
 };
-
-export default ChainSelector;

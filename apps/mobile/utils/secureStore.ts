@@ -44,7 +44,7 @@ export async function deleteItemAsync(
   }
 }
 
-export function canUseBiometricAuthentication(): boolean {
+function canUseBiometricAuthentication(): boolean {
   return false;
 }
 
@@ -55,5 +55,3 @@ const SecureStore = {
   deleteItemAsync,
   canUseBiometricAuthentication,
 };
-
-export default SecureStore;

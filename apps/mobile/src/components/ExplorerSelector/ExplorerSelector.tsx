@@ -50,5 +50,3 @@ export function ExplorerSelector({
     </SettingsScreenLayout>
   );
 }
-
-export default ExplorerSelector;

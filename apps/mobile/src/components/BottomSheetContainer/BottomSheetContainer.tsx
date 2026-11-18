@@ -104,8 +104,6 @@ const SPRING_CONFIG = {
  * mean guessing — `SendSheet` carried its own `ANIMATION_DURATION = 300`,
  * which did not match this at all.
  */
-export { SHEET_EXIT_MS };
-
 export interface BottomSheetContainerProps extends BottomSheetContainerPropsBase {
   /** Whether to show the top fade gradient driven by scroll offset */
   showFadeGradient?: boolean;
@@ -588,5 +586,3 @@ const stylesFor = (t: Semantic) =>
       zIndex: 1,
     },
   });
-
-export default BottomSheetContainer;

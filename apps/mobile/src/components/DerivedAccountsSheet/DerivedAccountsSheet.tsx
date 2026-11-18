@@ -184,5 +184,3 @@ const stylesFor = (t: Semantic) =>
       ...TABULAR,
     },
   });
-
-export default DerivedAccountsSheet;

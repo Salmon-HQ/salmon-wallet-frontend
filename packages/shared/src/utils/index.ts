@@ -136,18 +136,7 @@ export { SECRET_CLIPBOARD_CLEAR_MS, createSecretClipboard } from './secret-clipb
 export type { SecretClipboard, SecretClipboardPlatform } from './secret-clipboard';
 
 // Responsive scaling utilities
-export {
-  DESIGN_WIDTH,
-  DESIGN_HEIGHT,
-  scale,
-  s,
-  verticalScale,
-  vs,
-  moderateScale,
-  ms,
-  moderateVerticalScale,
-  mvs,
-} from './scaling';
+export { DESIGN_WIDTH, DESIGN_HEIGHT, s, vs, ms, mvs } from './scaling';
 
 // Formatting utilities
 export {

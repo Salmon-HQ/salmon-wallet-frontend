@@ -27,5 +27,3 @@ export function useBottomSheetChrome() {
     };
   }, [bottomInset, insets]);
 }
-
-export default useBottomSheetChrome;

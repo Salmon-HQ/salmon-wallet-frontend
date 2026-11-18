@@ -14,7 +14,7 @@ import { IconBubble } from '../IconBubble';
 import type { AccountAvatarProps } from './types';
 
 /** The wallet thumb, per `.pen` CORE 10. */
-export const ACCOUNT_AVATAR_SIZE = 44;
+const ACCOUNT_AVATAR_SIZE = 44;
 
 export function AccountAvatar({
   name,

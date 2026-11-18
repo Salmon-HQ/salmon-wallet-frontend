@@ -3,10 +3,4 @@
  * one provider, one `useEnsureMirrorNetworks`, mounted on both platforms. This
  * module keeps the app's import path.
  */
-export {
-  DeveloperModeProvider,
-  useDeveloperMode,
-  useUnverifiedTokens,
-  useDeveloperModeSettings,
-  type DeveloperModeContextValue,
-} from '@salmon/shared';
+export { DeveloperModeProvider, useDeveloperMode, useUnverifiedTokens } from '@salmon/shared';

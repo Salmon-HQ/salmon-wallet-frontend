@@ -3,8 +3,6 @@ import type { MarketData } from '../TokenMarketData';
 import type { PriceChartPeriod, PriceDataPoint, Token, CoinInfo } from '@salmon/shared';
 
 // Re-export CoinInfo for consumers
-export type { CoinInfo } from '@salmon/shared';
-
 /**
  * Props for TokenDetailContent — the token detail screen body, shared by the
  * pushed detail page and the Bitcoin home tab. The anatomy is mobile's

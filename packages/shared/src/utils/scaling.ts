@@ -37,17 +37,15 @@ const getDimensions = (): { width: number; height: number } => {
   return { width: DESIGN_WIDTH, height: DESIGN_HEIGHT };
 };
 
-export const scale = (size: number): number => (getDimensions().width / DESIGN_WIDTH) * size;
+const scale = (size: number): number => (getDimensions().width / DESIGN_WIDTH) * size;
 export const s = scale;
 
-export const verticalScale = (size: number): number =>
-  (getDimensions().height / DESIGN_HEIGHT) * size;
+const verticalScale = (size: number): number => (getDimensions().height / DESIGN_HEIGHT) * size;
 export const vs = verticalScale;
 
-export const moderateScale = (size: number, factor = 0.5): number =>
-  size + (scale(size) - size) * factor;
+const moderateScale = (size: number, factor = 0.5): number => size + (scale(size) - size) * factor;
 export const ms = moderateScale;
 
-export const moderateVerticalScale = (size: number, factor = 0.5): number =>
+const moderateVerticalScale = (size: number, factor = 0.5): number =>
   size + (verticalScale(size) - size) * factor;
 export const mvs = moderateVerticalScale;

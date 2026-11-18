@@ -7,7 +7,7 @@ export interface SalmonEvent {
   accountChanged(...args: unknown[]): unknown;
 }
 
-export interface SalmonEventEmitter {
+interface SalmonEventEmitter {
   on<E extends keyof SalmonEvent>(event: E, listener: SalmonEvent[E], context?: unknown): void;
   off<E extends keyof SalmonEvent>(event: E, listener: SalmonEvent[E], context?: unknown): void;
 }
@@ -40,7 +40,7 @@ export interface Salmon extends SalmonEventEmitter {
 }
 
 /** JSON-safe `SolanaSignInInput` (incl. Wallet Standard PR#93 `useOffchainMessage`). */
-export interface SalmonSignInInput {
+interface SalmonSignInInput {
   domain?: string;
   address?: string;
   statement?: string;
@@ -56,7 +56,7 @@ export interface SalmonSignInInput {
   useOffchainMessage?: { messageVersion: 1 };
 }
 
-export interface SalmonSignInResult {
+interface SalmonSignInResult {
   address: string;
   publicKey: Uint8Array;
   signedMessage: Uint8Array;

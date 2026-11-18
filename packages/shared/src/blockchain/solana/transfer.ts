@@ -128,7 +128,7 @@ export interface TransferOptions {
 }
 
 /** Payload returned by `simulateTransaction` when `TransferOptions.simulate` is set. */
-export type SimulatedTransferResponse = Awaited<
+type SimulatedTransferResponse = Awaited<
   ReturnType<ReturnType<SolanaRpc['simulateTransaction']>['send']>
 >['value'];
 

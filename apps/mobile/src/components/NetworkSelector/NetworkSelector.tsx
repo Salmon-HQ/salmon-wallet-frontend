@@ -50,5 +50,3 @@ export function NetworkSelector({
     </SettingsScreenLayout>
   );
 }
-
-export default NetworkSelector;

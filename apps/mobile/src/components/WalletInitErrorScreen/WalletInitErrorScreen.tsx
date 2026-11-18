@@ -95,5 +95,3 @@ const stylesFor = (t: Semantic) =>
       height: vs(componentSizes.buttonHeightMedium),
     },
   });
-
-export default WalletInitErrorScreen;

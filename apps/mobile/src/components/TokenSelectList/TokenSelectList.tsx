@@ -143,5 +143,3 @@ const stylesFor = (t: Semantic) =>
       fontVariant: [...tabularNums.native.fontVariant],
     },
   });
-
-export default TokenSelectList;

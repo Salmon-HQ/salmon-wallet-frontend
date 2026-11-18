@@ -7,8 +7,6 @@
 import type { BiometricKind, BiometricUnlockResult, LockScreenPropsBase } from '@salmon/shared';
 import type { ReactNode } from 'react';
 
-export type { LockScreenPropsBase };
-
 /** `LockOverlay` only owns coverage and the touch block — no lock behaviour. */
 export interface LockOverlayProps {
   children: ReactNode;
@@ -54,7 +52,7 @@ export interface LockContentProps extends LockScreenPropsBase {
  * apart — and they had: the biometric one carried its own copy of the vault's
  * salt and broke the moment the vault was re-encrypted.
  */
-export interface BiometricConfig {
+interface BiometricConfig {
   /** Hardware present and the user has enrolled with the OS. */
   available: boolean;
   /** This wallet has a usable enrolment. */

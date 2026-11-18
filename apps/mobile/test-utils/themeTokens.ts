@@ -22,13 +22,13 @@ export * from '../../../packages/shared/src/theme';
  * `packages/shared/node_modules` that has no bridge. Identity also makes an
  * assertion readable: a style value equals the token it came from.
  */
-export const scale = (size: number): number => size;
+const scale = (size: number): number => size;
 export const s = scale;
-export const verticalScale = (size: number): number => size;
+const verticalScale = (size: number): number => size;
 export const vs = verticalScale;
-export const moderateScale = (size: number): number => size;
+const moderateScale = (size: number): number => size;
 export const ms = moderateScale;
-export const moderateVerticalScale = (size: number): number => size;
+const moderateVerticalScale = (size: number): number => size;
 export const mvs = moderateVerticalScale;
 
 /**

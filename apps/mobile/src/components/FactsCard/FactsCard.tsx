@@ -37,5 +37,3 @@ const stylesFor = (t: Semantic) =>
       lineHeight: s(fontSize.base) * lineHeight.condensed,
     },
   });
-
-export default FactsCard;

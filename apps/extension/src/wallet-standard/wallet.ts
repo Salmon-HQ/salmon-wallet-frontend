@@ -51,16 +51,16 @@ const SUPPORTED_TRANSACTION_VERSIONS = [
 // Defined locally because the installed @solana/wallet-standard-features does
 // not ship the feature yet; remove once the upstream package includes it.
 
-export type SolanaSignOffchainMessageVersion = 1;
+type SolanaSignOffchainMessageVersion = 1;
 
-export interface SolanaSignOffchainMessageInput {
+interface SolanaSignOffchainMessageInput {
   readonly account: WalletAccount;
   readonly message: string;
   readonly messageVersion: SolanaSignOffchainMessageVersion;
   readonly requiredSigners: readonly Uint8Array[];
 }
 
-export interface SolanaSignOffchainMessageOutput {
+interface SolanaSignOffchainMessageOutput {
   readonly signedOffchainMessage: Uint8Array;
   readonly signature: Uint8Array;
   readonly signatureType?: 'ed25519';
@@ -83,11 +83,11 @@ export type SolanaSignOffchainMessageFeature = {
 // (`useOffchainMessage` input + `signedMessageFormat` output, feature version
 // 1.1.0) are defined locally until the upstream package includes them.
 
-export type SalmonSolanaSignInInput = SolanaSignInInput & {
+type SalmonSolanaSignInInput = SolanaSignInInput & {
   readonly useOffchainMessage?: { readonly messageVersion: 1 };
 };
 
-export type SalmonSolanaSignInOutput = SolanaSignInOutput & {
+type SalmonSolanaSignInOutput = SolanaSignInOutput & {
   readonly signedMessageFormat?: { kind: 'offchainMessage'; messageVersion: 1 };
 };
 

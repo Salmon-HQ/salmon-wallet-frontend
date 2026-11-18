@@ -1,8 +1,3 @@
 export { TokenList, TokenListSkeleton } from './TokenList';
 export { TokenListItem } from './TokenListItem';
-export type {
-  TokenListProps,
-  TokenListItemProps,
-  TokenListSkeletonProps,
-  BlockchainType,
-} from './types';
+export type { TokenListProps, TokenListItemProps, TokenListSkeletonProps } from './types';

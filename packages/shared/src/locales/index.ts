@@ -65,11 +65,6 @@ export type SupportedLanguage = LanguageCode;
 export const AVAILABLE_LANGUAGES: LanguageCode[] = Object.keys(translations) as LanguageCode[];
 
 /**
- * Alias for AVAILABLE_LANGUAGES - commonly used naming convention.
- */
-export const SUPPORTED_LANGUAGES = AVAILABLE_LANGUAGES;
-
-/**
  * Default language for the application.
  */
 export const DEFAULT_LANGUAGE: LanguageCode = 'en';

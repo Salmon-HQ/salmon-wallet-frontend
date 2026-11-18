@@ -219,6 +219,7 @@ pnpm turbo run typecheck lint test:coverage   # every package, zero lint warning
 pnpm --filter @salmon/extension build   # extension bundles with wxt
 pnpm check:i18n                         # EN/ES keys in sync, no orphans
 pnpm check:parity                       # the extension is the mobile app on the DOM (see docs/ARCHITECTURE.md)
+pnpm check:dead-code                    # no unused export or file, every import declared where it is used (knip)
 pnpm check:manifest                     # extension permissions match the reviewed baseline (after an extension build)
 pnpm check:no-secrets                   # nothing that looks like a seed phrase or a keypair in tracked files
 pnpm check:powerups-bundle apps/extension/dist/chrome-mv3   # a Powerups-off build carries no Powerup (after a build with VITE_POWERUPS=off)
@@ -311,6 +312,7 @@ pnpm format:check
 pnpm turbo run typecheck lint test:coverage
 pnpm check:i18n
 pnpm check:parity
+pnpm check:dead-code
 ```
 
 For user-facing copy, update both English and Spanish translations in:

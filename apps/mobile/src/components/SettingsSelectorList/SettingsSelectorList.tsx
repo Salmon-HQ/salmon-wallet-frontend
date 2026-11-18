@@ -118,8 +118,6 @@ export function SettingsSelectorList<T>({
   return <>{items.map(renderItem)}</>;
 }
 
-export default SettingsSelectorList;
-
 // ============================================================================
 // Styles
 // ============================================================================

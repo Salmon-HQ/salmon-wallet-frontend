@@ -199,5 +199,3 @@ const stylesFor = (t: Semantic) =>
       color: t.text.onScrimSecondary,
     },
   });
-
-export default NftCard;

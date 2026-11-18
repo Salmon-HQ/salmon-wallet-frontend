@@ -9,7 +9,7 @@ interface Indexed<T> {
   [index: number]: T;
 }
 
-export function arraysEqual<T>(a: Indexed<T>, b: Indexed<T>): boolean {
+function arraysEqual<T>(a: Indexed<T>, b: Indexed<T>): boolean {
   if (a === b) return true;
 
   const length = a.length;
