@@ -28,6 +28,7 @@ in order, any "no" blocks. The gates that are easiest to miss:
 
 - [ ] `pnpm check:parity` green, no new `MOBILE_ONLY` / `DOM_ONLY` entry, and the clone ceiling did not rise
 - [ ] `pnpm check:dead-code` green — nothing exported that nobody imports, and each package declares what it imports
+- [ ] `pnpm check:cycles` green — no import cycle at run time
 - [ ] Every visible element is a §1 block or a folder-local composition of them — no custom modal, spinner, icon asset, literal spacing, duration or easing
 - [ ] Loading, empty and error all have a screen; a builder also covers every `describePowerupBuildError` outcome
 - [ ] Transaction bytes come only from `/v1/{networkId}/powerups/{id}/build`, and `requestSignature` is the one door — no confirmation, wait or receipt drawn by the Powerup

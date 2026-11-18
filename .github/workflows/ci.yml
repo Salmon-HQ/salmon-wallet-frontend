@@ -113,6 +113,11 @@ jobs:
       - name: Dead code and undeclared dependencies
         run: pnpm check:dead-code
 
+      # No module reaches itself through its own imports at run time; type-only
+      # imports are not counted (.madgerc).
+      - name: Import cycles
+        run: pnpm check:cycles
+
       # Every selector the e2e suites use still exists (spec 035): a flow on a
       # removed element fails here, naming it, not minutes into a device run.
       - name: e2e selector audit

@@ -150,6 +150,12 @@ Package names: `@salmon/shared`, `@salmon/ui`, `@salmon/mobile`,
   the `package.json` of the workspace that imports it; one thing has one
   exported name. Exceptions live in `knip.json`, each for a use knip cannot
   see.
+- Import cycles: `pnpm check:cycles` (madge, strict in CI). Two modules
+  that need each other at run time share a third one they both import;
+  `import type` does not count.
+- Package boundaries are lint errors: `packages/shared` imports no
+  platform package outside a `*.native.*` file and nothing from
+  `packages/ui` or an app; `packages/ui` imports no React Native.
 
 ## Gates that carry a baseline — what to update when X changes
 

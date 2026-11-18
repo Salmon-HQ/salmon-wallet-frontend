@@ -36,6 +36,7 @@
     "extension:zip:firefox": "pnpm --filter @salmon/extension zip:firefox",
     "check:i18n": "node scripts/check-i18n.mjs",
     "check:dead-code": "knip",
+    "check:cycles": "madge --circular packages/shared/src packages/ui/src apps/extension/src apps/mobile/app apps/mobile/src apps/mobile/hooks apps/mobile/utils",
     "check:parity": "node scripts/check-dom-parity.mjs",
     "check:parity:report": "node scripts/check-dom-parity.mjs --report",
     "check:parity:test": "node --test scripts/check-dom-parity.test.mjs",
@@ -64,6 +65,7 @@
     "eslint-plugin-react-hooks": "~7.0.1",
     "jscpd": "^5.3.3",
     "knip": "6.45.0",
+    "madge": "8.0.0",
     "prettier": "3.9.9",
     "qrcode": "1.5.4",
     "turbo": "^2.11.5"

@@ -1,0 +1,8 @@
+{
+  "fileExtensions": ["ts", "tsx"],
+  "excludeRegExp": ["node_modules", "\\.test\\.", "__tests__", "/android/", "/ios/", "\\.expo", "coverage", "dist", "\\.output", "\\.wxt"],
+  "detectiveOptions": {
+    "ts": { "skipTypeImports": true },
+    "tsx": { "skipTypeImports": true }
+  }
+}
