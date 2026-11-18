@@ -42,13 +42,19 @@ jobs:
       # The action signs in as the Claude GitHub App through OIDC; that App,
       # not this job's token, is what posts the comments.
       id-token: write
+    env:
+      # Without the key there is nothing to run: the steps are skipped and the
+      # job passes, so a missing secret never shows as a failed check.
+      HAS_KEY: ${{ secrets.ANTHROPIC_API_KEY != '' }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - if: env.HAS_KEY == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.base.sha }}
           persist-credentials: false
 
       - name: Fetch the change as a file
+        if: env.HAS_KEY == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -56,7 +62,8 @@ jobs:
 
       # Pinned to a release that was at least 7 days old when chosen, the same
       # waiting period pnpm-workspace.yaml sets for packages.
-      - uses: anthropics/claude-code-action@4fa93a88de49bbef68b10eb15aabedf28ca0e1ed # v1.0.271
+      - if: env.HAS_KEY == 'true'
+        uses: anthropics/claude-code-action@4fa93a88de49bbef68b10eb15aabedf28ca0e1ed # v1.0.271
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           # Reading is allowed, so the places a runner keeps credentials are
