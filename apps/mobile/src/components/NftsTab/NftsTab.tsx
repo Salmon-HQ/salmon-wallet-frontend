@@ -16,17 +16,13 @@
  */
 
 import {
-  canonicalNftToSolanaNftData,
   fontSize,
   spacing,
   getShortAddress,
   s,
-  useAccountsContext,
-  useSolanaNfts,
+  useNftsGrid,
   vs,
-  type Nft,
   type Semantic,
-  type SolanaNetworkId,
 } from '@salmon/shared';
 import React, { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
@@ -79,17 +75,24 @@ export function NftsTab({
   // Which derived account of the active network the grid is showing.
   const [subAccountIndex, setSubAccountIndex] = useState(0);
 
-  const [accountState] = useAccountsContext();
-  const { ready, activeAccount, networkId } = accountState;
-
-  // The grid follows the carousel. A Solana network is the only one with a
-  // collectibles surface, and the sub-tab is only offered on Solana, so this
-  // is the active network whenever the tab is on screen.
-  const activeNetworkId = (networkId ?? 'solana-mainnet') as SolanaNetworkId;
-
   // Spam is its own setting now (spec 026 D4): showing what an airdrop left
   // behind is not the same choice as putting devnet in the carousel.
   const includeSpam = useUnverifiedTokens();
+
+  // The grid follows the carousel: its network is the active one.
+  const {
+    ready,
+    activeAccount,
+    activeNetworkId,
+    nfts,
+    cards,
+    loading,
+    loadError,
+    isEmpty,
+    partial,
+    refreshing,
+    handleRefresh,
+  } = useNftsGrid({ includeSpam, subAccountIndex });
 
   const subAccounts = useMemo<SubAccount[]>(() => {
     const accounts = activeAccount?.networksAccounts?.[activeNetworkId] ?? [];
@@ -100,31 +103,6 @@ export function NftsTab({
       .filter((item): item is SubAccount => item !== null);
   }, [activeAccount, activeNetworkId]);
 
-  const ownerAddress = useMemo(() => {
-    const acc = activeAccount?.networksAccounts?.[activeNetworkId]?.[subAccountIndex];
-    return acc?.getReceiveAddress();
-  }, [activeAccount, activeNetworkId, subAccountIndex]);
-
-  const { nfts, loading, error, partial, refresh } = useSolanaNfts({
-    publicKey: ready ? ownerAddress : undefined,
-    networkId: activeNetworkId,
-    includeSpam,
-  });
-
-  const cards = useMemo<NftData[]>(() => (nfts as Nft[]).map(canonicalNftToSolanaNftData), [nfts]);
-
-  // Pull-to-refresh. The local boolean drives the RefreshControl spinner since
-  // the hook only exposes initial-load state.
-  const [refreshing, setRefreshing] = useState(false);
-  const handleRefresh = useCallback(async () => {
-    setRefreshing(true);
-    try {
-      await refresh();
-    } finally {
-      setRefreshing(false);
-    }
-  }, [refresh]);
-
   // Handle NFT press — push the detail screen (spec 019 D7).
   //
   // The route carries the sub-account the card was opened from, because it
@@ -132,7 +110,7 @@ export function NftsTab({
   // one and the detail screen derives it the same way this grid does.
   const handleNftPress = useCallback(
     (nftData: NftData) => {
-      const rawNft = (nfts as Nft[]).find((n) => n.mint.address === nftData.mint);
+      const rawNft = nfts.find((n) => n.mint.address === nftData.mint);
       if (!rawNft) return;
       router.push(`/nft/${rawNft.mint.address}?sub=${subAccountIndex}`);
     },
@@ -158,11 +136,6 @@ export function NftsTab({
     });
     return built;
   }, [cards]);
-
-  const loadError = error !== null;
-  // A failed load is not "you have no collectibles" — the error state owns
-  // that render, so the empty state stays out of it.
-  const isEmpty = !loading && !loadError && cards.length === 0;
 
   // Loading state - wait for account to be ready
   if (!ready) {
@@ -209,7 +182,7 @@ export function NftsTab({
           <>
             <NftsTabHeader
               loadError={loadError}
-              partialLoad={!!partial}
+              partialLoad={partial}
               isEmpty={isEmpty}
               onRetry={handleRefresh}
             />

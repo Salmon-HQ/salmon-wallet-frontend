@@ -4,7 +4,7 @@ export type { SelectOptionsPageProps } from './types';
 export { RecoverWalletPage } from './RecoverWalletPage';
 export type { RecoverWalletPageProps } from './types';
 
-export { CreateWalletPage, CREATE_FLOW_STEPS } from './CreateWalletPage';
+export { CreateWalletPage } from './CreateWalletPage';
 export type { CreateWalletPageProps } from './types';
 
 export { PasswordPage } from './PasswordPage';

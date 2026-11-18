@@ -13,32 +13,31 @@ const mockState: Record<string, unknown> = {};
 const mockVerification = { current: 'verified' };
 const mockVerifiedOrigins: unknown[] = [];
 
-// `@solana/kit` is ESM Jest cannot load; the MWA helpers only use it inside
-// the signing functions, which this host never reaches.
-jest.mock('@solana/kit', () => ({}));
-jest.mock('@salmon/shared', () => ({
-  // The phrase check (DEV-208) is never due here.
-  usePhraseBackup: () => ({
-    needsBackup: false,
-    requireBackup: async () => true,
-    openBackup: () => {},
-    markUnconfirmed: async () => {},
-  }),
-  // The detail cards are the kit's, drawn for real.
-  ...jest.requireActual('../../test-utils/themeTokens'),
-  ...jest.requireActual('@salmon/shared/src/utils/mwa'),
-  ...jest.requireActual('@salmon/shared/src/utils/active-selection'),
-  isSignableSolanaAccount: () => true,
-  useAccountsContext: () => [
-    mockState,
-    {
-      changeNetwork: mockChangeNetwork,
-      clearSwitchingNetwork: mockClearSwitchingNetwork,
-      lockAccounts: mockLockAccounts,
-      unlockAccounts: jest.fn(),
-    },
-  ],
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../test-utils/sharedWith').sharedWith({
+    // The phrase check (DEV-208) is never due here.
+    usePhraseBackup: () => ({
+      needsBackup: false,
+      requireBackup: async () => true,
+      openBackup: () => {},
+      markUnconfirmed: async () => {},
+    }),
+    // The detail cards are the kit's, drawn for real.
+    ...jest.requireActual('../../test-utils/themeTokens'),
+    ...jest.requireActual('@salmon/shared/src/utils/mwa'),
+    ...jest.requireActual('@salmon/shared/src/utils/active-selection'),
+    isSignableSolanaAccount: () => true,
+    useAccountsContext: () => [
+      mockState,
+      {
+        changeNetwork: mockChangeNetwork,
+        clearSwitchingNetwork: mockClearSwitchingNetwork,
+        lockAccounts: mockLockAccounts,
+        unlockAccounts: jest.fn(),
+      },
+    ],
+  })
+);
 
 jest.mock('@solana-mobile/mobile-wallet-adapter-walletlib', () => ({
   __esModule: true,
@@ -167,7 +166,7 @@ function given(state: Record<string, unknown>, request: unknown) {
 beforeEach(() => {
   jest.clearAllMocks();
   mockVerification.current = 'verified';
-  jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+  jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
 });
 
 describe('MwaHost — a devnet dApp on a mainnet wallet', () => {

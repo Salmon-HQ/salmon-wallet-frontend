@@ -7,14 +7,16 @@ import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { Keyboard } from 'react-native';
 
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('@salmon/shared/src/theme'),
-  ...jest.requireActual('@salmon/shared/src/types/ui/card'),
-  s: (value: number) => value,
-  vs: (value: number) => value,
-  ms: (value: number) => value,
-  ...jest.requireActual('@salmon/shared/src/hooks/useFieldFocus'),
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('@salmon/shared/src/theme'),
+    ...jest.requireActual('@salmon/shared/src/types/ui/card'),
+    s: (value: number) => value,
+    vs: (value: number) => value,
+    ms: (value: number) => value,
+    ...jest.requireActual('@salmon/shared/src/hooks/useFieldFocus'),
+  })
+);
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));

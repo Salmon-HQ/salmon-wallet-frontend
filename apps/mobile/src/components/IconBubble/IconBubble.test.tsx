@@ -8,7 +8,11 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
 
-jest.mock('@salmon/shared', () => ({ ...jest.requireActual('../../../test-utils/themeTokens') }));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('../../../test-utils/themeTokens'),
+  })
+);
 
 // No worklets runtime in Jest: the animated touchable and the press hook need
 // plain-JS stand-ins (same shape as the PowerupsFab suite's).

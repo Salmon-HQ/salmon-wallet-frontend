@@ -103,5 +103,3 @@ export function PowerupsFab({
     </div>
   );
 }
-
-export default PowerupsFab;

@@ -6,11 +6,13 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react-native';
 
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('../../../test-utils/themeTokens'),
-  powerupBadgeTier: jest.requireActual('@salmon/shared/src/utils/powerupBadgeTier')
-    .powerupBadgeTier,
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('../../../test-utils/themeTokens'),
+    powerupBadgeTier: jest.requireActual('@salmon/shared/src/utils/powerupBadgeTier')
+      .powerupBadgeTier,
+  })
+);
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (_key: string, fallback: string) => fallback }),

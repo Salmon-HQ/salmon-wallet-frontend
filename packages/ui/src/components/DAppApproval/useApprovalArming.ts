@@ -14,7 +14,7 @@ import type { KeyboardEvent } from 'react';
 export const APPROVE_ARM_MS = 750;
 
 /** The handlers `ApproveArea` puts on the element around Approve. */
-export interface ApproveAreaHandlers {
+interface ApproveAreaHandlers {
   onPointerEnter: () => void;
   onFocus: () => void;
   onBlur: () => void;

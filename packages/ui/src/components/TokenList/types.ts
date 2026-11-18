@@ -1,8 +1,6 @@
 import type { CSSProperties } from 'react';
 import type { TokenListItemPropsBase, TokenListPropsBase } from '@salmon/shared';
 
-export type { TokenListBlockchain as BlockchainType } from '@salmon/shared';
-
 /** The DOM half of `TokenListItemPropsBase`: the contract plus a style. */
 export interface TokenListItemProps extends TokenListItemPropsBase {
   style?: CSSProperties;

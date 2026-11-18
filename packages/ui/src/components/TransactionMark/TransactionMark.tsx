@@ -38,7 +38,7 @@ import { TokenLogo } from '../TokenLogo';
 import type { TransactionMarkProps } from './types';
 
 /** The kit's activity mark: a 40 circle (component inventory, CORE 08). */
-export const LEADING_SIZE = componentSizes.iconSize2XL;
+const LEADING_SIZE = componentSizes.iconSize2XL;
 
 /** The type badge riding the token logo — a mark on a mark, not a bubble. */
 const TYPE_BADGE_SIZE = componentSizes.iconSizeXSmall;

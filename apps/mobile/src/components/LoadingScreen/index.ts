@@ -1,2 +1,2 @@
-export { LoadingScreen, default } from './LoadingScreen';
+export { LoadingScreen } from './LoadingScreen';
 export type { LoadingScreenProps } from './types';

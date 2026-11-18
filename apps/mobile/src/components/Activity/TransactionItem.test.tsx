@@ -24,17 +24,19 @@ jest.mock('react-i18next', () => {
   };
 });
 
-jest.mock('@salmon/shared', () => ({
-  // The real tokens: the row is a `ListRow` now, and the kit primitives it
-  // composes read far more of the theme than the row itself does.
-  ...jest.requireActual('../../../test-utils/themeTokens'),
-  // The row's verb table and its sentence are real — they are the row.
-  ...jest.requireActual('@salmon/shared/src/utils/transactionDisplay'),
-  ...jest.requireActual('@salmon/shared/src/hooks/useTransactionItemDerived'),
-  formatRawAmount: (amount: string | number, decimals: number) =>
-    `${Number(amount) / 10 ** decimals}`,
-  formatRelativeTimeCompact: () => '2h',
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    // The real tokens: the row is a `ListRow` now, and the kit primitives it
+    // composes read far more of the theme than the row itself does.
+    ...jest.requireActual('../../../test-utils/themeTokens'),
+    // The row's verb table and its sentence are real — they are the row.
+    ...jest.requireActual('@salmon/shared/src/utils/transactionDisplay'),
+    ...jest.requireActual('@salmon/shared/src/hooks/useTransactionItemDerived'),
+    formatRawAmount: (amount: string | number, decimals: number) =>
+      `${Number(amount) / 10 ** decimals}`,
+    formatRelativeTimeCompact: () => '2h',
+  })
+);
 
 // No worklets runtime in Jest: the kit's pressable bubble pulls reanimated in,
 // so the animated touchable, the press hook and the two textures need

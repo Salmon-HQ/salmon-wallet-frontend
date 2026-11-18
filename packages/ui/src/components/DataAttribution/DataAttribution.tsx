@@ -54,5 +54,3 @@ export function DataAttribution({
     </a>
   );
 }
-
-export default DataAttribution;

@@ -143,83 +143,85 @@ jest.mock('react-i18next', () => {
   };
 });
 
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('../../test-utils/themeTokens'),
-  ...jest.requireActual('../../../../packages/shared/src/utils/sol-fees'),
-  ...jest.requireActual('../../../../packages/shared/src/utils/decimals'),
-  ...jest.requireActual('../../../../packages/shared/src/utils/send-failure-report'),
-  // What the review shows about a payment request is real: the suite pins it.
-  ...jest.requireActual('../../../../packages/shared/src/utils/sendRequestReview'),
-  readSettledPaymentLink: (raw: string, chain: string) => mockReadSettledPaymentLink(raw, chain),
-  // The components barrel is imported whole, so exports that have nothing to
-  // do with these screens still have to exist.
-  ...jest.requireActual('../../../../packages/shared/src/motion/crest'),
-  // The recipient groups are real: recents, address book and own wallets.
-  ...jest.requireActual('../../../../packages/shared/src/utils/recipientOptions'),
-  // The balance fills are real: the suite exercises their truncation.
-  ...jest.requireActual('../../../../packages/shared/src/hooks/useAmountShortcuts'),
-  // The derivations both twins render are real: the commit state (over the
-  // real wait exit) and the recipient groups.
-  ...jest.requireActual('../../../../packages/shared/src/hooks/useSendCommitState'),
-  ...jest.requireActual('../../../../packages/shared/src/hooks/useRecipientOptions'),
-  ...jest.requireActual('../../../../packages/shared/src/hooks/useDeferredFeeEstimate'),
-  ...jest.requireActual('../../../../packages/shared/src/utils/sendReceiptRows'),
-  useFiatLine: (amount: string, price?: number) =>
-    `≈ ${String((parseFloat(amount) || 0) * (price ?? 0))} USD`,
-  SOL_CONSTANTS: { ADDRESS: 'So11111111111111111111111111111111111111112' },
-  formatTokenAmount: (value: number) => String(value),
-  // Real: the amount field's limit to the token's places is what it pins.
-  ...jest.requireActual('../../../../packages/shared/src/utils/decimal-input'),
-  getShortAddress: (value: string) => (value ? `${value.slice(0, 4)}…${value.slice(-4)}` : null),
-  chunkAddress: (value: string) => value,
-  tabularNums: { native: { fontVariant: ['tabular-nums'] } },
-  isWatchOnlyAccount: () => mockIsWatchOnly,
-  useAccountsContext: () => [mockAccountState, {}],
-  useAddressValidation: () => mockValidation,
-  // Real hook: `dirty` starts false and is set on each edit, so a screen that
-  // gates Continue on `!dirty` behaves here exactly as it does shipped.
-  // Faithful to the real hook (packages/shared/src/hooks/useValidationDirty.ts):
-  // dirty is set on every edit and cleared only when a validation cycle
-  // actually completes. Reproduced rather than imported because requireActual
-  // pulls the whole barrel, which this jest config cannot load.
-  useValidationDirty: (isValidating: boolean) => {
-    const React = require('react');
-    const [dirty, setDirty] = React.useState(false);
-    const wasValidating = React.useRef(false);
-    React.useEffect(() => {
-      if (wasValidating.current && !isValidating) setDirty(false);
-      wasValidating.current = isValidating;
-    }, [isValidating]);
-    return { dirty, markDirty: React.useCallback(() => setDirty(true), []) };
-  },
-  // The real hook, loaded from its own file rather than the barrel (which this
-  // jest config cannot load). It only depends on React.
-  useSettledPaymentLink: jest.requireActual(
-    '../../../../packages/shared/src/hooks/useSettledPaymentLink'
-  ).useSettledPaymentLink,
-  useSendContacts: () => ({
-    contacts: [
-      {
-        name: 'Ana',
-        address: 'Contact11111111111111111111111111111111111',
-        networkName: 'Solana',
-        blockchain: 'solana',
-      },
-    ],
-    ownWallets: [],
-    isLoading: false,
-  }),
-  useTransactions: () => ({ transactions: [] }),
-  useCurrencyContext: () => [{ currency: 'usd' }, { formatPrecise: (v: number) => String(v) }],
-  // The REAL hook. Stubbed as `held === active` it collapsed the very
-  // distinction the wait's exit is built on — "committed" against "committed,
-  // or still leaving" — so a wait that was cut instead of left looked
-  // identical to one that left properly (spec 031 §4).
-  useWaitExit: jest.requireActual('@salmon/shared/src/hooks/useWaitExit').useWaitExit,
-  useBalance: () => ({ tokens: [], loading: false }),
-  useSendTransaction: () => mockFlow.sendHook,
-  getBlockchainFromNetworkId: () => 'solana',
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('../../test-utils/themeTokens'),
+    ...jest.requireActual('../../../../packages/shared/src/utils/sol-fees'),
+    ...jest.requireActual('../../../../packages/shared/src/utils/decimals'),
+    ...jest.requireActual('../../../../packages/shared/src/utils/send-failure-report'),
+    // What the review shows about a payment request is real: the suite pins it.
+    ...jest.requireActual('../../../../packages/shared/src/utils/sendRequestReview'),
+    readSettledPaymentLink: (raw: string, chain: string) => mockReadSettledPaymentLink(raw, chain),
+    // The components barrel is imported whole, so exports that have nothing to
+    // do with these screens still have to exist.
+    ...jest.requireActual('../../../../packages/shared/src/motion/crest'),
+    // The recipient groups are real: recents, address book and own wallets.
+    ...jest.requireActual('../../../../packages/shared/src/utils/recipientOptions'),
+    // The balance fills are real: the suite exercises their truncation.
+    ...jest.requireActual('../../../../packages/shared/src/hooks/useAmountShortcuts'),
+    // The derivations both twins render are real: the commit state (over the
+    // real wait exit) and the recipient groups.
+    ...jest.requireActual('../../../../packages/shared/src/hooks/useSendCommitState'),
+    ...jest.requireActual('../../../../packages/shared/src/hooks/useRecipientOptions'),
+    ...jest.requireActual('../../../../packages/shared/src/hooks/useDeferredFeeEstimate'),
+    ...jest.requireActual('../../../../packages/shared/src/utils/sendReceiptRows'),
+    useFiatLine: (amount: string, price?: number) =>
+      `≈ ${String((parseFloat(amount) || 0) * (price ?? 0))} USD`,
+    SOL_CONSTANTS: { ADDRESS: 'So11111111111111111111111111111111111111112' },
+    formatTokenAmount: (value: number) => String(value),
+    // Real: the amount field's limit to the token's places is what it pins.
+    ...jest.requireActual('../../../../packages/shared/src/utils/decimal-input'),
+    getShortAddress: (value: string) => (value ? `${value.slice(0, 4)}…${value.slice(-4)}` : null),
+    chunkAddress: (value: string) => value,
+    tabularNums: { native: { fontVariant: ['tabular-nums'] } },
+    isWatchOnlyAccount: () => mockIsWatchOnly,
+    useAccountsContext: () => [mockAccountState, {}],
+    useAddressValidation: () => mockValidation,
+    // Real hook: `dirty` starts false and is set on each edit, so a screen that
+    // gates Continue on `!dirty` behaves here exactly as it does shipped.
+    // Faithful to the real hook (packages/shared/src/hooks/useValidationDirty.ts):
+    // dirty is set on every edit and cleared only when a validation cycle
+    // actually completes. Reproduced rather than imported because requireActual
+    // pulls the whole barrel, which this jest config cannot load.
+    useValidationDirty: (isValidating: boolean) => {
+      const React = require('react');
+      const [dirty, setDirty] = React.useState(false);
+      const wasValidating = React.useRef(false);
+      React.useEffect(() => {
+        if (wasValidating.current && !isValidating) setDirty(false);
+        wasValidating.current = isValidating;
+      }, [isValidating]);
+      return { dirty, markDirty: React.useCallback(() => setDirty(true), []) };
+    },
+    // The real hook, loaded from its own file rather than the barrel (which this
+    // jest config cannot load). It only depends on React.
+    useSettledPaymentLink: jest.requireActual(
+      '../../../../packages/shared/src/hooks/useSettledPaymentLink'
+    ).useSettledPaymentLink,
+    useSendContacts: () => ({
+      contacts: [
+        {
+          name: 'Ana',
+          address: 'Contact11111111111111111111111111111111111',
+          networkName: 'Solana',
+          blockchain: 'solana',
+        },
+      ],
+      ownWallets: [],
+      isLoading: false,
+    }),
+    useTransactions: () => ({ transactions: [] }),
+    useCurrencyContext: () => [{ currency: 'usd' }, { formatPrecise: (v: number) => String(v) }],
+    // The REAL hook. Stubbed as `held === active` it collapsed the very
+    // distinction the wait's exit is built on — "committed" against "committed,
+    // or still leaving" — so a wait that was cut instead of left looked
+    // identical to one that left properly (spec 031 §4).
+    useWaitExit: jest.requireActual('@salmon/shared/src/hooks/useWaitExit').useWaitExit,
+    useBalance: () => ({ tokens: [], loading: false }),
+    useSendTransaction: () => mockFlow.sendHook,
+    getBlockchainFromNetworkId: () => 'solana',
+  })
+);
 
 jest.mock('../../src/contexts/SendFlowContext', () => ({
   SendFlowProvider: ({ children }: { children: React.ReactNode }) => children,

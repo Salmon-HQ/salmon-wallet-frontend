@@ -40,12 +40,14 @@ const mockHost: {
   dismissReceipt: jest.fn(),
 };
 
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('@salmon/shared/src/hooks/useWaitExit'),
-  ...jest.requireActual('@salmon/shared/src/core/confirmation/receipt'),
-  spacing: { lg: 16 },
-  useSignatureRequestHost: () => mockHost,
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('@salmon/shared/src/hooks/useWaitExit'),
+    ...jest.requireActual('@salmon/shared/src/core/confirmation/receipt'),
+    spacing: { lg: 16 },
+    useSignatureRequestHost: () => mockHost,
+  })
+);
 
 jest.mock('../../theme/useThemedStyles', () => ({
   useThemedStyles: (make: (t: unknown) => unknown) => make({ depth: { column: '#000' } }),

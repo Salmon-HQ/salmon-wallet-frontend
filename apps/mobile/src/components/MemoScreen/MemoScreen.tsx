@@ -88,5 +88,3 @@ const stylesFor = (t: Semantic) =>
       height: vs(componentSizes.buttonHeightCompact),
     },
   });
-
-export default MemoScreen;

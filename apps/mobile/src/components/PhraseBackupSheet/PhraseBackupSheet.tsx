@@ -13,17 +13,15 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import {
-  borderRadius,
   fontFamilyNative,
   fontSize,
   s,
-  spacing,
   usePhraseBackupSheet,
-  vs,
   type PhraseBackupSheetPropsBase,
   type Semantic,
 } from '@salmon/shared';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
+import { sheetBodyStyles } from '../BottomSheetContainer/sheetBodyStyles';
 import { secretClipboard } from '../../../hooks/useSecretClipboard';
 import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
 import { HoldToCopyButton, PrimaryButton, SecondaryButton } from '../Button';
@@ -140,35 +138,11 @@ export function PhraseBackupSheet(props: PhraseBackupSheetProps) {
 
 const stylesFor = (t: Semantic) =>
   StyleSheet.create({
-    bedrock: {
-      ...StyleSheet.absoluteFill,
-      backgroundColor: t.surface.bedrock,
-      borderTopLeftRadius: borderRadius.header,
-      borderTopRightRadius: borderRadius.header,
-    },
-    scroll: {
-      flexGrow: 0,
-    },
-    content: {
-      paddingHorizontal: s(spacing.screenGutter),
-      paddingTop: vs(spacing.md),
-      gap: vs(spacing.xl),
-    },
-    message: {
-      color: t.text.secondary,
-      fontFamily: fontFamilyNative.regular,
-      fontSize: s(fontSize.bodyLg),
-      textAlign: 'left',
-    },
+    ...sheetBodyStyles(t),
     question: {
       color: t.text.primary,
       fontFamily: fontFamilyNative.semiBold,
       fontSize: s(fontSize.bodyLg),
       textAlign: 'center',
     },
-    actions: {
-      gap: vs(spacing.sm),
-    },
   });
-
-export default PhraseBackupSheet;

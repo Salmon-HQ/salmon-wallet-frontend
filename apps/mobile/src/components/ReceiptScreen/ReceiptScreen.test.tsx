@@ -24,13 +24,15 @@ jest.mock('expo-haptics', () => ({
   NotificationFeedbackType: { Success: 'success' },
 }));
 
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('../../../test-utils/themeTokens'),
-  ...jest.requireActual('@salmon/shared/src/theme/onboardingGrid'),
-  ...jest.requireActual('@salmon/shared/src/motion/sinkFloat'),
-  useWaitGate: (active: boolean) => active,
-  useWaitExit: (showWait: boolean) => ({ held: showWait, onExited: () => {} }),
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('../../../test-utils/themeTokens'),
+    ...jest.requireActual('@salmon/shared/src/theme/onboardingGrid'),
+    ...jest.requireActual('@salmon/shared/src/motion/sinkFloat'),
+    useWaitGate: (active: boolean) => active,
+    useWaitExit: (showWait: boolean) => ({ held: showWait, onExited: () => {} }),
+  })
+);
 
 jest.mock('react-native-reanimated', () => {
   const { View } = jest.requireActual('react-native');

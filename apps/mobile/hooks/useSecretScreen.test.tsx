@@ -60,16 +60,16 @@ function AppRoot() {
 }
 
 describe('useSecretScreen', () => {
-  // Capture prevention is Android-only now; run the refcounting suite there.
+  // Capture prevention is Android-only; the refcounting suite runs there.
+  // The platform is set before each test, not once per block, so a test does
+  // not depend on which block ran before it.
   const originalOS = Platform.OS;
-  beforeAll(() => {
-    Platform.OS = 'android';
-  });
   afterAll(() => {
     Platform.OS = originalOS;
   });
 
   beforeEach(() => {
+    Platform.OS = 'android';
     jest.clearAllMocks();
   });
 
@@ -114,12 +114,8 @@ describe('useSecretScreen', () => {
   });
 
   describe('on iOS', () => {
-    const originalOS = Platform.OS;
-    beforeAll(() => {
+    beforeEach(() => {
       Platform.OS = 'ios';
-    });
-    afterAll(() => {
-      Platform.OS = originalOS;
     });
 
     // The blur covers the whole app from the root (balances and the address
@@ -149,7 +145,6 @@ describe('useSecretScreen', () => {
   // A refused native call is not protection: the next mount tries again,
   // and once it has worked nothing calls it a second time.
   it('tries the blur again after a refused call, and stops once it is on', async () => {
-    const originalOS = Platform.OS;
     Platform.OS = 'ios';
     // A fresh copy of the hook's module (its process-wide flag starts empty),
     // sharing this test's React and React Native.
@@ -175,18 +170,9 @@ describe('useSecretScreen', () => {
     await act(async () => {});
 
     expect(mockEnableAppSwitcherProtectionAsync).toHaveBeenCalledTimes(2);
-    Platform.OS = originalOS;
   });
 
   describe('on Android', () => {
-    const originalOS = Platform.OS;
-    beforeAll(() => {
-      Platform.OS = 'android';
-    });
-    afterAll(() => {
-      Platform.OS = originalOS;
-    });
-
     it('skips the iOS-only app switcher call, since FLAG_SECURE already blanks Recents', () => {
       render(<AppRoot />);
       const screen = render(<SecretScreen label="android" />);

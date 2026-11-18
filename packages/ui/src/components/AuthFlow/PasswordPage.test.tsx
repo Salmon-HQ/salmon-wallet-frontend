@@ -40,7 +40,7 @@ const mockProtectWallet = vi.fn();
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (_key: string, fallback?: string) => fallback ?? _key,
+    t: (_key: string, fallback?: unknown) => (typeof fallback === 'string' ? fallback : _key),
   }),
 }));
 
@@ -52,7 +52,6 @@ vi.mock('@salmon/shared/utils/account', () => ({
 // stub); only the account-setup surface below needs deterministic control.
 vi.mock('@salmon/shared', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@salmon/shared')>()),
-  PASSWORD_CONSTRAINTS: { MIN_LENGTH: 12, MAX_LENGTH: 128 },
   ApiError: MockApiError,
   createAccount: (...args: unknown[]) => mockCreateAccount(...args),
   getScanNetworks: async () => ['solana'],
@@ -66,8 +65,6 @@ vi.mock('@salmon/shared', async (importOriginal) => ({
       protectWallet: mockProtectWallet,
     },
   ],
-  validatePassword: () => ({ isValid: true, strength: 'strong' }),
-  getPasswordIssue: () => null,
   getPasswordStrengthLabel: (strength: string) => `strength-${strength}`,
 }));
 
@@ -164,7 +161,7 @@ describe('PasswordPage reserved slots', () => {
     // Both slots exist, hidden — only ReservedSlot uses `inert` in this tree.
     expect(container.querySelectorAll('div[inert]')).toHaveLength(2);
     // The meter itself is already mounted inside its hidden slot.
-    expect(screen.getByText('strength-strong')).toBeTruthy();
+    expect(screen.getByText(/^strength-/)).toBeTruthy();
   });
 
   it('reveals the strength meter in place on the first character', () => {
@@ -174,7 +171,7 @@ describe('PasswordPage reserved slots', () => {
 
     // The strength slot flipped visible; the error slot is still reserved.
     expect(container.querySelectorAll('div[inert]')).toHaveLength(1);
-    expect(screen.getByText('strength-strong')).toBeTruthy();
+    expect(screen.getByText(/^strength-/)).toBeTruthy();
   });
 });
 

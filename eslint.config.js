@@ -161,6 +161,58 @@ export default [
   // every file, and flat config replaces same-named rules wholesale — a
   // second config of that rule here would clobber one restriction or the
   // other for mobile files.
+  // The ownership table in AGENTS.md, as lint. `packages/shared` runs on both
+  // platforms, so platform code enters it only through a `*.native.*` file;
+  // `packages/ui` is the DOM kit.
+  {
+    files: ['packages/shared/src/**/*.{ts,tsx}'],
+    ignores: ['**/*.native.{ts,tsx}', '**/*.test.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                'react-native',
+                'react-native/*',
+                'expo',
+                'expo-*',
+                'react-dom',
+                'react-dom/*',
+              ],
+              message:
+                'packages/shared is imported by mobile and by the extension. Platform code goes in a *.native.* file here, or in the app that owns the platform.',
+            },
+            {
+              group: ['@salmon/ui', '@salmon/ui/*', '@salmon/mobile', '@salmon/extension'],
+              message: 'packages/shared sits below the apps and the DOM kit; it imports neither.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['packages/ui/src/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['react-native', 'react-native/*', 'expo', 'expo-*'],
+              message: 'packages/ui is the DOM kit. The React Native twin lives in apps/mobile.',
+            },
+            {
+              group: ['@salmon/mobile', '@salmon/extension'],
+              message: 'packages/ui sits below the apps; it imports neither.',
+            },
+          ],
+        },
+      ],
+    },
+  },
   {
     files: ['apps/mobile/**/*.{ts,tsx}'],
     rules: {
@@ -225,6 +277,24 @@ export default [
         {
           selector: 'TSImportType[source.value="@solana/web3.js"]',
           message: "'@solana/web3.js' import is restricted from being used by a pattern.",
+        },
+      ],
+    },
+  },
+  // A mobile test that mocks `@salmon/shared` starts from the real package
+  // (`test-utils/sharedWith.ts`) and names only what it controls. A mock that
+  // lists the package's exports by hand breaks the day the screen reads one
+  // more, and lets a test pass on an export that silently arrives undefined.
+  {
+    files: ['apps/mobile/**/*.test.{ts,tsx}', 'apps/mobile/__tests__/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "CallExpression[callee.object.name='jest'][callee.property.name='mock'][arguments.0.value='@salmon/shared'] > ArrowFunctionExpression > :matches(ObjectExpression, CallExpression[callee.object.name='jest'])",
+          message:
+            "Build the mock on the real package: jest.mock('@salmon/shared', () => require('<path>/test-utils/sharedWith').sharedWith({ ... })).",
         },
       ],
     },

@@ -16,7 +16,7 @@ import {
 import * as SplashScreen from 'expo-splash-screen';
 import * as SystemUI from 'expo-system-ui';
 import { useEffect, useState, useRef } from 'react';
-import { View, StyleSheet, AppState, Linking, Platform, type AppStateStatus } from 'react-native';
+import { View, StyleSheet, AppState, Linking, Platform } from 'react-native';
 import 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
@@ -54,7 +54,7 @@ export {
 
 export const unstable_settings = {
   // Ensure that reloading keeps a back button present.
-  initialRouteName: '(auth)',
+  anchor: '(auth)',
 };
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -166,7 +166,7 @@ function RootLayoutNav({ updateRequired }: { updateRequired: boolean }) {
   const segments = useSegments();
   const { type: routeType } = useGlobalSearchParams<{ type?: string }>();
   const navigationState = useRootNavigationState();
-  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
+  const appStateRef = useRef(AppState.currentState);
   const lockInFlightRef = useRef(false);
 
   // Mounts after the update gate, so an update applied at launch is one open.

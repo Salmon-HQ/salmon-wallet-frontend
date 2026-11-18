@@ -289,5 +289,3 @@ const stylesFor = (t: Semantic) =>
       padding: s(spacing.md),
     },
   });
-
-export default HomeTabOrderSheet;

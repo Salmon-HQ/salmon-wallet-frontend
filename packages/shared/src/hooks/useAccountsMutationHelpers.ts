@@ -23,8 +23,6 @@ import {
   resolveMnemonicsWithPassword,
 } from './useAccountsSecurityHelpers';
 
-export { buildSecretVault } from '../utils/account-secret';
-
 /** The Web Locks name every read-modify-write of the stored wallets holds. */
 const VAULT_WRITE_LOCK = 'salmon-vault-write';
 

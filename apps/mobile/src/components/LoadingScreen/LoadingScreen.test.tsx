@@ -28,77 +28,81 @@ let mockWaveStarts = 0;
 
 // The shared barrel reaches the Solana ESM packages, which this Jest config
 // does not transform. Only the tokens this screen reads matter here.
-jest.mock('@salmon/shared', () => ({
-  DEFAULT_WALLET_TIP_KEYS: ['general.tips.1'],
-  colors: {
-    background: { primary: '#10131C', secondary: '#070911' },
-    text: { primary: '#EDF1F7', secondary: '#A7B1C4' },
-    accent: { primary: '#FF5C45' },
-  },
-  semantic: {
-    text: { accent: '#FF5C45', primary: '#EDF1F7', secondary: '#A7B1C4' },
-    border: { hairline: 'rgba(199,211,232,0.10)' },
-    accent: { ink: '#FF5C45', fill: '#FF5C45', tint: 'rgba(255, 92, 69, 0.10)' },
-    depth: { abyss: '#10131C' },
-    surface: { raised: '#161C2D' },
-    water: { crestShadow: { color: '#070911', alpha: 0.9 } },
-  },
-  componentSizes: {
-    descentTrackWidth: 2,
-    descentTrackHeight: 120,
-    descentSegmentHeight: 44,
-    waveAmplitude: 3,
-  },
-  fontFamilyNative: { regular: 'DMSansRegular', semiBold: 'DMSansSemiBold', bold: 'DMSansBold' },
-  fontSize: { sm: 12, base: 14, bodyLg: 16, headline: 24, caption: 12, body: 14 },
-  lineHeight: { snug: 1.4, tight: 1.25 },
-  letterSpacing: { widest: 1 },
-  s: (value: number) => value,
-  motionMs: {
-    flick: 90,
-    swell: 180,
-    ebb: 180,
-    drift: 280,
-    rise: 420,
-    tide: 720,
-    stagger: 24,
-    shimmerCycle: 1400,
-    pulseCycle: 1200,
-    waitFloor: 2500,
-  },
-  markPaths: ['M0 0h1v1H0z'],
-  markViewBoxAttr: '0 0 253 237',
-  WAVEFRONT_CROSS_MS: 1400,
-  WAVEFRONT_EBB_MS: 360,
-  WAVEFRONT_PERIOD_MS: 2000,
-  WAVEFRONT_SINK_MS: 90,
-  WAVEFRONT_RECOVER_MS: 720,
-  wavefrontRadius: () => 500,
-  wavefrontExitMs: (isReduceMotionEnabled: boolean) => (isReduceMotionEnabled ? 180 : 1580),
-  planWavefrontExit: (_elapsedMs: number, isReduceMotionEnabled: boolean) =>
-    isReduceMotionEnabled ? { holdMs: 0, exitMs: 180 } : { holdMs: 1400, exitMs: 1580 },
-  motionEasing: {
-    current: { native: [0.32, 0.72, 0, 1] },
-    settle: { native: [0.22, 1, 0.36, 1] },
-    sink: { native: [0.4, 0, 1, 1] },
-    swellIn: { native: [0.34, 1.14, 0.64, 1] },
-  },
-  resolveMotionMs: (ms: number, reduced: boolean) => (reduced ? 0 : ms),
-  spacing: { sm: 8, lg: 16, '2xl': 24, '3xl': 32, '5xl': 48 },
-  // The crest's shape is real, not stubbed: it is pure arithmetic over theme
-  // tokens with nothing under it to transform, and a fake here would let the
-  // two platforms draw two different waves without a test noticing.
-  ...jest.requireActual('@salmon/shared/src/motion/crest'),
-  // The wait's own numbers and its tip clock, real for the same reason.
-  ...jest.requireActual('@salmon/shared/src/motion/wait'),
-  useWaitTips: jest.requireActual('@salmon/shared/src/hooks/useWaitTips').useWaitTips,
-  // The task chrome and the Home shell are the real modules (their own suites
-  // cover them); this file needs them present, not faked.
-  ...jest.requireActual('@salmon/shared/src/contexts/TaskChromeContext'),
-  useHomeShell: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').useHomeShell,
-  mapBalanceToToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').mapBalanceToToken,
-  buildBitcoinToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').buildBitcoinToken,
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    DEFAULT_WALLET_TIP_KEYS: ['general.tips.1'],
+    colors: {
+      background: { primary: '#10131C', secondary: '#070911' },
+      text: { primary: '#EDF1F7', secondary: '#A7B1C4' },
+      accent: { primary: '#FF5C45' },
+    },
+    semantic: {
+      text: { accent: '#FF5C45', primary: '#EDF1F7', secondary: '#A7B1C4' },
+      border: { hairline: 'rgba(199,211,232,0.10)' },
+      accent: { ink: '#FF5C45', fill: '#FF5C45', tint: 'rgba(255, 92, 69, 0.10)' },
+      depth: { abyss: '#10131C' },
+      surface: { raised: '#161C2D' },
+      water: { crestShadow: { color: '#070911', alpha: 0.9 } },
+    },
+    componentSizes: {
+      descentTrackWidth: 2,
+      descentTrackHeight: 120,
+      descentSegmentHeight: 44,
+      waveAmplitude: 3,
+    },
+    fontFamilyNative: { regular: 'DMSansRegular', semiBold: 'DMSansSemiBold', bold: 'DMSansBold' },
+    fontSize: { sm: 12, base: 14, bodyLg: 16, headline: 24, caption: 12, body: 14 },
+    lineHeight: { snug: 1.4, tight: 1.25 },
+    letterSpacing: { widest: 1 },
+    s: (value: number) => value,
+    motionMs: {
+      flick: 90,
+      swell: 180,
+      ebb: 180,
+      drift: 280,
+      rise: 420,
+      tide: 720,
+      stagger: 24,
+      shimmerCycle: 1400,
+      pulseCycle: 1200,
+      waitFloor: 2500,
+    },
+    markPaths: ['M0 0h1v1H0z'],
+    markViewBoxAttr: '0 0 253 237',
+    WAVEFRONT_CROSS_MS: 1400,
+    WAVEFRONT_EBB_MS: 360,
+    WAVEFRONT_PERIOD_MS: 2000,
+    WAVEFRONT_SINK_MS: 90,
+    WAVEFRONT_RECOVER_MS: 720,
+    wavefrontRadius: () => 500,
+    wavefrontExitMs: (isReduceMotionEnabled: boolean) => (isReduceMotionEnabled ? 180 : 1580),
+    planWavefrontExit: (_elapsedMs: number, isReduceMotionEnabled: boolean) =>
+      isReduceMotionEnabled ? { holdMs: 0, exitMs: 180 } : { holdMs: 1400, exitMs: 1580 },
+    motionEasing: {
+      current: { native: [0.32, 0.72, 0, 1] },
+      settle: { native: [0.22, 1, 0.36, 1] },
+      sink: { native: [0.4, 0, 1, 1] },
+      swellIn: { native: [0.34, 1.14, 0.64, 1] },
+    },
+    resolveMotionMs: (ms: number, reduced: boolean) => (reduced ? 0 : ms),
+    spacing: { sm: 8, lg: 16, '2xl': 24, '3xl': 32, '5xl': 48 },
+    // The crest's shape is real, not stubbed: it is pure arithmetic over theme
+    // tokens with nothing under it to transform, and a fake here would let the
+    // two platforms draw two different waves without a test noticing.
+    ...jest.requireActual('@salmon/shared/src/motion/crest'),
+    // The wait's own numbers and its tip clock, real for the same reason.
+    ...jest.requireActual('@salmon/shared/src/motion/wait'),
+    useWaitTips: jest.requireActual('@salmon/shared/src/hooks/useWaitTips').useWaitTips,
+    // The task chrome and the Home shell are the real modules (their own suites
+    // cover them); this file needs them present, not faked.
+    ...jest.requireActual('@salmon/shared/src/contexts/TaskChromeContext'),
+    useHomeShell: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').useHomeShell,
+    mapBalanceToToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell')
+      .mapBalanceToToken,
+    buildBitcoinToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell')
+      .buildBitcoinToken,
+  })
+);
 
 jest.mock('expo-linear-gradient', () => {
   const { View } = jest.requireActual('react-native');

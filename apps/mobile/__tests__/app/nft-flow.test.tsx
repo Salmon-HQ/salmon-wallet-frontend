@@ -24,19 +24,21 @@ jest.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string, fallback?: string) => fallback ?? key }),
 }));
 
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('../../test-utils/themeTokens'),
-  canonicalNftToSolanaNftData: (...args: unknown[]) => mockCanonicalNftToSolanaNftData(...args),
-  useAccountsContext: () => [
-    {
-      ready: true,
-      activeAccount: { id: 'acct-1', networksAccounts: { 'solana-mainnet': [mockAccount] } },
-    },
-    {},
-  ],
-  useSolanaNfts: () => ({ nfts: [mockRawNft], loading: false }),
-  useNftFlowState: (...args: unknown[]) => mockUseNftFlowState(...args),
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('../../test-utils/themeTokens'),
+    canonicalNftToSolanaNftData: (...args: unknown[]) => mockCanonicalNftToSolanaNftData(...args),
+    useAccountsContext: () => [
+      {
+        ready: true,
+        activeAccount: { id: 'acct-1', networksAccounts: { 'solana-mainnet': [mockAccount] } },
+      },
+      {},
+    ],
+    useSolanaNfts: () => ({ nfts: [mockRawNft], loading: false }),
+    useNftFlowState: (...args: unknown[]) => mockUseNftFlowState(...args),
+  })
+);
 
 jest.mock('../../src/contexts/DeveloperModeContext', () => ({
   useUnverifiedTokens: () => false,

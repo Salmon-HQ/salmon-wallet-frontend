@@ -3,14 +3,10 @@ import {
   fontFamilyNative,
   fontScaleCap,
   fontSize,
-  formatLargeNumber,
-  formatTokenAmount,
-  getLabelValue,
-  hiddenValue,
   ms,
   s,
-  showPercentage,
   spacing,
+  tokenRowDisplay,
   useCurrencyContext,
   vs,
   type Semantic,
@@ -66,57 +62,26 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
   const styles = useThemedStyles(stylesFor);
   const { change: changeTones } = useSemantic();
   const [, { formatValue }] = useCurrencyContext();
-  const { name, symbol, logo, price, uiAmount, usdBalance, last24HoursChange } = token;
+  const { name, symbol, logo } = token;
 
   const handlePress = React.useCallback(() => {
     onPress?.(token);
   }, [onPress, token]);
 
-  // Get the label type for coloring the percentage
-  const percentageChange = last24HoursChange?.perc ?? 0;
-  const labelType = getLabelValue(percentageChange);
-  const changeColor = changeTones[labelType];
+  const {
+    changeTone,
+    displayPrice,
+    displayUsdValue,
+    displayTokenAmount,
+    spokenAmount,
+    spokenPrice,
+    tickerSegment,
+    changeSegment,
+  } = tokenRowDisplay(token, hiddenBalance, formatValue);
+  const changeColor = changeTones[changeTone];
 
-  // Format display values
-  const displayPrice = hiddenBalance ? hiddenValue : price != null ? formatValue(price) : null;
-
-  const displayPercentage = last24HoursChange ? showPercentage(percentageChange) : null;
-
-  const displayUsdValue = hiddenBalance
-    ? hiddenValue
-    : usdBalance != null
-      ? formatValue(usdBalance)
-      : null;
-
-  // A holding of 28,896.26376 BONK printed in full pushed the ticker off the
-  // row ("28896.26376 Bo…"). `formatLargeNumber` is the repo's compact
-  // renderer: K/M/B above a thousand, full precision below it, so a dust
-  // balance still reads digit for digit.
-  const numericAmount = typeof uiAmount === 'string' ? parseFloat(uiAmount) : uiAmount;
-  const compactAmount = Number.isFinite(numericAmount)
-    ? formatLargeNumber(numericAmount)
-    : formatTokenAmount(uiAmount);
-  const displayTokenAmount = hiddenBalance ? hiddenValue : `${compactAmount} ${symbol || ''}`;
-
-  // What the screen reader is told, masked exactly like the pixels are. The
-  // labels used to interpolate the raw `price` and `uiAmount` regardless of
-  // `hiddenBalance`, so VoiceOver read out the balance the user had just
-  // chosen to hide.
-  const spokenAmount = hiddenBalance ? hiddenValue : uiAmount;
-  const spokenPrice = hiddenBalance ? hiddenValue : price;
-
-  // One text run that ellipsises at its end, like the DOM twin
-  // (`packages/ui/src/components/TokenList/TokenListItem.tsx`). Three
-  // fixed-width Texts fighting for space beside a non-shrinking name column
-  // squeezed the ticker to "mSC$145.52"; a single `numberOfLines={1}` Text
-  // degrades to "mSOL · $145.…" instead.
-  const hasTail = !!displayPrice || !!displayPercentage;
-  const tickerSegment = symbol ? (hasTail ? `${symbol} · ` : symbol) : null;
-  const changeSegment = displayPercentage
-    ? displayPrice
-      ? ` · ${displayPercentage}`
-      : displayPercentage
-    : null;
+  // One text run that ellipsises at its end, like the DOM twin: three
+  // fixed-width Texts beside a non-shrinking name column squeeze the ticker.
   const subline = (tickerSegment || displayPrice || changeSegment) && (
     <Text
       testID={`token-row-subline-${symbol}`}

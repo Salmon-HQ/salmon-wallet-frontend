@@ -96,5 +96,3 @@ export function usePressMotion(): PressMotion {
     specular: { x: specularX, y: specularY, opacity: specularOpacity },
   };
 }
-
-export default usePressMotion;

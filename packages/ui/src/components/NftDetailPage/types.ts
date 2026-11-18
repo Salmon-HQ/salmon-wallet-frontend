@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react';
 import type { NftData, PreparedNftTransactionResponse } from '@salmon/shared';
 
 // Re-export for convenience
-export type { NftAttribute, NftData } from '@salmon/shared';
+export type { NftAttribute } from '@salmon/shared';
 
 /**
  * NFT detail data is the full NftData type

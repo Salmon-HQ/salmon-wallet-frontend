@@ -67,5 +67,3 @@ export function DAppConnectPage({
     />
   );
 }
-
-export default DAppConnectPage;

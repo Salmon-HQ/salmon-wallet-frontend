@@ -359,5 +359,3 @@ const stylesFor = (t: Semantic) =>
       color: t.text.secondary,
     },
   });
-
-export default PriceChart;

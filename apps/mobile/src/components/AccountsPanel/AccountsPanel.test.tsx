@@ -12,26 +12,28 @@ jest.mock('react-i18next', () => ({
 // The theme folder imports nothing but itself, so the real tokens can be
 // pulled in directly — the barrel would drag in `@solana/kit`, which
 // jest-expo does not transform. See `test-utils/themeTokens.ts`.
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('../../../test-utils/themeTokens'),
-  getAvatarColor: () => '#333',
-  getInitials: (name: string) => name.slice(0, 2),
-  getAccountAddress: () => '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU',
-  getShortAddress: (address: string) => `${address.slice(0, 4)}...${address.slice(-4)}`,
-  isWatchOnlyAccount: () => false,
-  isSeedVaultAccount: () => false,
-  // The delete confirmation's state lives in shared; the panel only renders it.
-  useAccountDeleteConfirm: (onDeleteAccount: (id: string, password?: string) => void) => {
-    const { useState } = require('react');
-    const [accountToDelete, setAccountToDelete] = useState(null);
-    return {
-      accountToDelete,
-      setAccountToDelete,
-      confirm: async (password?: string) =>
-        accountToDelete && onDeleteAccount(accountToDelete.id, password),
-    };
-  },
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('../../../test-utils/themeTokens'),
+    getAvatarColor: () => '#333',
+    getInitials: (name: string) => name.slice(0, 2),
+    getAccountAddress: () => '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU',
+    getShortAddress: (address: string) => `${address.slice(0, 4)}...${address.slice(-4)}`,
+    isWatchOnlyAccount: () => false,
+    isSeedVaultAccount: () => false,
+    // The delete confirmation's state lives in shared; the panel only renders it.
+    useAccountDeleteConfirm: (onDeleteAccount: (id: string, password?: string) => void) => {
+      const { useState } = require('react');
+      const [accountToDelete, setAccountToDelete] = useState(null);
+      return {
+        accountToDelete,
+        setAccountToDelete,
+        confirm: async (password?: string) =>
+          accountToDelete && onDeleteAccount(accountToDelete.id, password),
+      };
+    },
+  })
+);
 
 jest.mock('expo-image', () => {
   const { View } = jest.requireActual('react-native');

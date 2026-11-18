@@ -49,21 +49,23 @@ jest.mock('expo-status-bar', () => ({
 // outside any navigator and never passes `float`.
 jest.mock('expo-router', () => ({ useFocusEffect: () => {} }));
 
-jest.mock('@salmon/shared', () => ({
-  // Real tokens rather than a hand-listed subset — see test-utils/themeTokens.
-  // The lock screen and the shared buttons under it read a wide slice of the
-  // theme, and listing that slice by hand meant every new token read broke
-  // this file with "cannot read properties of undefined".
-  ...jest.requireActual('../../../test-utils/themeTokens'),
-  // The real wait-exit hook: the passage into the unlock wait composes it,
-  // and a stub here would let this file pass while the hold contract drifted.
-  ...jest.requireActual('../../../../../packages/shared/src/hooks/useWaitExit'),
-  resolveMotionMs: (ms: number) => ms,
-  useUnlockThrottle: () => mockThrottle,
-  ms: (value: number) => value,
-  s: (value: number) => value,
-  vs: (value: number) => value,
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    // Real tokens rather than a hand-listed subset — see test-utils/themeTokens.
+    // The lock screen and the shared buttons under it read a wide slice of the
+    // theme, and listing that slice by hand meant every new token read broke
+    // this file with "cannot read properties of undefined".
+    ...jest.requireActual('../../../test-utils/themeTokens'),
+    // The real wait-exit hook: the passage into the unlock wait composes it,
+    // and a stub here would let this file pass while the hold contract drifted.
+    ...jest.requireActual('../../../../../packages/shared/src/hooks/useWaitExit'),
+    resolveMotionMs: (ms: number) => ms,
+    useUnlockThrottle: () => mockThrottle,
+    ms: (value: number) => value,
+    s: (value: number) => value,
+    vs: (value: number) => value,
+  })
+);
 
 jest.mock('react-native-safe-area-context', () => ({
   SafeAreaView: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
@@ -138,6 +140,14 @@ jest.mock('../ConfirmSheet', () => ({
 }));
 
 import { LockContent } from './LockContent';
+
+// The unlock holds until the wait reports it is drawing; the stubbed wait
+// never reports, so each attempt proceeds when the component's own watchdog
+// fires, after the wait's entrance.
+const { FLOAT_DELAY_MS, FLOAT_IN_MS } = jest.requireActual(
+  '../../../../../packages/shared/src/motion/sinkFloat'
+);
+const WAIT_WATCHDOG_MS = FLOAT_DELAY_MS + FLOAT_IN_MS;
 
 describe('LockContent', () => {
   beforeEach(() => {
@@ -245,7 +255,7 @@ describe('LockContent', () => {
     // The recovered password goes through the same door a typed one does —
     // there is no second unlock path carrying a pre-derived key any more.
     await act(async () => {
-      jest.advanceTimersByTime(100);
+      jest.advanceTimersByTime(WAIT_WATCHDOG_MS);
     });
     await waitFor(() => {
       expect(onUnlock).toHaveBeenCalledWith('correct-horse');
@@ -293,7 +303,7 @@ describe('LockContent', () => {
     };
     const { rerender } = render(<LockContent {...props} />);
     await act(async () => {
-      jest.advanceTimersByTime(100);
+      jest.advanceTimersByTime(WAIT_WATCHDOG_MS);
     });
     rerender(<LockContent {...props} autoPrompt={false} />);
     await act(async () => {
@@ -533,14 +543,14 @@ describe('LockContent', () => {
 
     // The wrong-password error lands in `assist`, not against the input. The
     // form gives way to the wait while the attempt runs (its subtree
-    // unmounts), so the attempt has to finish — one 100ms yield — before the
+    // unmounts), so the attempt has to finish — the wait watchdog — before the
     // bands are back to be queried.
     fireEvent.changeText(screen.getByTestId('lock-password-input'), 'nope');
     await act(async () => {
       fireEvent.press(screen.getByTestId('lock-unlock-button'));
     });
     await act(async () => {
-      jest.advanceTimersByTime(100);
+      jest.advanceTimersByTime(WAIT_WATCHDOG_MS);
     });
     const assist = within(screen.getByTestId('onboarding-slot-assist'));
     await waitFor(() => {
@@ -589,7 +599,7 @@ describe('LockContent', () => {
     expect(mockLoadingScreenProps.visible).toBe(true);
     expect(onUnlock).not.toHaveBeenCalled();
     await act(async () => {
-      jest.advanceTimersByTime(100);
+      jest.advanceTimersByTime(WAIT_WATCHDOG_MS);
     });
     expect(onUnlock).toHaveBeenCalledWith('correct-horse');
 
@@ -650,7 +660,7 @@ describe('LockContent', () => {
       fireEvent.press(screen.getByTestId('lock-unlock-button'));
     });
     await act(async () => {
-      jest.advanceTimersByTime(100);
+      jest.advanceTimersByTime(WAIT_WATCHDOG_MS);
     });
 
     // The wave is dismissed, the error lands in the assist band, and the
@@ -697,7 +707,7 @@ describe('LockContent', () => {
       fireEvent.press(screen.getByTestId('lock-unlock-button'));
     });
     await act(async () => {
-      jest.advanceTimersByTime(100);
+      jest.advanceTimersByTime(WAIT_WATCHDOG_MS);
     });
     expect(screen.queryByTestId('lock-password-input')).toBeNull();
 

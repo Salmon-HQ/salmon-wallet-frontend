@@ -63,5 +63,3 @@ const styles = StyleSheet.create({
     gap: s(spacing.xs),
   },
 });
-
-export default TransactionDetailDeveloper;

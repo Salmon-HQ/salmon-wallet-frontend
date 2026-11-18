@@ -5,10 +5,12 @@
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('../../../test-utils/themeTokens'),
-  vs: (value: number) => value,
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('../../../test-utils/themeTokens'),
+    vs: (value: number) => value,
+  })
+);
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({

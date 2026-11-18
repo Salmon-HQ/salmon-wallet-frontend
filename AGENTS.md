@@ -144,6 +144,30 @@ Package names: `@salmon/shared`, `@salmon/ui`, `@salmon/mobile`,
   `apps/mobile/src/components`, `apps/mobile/app`, `packages/ui` or
   `packages/shared/src/types/ui`; `pnpm check:parity:report` to read
   findings without failing.
+- Dead code: `pnpm check:dead-code` (knip, strict in CI) after removing a
+  caller, adding an export or adding an import of a new package. An export
+  nobody imports is deleted, not kept for later; a package is declared in
+  the `package.json` of the workspace that imports it; one thing has one
+  exported name. Exceptions live in `knip.json`, each for a use knip cannot
+  see.
+- Hidden characters: `pnpm check:hidden-unicode` (strict in CI). No
+  zero-width, bidirectional or tag character in a tracked file; where code
+  needs one, write its escape (`\u200B`).
+- Import cycles: `pnpm check:cycles` (madge, strict in CI). Two modules
+  that need each other at run time share a third one they both import;
+  `import type` does not count.
+- Known vulnerabilities: `pnpm check:audit` (strict in CI). No high or
+  critical advisory in the lockfile. The fix is a minimum version under
+  `pnpm.overrides`, within the same major.
+- One Solana kit: `pnpm check:single-kit` (strict in CI) after adding or
+  upgrading a dependency. The lockfile holds one version of `@solana/kit`
+  and of each `@solana-program/*` client, because a second kit adds about
+  forty packages to every bundle. A dependency that asks for an older one
+  gets an entry under `pnpm.overrides`, after checking that every function
+  it calls exists in the current version.
+- Package boundaries are lint errors: `packages/shared` imports no
+  platform package outside a `*.native.*` file and nothing from
+  `packages/ui` or an app; `packages/ui` imports no React Native.
 
 ## Gates that carry a baseline — what to update when X changes
 
@@ -161,6 +185,7 @@ threshold or a skipped step.
 | A test that needs a phrase, a keypair or a signature                                                                   | Use the public vectors (`abandon…`, `test…junk`) or a random one generated inside the test; otherwise mark the line `// no-secrets-ignore: <why>`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | `pnpm check:no-secrets`                                                      |
 | Coverage of a package goes up for good                                                                                 | Raise that package's `thresholds` (vitest config) / `coverageThreshold` (jest config). They are a ratchet: they only ever go up; a PR that drops below adds tests                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | `pnpm test:coverage`                                                         |
 | Cross-platform duplication goes down                                                                                   | Lower `CROSS_PLATFORM_CLONE_LINES_MAX` in `scripts/check-dom-parity.mjs` — same ratchet, the other direction. It may be raised only for new twin pairs that copy no logic, with the reason in the commit (`docs/DOM-PARITY.md`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | `pnpm check:parity:report`                                                   |
+| Duplication on one platform or inside `packages/shared` goes down                                                      | Lower `SAME_SIDE_CLONE_LINES_MAX` in `scripts/check-dom-parity.mjs`. It never goes up: a change that trips it reuses or extracts the helper instead of copying it (`docs/DOM-PARITY.md`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | `pnpm check:parity:report`                                                   |
 | `packageManager` (pnpm) or the Node version                                                                            | Keep `.nvmrc`, `package.json#engines`, `apps/mobile/eas.json → build.base.node` and `scripts/check-build-env.cjs` saying the same thing                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | —                                                                            |
 | A dependency that has an entry in `package.json#pnpm.overrides`                                                        | Re-check the override: it exists to patch one advisory, bounded to one major. Remove it once the dependant pulls the fixed version on its own; never widen it past the major                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | `pnpm audit`                                                                 |
 | A new Powerup, or a new string inside one                                                                              | Its code and copy live under `powerups/**` (shared: `packages/shared/src/powerups`, kit: `packages/ui/src/powerups.ts`, mobile: `apps/mobile/src/powerups`) and reach the apps only through those entries — the build flag aliases them out (`EXPO_PUBLIC_POWERUPS` / `VITE_POWERUPS`); nothing under `powerups/**` imports `core/signing`, `core/broadcast`, `crypto` or `storage` (lint fails). Add a marker to `scripts/check-powerups-bundle.mjs` if the Powerup carries a string the grep should catch. Its UI composes only the blocks in `docs/POWERUPS-UI.md` (the Powerup UI runbook: what is reused, what is fixed, the reviewer checklist), and a NEW Powerup starts at the §Starting a new Powerup section: research, then the questions to the human, then the runbook | `pnpm check:powerups-bundle <dist>` after a build with the flag off          |
@@ -280,6 +305,12 @@ keep, and `scripts/check-dom-parity.mjs` enforces:
   the failure is user-relevant.
 - Prefer unit and integration coverage in the owning package before adding
   E2E coverage — E2E is slower and flakier per bug caught.
+- Tests run in a random order on every run, in every package, and call
+  counts start at zero in each test. A test sets the state it needs in
+  `beforeEach` and restores what it changed outside its own tree (globals,
+  prototypes, storage, `Platform.OS`, queued `mock…Once` answers). A failure
+  prints its seed: replay it with `--seed=<n>` (Jest) or
+  `--sequence.seed=<n>` (Vitest).
 - Backend-dependent E2E tests may target `../salmon-wallet-backend` running in Docker.
   Before adding one, check whether `../salmon-wallet-backend` already covers the
   behavior to avoid redundant tests.

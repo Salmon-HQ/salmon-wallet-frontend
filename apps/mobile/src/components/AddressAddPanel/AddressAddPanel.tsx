@@ -38,5 +38,3 @@ export function AddressAddPanel({
     />
   );
 }
-
-export default AddressAddPanel;

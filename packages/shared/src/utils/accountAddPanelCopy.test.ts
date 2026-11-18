@@ -1,56 +1,63 @@
-import { describe, expect, it } from 'vitest';
-import {
-  ACCOUNT_ADD_METHODS,
-  ACCOUNT_ADD_STEP_TITLE_KEYS,
-  ACCOUNT_ADD_STEP_SUBTITLE_KEYS,
-} from './accountAddPanelCopy';
-import type { AccountAddStep } from '../types/ui/account-add';
+import { describe, expect, it, vi } from 'vitest';
+import { accountAddMethods } from './accountAddPanelCopy';
 
-const ALL_STEPS: readonly AccountAddStep[] = [
-  'select-method',
-  'derive-scan',
-  'import-seed',
-  'import-private-key',
-  'import-watch-only',
-  'set-name',
-  'reauth',
-  'complete',
-];
+const icons = {
+  derive: 'tree',
+  import: 'file',
+  'private-key': 'key',
+  'watch-only': 'eye',
+  'seed-vault': 'vault',
+};
 
-describe('ACCOUNT_ADD_METHODS', () => {
-  it('lists derive first, then import, private-key, watch-only, seed-vault', () => {
-    expect(ACCOUNT_ADD_METHODS.map((method) => method.id)).toEqual([
-      'derive',
-      'import',
-      'private-key',
-      'watch-only',
-      'seed-vault',
+function flowWith(overrides: { canDerive?: boolean; canUseSeedVault?: boolean } = {}) {
+  return {
+    canDerive: true,
+    canUseSeedVault: true,
+    selectDerive: vi.fn(async () => {}),
+    selectImport: vi.fn(),
+    selectImportPrivateKey: vi.fn(),
+    selectImportWatchOnly: vi.fn(),
+    selectSeedVault: vi.fn(async () => {}),
+    ...overrides,
+  };
+}
+
+describe('accountAddMethods', () => {
+  it('offers every method, each with its icon, when the account can derive and the device has a Seed Vault', () => {
+    const methods = accountAddMethods(flowWith(), icons);
+
+    expect(methods.map((method) => [method.id, method.icon])).toEqual([
+      ['derive', 'tree'],
+      ['import', 'file'],
+      ['private-key', 'key'],
+      ['watch-only', 'eye'],
+      ['seed-vault', 'vault'],
     ]);
   });
 
-  it('gives every method a title and description key', () => {
-    for (const method of ACCOUNT_ADD_METHODS) {
-      expect(method.titleKey).toMatch(/^settings\.account_add\./);
-      expect(method.descriptionKey.length).toBeGreaterThan(0);
-    }
-  });
-});
+  it('leaves out deriving without a phrase and Seed Vault without the hardware', () => {
+    const methods = accountAddMethods(
+      flowWith({ canDerive: false, canUseSeedVault: false }),
+      icons
+    );
 
-describe('ACCOUNT_ADD_STEP_TITLE_KEYS / ACCOUNT_ADD_STEP_SUBTITLE_KEYS', () => {
-  it('covers every AccountAddStep', () => {
-    for (const step of ALL_STEPS) {
-      expect(ACCOUNT_ADD_STEP_TITLE_KEYS[step]).toBeTruthy();
-      expect(ACCOUNT_ADD_STEP_SUBTITLE_KEYS[step]).toBeTruthy();
-    }
+    expect(methods.map((method) => method.id)).toEqual(['import', 'private-key', 'watch-only']);
   });
 
-  it("'complete' subtitle repeats its own key as fallback", () => {
-    const [key, fallback] = ACCOUNT_ADD_STEP_SUBTITLE_KEYS.complete;
-    expect(fallback).toBe(key);
-  });
+  it('opens the step that belongs to the pressed method, and only that one', () => {
+    const flow = flowWith();
+    const press = (id: string) =>
+      accountAddMethods(flow, icons)
+        .find((method) => method.id === id)
+        ?.onPress();
 
-  it('reauth title and subtitle use distinct keys', () => {
-    expect(ACCOUNT_ADD_STEP_TITLE_KEYS.reauth).toBe('settings.account_add.reauth_title');
-    expect(ACCOUNT_ADD_STEP_SUBTITLE_KEYS.reauth[0]).toBe('settings.account_add.reauth_subtitle');
+    press('private-key');
+    expect(flow.selectImportPrivateKey).toHaveBeenCalledTimes(1);
+    press('seed-vault');
+    expect(flow.selectSeedVault).toHaveBeenCalledTimes(1);
+    press('derive');
+    expect(flow.selectDerive).toHaveBeenCalledTimes(1);
+    expect(flow.selectImport).not.toHaveBeenCalled();
+    expect(flow.selectImportWatchOnly).not.toHaveBeenCalled();
   });
 });

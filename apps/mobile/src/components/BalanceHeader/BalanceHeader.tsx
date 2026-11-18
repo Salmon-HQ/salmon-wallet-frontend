@@ -481,5 +481,3 @@ const stylesFor = (t: Semantic) =>
       ...TABULAR,
     },
   });
-
-export default BalanceHeader;

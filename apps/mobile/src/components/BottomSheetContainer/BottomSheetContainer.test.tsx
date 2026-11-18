@@ -34,26 +34,28 @@ jest.mock('react-native-reanimated', () => {
   };
 });
 
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('@salmon/shared/src/contexts/SheetHeightContext'),
-  ...jest.requireActual('@salmon/shared/src/contexts/useSheetTurn'),
-  ...jest.requireActual('@salmon/shared/src/hooks/useHeldSheetSize'),
-  // The mobile motion wrapper reads the real motion vocabulary.
-  ...jest.requireActual('@salmon/shared/src/theme/durations'),
-  semantic: jest.requireActual('@salmon/shared/src/theme/semantic').semantic,
-  shadows: { sheet: {} },
-  borderRadius: { card: 24, full: 999 },
-  borderWidth: { sheet: 1 },
-  componentSizes: {
-    sheetHandleWidth: 40,
-    sheetHandleHeight: 4,
-    sheetHandleOpacity: 0.4,
-    sheetFadeGradientHeight: 24,
-  },
-  spacing: { sm: 8, md: 12 },
-  vs: (value: number) => value,
-  s: (value: number) => value,
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('@salmon/shared/src/contexts/SheetHeightContext'),
+    ...jest.requireActual('@salmon/shared/src/contexts/useSheetTurn'),
+    ...jest.requireActual('@salmon/shared/src/hooks/useHeldSheetSize'),
+    // The mobile motion wrapper reads the real motion vocabulary.
+    ...jest.requireActual('@salmon/shared/src/theme/durations'),
+    semantic: jest.requireActual('@salmon/shared/src/theme/semantic').semantic,
+    shadows: { sheet: {} },
+    borderRadius: { card: 24, full: 999 },
+    borderWidth: { sheet: 1 },
+    componentSizes: {
+      sheetHandleWidth: 40,
+      sheetHandleHeight: 4,
+      sheetHandleOpacity: 0.4,
+      sheetFadeGradientHeight: 24,
+    },
+    spacing: { sm: 8, md: 12 },
+    vs: (value: number) => value,
+    s: (value: number) => value,
+  })
+);
 
 jest.mock('react-native-gesture-handler', () => {
   const { View: RNView } = jest.requireActual('react-native');

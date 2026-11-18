@@ -20,12 +20,11 @@ import {
   fontScaleCap,
   fontSize,
   lineHeight,
-  normalizeMnemonic,
   s,
   setStashItem,
   spacing,
   STASH_KEYS,
-  validateMnemonic,
+  useRecoveryPhraseEntry,
   type Semantic,
 } from '@salmon/shared';
 import {
@@ -38,13 +37,12 @@ import {
   SecondaryButton,
   SeedPhraseEntry,
 } from '../../src/components';
-import { SHORT_PHRASE, distributePhrase } from '../../src/components/SeedPhrase';
 import { KeyIcon } from '../../src/icons';
 import { useSecretScreen } from '../../hooks/useSecretScreen';
 import { useSemantic, useThemedStyles } from '../../src/theme/useThemedStyles';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text } from 'react-native';
 
@@ -62,28 +60,17 @@ export default function RecoverWalletScreen() {
   // for the frames where no box is mounted yet.
   useSecretScreen('recover-wallet');
 
-  // State — one entry per box. Twelve to begin with; a paste or a thirteenth
-  // typed word grows it to twenty-four.
-  const [words, setWords] = useState<string[]>(() => Array<string>(SHORT_PHRASE).fill(''));
-  // The count of what was actually pasted, so the screen can say what happened
-  // rather than only that something is wrong. `null` means nothing was rejected.
-  const [pastedCount, setPastedCount] = useState<number | null>(null);
-
-  const phrase = useMemo(() => normalizeMnemonic(words.join(' ')), [words]);
-  const isComplete = words.every((word) => word.length > 0);
-  const isValidSeedPhrase = isComplete && validateMnemonic(phrase);
-
-  const handleWords = useCallback((next: string[]) => {
-    setWords(next);
-    setPastedCount(null);
-  }, []);
-
-  const handleLength = useCallback((length: number) => {
-    setWords((prev) => {
-      if (prev.length === length) return prev;
-      return Array.from({ length }, (_, i) => prev[i] ?? '');
-    });
-  }, []);
+  const {
+    words,
+    phrase,
+    pastedCount,
+    setPastedCount,
+    isValidSeedPhrase,
+    showInvalid,
+    handleWords,
+    handleLength,
+    paste,
+  } = useRecoveryPhraseEntry();
 
   /**
    * Handle back navigation
@@ -98,15 +85,11 @@ export default function RecoverWalletScreen() {
    */
   const handlePaste = useCallback(async () => {
     try {
-      const clipboardContent = await Clipboard.getStringAsync();
-      if (!clipboardContent) return;
-      const { words: pasted, fits, count } = distributePhrase(clipboardContent);
-      setPastedCount(fits ? null : count);
-      setWords(pasted);
+      paste(await Clipboard.getStringAsync());
     } catch (error) {
       console.error('Failed to paste from clipboard:', error);
     }
-  }, []);
+  }, [paste]);
 
   /**
    * Handle next button press - navigate to password screen
@@ -119,10 +102,6 @@ export default function RecoverWalletScreen() {
       pathname: '/(auth)/password',
     });
   }, [isValidSeedPhrase, phrase]);
-
-  // Only once every box is filled — telling someone their phrase is invalid
-  // while they are still typing it is noise.
-  const showInvalid = pastedCount !== null || (isComplete && !isValidSeedPhrase);
 
   return (
     <OnboardingLayout

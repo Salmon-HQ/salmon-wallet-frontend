@@ -32,5 +32,3 @@ export function I18nProvider({ children }: I18nProviderProps) {
   // The effect above will update to stored preference if different
   return <I18nextProvider i18n={i18n}>{children}</I18nextProvider>;
 }
-
-export default I18nProvider;

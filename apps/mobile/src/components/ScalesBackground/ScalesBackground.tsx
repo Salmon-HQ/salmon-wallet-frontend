@@ -6,7 +6,7 @@ import Svg, { Defs, G, LinearGradient, Mask, Pattern, Path, Rect, Stop } from 'r
 import { useSemantic } from '../../theme/useThemedStyles';
 import type { ScalesBackgroundProps, ScalesVariant } from './types';
 
-export type { ScalesBackgroundProps, ScalesVariant };
+export type { ScalesBackgroundProps };
 
 /**
  * The motif's three sanctioned appearances, two of which this platform draws.

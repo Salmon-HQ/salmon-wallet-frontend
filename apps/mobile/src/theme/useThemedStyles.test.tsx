@@ -9,7 +9,11 @@
 import React from 'react';
 import { Text, StyleSheet } from 'react-native';
 
-jest.mock('@salmon/shared', () => ({ ...jest.requireActual('../../test-utils/themeTokens') }));
+jest.mock('@salmon/shared', () =>
+  require('../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('../../test-utils/themeTokens'),
+  })
+);
 
 import type { Semantic } from '@salmon/shared';
 

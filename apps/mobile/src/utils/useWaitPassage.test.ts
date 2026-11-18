@@ -20,10 +20,12 @@ jest.mock('react-native-reanimated', () => ({
 // does not transform. The passage needs the real motion vocabulary and the
 // real wait-exit hook — a fake of either would let this test pass while the
 // composition drifted.
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('@salmon/shared/src/theme/durations'),
-  ...jest.requireActual('@salmon/shared/src/hooks/useWaitExit'),
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('@salmon/shared/src/theme/durations'),
+    ...jest.requireActual('@salmon/shared/src/hooks/useWaitExit'),
+  })
+);
 
 import { FLOAT_DELAY_MS, SINK_OUT_MS } from './sinkAndFloat';
 import { useWaitPassage } from './useWaitPassage';

@@ -38,7 +38,6 @@ export type {
   TransactionFee,
   TransactionType,
   TransactionDisplayStatus,
-  SolanaNetworkId,
 };
 
 // ============================================================================

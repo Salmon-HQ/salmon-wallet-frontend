@@ -8,32 +8,24 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import { View } from 'react-native';
-import type { Token } from '@salmon/shared';
+import { hiddenValue, showPercentage, type Token } from '@salmon/shared';
 
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('@salmon/shared/src/theme'),
-  ...jest.requireActual('@salmon/shared/src/types/ui/card'),
-  s: (value: number) => value,
-  vs: (value: number) => value,
-  ms: (value: number) => value,
-  hiddenValue: '••••',
-  getLabelValue: (value: number) => (value >= 0 ? 'positive' : 'negative'),
-  showPercentage: (value: number) => `${value >= 0 ? '+' : ''}${value}%`,
-  formatTokenAmount: (value: unknown) => String(value),
-  formatLargeNumber: (value: number) =>
-    value >= 1_000_000
-      ? `${(value / 1_000_000).toFixed(2)}M`
-      : value >= 1_000
-        ? `${(value / 1_000).toFixed(2)}K`
-        : String(value),
-  useCurrencyContext: () => [
-    {},
-    {
-      formatValue: (value: number) => `$${value}`,
-      formatChange: (value: number) => `${value >= 0 ? '+' : ''}$${value}`,
-    },
-  ],
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('@salmon/shared/src/theme'),
+    ...jest.requireActual('@salmon/shared/src/types/ui/card'),
+    s: (value: number) => value,
+    vs: (value: number) => value,
+    ms: (value: number) => value,
+    useCurrencyContext: () => [
+      {},
+      {
+        formatValue: (value: number) => `$${value}`,
+        formatChange: (value: number) => `${value >= 0 ? '+' : ''}$${value}`,
+      },
+    ],
+  })
+);
 
 // Interpolating `t`: the masked-label assertions below are about what lands
 // in `{{amount}}` / `{{price}}`, which a fallback-only stub throws away.
@@ -94,7 +86,7 @@ describe('TokenListItem secondary line', () => {
     );
 
     const subline = getByTestId('token-row-subline-mSOL');
-    expect(textOf(subline)).toBe('mSOL · $159.58 · +4.2%');
+    expect(textOf(subline)).toBe(`mSOL · $159.58 · ${showPercentage(4.2)}`);
     expect(subline.props.numberOfLines).toBe(1);
     expect(subline.props.ellipsizeMode).toBe('tail');
   });
@@ -102,7 +94,9 @@ describe('TokenListItem secondary line', () => {
   it('masks the price but keeps the ticker and change when hiddenBalance is set', () => {
     const { getByTestId } = render(<TokenListItem token={TOKEN} hiddenBalance />);
 
-    expect(textOf(getByTestId('token-row-subline-SOL'))).toBe('SOL · •••• · +4.2%');
+    expect(textOf(getByTestId('token-row-subline-SOL'))).toBe(
+      `SOL · ${hiddenValue} · ${showPercentage(4.2)}`
+    );
   });
 
   it('drops a missing segment without stray separators', () => {
@@ -121,7 +115,7 @@ describe('TokenListItem hidden balance', () => {
       <TokenListItem token={TOKEN} hiddenBalance />
     );
 
-    expect(getByLabelText('Solana token, balance •••• SOL')).toBeTruthy();
+    expect(getByLabelText(`Solana token, balance ${hiddenValue} SOL`)).toBeTruthy();
     expect(queryByLabelText(/1\.2/)).toBeNull();
   });
 
@@ -131,7 +125,9 @@ describe('TokenListItem hidden balance', () => {
       <TokenListItem token={btc} blockchain="bitcoin" hiddenBalance onPress={jest.fn()} />
     );
 
-    expect(getByLabelText('Solana token, price ••••, balance •••• BTC')).toBeTruthy();
+    expect(
+      getByLabelText(`Solana token, price ${hiddenValue}, balance ${hiddenValue} BTC`)
+    ).toBeTruthy();
     expect(queryByLabelText(/64000|0\.51/)).toBeNull();
   });
 
@@ -141,7 +137,9 @@ describe('TokenListItem hidden balance', () => {
     );
 
     expect(queryByText(/\+\$6.4/)).toBeNull();
-    expect(textOf(getByTestId('token-row-subline-SOL'))).toBe('SOL · •••• · +4.2%');
+    expect(textOf(getByTestId('token-row-subline-SOL'))).toBe(
+      `SOL · ${hiddenValue} · ${showPercentage(4.2)}`
+    );
   });
 });
 

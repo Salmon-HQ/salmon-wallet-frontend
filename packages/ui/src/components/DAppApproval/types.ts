@@ -6,8 +6,6 @@ import type {
   TransactionEffectsCardPropsBase,
 } from '@salmon/shared';
 
-export type { SiwsFields } from '@salmon/shared';
-
 /** The DOM halves of the approval contracts — nothing added: the gate shows
  * exactly what the contract carries. */
 export type DAppConnectApprovalViewProps = DAppConnectApprovalViewPropsBase;

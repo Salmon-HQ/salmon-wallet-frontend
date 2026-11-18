@@ -312,5 +312,3 @@ const stylesFor = (t: Semantic) =>
       marginTop: spacing.md,
     },
   });
-
-export default AccountAvatarPanel;

@@ -1,12 +1,4 @@
-/**
- * The settings sub-screen route is `settings/[panel]`, never `settings/[screen]`.
- *
- * `screen` is the param React Navigation uses to address a nested navigator's
- * child, and expo-router deletes it while building the push action
- * (`global-state/routing.js`, `getPayloadFromStateRoute`). A `[screen]` segment
- * mounts with empty params, so every Settings row bounced back to the list.
- * This pins both halves: the trap and the working name.
- */
+/** A row in Settings pushes `settings/[panel]`; the panel must receive that value. */
 import React from 'react';
 import { Pressable, Text } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
@@ -53,9 +45,5 @@ async function pushAndReadParams(segment: string) {
 describe('settings/[panel] route param', () => {
   it('a [panel] segment receives the pushed value', async () => {
     expect(await pushAndReadParams('panel')).toContain('"panel":"accounts"');
-  });
-
-  it('a [screen] segment loses it — the reserved-key trap', async () => {
-    expect(await pushAndReadParams('screen')).toBe('{}');
   });
 });

@@ -275,5 +275,3 @@ const stylesFor = (t: Semantic) =>
       borderTopColor: t.border.hairline,
     },
   });
-
-export default TransactionDetail;

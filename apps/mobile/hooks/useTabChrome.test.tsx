@@ -16,7 +16,9 @@ jest.mock('react-native-safe-area-context', () => ({
 }));
 
 // Real tokens rather than a hand-listed subset — see test-utils/themeTokens.
-jest.mock('@salmon/shared', () => jest.requireActual('../test-utils/themeTokens'));
+jest.mock('@salmon/shared', () =>
+  require('../test-utils/sharedWith').sharedWith(jest.requireActual('../test-utils/themeTokens'))
+);
 
 const { componentSizes, spacing } = jest.requireActual('../test-utils/themeTokens');
 

@@ -30,15 +30,12 @@ export const focusRing = {
 
 /**
  * Opt-out for a field whose visual boundary is an outer wrapper rather than
- * the input itself. Pair it with `focusRingOnWrapper` on the wrapper.
+ * the input itself. Pair it with `focusRing` on the wrapper.
  */
 export const focusRingNone = {
   outline: 'none',
   boxShadow: 'none',
 } as const;
-
-/** The ring, for a wrapper that owns a field's shape. See `focusRingNone`. */
-export const focusRingOnWrapper = focusRing;
 
 /**
  * The class every text field's *shape owner* wears — the wrapper that draws

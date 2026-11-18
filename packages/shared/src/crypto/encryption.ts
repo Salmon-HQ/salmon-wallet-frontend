@@ -270,30 +270,7 @@ export async function lock<T>(
   password: string,
   options: LockOptions = {}
 ): Promise<LockedVault> {
-  const { iterations = DEFAULT_ITERATIONS, digest = DEFAULT_DIGEST } = options;
-
-  // Generate cryptographically secure random salt
-  const salt = randomBytes(SALT_LENGTH);
-
-  // Derive encryption key from password
-  const key = await deriveEncryptionKey(password, salt, iterations, digest);
-
-  // Generate random nonce for secretbox
-  const nonce = randomBytes(secretbox.nonceLength);
-
-  // Serialize and encrypt the data
-  const plaintext = Buffer.from(JSON.stringify(unlocked));
-  const encrypted = secretbox(plaintext, nonce, key);
-
-  // Return the locked vault with all components base58 encoded
-  return {
-    encrypted: bs58.encode(encrypted),
-    nonce: bs58.encode(nonce),
-    salt: bs58.encode(salt),
-    iterations,
-    digest,
-    kdf: 'pbkdf2',
-  };
+  return (await deriveKeyAndSeal(unlocked, password, options)).vault;
 }
 
 /**
@@ -306,42 +283,81 @@ export async function lockAndGetKey<T>(
   password: string,
   options: LockOptions = {}
 ): Promise<{ vault: LockedVault; keyCache: DerivedKeyCache }> {
+  const { vault, key } = await deriveKeyAndSeal(unlocked, password, options);
+  return { vault, keyCache: keyCacheFor(key, vault) };
+}
+
+/**
+ * Internal helper: a fresh random salt, the key the password derives with it,
+ * and the vault sealed under that key. The one path `lock` and
+ * `lockAndGetKey` share.
+ */
+async function deriveKeyAndSeal<T>(
+  unlocked: T,
+  password: string,
+  options: LockOptions
+): Promise<{ vault: LockedVault; key: Uint8Array }> {
   const { iterations = DEFAULT_ITERATIONS, digest = DEFAULT_DIGEST } = options;
 
+  // Generate cryptographically secure random salt
   const salt = randomBytes(SALT_LENGTH);
+
+  // Derive encryption key from password
   const key = await deriveEncryptionKey(password, salt, iterations, digest);
+
+  return { vault: seal(unlocked, key, bs58.encode(salt), iterations, digest), key };
+}
+
+/**
+ * Internal helper: encrypts the data under `key` with a fresh random nonce
+ * (CRITICAL: unique per encryption) and returns the vault, every component
+ * base58 encoded. `salt`, `iterations` and `digest` are recorded as given:
+ * they describe how `key` was derived, they are not used here.
+ */
+function seal<T>(
+  unlocked: T,
+  key: Uint8Array,
+  salt: string,
+  iterations: number,
+  digest: DigestAlgorithm
+): LockedVault {
   const nonce = randomBytes(secretbox.nonceLength);
+
+  // Serialize and encrypt the data
   const plaintext = Buffer.from(JSON.stringify(unlocked));
   const encrypted = secretbox(plaintext, nonce, key);
 
   return {
-    vault: {
-      encrypted: bs58.encode(encrypted),
-      nonce: bs58.encode(nonce),
-      salt: bs58.encode(salt),
-      iterations,
-      digest,
-      kdf: 'pbkdf2',
-    },
-    keyCache: {
-      key: Array.from(key),
-      salt: bs58.encode(salt),
-      iterations,
-      digest,
-      expiresAt: Date.now() + KEY_CACHE_TTL,
-    },
+    encrypted: bs58.encode(encrypted),
+    nonce: bs58.encode(nonce),
+    salt,
+    iterations,
+    digest,
+    kdf: 'pbkdf2',
   };
 }
 
 /**
- * Validates the structure and integrity of a locked vault.
- * Helper function to avoid code duplication between unlock functions.
- *
- * @param locked - The vault to validate
- * @throws {InvalidVaultError} If the vault structure is invalid or digest is unsupported
+ * Internal helper: the cache entry for a key, carrying the derivation
+ * parameters of the vault it opens.
  */
-function validateVault(locked: LockedVault): void {
-  // Validate vault structure
+function keyCacheFor(key: Uint8Array, vault: LockedVault): DerivedKeyCache {
+  return {
+    key: Array.from(key),
+    salt: vault.salt,
+    iterations: vault.iterations,
+    digest: vault.digest,
+    expiresAt: Date.now() + KEY_CACHE_TTL,
+  };
+}
+
+/**
+ * Throws unless the vault carries every field decryption reads, with the
+ * right type.
+ *
+ * @throws {InvalidVaultError} If a field is missing or mistyped
+ */
+function assertVaultFields(locked: LockedVault): void {
   if (
     !locked ||
     typeof locked.encrypted !== 'string' ||
@@ -352,46 +368,22 @@ function validateVault(locked: LockedVault): void {
   ) {
     throw new InvalidVaultError('Vault is missing required fields');
   }
+}
 
-  // Validate digest algorithm
+/**
+ * Validates a vault before a key is derived for it: its fields, and a digest
+ * the key derivation supports.
+ *
+ * @param locked - The vault to validate
+ * @throws {InvalidVaultError} If the vault structure is invalid or digest is unsupported
+ */
+function validateVault(locked: LockedVault): void {
+  assertVaultFields(locked);
+
   if (locked.digest !== 'sha256' && locked.digest !== 'sha512') {
     throw new InvalidVaultError(`Unsupported digest algorithm: ${locked.digest}`);
   }
 }
-
-/**
- * Decrypts a locked vault using the provided password.
- *
- * The decryption process:
- * 1. Decodes the base58-encoded components (encrypted data, nonce, salt)
- * 2. Re-derives the encryption key using the same parameters
- * 3. Decrypts using NaCl secretbox
- * 4. Parses and returns the JSON data
- *
- * @typeParam T - The expected type of the decrypted data
- * @param locked - The encrypted vault to decrypt
- * @param password - The password to decrypt with
- * @returns A Promise resolving to the decrypted data
- * @throws {InvalidVaultError} If the vault structure is invalid
- * @throws {IncorrectPasswordError} If the password is incorrect
- *
- * @example
- * ```typescript
- * interface WalletData {
- *   mnemonic: string;
- *   privateKey: string;
- * }
- *
- * try {
- *   const data = await unlock<WalletData>(vault, 'userPassword');
- *   console.log(data.mnemonic);
- * } catch (error) {
- *   if (error instanceof IncorrectPasswordError) {
- *     console.error('Wrong password!');
- *   }
- * }
- * ```
- */
 
 /**
  * Internal helper: decrypts vault data with a key and parses JSON.
@@ -428,7 +420,14 @@ function rethrowDecryptionError(error: unknown): never {
   );
 }
 
-export async function unlock<T>(locked: LockedVault, password: string): Promise<T> {
+/**
+ * Internal helper: validates the vault, re-derives its key from the password
+ * and decrypts. The one path `unlock` and `unlockAndGetKey` share.
+ */
+async function deriveKeyAndOpen<T>(
+  locked: LockedVault,
+  password: string
+): Promise<{ data: T; key: Uint8Array }> {
   validateVault(locked);
 
   try {
@@ -436,10 +435,47 @@ export async function unlock<T>(locked: LockedVault, password: string): Promise<
     const nonce = bs58.decode(locked.nonce);
     const salt = bs58.decode(locked.salt);
     const key = await deriveEncryptionKey(password, salt, locked.iterations, locked.digest);
-    return decryptAndParse<T>(encrypted, nonce, key);
+    return { data: decryptAndParse<T>(encrypted, nonce, key), key };
   } catch (error) {
     rethrowDecryptionError(error);
   }
+}
+
+/**
+ * Decrypts a locked vault using the provided password.
+ *
+ * The decryption process:
+ * 1. Decodes the base58-encoded components (encrypted data, nonce, salt)
+ * 2. Re-derives the encryption key using the same parameters
+ * 3. Decrypts using NaCl secretbox
+ * 4. Parses and returns the JSON data
+ *
+ * @typeParam T - The expected type of the decrypted data
+ * @param locked - The encrypted vault to decrypt
+ * @param password - The password to decrypt with
+ * @returns A Promise resolving to the decrypted data
+ * @throws {InvalidVaultError} If the vault structure is invalid
+ * @throws {IncorrectPasswordError} If the password is incorrect
+ *
+ * @example
+ * ```typescript
+ * interface WalletData {
+ *   mnemonic: string;
+ *   privateKey: string;
+ * }
+ *
+ * try {
+ *   const data = await unlock<WalletData>(vault, 'userPassword');
+ *   console.log(data.mnemonic);
+ * } catch (error) {
+ *   if (error instanceof IncorrectPasswordError) {
+ *     console.error('Wrong password!');
+ *   }
+ * }
+ * ```
+ */
+export async function unlock<T>(locked: LockedVault, password: string): Promise<T> {
+  return (await deriveKeyAndOpen<T>(locked, password)).data;
 }
 
 // ============================================================================
@@ -461,27 +497,8 @@ export async function unlockAndGetKey<T>(
   locked: LockedVault,
   password: string
 ): Promise<{ data: T; keyCache: DerivedKeyCache }> {
-  validateVault(locked);
-
-  try {
-    const encrypted = bs58.decode(locked.encrypted);
-    const nonce = bs58.decode(locked.nonce);
-    const salt = bs58.decode(locked.salt);
-    const key = await deriveEncryptionKey(password, salt, locked.iterations, locked.digest);
-    const data = decryptAndParse<T>(encrypted, nonce, key);
-
-    const keyCache: DerivedKeyCache = {
-      key: Array.from(key),
-      salt: locked.salt,
-      iterations: locked.iterations,
-      digest: locked.digest,
-      expiresAt: Date.now() + KEY_CACHE_TTL,
-    };
-
-    return { data, keyCache };
-  } catch (error) {
-    rethrowDecryptionError(error);
-  }
+  const { data, key } = await deriveKeyAndOpen<T>(locked, password);
+  return { data, keyCache: keyCacheFor(key, locked) };
 }
 
 /**
@@ -494,23 +511,14 @@ export async function unlockAndGetKey<T>(
  * @returns The encrypted vault
  */
 export function lockWithKey<T>(unlocked: T, keyCache: DerivedKeyCache): LockedVault {
-  const key = new Uint8Array(keyCache.key);
-
-  // Generate new random nonce (CRITICAL: must be unique per encryption)
-  const nonce = randomBytes(secretbox.nonceLength);
-
-  // Serialize and encrypt the data
-  const plaintext = Buffer.from(JSON.stringify(unlocked));
-  const encrypted = secretbox(plaintext, nonce, key);
-
-  return {
-    encrypted: bs58.encode(encrypted),
-    nonce: bs58.encode(nonce),
-    salt: keyCache.salt, // Reuse the same salt
-    iterations: keyCache.iterations,
-    digest: keyCache.digest,
-    kdf: 'pbkdf2',
-  };
+  // The salt is reused: it is the one the cached key was derived with.
+  return seal(
+    unlocked,
+    new Uint8Array(keyCache.key),
+    keyCache.salt,
+    keyCache.iterations,
+    keyCache.digest
+  );
 }
 
 /**
@@ -551,17 +559,8 @@ export function refreshCachedKey(keyCache: DerivedKeyCache): DerivedKeyCache {
  * @throws {IncorrectPasswordError} If decryption fails (key mismatch)
  */
 export function unlockWithKey<T>(locked: LockedVault, keyCache: DerivedKeyCache): T {
-  // Validate vault structure
-  if (
-    !locked ||
-    typeof locked.encrypted !== 'string' ||
-    typeof locked.nonce !== 'string' ||
-    typeof locked.salt !== 'string' ||
-    typeof locked.iterations !== 'number' ||
-    typeof locked.digest !== 'string'
-  ) {
-    throw new InvalidVaultError('Vault is missing required fields');
-  }
+  // The digest is not checked: no key is derived here, the cache carries it.
+  assertVaultFields(locked);
 
   // Validate that the cached key was derived with the same parameters
   if (locked.salt !== keyCache.salt) {

@@ -211,9 +211,6 @@ export const DEFAULT_WALLET_TIP_KEYS = [
   'general.tips.9',
 ] as const;
 
-/** @deprecated Use DEFAULT_WALLET_TIP_KEYS instead */
-export const DEFAULT_WALLET_TIPS = DEFAULT_WALLET_TIP_KEYS;
-
 // ============================================================================
 // Token Features Types
 // ============================================================================

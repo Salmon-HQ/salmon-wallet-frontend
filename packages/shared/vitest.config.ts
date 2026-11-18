@@ -2,6 +2,11 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
+    // Tests run in a new order on every run and call counts start at zero in
+    // each one: a test that only passes after another fails here, with the
+    // seed printed to reproduce it (`--sequence.seed=<n>`).
+    sequence: { shuffle: true },
+    clearMocks: true,
     // Tests that lock/unlock a vault run real PBKDF2 at the production
     // iteration count; on cold 2-core CI runners a round-trip blows past the
     // default 5s while meaning nothing locally. Same headroom `packages/ui`

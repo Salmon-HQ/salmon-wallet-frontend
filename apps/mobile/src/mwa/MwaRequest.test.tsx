@@ -9,12 +9,9 @@ const mockAddress = 'AKnL4NNf3DGWZJS6cPknBuEGnVsV4A4m5tgebLHaRSZ9';
 const mockOrigin = 'https://dapp.example';
 const mockToken = new Uint8Array([7, 7, 7, 7]);
 
-// `@solana/kit` is ESM Jest cannot load; the MWA helpers only use it inside
-// the signing functions, which these tests never reach.
-jest.mock('@solana/kit', () => ({}));
 jest.mock('@salmon/shared', () => {
   const mwa = jest.requireActual('@salmon/shared/src/utils/mwa');
-  return {
+  return require('../../test-utils/sharedWith').sharedWith({
     // The phrase check (DEV-208) is never due here.
     usePhraseBackup: () => ({
       needsBackup: false,
@@ -50,7 +47,7 @@ jest.mock('@salmon/shared', () => {
       },
       {},
     ],
-  };
+  });
 });
 
 jest.mock('@solana-mobile/mobile-wallet-adapter-walletlib', () => ({
@@ -118,6 +115,12 @@ jest.mock('../components/TransactionConfirmation', () => ({
     );
   },
 }));
+
+// The calling app verifies unless a test says otherwise; an answer one test
+// queued and did not use is dropped here, not handed to the next test.
+beforeEach(() => {
+  jest.mocked(verifyCallingPackage).mockReset().mockResolvedValue(true);
+});
 
 describe('MwaRequest — sign messages', () => {
   // The extension names the signing account on its sign screen; the mobile
@@ -216,9 +219,6 @@ describe('MwaRequest — connect and sign in', () => {
  */
 describe('MwaRequest — later requests from an unverified app', () => {
   const account = { getReceiveAddress: () => mockAddress } as never;
-  beforeEach(() => {
-    jest.mocked(verifyCallingPackage).mockReset().mockResolvedValue(true);
-  });
   const signed = (type: 'SIGN_MESSAGES' | 'SIGN_TRANSACTIONS') => (
     <MwaRequest
       account={account}
@@ -299,9 +299,6 @@ describe('MwaRequest — later requests from an unverified app', () => {
  */
 describe('MwaRequest — what the identity check is given', () => {
   const account = { getReceiveAddress: () => mockAddress } as never;
-  beforeEach(() => {
-    jest.mocked(verifyCallingPackage).mockReset().mockResolvedValue(true);
-  });
   const request = (type: string, identityUri: string) =>
     ({
       __type: type,

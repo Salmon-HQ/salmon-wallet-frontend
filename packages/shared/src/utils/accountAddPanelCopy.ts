@@ -94,3 +94,39 @@ export const ACCOUNT_ADD_STEP_SUBTITLE_KEYS: Record<AccountAddStep, readonly [st
   reauth: ['settings.account_add.reauth_subtitle', 'Enter your password to keep going.'],
   complete: ['settings.account_add.title', 'settings.account_add.title'],
 };
+
+/** What the method list reads from the add-account flow. */
+interface AccountAddSelectors {
+  /** Deriving needs a phrase to derive from. */
+  canDerive: boolean;
+  /** Seed Vault is offered only on a device that has one. */
+  canUseSeedVault: boolean;
+  selectDerive: () => unknown;
+  selectImport: () => void;
+  selectImportPrivateKey: () => void;
+  selectImportWatchOnly: () => void;
+  selectSeedVault: () => unknown;
+}
+
+/**
+ * The methods the add-account panel offers right now, in order, each with its
+ * platform icon and the flow step it opens.
+ */
+export function accountAddMethods<Icon>(
+  flow: AccountAddSelectors,
+  icons: Record<AccountAddMethodId, Icon>
+): (AccountAddMethodCopy & { icon: Icon; onPress: () => void })[] {
+  const handlers: Record<AccountAddMethodId, () => void> = {
+    derive: () => void flow.selectDerive(),
+    import: flow.selectImport,
+    'private-key': flow.selectImportPrivateKey,
+    'watch-only': flow.selectImportWatchOnly,
+    'seed-vault': () => void flow.selectSeedVault(),
+  };
+
+  return ACCOUNT_ADD_METHODS.filter(
+    (method) =>
+      (method.id !== 'derive' || flow.canDerive) &&
+      (method.id !== 'seed-vault' || flow.canUseSeedVault)
+  ).map((method) => ({ ...method, icon: icons[method.id], onPress: handlers[method.id] }));
+}

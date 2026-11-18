@@ -23,19 +23,19 @@ export interface SkrViewDeps {
 }
 
 /** A figure and, when the price is known, its value in the user's currency. */
-export interface SkrFigure {
+interface SkrFigure {
   value: string;
   caption?: string;
 }
 
-export interface SkrGuardian {
+interface SkrGuardian {
   key: string;
   name: string;
   commission: string | null;
   active: boolean | null;
 }
 
-export interface SkrHistoryRow {
+interface SkrHistoryRow {
   key: string;
   date: string;
   value: string;

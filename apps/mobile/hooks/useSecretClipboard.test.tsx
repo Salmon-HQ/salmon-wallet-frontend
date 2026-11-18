@@ -12,9 +12,11 @@ jest.mock('expo-clipboard', () => ({
   setStringAsync: (text: string) => mockSetStringAsync(text),
 }));
 
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('@salmon/shared/src/utils/secret-clipboard'),
-}));
+jest.mock('@salmon/shared', () =>
+  require('../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('@salmon/shared/src/utils/secret-clipboard'),
+  })
+);
 
 import { secretClipboard, useSecretClipboardResume } from './useSecretClipboard';
 

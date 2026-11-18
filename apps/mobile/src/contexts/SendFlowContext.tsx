@@ -24,13 +24,10 @@ import {
   type BlockchainType,
   type NetworkId,
   type SendFlowState,
-  type SendRecipient,
   type SendToken,
 } from '@salmon/shared';
 
 import { useUnverifiedTokens } from './DeveloperModeContext';
-
-export type { SendRecipient };
 
 export interface SendFlowValue extends SendFlowState {
   /** The chain the flow runs on — Home's active chain, read once per render. */
@@ -108,5 +105,3 @@ export function useSendFlow(): SendFlowValue {
   if (!value) throw new Error('useSendFlow must be used inside SendFlowProvider');
   return value;
 }
-
-export default SendFlowContext;

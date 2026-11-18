@@ -9,11 +9,13 @@ import { render, screen } from '@testing-library/react-native';
 const mockLogic = jest.fn();
 const mockBlocks = jest.fn();
 jest.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('@salmon/shared/src/theme'),
-  s: (value: number) => value,
-  vs: (value: number) => value,
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('@salmon/shared/src/theme'),
+    s: (value: number) => value,
+    vs: (value: number) => value,
+  })
+);
 jest.mock('@salmon/shared/powerups', () => ({
   useSkrScreenLogic: (params: unknown) => mockLogic(params),
   skrBlocks: (logic: unknown, t: unknown) => mockBlocks(logic, t),

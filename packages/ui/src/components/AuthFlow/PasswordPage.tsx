@@ -16,17 +16,13 @@ import {
   getMirrorNetworks,
   getScanNetworks,
   lineHeight,
-  PASSWORD_CONSTRAINTS,
   spacing,
   trackOnboardingEvent,
   useAccountsContext,
   usePhraseBackup,
-  validatePassword,
-  getPasswordIssue,
   componentSizes,
+  useSetupPasswordForm,
   useWaitExit,
-  YIELD_TO_PAINT_MS,
-  passwordCheckErrorKey,
 } from '@salmon/shared';
 import { LockIcon } from '../../icons';
 import { generateAccountName } from '@salmon/shared/utils/account';
@@ -121,12 +117,29 @@ export function PasswordPage(props: PasswordPageProps): React.ReactElement {
   const showSingleInput = !protect && state.requiredLock;
   // A wallet the owner does not recognise leaves by removal, after its sheet.
   const [removeOpen, setRemoveOpen] = useState(false);
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isChecking, setIsChecking] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [wrongPassword, setWrongPassword] = useState(false);
+  const {
+    password,
+    confirmPassword,
+    passwordValidation,
+    isLoading,
+    setIsLoading,
+    isChecking,
+    error,
+    setError,
+    submitDisabled,
+    handlePasswordChange,
+    handleConfirmPasswordChange,
+    begin,
+    passwordError,
+    confirmError,
+    buttonText,
+  } = useSetupPasswordForm({
+    showSingleInput,
+    protect: !!protect,
+    flowType,
+    checkPassword: actions.checkPassword,
+    t,
+  });
   /**
    * Held from a successful setup: the form sank to make room for the wait and
    * has no right to come back up while the last wave is still leaving.
@@ -150,53 +163,8 @@ export function PasswordPage(props: PasswordPageProps): React.ReactElement {
     onSuccess();
   }, [onExited, onSuccess]);
 
-  const passwordValidation = validatePassword(password);
-  const passwordsMatch = password === confirmPassword && confirmPassword.length > 0;
-
-  const isFormValid = useCallback((): boolean => {
-    if (showSingleInput) return password.length > 0;
-    return passwordValidation.isValid && passwordsMatch;
-  }, [password, passwordValidation.isValid, passwordsMatch, showSingleInput]);
-
-  const handlePasswordChange = useCallback(
-    (text: string) => {
-      setPassword(text);
-      setError(null);
-      if (showSingleInput) setWrongPassword(false);
-    },
-    [showSingleInput]
-  );
-
-  const handleConfirmPasswordChange = useCallback((text: string) => {
-    setConfirmPassword(text);
-    setError(null);
-  }, []);
-
   const handleSubmit = useCallback(async () => {
-    if (!isFormValid()) return;
-
-    if (showSingleInput) {
-      setIsChecking(true);
-      setError(null);
-      try {
-        const isValidPassword = await actions.checkPassword(password);
-        if (!isValidPassword) {
-          setWrongPassword(true);
-          setIsChecking(false);
-          return;
-        }
-      } catch (err) {
-        setError(t(passwordCheckErrorKey(err, 'wallet.create.invalid_password')));
-        setIsChecking(false);
-        return;
-      }
-      setIsChecking(false);
-    }
-
-    setIsLoading(true);
-    setError(null);
-    // Yield to UI thread so LoadingScreen renders before heavy crypto derivation
-    await new Promise((resolve) => setTimeout(resolve, YIELD_TO_PAINT_MS));
+    if (!(await begin())) return;
 
     if (protect) {
       const protectedNow = await actions.protectWallet(password);
@@ -249,45 +217,17 @@ export function PasswordPage(props: PasswordPageProps): React.ReactElement {
   }, [
     markUnconfirmed,
     actions,
+    begin,
     flowType,
-    isFormValid,
     mnemonic,
     onCreating,
     password,
     protect,
-    showSingleInput,
+    setError,
+    setIsLoading,
     state.counter,
     t,
   ]);
-
-  const passwordIssue =
-    !showSingleInput && password.length > 0 ? getPasswordIssue(passwordValidation) : null;
-  const passwordError =
-    passwordIssue === 'too_short'
-      ? t('wallet.create.password_too_short', { min: PASSWORD_CONSTRAINTS.MIN_LENGTH })
-      : passwordIssue === 'too_long'
-        ? t('wallet.create.password_too_long', { max: PASSWORD_CONSTRAINTS.MAX_LENGTH })
-        : passwordIssue === 'too_weak'
-          ? t('wallet.create.password_too_weak')
-          : wrongPassword
-            ? t('wallet.create.invalid_password') || 'Invalid Password'
-            : undefined;
-
-  const confirmError =
-    !showSingleInput &&
-    confirmPassword.length > 0 &&
-    password.length >= PASSWORD_CONSTRAINTS.MIN_LENGTH &&
-    !passwordsMatch
-      ? t('wallet.create.passwords_dont_match') || 'Passwords do not match'
-      : undefined;
-
-  const buttonText = isChecking
-    ? t('wallet.create.passwordChecking') || 'Checking...'
-    : protect
-      ? t('wallet.protect.button')
-      : flowType === 'create'
-        ? t('wallet.create_wallet') || 'CREATE WALLET'
-        : t('wallet.recover_wallet') || 'RECOVER ACCOUNT';
 
   return (
     <>
@@ -434,7 +374,7 @@ export function PasswordPage(props: PasswordPageProps): React.ReactElement {
         action={
           <PrimaryButton
             onPress={handleSubmit}
-            disabled={!isFormValid() || wrongPassword}
+            disabled={submitDisabled}
             loading={isLoading || isChecking}
             fullWidth
             testID="password-submit-button"

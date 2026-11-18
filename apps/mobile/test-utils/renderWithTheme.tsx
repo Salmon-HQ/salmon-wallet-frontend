@@ -7,10 +7,9 @@
  * from it: the ability to render the same tree in the other mode and compare.
  *
  * The provider is imported by path, not through `@salmon/shared`, so it is
- * the same module instance whether or not the test under it mocks the barrel
- * (`jest.mock('@salmon/shared', () => requireActual('../test-utils/themeTokens'))`
- * re-exports this very file). Two instances would mean two React contexts and
- * a `useTheme` that cannot see this provider.
+ * the same module instance whether or not the test under it mocks the barrel.
+ * Two instances would mean two React contexts and a `useTheme` that cannot
+ * see this provider.
  */
 import { render, type RenderOptions } from '@testing-library/react-native';
 import React, { type ReactElement } from 'react';

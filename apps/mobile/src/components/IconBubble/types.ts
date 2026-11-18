@@ -3,7 +3,6 @@ import type { SharedValue } from 'react-native-reanimated';
 import type { IconBubblePropsBase } from '@salmon/shared';
 
 export type {
-  IconBubbleRadius,
   IconBubbleShape,
   IconBubbleSize,
   IconBubbleTone,

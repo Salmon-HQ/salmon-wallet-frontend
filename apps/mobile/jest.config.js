@@ -6,14 +6,26 @@ module.exports = {
   // locally. Same headroom as the Vitest configs.
   testTimeout: 20000,
   setupFilesAfterEnv: ['./jest.setup.js'],
+  // Call counts start at zero in every test, and tests run in a new order on
+  // every run: a test that only passes after another one fails here, with
+  // the seed printed to reproduce it (`--seed=<n>`).
+  clearMocks: true,
+  randomize: true,
+  // Besides React Native and Expo, the ESM-only packages `@salmon/shared`
+  // imports: with them transformed, a test can load the real barrel
+  // (`test-utils/sharedWith.ts`).
   transformIgnorePatterns: [
-    'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|standard-navigation|@salmon/.*|@solana/.*|@solana-mobile/.*|phosphor-react-native/.*|decode-uri-component|lodash-es|.pnpm/.*)',
+    'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|standard-navigation|@salmon/.*|@solana/.*|@solana-mobile/.*|@onsol/.*|p-limit|yocto-queue|@noble/.*|@scure/.*|micro-key-producer|micro-packed|phosphor-react-native/.*|decode-uri-component|lodash-es|.pnpm/.*)',
   ],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
     // The Powerups entry is a subpath the package does not publish; the
     // bundlers alias it (see metro.config.js), so the tests map it the same way.
     '^@salmon/shared/powerups$': '<rootDir>/../../packages/shared/src/powerups',
+    // The package's `exports` names a CommonJS file it does not ship, which
+    // Jest 30 follows; Metro takes the `react-native` entry, so tests do too.
+    '^@solana-mobile/mobile-wallet-adapter-walletlib$':
+      '<rootDir>/../../node_modules/@solana-mobile/mobile-wallet-adapter-walletlib/lib/esm/index.native.js',
   },
   testPathIgnorePatterns: ['/node_modules/', '/.expo/'],
   // Ratchet: floors sit just under the measured coverage (2026-11-12) and

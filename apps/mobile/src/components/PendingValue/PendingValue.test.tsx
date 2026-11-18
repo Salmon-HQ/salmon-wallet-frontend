@@ -4,17 +4,19 @@ import { Text } from 'react-native';
 
 // The shared barrel reaches the Solana ESM packages, which this Jest config
 // does not transform. Only the motion tokens matter here.
-jest.mock('@salmon/shared', () => ({
-  opacity: { disabled: 0.5, full: 1 },
-  motionMs: { swell: 180, pulseCycle: 1200 },
-  motionEasing: {
-    current: { native: [0.32, 0.72, 0, 1] },
-    settle: { native: [0.22, 1, 0.36, 1] },
-    sink: { native: [0.4, 0, 1, 1] },
-    swellIn: { native: [0.34, 1.14, 0.64, 1] },
-  },
-  resolveMotionMs: (ms: number, reduced: boolean) => (reduced ? 0 : ms),
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    opacity: { disabled: 0.5, full: 1 },
+    motionMs: { swell: 180, pulseCycle: 1200 },
+    motionEasing: {
+      current: { native: [0.32, 0.72, 0, 1] },
+      settle: { native: [0.22, 1, 0.36, 1] },
+      sink: { native: [0.4, 0, 1, 1] },
+      swellIn: { native: [0.34, 1.14, 0.64, 1] },
+    },
+    resolveMotionMs: (ms: number, reduced: boolean) => (reduced ? 0 : ms),
+  })
+);
 
 jest.mock('react-native-reanimated', () => {
   const { View } = jest.requireActual('react-native');

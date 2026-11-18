@@ -59,6 +59,57 @@ jobs:
           node --test scripts/check-no-secrets.test.mjs
           pnpm check:no-secrets
 
+      # Zero-width, bidirectional and tag characters in tracked files. The
+      # diff view does not draw them, so a reviewer cannot see an instruction
+      # written with them, while an agent that loads AGENTS.md or a skill does.
+      - name: No hidden characters in the tree
+        run: |
+          node --test scripts/check-hidden-unicode.test.mjs
+          pnpm check:hidden-unicode
+
+      # The OTA guard (apps/mobile/AGENTS.md): when the native surface has
+      # moved since the last built binary, expo.version must have moved too,
+      # or an update would reach binaries that cannot run it.
+      - name: Native fingerprint vs last binary
+        run: pnpm check:fingerprint
+
+      - name: i18n parity (en/es keys, orphans)
+        run: node scripts/check-i18n.mjs
+
+      # The extension is the mobile app on the DOM (spec 028): live-mode tokens
+      # only, one twin per kit component, one contract per pair, one DOM screen
+      # per mobile route. Strict since 2026-09-02; the script's own fixtures
+      # run first so the gate cannot silently stop catching things.
+      - name: DOM parity (extension = mobile on the DOM)
+        run: |
+          node --test scripts/check-dom-parity.test.mjs
+          node scripts/check-dom-parity.mjs
+
+      # Nothing exported that nobody imports, no file nobody reaches, no
+      # package imported without being declared where it is used (knip.json).
+      - name: Dead code and undeclared dependencies
+        run: pnpm check:dead-code
+
+      # No module reaches itself through its own imports at run time; type-only
+      # imports are not counted (.madgerc).
+      - name: Import cycles
+        run: pnpm check:cycles
+
+      # One version of @solana/kit and of each @solana-program client in the
+      # lockfile: a second kit is about forty extra packages in every bundle.
+      - name: One Solana kit
+        run: pnpm check:single-kit
+
+      # Every selector the e2e suites use still exists (spec 035): a flow on a
+      # removed element fails here, naming it, not minutes into a device run.
+      - name: e2e selector audit
+        run: |
+          node --test scripts/check-e2e-selectors.test.mjs
+          node scripts/check-e2e-selectors.mjs
+
+      # Every step above reads the tree and takes seconds; they run first so a
+      # broken rule is reported before the minutes of tests and builds below.
+
       # test:coverage, not test: every package carries a coverage floor in its
       # vitest/jest config (a ratchet — set just under the measured value, only
       # ever raised), so a PR that drops below fails here.
@@ -90,30 +141,24 @@ jobs:
       - name: Mobile bundles (Metro)
         run: pnpm --filter @salmon/mobile export:check
 
-      # The OTA guard (apps/mobile/AGENTS.md): when the native surface has
-      # moved since the last built binary, expo.version must have moved too,
-      # or an update would reach binaries that cannot run it.
-      - name: Native fingerprint vs last binary
-        run: pnpm check:fingerprint
+  audit:
+    name: dependency audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-      - name: i18n parity (en/es keys, orphans)
-        run: node scripts/check-i18n.mjs
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
 
-      # The extension is the mobile app on the DOM (spec 028): live-mode tokens
-      # only, one twin per kit component, one contract per pair, one DOM screen
-      # per mobile route. Strict since 2026-09-02; the script's own fixtures
-      # run first so the gate cannot silently stop catching things.
-      - name: DOM parity (extension = mobile on the DOM)
-        run: |
-          node --test scripts/check-dom-parity.test.mjs
-          node scripts/check-dom-parity.mjs
-
-      # Every selector the e2e suites use still exists (spec 035): a flow on a
-      # removed element fails here, naming it, not minutes into a device run.
-      - name: e2e selector audit
-        run: |
-          node --test scripts/check-e2e-selectors.test.mjs
-          node scripts/check-e2e-selectors.mjs
+      # Reads the lockfile and asks the registry for known advisories; nothing
+      # is installed. Fails on a high or critical one. The fix is a minimum
+      # version under `pnpm.overrides`, within the same major.
+      - name: No high or critical advisory in the lockfile
+        run: pnpm check:audit
 
   zizmor:
     name: workflow security lint

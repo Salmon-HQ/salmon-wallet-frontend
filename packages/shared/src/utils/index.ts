@@ -136,18 +136,7 @@ export { SECRET_CLIPBOARD_CLEAR_MS, createSecretClipboard } from './secret-clipb
 export type { SecretClipboard, SecretClipboardPlatform } from './secret-clipboard';
 
 // Responsive scaling utilities
-export {
-  DESIGN_WIDTH,
-  DESIGN_HEIGHT,
-  scale,
-  s,
-  verticalScale,
-  vs,
-  moderateScale,
-  ms,
-  moderateVerticalScale,
-  mvs,
-} from './scaling';
+export { DESIGN_WIDTH, DESIGN_HEIGHT, s, vs, ms, mvs } from './scaling';
 
 // Formatting utilities
 export {
@@ -190,6 +179,7 @@ export {
   // Price performance
   isPositivePerformance,
 } from './formatting';
+export { tokenRowDisplay } from './tokenRowDisplay';
 
 // Decimal & unit conversion utilities
 export {
@@ -356,6 +346,8 @@ export { BLOCKCHAIN_TO_COINGECKO, PERIOD_TO_DAYS, coinInfoToMarketData } from '.
 // Backend `/v1/networks` is the runtime source of truth for enablement.
 export { ENABLED_BLOCKCHAINS, isBlockchainEnabled } from '../config/blockchains';
 
+export { readNetworkId } from './networkDisplay';
+
 // Derived-accounts scanning utilities (shared between mobile and extension)
 export {
   // Constants
@@ -403,7 +395,8 @@ export { MAX_RECENTS, recipientOptions } from './recipientOptions';
 export type { RecipientOption, RecipientOptions } from './recipientOptions';
 export { RESAMPLE_POINTS, buildLinePath, getDataBounds, resampleYs } from './priceChartPath';
 export type { ChartBounds } from './priceChartPath';
-export { APPEARANCE_OPTIONS } from './appearanceOptions';
+export { APPEARANCE_OPTIONS, appearanceRows } from './appearanceOptions';
+export type { AppearanceRow } from './appearanceOptions';
 export type { AppearanceOption } from './appearanceOptions';
 export type { ActivityFilter, ActivityGroup, ActivityRow } from './activityRows';
 export type {
@@ -421,6 +414,7 @@ export type {
 } from './nft';
 export {
   ACCOUNT_ADD_METHODS,
+  accountAddMethods,
   ACCOUNT_ADD_STEP_TITLE_KEYS,
   ACCOUNT_ADD_STEP_SUBTITLE_KEYS,
 } from './accountAddPanelCopy';

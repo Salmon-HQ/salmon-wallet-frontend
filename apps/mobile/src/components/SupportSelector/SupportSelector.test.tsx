@@ -12,9 +12,11 @@ import { render } from '@testing-library/react-native';
 // The theme folder imports nothing but itself, so the real tokens can be
 // pulled in directly — the barrel would drag in `@solana/kit`, which
 // jest-expo does not transform. See `test-utils/themeTokens.ts`.
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('../../../test-utils/themeTokens'),
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('../../../test-utils/themeTokens'),
+  })
+);
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),

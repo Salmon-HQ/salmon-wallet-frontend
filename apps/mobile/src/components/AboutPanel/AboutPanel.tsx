@@ -177,5 +177,3 @@ const stylesFor = (t: Semantic) =>
       lineHeight: fontSize.caption * lineHeight.normal,
     },
   });
-
-export default AboutPanel;

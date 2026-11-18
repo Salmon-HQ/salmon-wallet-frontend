@@ -6,15 +6,17 @@ import type { View } from 'react-native';
 const mockBlurView = jest.fn(({ children }: { children?: React.ReactNode }) => <>{children}</>);
 const mockUseBlurTarget = jest.fn();
 
-jest.mock('@salmon/shared', () => ({
-  semantic: {
-    // Opaque, as the shipped token is: a list row is content, and DESIGN.md
-    // gives translucency only to floating chrome.
-    surface: { raised: '#161C2D' },
-    border: { default: '#404962' },
-  },
-  isOpaqueColor: (color: string) => color.startsWith('#'),
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    semantic: {
+      // Opaque, as the shipped token is: a list row is content, and DESIGN.md
+      // gives translucency only to floating chrome.
+      surface: { raised: '#161C2D' },
+      border: { default: '#404962' },
+    },
+    isOpaqueColor: (color: string) => color.startsWith('#'),
+  })
+);
 
 jest.mock('expo-blur', () => ({
   BlurView: (props: { children?: React.ReactNode }) => mockBlurView(props),

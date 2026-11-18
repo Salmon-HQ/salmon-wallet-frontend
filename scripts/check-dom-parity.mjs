@@ -25,7 +25,11 @@
  *                CROSS_PLATFORM_CLONE_LINES_MAX. Two renderings of one design
  *                legitimately share shape, so the ceiling is not zero — it is
  *                a ratchet: lower it when a lot hoists logic into shared, and
- *                the number can never climb back.
+ *                the number can never climb back. Every other clone — two
+ *                files on the same platform, or inside packages/shared — is
+ *                held under SAME_SIDE_CLONE_LINES_MAX the same way; that
+ *                ceiling moves only down, since nothing there exists twice
+ *                by design.
  *
  * Usage: node scripts/check-dom-parity.mjs [--report] [--no-clones]
  *   --report prints every finding and exits 0; otherwise any finding exits 1.
@@ -112,7 +116,19 @@ import { fileURLToPath } from 'node:url';
 // twins: the merchant's words as the notice body and a Retry button. Pure
 // JSX: which failures may retry, the reason's key and the 80-character cut
 // are decided in `useSolanaPayTransactionRequest` / `transaction-request.ts`.
-export const CROSS_PLATFORM_CLONE_LINES_MAX = 2513;
+// 2026-11-18: 2513 → 2495. The revoke-in-flight state of both
+// `TrustedAppsSelector` twins is `usePendingAction` in shared.
+// 2026-11-18, later: 2495 → 2487. The `TransactionDetail` barrels re-exported
+// three props types nothing read.
+export const CROSS_PLATFORM_CLONE_LINES_MAX = 2263;
+
+/**
+ * The ceiling for every clone that is not cross-platform, in lines (same
+ * jscpd pass): two files on one platform, or inside `packages/shared`. No
+ * design asks for these to exist twice, so the number only goes down —
+ * extract the helper, lower the constant in the same commit.
+ */
+export const SAME_SIDE_CLONE_LINES_MAX = 870;
 
 /** Twins whose folders are not named the same. mobile folder → DOM folder(s). */
 export const MAP = {
@@ -355,7 +371,17 @@ export function run(root, { clones = false } = {}) {
 
   // 6. clones -----------------------------------------------------------------
   if (clones) {
-    const lines = crossPlatformCloneLines(root);
+    const { crossPlatform: lines, sameSide } = cloneLines(root);
+    if (sameSide > SAME_SIDE_CLONE_LINES_MAX)
+      note(
+        'clones',
+        `${sameSide} lines duplicated on the same platform or inside packages/shared — above the ${SAME_SIDE_CLONE_LINES_MAX} ceiling; reuse or extract the helper instead of copying it`
+      );
+    else if (sameSide < SAME_SIDE_CLONE_LINES_MAX * 0.95)
+      note(
+        'clones',
+        `${sameSide} same-side lines duplicated — well under the ${SAME_SIDE_CLONE_LINES_MAX} ceiling; lower SAME_SIDE_CLONE_LINES_MAX to ${sameSide} so it cannot climb back`
+      );
     if (lines > CROSS_PLATFORM_CLONE_LINES_MAX)
       note(
         'clones',
@@ -371,8 +397,11 @@ export function run(root, { clones = false } = {}) {
   return { findings, pairs };
 }
 
-/** Lines jscpd reports as duplicated with one side on mobile and one on the DOM. */
-export function crossPlatformCloneLines(root) {
+/**
+ * Lines jscpd reports as duplicated: `crossPlatform` with one side on mobile
+ * and one on the DOM, `sameSide` for every other pair.
+ */
+export function cloneLines(root) {
   const out = mkdtempSync(join(tmpdir(), 'dom-parity-jscpd-'));
   try {
     execFileSync(
@@ -400,13 +429,12 @@ export function crossPlatformCloneLines(root) {
     const report = JSON.parse(readFileSync(join(out, 'jscpd-report.json'), 'utf8'));
     const side = (name) =>
       name.startsWith('mobile/') ? 'mobile' : /^(ui|extension)\//.test(name) ? 'dom' : 'other';
-    return report.duplicates
-      .filter((d) => {
-        const a = side(d.firstFile.name);
-        const b = side(d.secondFile.name);
-        return (a === 'mobile' && b === 'dom') || (a === 'dom' && b === 'mobile');
-      })
-      .reduce((sum, d) => sum + d.lines, 0);
+    const total = { crossPlatform: 0, sameSide: 0 };
+    for (const d of report.duplicates) {
+      const sides = [side(d.firstFile.name), side(d.secondFile.name)].sort().join('+');
+      total[sides === 'dom+mobile' ? 'crossPlatform' : 'sameSide'] += d.lines;
+    }
+    return total;
   } finally {
     rmSync(out, { recursive: true, force: true });
   }

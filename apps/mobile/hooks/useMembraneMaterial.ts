@@ -59,5 +59,3 @@ export function useMembraneMaterial(): MembraneMaterial {
 
   return supportsLiquidGlass() ? 'liquidGlass' : 'blur';
 }
-
-export default useMembraneMaterial;

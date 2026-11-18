@@ -11,6 +11,11 @@ export default defineConfig({
     },
   },
   test: {
+    // Tests run in a new order on every run and call counts start at zero in
+    // each one: a test that only passes after another fails here, with the
+    // seed printed to reproduce it (`--sequence.seed=<n>`).
+    sequence: { shuffle: true },
+    clearMocks: true,
     globals: true,
     environment: 'jsdom',
     // First render of the MUI-heavy trees takes >5s on cold 2-core CI

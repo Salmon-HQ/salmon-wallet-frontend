@@ -23,10 +23,12 @@ jest.mock('expo-router', () => ({
   },
 }));
 
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('../../test-utils/themeTokens'),
-  useAccountsContext: () => mockUseAccountsContext(),
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('../../test-utils/themeTokens'),
+    useAccountsContext: () => mockUseAccountsContext(),
+  })
+);
 
 // The layout collapses to a pass-through so the test sees the slots' content;
 // the grid's geometry has its own suite. BrandMark and Wordmark are real —

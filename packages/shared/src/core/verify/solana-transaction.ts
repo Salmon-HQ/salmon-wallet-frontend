@@ -138,7 +138,7 @@ type CompiledMessage = ReturnType<
  * createIdempotent naming the fee payer as owner) — the only place a swap
  * may move SOL to, since wrapping SOL is a transfer into such an account.
  */
-export interface AccountBind {
+interface AccountBind {
   code: number;
   /** Position in the instruction's account list. */
   index: number;

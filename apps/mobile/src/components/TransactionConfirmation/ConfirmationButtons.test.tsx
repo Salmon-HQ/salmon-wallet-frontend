@@ -1,5 +1,7 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
+
+const flatten = (style: unknown) => StyleSheet.flatten(style as StyleProp<ViewStyle>);
 import { render } from '@testing-library/react-native';
 
 jest.mock('react-i18next', () => ({
@@ -10,10 +12,12 @@ jest.mock('react-i18next', () => ({
 
 // The real barrel pulls in @solana/kit, which jest-expo cannot transform.
 // Only the two layout tokens this pair reads are needed here.
-jest.mock('@salmon/shared', () => ({
-  spacing: { md: 12 },
-  vs: (value: number) => value,
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    spacing: { md: 12 },
+    vs: (value: number) => value,
+  })
+);
 
 jest.mock('../Button', () => {
   const { Text: RNText } = require('react-native');
@@ -53,16 +57,16 @@ function renderStack() {
 describe('ConfirmationButtons — the pair stacks, full width', () => {
   it('stacks the two actions in a column', () => {
     const { stack } = renderStack();
-    expect(StyleSheet.flatten(stack.props.style)).toMatchObject({ flexDirection: 'column' });
+    expect(flatten(stack.props.style)).toMatchObject({ flexDirection: 'column' });
   });
 
   it('gives each action the full width — nothing narrows it', () => {
     const { stack, actions } = renderStack();
-    const stackStyle = (StyleSheet.flatten(stack.props.style) ?? {}) as Record<string, unknown>;
+    const stackStyle = (flatten(stack.props.style) ?? {}) as Record<string, unknown>;
     expect(stackStyle.alignItems ?? 'stretch').toBe('stretch');
     expect(actions).toHaveLength(2);
     for (const action of actions) {
-      const style = (StyleSheet.flatten(action.props.style) ?? {}) as Record<string, unknown>;
+      const style = (flatten(action.props.style) ?? {}) as Record<string, unknown>;
       expect(style.width ?? '100%').toBe('100%');
       expect(style.maxWidth).toBeUndefined();
       expect(style.flex).toBeUndefined();
@@ -87,7 +91,7 @@ describe('ConfirmationButtons — the pair stacks, full width', () => {
         <ConfirmationButtons onBack={jest.fn()} onConfirm={jest.fn()} confirmLabel={label} />
       ).toJSON() as unknown as Node;
       return ((tree.children ?? []) as Node[]).map((action) => {
-        const style = (StyleSheet.flatten(action.props.style) ?? {}) as Record<string, unknown>;
+        const style = (flatten(action.props.style) ?? {}) as Record<string, unknown>;
         return [style.height, style.minHeight];
       });
     };

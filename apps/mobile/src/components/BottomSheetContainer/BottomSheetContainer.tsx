@@ -13,6 +13,7 @@ import {
   StyleProp,
   ViewStyle,
   type LayoutChangeEvent,
+  type ViewInstance,
 } from 'react-native';
 import { BlurTargetView } from 'expo-blur';
 import Reanimated, {
@@ -103,8 +104,6 @@ const SPRING_CONFIG = {
  * mean guessing — `SendSheet` carried its own `ANIMATION_DURATION = 300`,
  * which did not match this at all.
  */
-export { SHEET_EXIT_MS };
-
 export interface BottomSheetContainerProps extends BottomSheetContainerPropsBase {
   /** Whether to show the top fade gradient driven by scroll offset */
   showFadeGradient?: boolean;
@@ -194,7 +193,7 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
   const { surface } = useSemantic();
-  const blurTargetRef = useRef<View>(null);
+  const blurTargetRef = useRef<ViewInstance>(null);
   const [isRendered, setIsRendered] = useState(visible);
 
   // The ceiling a sheet opens with is the ceiling it keeps (`useHeldSheetSize`).
@@ -587,5 +586,3 @@ const stylesFor = (t: Semantic) =>
       zIndex: 1,
     },
   });
-
-export default BottomSheetContainer;

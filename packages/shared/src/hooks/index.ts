@@ -64,6 +64,8 @@ export { useCopyFeedback } from './useCopyFeedback';
 export type { CopyFeedbackKey, UseCopyFeedbackResult } from './useCopyFeedback';
 
 export { useExplorerLink } from './useExplorerLink';
+export { usePendingAction } from './usePendingAction';
+export type { UsePendingActionResult } from './usePendingAction';
 export type {
   ExplorerLinkRow,
   ExplorerLinkTranslate,
@@ -259,6 +261,11 @@ export { useSecretCopied } from './useSecretCopied';
 export { usePhraseBackupSheet } from './usePhraseBackupSheet';
 export type { PhraseBackupStep, UsePhraseBackupSheetResult } from './usePhraseBackupSheet';
 export type { PasswordConfirmState, UsePasswordConfirmParams } from './usePasswordConfirm';
+export { useNftsGrid } from './useNftsGrid';
+export type { UseNftsGridParams } from './useNftsGrid';
+export { useRecoveryPhraseEntry } from './useRecoveryPhraseEntry';
+export { useSetupPasswordForm } from './useSetupPasswordForm';
+export type { UseSetupPasswordFormParams } from './useSetupPasswordForm';
 export { useChangePassword } from './useChangePassword';
 export type { UseChangePasswordParams } from './useChangePassword';
 

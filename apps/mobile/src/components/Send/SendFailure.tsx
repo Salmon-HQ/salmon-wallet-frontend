@@ -102,5 +102,3 @@ const stylesFor = (t: Semantic) =>
       gap: vs(spacing.md),
     },
   });
-
-export default SendFailure;

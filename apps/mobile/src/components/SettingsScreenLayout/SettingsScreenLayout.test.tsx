@@ -10,10 +10,12 @@ import { render, screen } from '@testing-library/react-native';
 // The header's step indicator (mounted whenever ScreenHeader is, via
 // `StepIndicator`) reads `motionEasing` through `src/utils/motion.ts` at
 // module scope, so the mock needs the real durations alongside the theme.
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('../../../test-utils/themeTokens'),
-  ...jest.requireActual('@salmon/shared/src/theme/durations'),
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('../../../test-utils/themeTokens'),
+    ...jest.requireActual('@salmon/shared/src/theme/durations'),
+  })
+);
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (_key: string, fallback?: string) => fallback ?? _key }),
 }));

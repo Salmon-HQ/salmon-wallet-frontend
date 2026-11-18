@@ -80,5 +80,3 @@ export function SupportSelector({ options, onOpenLink, errorText, onBack }: Supp
     </SettingsScreenLayout>
   );
 }
-
-export default SupportSelector;

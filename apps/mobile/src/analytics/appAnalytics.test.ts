@@ -6,7 +6,11 @@
 import type { AnalyticsBatch } from '@salmon/shared';
 
 // The barrel drags the Solana stack in; the real analytics client is all this needs.
-jest.mock('@salmon/shared', () => jest.requireActual('../../../../packages/shared/src/analytics'));
+jest.mock('@salmon/shared', () =>
+  require('../../test-utils/sharedWith').sharedWith(
+    jest.requireActual('../../../../packages/shared/src/analytics')
+  )
+);
 jest.mock('../seed-vault/bridge', () => ({ isSeedVaultAvailable: jest.fn() }));
 
 type Modules = {

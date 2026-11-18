@@ -8,7 +8,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { getAnalytics, trackEvent } from '@salmon/shared';
 import { USER_REJECTED_ERROR } from '../../utils/types';
 
-export const BACKGROUND_CHANNEL = 'salmon_extension_background_channel';
+const BACKGROUND_CHANNEL = 'salmon_extension_background_channel';
 
 type DAppApprovalEvent = 'dapp_connected' | 'dapp_message_signed' | 'dapp_transaction_signed';
 

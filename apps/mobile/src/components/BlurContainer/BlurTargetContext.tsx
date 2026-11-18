@@ -1,10 +1,10 @@
 import { createContext, useContext, type RefObject } from 'react';
-import type { View } from 'react-native';
+import type { ViewInstance } from 'react-native';
 
-const BlurTargetContext = createContext<RefObject<View | null> | undefined>(undefined);
+const BlurTargetContext = createContext<RefObject<ViewInstance | null> | undefined>(undefined);
 
 export const BlurTargetProvider = BlurTargetContext.Provider;
 
-export function useBlurTarget(): RefObject<View | null> | undefined {
+export function useBlurTarget(): RefObject<ViewInstance | null> | undefined {
   return useContext(BlurTargetContext);
 }

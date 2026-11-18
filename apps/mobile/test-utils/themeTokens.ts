@@ -1,12 +1,9 @@
 /**
- * The real design tokens, for Jest mocks of `@salmon/shared`.
+ * The design tokens with identity scalers, to spread into a `sharedWith`
+ * mock of `@salmon/shared` (`test-utils/sharedWith.ts`).
  *
- * Screen tests mock the whole barrel because importing it for real drags in
- * `@solana/kit`, which jest-expo will not transform. Hand-listing the handful
- * of tokens a screen happens to read is how those mocks used to work, and it
- * meant every token a component started reading broke an unrelated test with
- * "cannot read properties of undefined". The theme folder imports nothing but
- * itself, so it can be pulled in directly.
+ * The tokens are the real ones. Only the scalers below differ from the
+ * package, so a style value in an assertion equals the token it came from.
  */
 export * from '../../../packages/shared/src/theme';
 
@@ -22,77 +19,11 @@ export * from '../../../packages/shared/src/theme';
  * `packages/shared/node_modules` that has no bridge. Identity also makes an
  * assertion readable: a style value equals the token it came from.
  */
-export const scale = (size: number): number => size;
+const scale = (size: number): number => size;
 export const s = scale;
-export const verticalScale = (size: number): number => size;
+const verticalScale = (size: number): number => size;
 export const vs = verticalScale;
-export const moderateScale = (size: number): number => size;
+const moderateScale = (size: number): number => size;
 export const ms = moderateScale;
-export const moderateVerticalScale = (size: number): number => size;
+const moderateVerticalScale = (size: number): number => size;
 export const mvs = moderateVerticalScale;
-
-/**
- * The theme context, for components that read the active mode.
- *
- * `useThemedStyles` / `useSemantic` go through `useTheme`, so a mock of the
- * `@salmon/shared` barrel that carries the tokens but not the provider makes
- * every migrated component throw "useTheme must be used within a
- * ThemeProvider" — an error about the mock, not about the component. The
- * module is imported by path rather than through the barrel for the same
- * reason the tokens are: the barrel drags `@solana/kit` in with it.
- *
- * Pair with `renderWithTheme` (below in this folder) to mount the provider.
- */
-export {
-  ThemeContext,
-  ThemeProvider,
-  useTheme,
-} from '../../../packages/shared/src/contexts/ThemeContext';
-export type {
-  ThemePreference,
-  SystemScheme,
-} from '../../../packages/shared/src/contexts/ThemeContext';
-
-/**
- * The platform-free field hooks.
- *
- * They are plain React state with no dependencies of their own, and every
- * field that mocks this barrel reaches for them — a mock without them dies at
- * "useFieldFocus is not a function", which says nothing about the component
- * under test. Imported by path for the same reason the tokens are: the barrel
- * drags `@solana/kit` in with it.
- */
-export { useFieldFocus } from '../../../packages/shared/src/hooks/useFieldFocus';
-export { useAccountNameDraft } from '../../../packages/shared/src/hooks/useAccountNameDraft';
-
-/**
- * `KeyValueRow`'s tone-to-ink mapping — a pure function of the tokens
- * already re-exported above, imported by path for the same reason.
- */
-export { valueInkFor } from '../../../packages/shared/src/types/ui/key-value-row';
-// UnderlineTabs decides its edge fades with this pure helper; every screen
-// that carries a tab row needs it present in the mock.
-export { overflowEdges } from '../../../packages/shared/src/utils/overflowEdges';
-// Pill / StatTile tone maps (spec 040), pure functions of the tokens above.
-export { pillColorsFor } from '../../../packages/shared/src/types/ui/pill';
-export {
-  STAT_MIN_FONT_SCALE,
-  STAT_SIZES,
-  statInkFor,
-} from '../../../packages/shared/src/types/ui/stat-tile';
-export { progressPercent } from '../../../packages/shared/src/types/ui/progress-bar';
-export { barHeights } from '../../../packages/shared/src/types/ui/bar-chart';
-// The kit's block renderer (spec 040): screens build their BlockList from it
-// at import time, so every mock of the barrel needs it.
-export { createBlockList } from '../../../packages/shared/src/kit/createBlockList';
-// Card's tone, glow, padding and radius tables (spec 040), pure functions of the tokens.
-export {
-  CARD_GLOW,
-  CARD_PADDINGS,
-  CARD_RADII,
-  cardTonesFor,
-} from '../../../packages/shared/src/types/ui/card';
-// The clipboard that clears copied secrets: the secret panels create their
-// instance at import time, so every mock of the barrel that reaches the
-// components barrel needs the factory.
-export { createSecretClipboard } from '../../../packages/shared/src/utils/secret-clipboard';

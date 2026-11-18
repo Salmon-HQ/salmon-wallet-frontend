@@ -27,10 +27,12 @@ jest.mock('react-native-reanimated', () => ({
 // does not transform. Only the motion vocabulary matters here — the duration
 // tokens and the verb's own constants — and both are the real modules, so a
 // number changing upstream shows up in these assertions.
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('@salmon/shared/src/theme/durations'),
-  ...jest.requireActual('@salmon/shared/src/motion/sinkFloat'),
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('@salmon/shared/src/theme/durations'),
+    ...jest.requireActual('@salmon/shared/src/motion/sinkFloat'),
+  })
+);
 
 import {
   CHROME_SCALE,

@@ -5,16 +5,18 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
 
-jest.mock('@salmon/shared', () => ({
-  useOpenLink: () => ({ openLink: jest.fn(), errorText: null }),
-  spacing: { md: 14, sm: 8 },
-  fontFamilyNative: { bold: 'Font-Bold', regular: 'Font-Regular' },
-  fontSize: { bodyLg: 16, body: 14 },
-  lineHeight: { snug: 1.2, relaxed: 1.5 },
-  s: (value: number) => value,
-  vs: (value: number) => value,
-  semantic: { text: { primary: '#fff', secondary: '#aaa' }, status: { success: '#0f0' } },
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    useOpenLink: () => ({ openLink: jest.fn(), errorText: null }),
+    spacing: { md: 14, sm: 8 },
+    fontFamilyNative: { bold: 'Font-Bold', regular: 'Font-Regular' },
+    fontSize: { bodyLg: 16, body: 14 },
+    lineHeight: { snug: 1.2, relaxed: 1.5 },
+    s: (value: number) => value,
+    vs: (value: number) => value,
+    semantic: { text: { primary: '#fff', secondary: '#aaa' }, status: { success: '#0f0' } },
+  })
+);
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (_key: string, fallback?: string) => fallback ?? _key }),

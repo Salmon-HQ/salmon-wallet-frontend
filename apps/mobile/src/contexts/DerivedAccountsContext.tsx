@@ -37,5 +37,3 @@ export function DerivedAccountsProvider({ children }: { children: React.ReactNod
 export function useDerivedAccounts(): UseDerivedAccountsScanResult {
   return useContext(DerivedAccountsContext);
 }
-
-export default DerivedAccountsContext;

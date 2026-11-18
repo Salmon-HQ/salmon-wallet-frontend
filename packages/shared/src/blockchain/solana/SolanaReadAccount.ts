@@ -20,6 +20,7 @@ import {
   type ValidationResult,
 } from './validation';
 import { SOL_CONSTANTS } from '../../utils/balance';
+import { summarizeBalance } from '../portfolioTotals';
 import type { SolanaNetwork } from '../../types/blockchain';
 import type { SolanaWalletBalance } from '../../types/balance';
 import type { SolanaBalanceItem } from '../../types/transfer';
@@ -190,32 +191,6 @@ export class SolanaReadAccount {
   }
 
   /**
-   * Reduces priced items into the portfolio 24h delta. Items without
-   * `priceChange24h` contribute their USD balance unchanged (so a
-   * partially-priced wallet still produces a meaningful number).
-   */
-  private calculateLast24HoursChange(balances: SolanaBalanceItem[], usdTotal: number): number {
-    if (!usdTotal || usdTotal === 0) return 0;
-
-    let previousTotal = 0;
-    balances.forEach((balance) => {
-      if (
-        balance.usdBalance &&
-        balance.priceChange24h !== undefined &&
-        balance.priceChange24h !== null
-      ) {
-        const priceChangeFactor = 1 + balance.priceChange24h / 100;
-        const previousBalance = balance.usdBalance / priceChangeFactor;
-        previousTotal += previousBalance;
-      } else if (balance.usdBalance) {
-        previousTotal += balance.usdBalance;
-      }
-    });
-
-    return previousTotal === 0 ? 0 : usdTotal - previousTotal;
-  }
-
-  /**
    * Returns the complete wallet balance. The salmon-api `/balance`
    * endpoint already attaches USD pricing per item via the multichain
    * `price-enrichers` plug-point, so this method only sorts the items
@@ -233,14 +208,7 @@ export class SolanaReadAccount {
       return (b.usdBalance || 0) - (a.usdBalance || 0);
     });
 
-    const hasAnyPrice = items.some((item) => item.usdBalance !== undefined);
-    if (!hasAnyPrice) {
-      return { usdTotal: 0, last24HoursChange: 0, items };
-    }
-
-    const usdTotal = items.reduce((currentValue, next) => (next.usdBalance || 0) + currentValue, 0);
-    const last24HoursChange = this.calculateLast24HoursChange(items, usdTotal);
-    return { usdTotal, last24HoursChange, items };
+    return summarizeBalance(items);
   }
 
   /**

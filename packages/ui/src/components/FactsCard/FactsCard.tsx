@@ -37,5 +37,3 @@ export function FactsCard({ title, rows, style, className, testID }: FactsCardPr
     </Card>
   );
 }
-
-export default FactsCard;

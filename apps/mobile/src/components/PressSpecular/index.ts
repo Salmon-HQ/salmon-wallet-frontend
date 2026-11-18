@@ -1,2 +1,2 @@
-export { PressSpecular, SPECULAR_OPACITY, SPECULAR_RADIUS } from './PressSpecular';
+export { PressSpecular, SPECULAR_OPACITY } from './PressSpecular';
 export type { PressSpecularProps } from './PressSpecular';

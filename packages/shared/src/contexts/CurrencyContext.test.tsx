@@ -72,6 +72,8 @@ describe('CurrencyProvider', () => {
 
   afterEach(() => {
     resetStorage();
+    // The chosen currency is persisted; one test's choice is not the next one's.
+    localStorage.clear();
   });
 
   it('holds the rate fetch through boot and lock, and runs it on unlock', async () => {

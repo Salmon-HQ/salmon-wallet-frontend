@@ -13,17 +13,14 @@ import { ScrollView, View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { WarningIcon } from '../../icons';
 import {
-  borderRadius,
   spacing,
   fontSize,
-  fontFamilyNative,
-  s,
-  vs,
   type ConfirmSheetPropsBase,
   type Semantic,
   usePasswordConfirm,
 } from '@salmon/shared';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
+import { sheetBodyStyles } from '../BottomSheetContainer/sheetBodyStyles';
 import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
 import { Card } from '../Card';
 import { HoldToApproveButton } from '../Button/HoldToCopyButton';
@@ -199,38 +196,8 @@ export function ConfirmSheet({
   );
 }
 
-export default ConfirmSheet;
-
 // ============================================================================
 // Styles
 // ============================================================================
 
-const stylesFor = (t: Semantic) =>
-  StyleSheet.create({
-    bedrock: {
-      ...StyleSheet.absoluteFill,
-      backgroundColor: t.surface.bedrock,
-      borderTopLeftRadius: borderRadius.header,
-      borderTopRightRadius: borderRadius.header,
-    },
-    // Hugs its content until the container's ceiling, then scrolls inside it.
-    scroll: {
-      flexGrow: 0,
-    },
-    content: {
-      paddingHorizontal: s(spacing.screenGutter),
-      paddingTop: vs(spacing.md),
-      gap: vs(spacing.xl),
-    },
-    message: {
-      color: t.text.secondary,
-      fontFamily: fontFamilyNative.regular,
-      fontSize: s(fontSize.bodyLg),
-      // Left-aligned: the message runs to several lines, and a centred block
-      // moves the start of every line.
-      textAlign: 'left',
-    },
-    actions: {
-      gap: vs(spacing.sm),
-    },
-  });
+const stylesFor = (t: Semantic) => StyleSheet.create(sheetBodyStyles(t));

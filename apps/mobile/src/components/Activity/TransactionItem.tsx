@@ -235,5 +235,3 @@ const stylesFor = (t: Semantic) =>
       textAlign: 'right',
     },
   });
-
-export default TransactionItem;

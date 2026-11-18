@@ -5,6 +5,8 @@ import type { ValidationResult, AddressType } from '../../types/validation';
 import { satoshisToBtc, btcToSatoshis } from '../../utils/decimals';
 import { getShortAddress } from '../../utils/address';
 import { sendBitcoin, estimateBitcoinFee } from './transfer';
+import { AccountWithoutSolanaFeatures } from '../AccountWithoutSolanaFeatures';
+import { summarizeBalance } from '../portfolioTotals';
 import type {
   BitcoinBalanceItem,
   UTXO,
@@ -87,7 +89,7 @@ export type { BitcoinWalletBalance } from '../../types/balance';
  * Note: Balance and transaction methods are designed to work with external API services
  * (like the Salmon API) since Bitcoin doesn't have a native RPC for balance queries.
  */
-export class BitcoinAccount {
+export class BitcoinAccount extends AccountWithoutSolanaFeatures {
   /** Network configuration */
   readonly network: BitcoinNetwork;
 
@@ -118,6 +120,7 @@ export class BitcoinAccount {
    * @param options - Account configuration options
    */
   constructor(options: BitcoinAccountOptions) {
+    super();
     this.network = options.network;
     this.index = options.index;
     this.path = options.path;
@@ -277,39 +280,6 @@ export class BitcoinAccount {
   }
 
   /**
-   * Reduces priced items into the portfolio 24h delta. Items without
-   * `priceChange24h` contribute their USD balance unchanged so a
-   * partially-priced wallet still produces a meaningful number.
-   */
-  private calculateLast24HoursChange(balances: BitcoinBalanceItem[], usdTotal: number): number {
-    if (!usdTotal || usdTotal === 0) {
-      return 0;
-    }
-
-    let previousTotal = 0;
-
-    balances.forEach((balance) => {
-      if (
-        balance.usdBalance &&
-        balance.priceChange24h !== undefined &&
-        balance.priceChange24h !== null
-      ) {
-        const priceChangeFactor = 1 + balance.priceChange24h / 100;
-        const previousBalance = balance.usdBalance / priceChangeFactor;
-        previousTotal += previousBalance;
-      } else if (balance.usdBalance) {
-        previousTotal += balance.usdBalance;
-      }
-    });
-
-    if (previousTotal === 0) {
-      return 0;
-    }
-
-    return usdTotal - previousTotal;
-  }
-
-  /**
    * Gets the primary balance amount (in satoshis).
    *
    * @returns Promise resolving to balance in satoshis
@@ -326,16 +296,7 @@ export class BitcoinAccount {
    * portfolio totals client-side.
    */
   async getBalance(): Promise<BitcoinWalletBalance> {
-    const items = await this.fetchBitcoinBalance();
-
-    const hasAnyPrice = items.some((item) => item.usdBalance !== undefined);
-    if (!hasAnyPrice) {
-      return { usdTotal: 0, last24HoursChange: 0, items };
-    }
-
-    const usdTotal = items.reduce((currentValue, next) => (next.usdBalance || 0) + currentValue, 0);
-    const last24HoursChange = this.calculateLast24HoursChange(items, usdTotal);
-    return { usdTotal, last24HoursChange, items };
+    return summarizeBalance(await this.fetchBitcoinBalance());
   }
 
   // ============================================================================
@@ -477,84 +438,6 @@ export class BitcoinAccount {
     return {
       fee: feeInBtc.toFixed(8).replace(/0+$/, '').replace(/\.$/, ''),
     };
-  }
-
-  // ============================================================================
-  // Unsupported Methods (throw 'method_not_supported')
-  // ============================================================================
-
-  /**
-   * Gets domain for this account.
-   * Not supported for Bitcoin.
-   *
-   * @throws 'method_not_supported'
-   */
-  async getDomain(): Promise<never> {
-    throw 'method_not_supported';
-  }
-
-  /**
-   * Gets domain from a public key.
-   * Not supported for Bitcoin.
-   *
-   * @param _publicKey - Public key (unused)
-   * @throws 'method_not_supported'
-   */
-  async getDomainFromPublicKey(_publicKey: string): Promise<never> {
-    throw 'method_not_supported';
-  }
-
-  /**
-   * Gets public key from a domain.
-   * Not supported for Bitcoin.
-   *
-   * @param _domain - Domain name (unused)
-   * @throws 'method_not_supported'
-   */
-  async getPublicKeyFromDomain(_domain: string): Promise<never> {
-    throw 'method_not_supported';
-  }
-
-  /**
-   * Gets all NFTs for this account.
-   * Not supported for Bitcoin.
-   *
-   * @returns null (Bitcoin doesn't support NFTs in this context)
-   */
-  async getAllNfts(): Promise<null> {
-    return null;
-  }
-
-  /**
-   * Gets available tokens.
-   * Not supported for Bitcoin.
-   *
-   * @throws 'method_not_supported'
-   */
-  async getAvailableTokens(): Promise<never> {
-    throw 'method_not_supported';
-  }
-
-  /**
-   * Gets featured tokens.
-   * Not supported for Bitcoin.
-   *
-   * @throws 'method_not_supported'
-   */
-  async getFeaturedTokens(): Promise<never> {
-    throw 'method_not_supported';
-  }
-
-  /**
-   * Calculates transfer fee.
-   * Returns null for Bitcoin (fee is calculated at transaction creation time).
-   *
-   * @param _mint - Token mint (unused)
-   * @param _amount - Transfer amount (unused)
-   * @returns null
-   */
-  async calculateTransferFee(_mint?: string, _amount?: number): Promise<null> {
-    return null;
   }
 
   // ============================================================================

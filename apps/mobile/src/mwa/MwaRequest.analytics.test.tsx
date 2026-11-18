@@ -33,50 +33,52 @@ const mockSignAndSend = jest.fn();
 
 // The barrel drags the Solana stack in: the real analytics client, and the
 // signers and wallet state as stand-ins.
-jest.mock('@salmon/shared', () => ({
-  // The phrase check (DEV-208) is never due here.
-  usePhraseBackup: () => ({
-    needsBackup: false,
-    requireBackup: async () => true,
-    openBackup: () => {},
-    markUnconfirmed: async () => {},
-  }),
-  // The detail cards draw the kit's real tokens.
-  ...jest.requireActual('../../test-utils/themeTokens'),
-  ...jest.requireActual('../../../../packages/shared/src/analytics'),
-  mwaPrecheck: () => ({ ok: true, origin: 'https://dapp.example' }),
-  useAccountsContext: () => [
-    { networkId: 'solana-mainnet', activeTrustedApps: [], activeAccount: { name: 'Main' } },
-    { addTrustedApp: mockAddTrustedApp, removeTrustedApp: jest.fn() },
-  ],
-  mwaDisplayName: () => 'Example',
-  formatSigningAccount: ({ address }: { address: string }) => address,
-  getStorageItem: jest.fn().mockResolvedValue(null),
-  mwaChainToNetworkId: () => 'solana-mainnet',
-  mwaDeauthorizeOrigin: () => null,
-  STORAGE_KEYS: { TRUSTED_APPS: 'trustedApps' },
-  mwaIconUrl: () => undefined,
-  getShortAddress: (address: string) => address,
-  newMwaAuthToken: () => new Uint8Array([7]),
-  encodeMwaAuthToken: () => 'token',
-  mwaAuthorizedAccount: (address: string) => ({ address }),
-  mwaSignIn: (...args: unknown[]) => mockSignIn(...args),
-  mwaSignMessages: (...args: unknown[]) => mockSignMessages(...args),
-  mwaSignTransactions: (...args: unknown[]) => mockSignTransactions(...args),
-  mwaSignAndSend: (...args: unknown[]) => mockSignAndSend(...args),
-  decodeDAppMessage: () => ({ text: 'Hello' }),
-  isSeedVaultError: (error: unknown) => (error as { seedVault?: boolean }).seedVault === true,
-  toSignAllTransactionsRequest: () => ({ method: 'signAllTransactions' }),
-  useSolanaTransactionApproval: () => ({
-    feeSol: null,
-    parsingError: null,
-    effects: null,
-    effectsLoading: false,
-    details: null,
-  }),
-  dappTransactionDisplay: () => ({}),
-  dappTransactionGate: () => ({ canApprove: true, requiresHold: false }),
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../test-utils/sharedWith').sharedWith({
+    // The phrase check (DEV-208) is never due here.
+    usePhraseBackup: () => ({
+      needsBackup: false,
+      requireBackup: async () => true,
+      openBackup: () => {},
+      markUnconfirmed: async () => {},
+    }),
+    // The detail cards draw the kit's real tokens.
+    ...jest.requireActual('../../test-utils/themeTokens'),
+    ...jest.requireActual('../../../../packages/shared/src/analytics'),
+    mwaPrecheck: () => ({ ok: true, origin: 'https://dapp.example' }),
+    useAccountsContext: () => [
+      { networkId: 'solana-mainnet', activeTrustedApps: [], activeAccount: { name: 'Main' } },
+      { addTrustedApp: mockAddTrustedApp, removeTrustedApp: jest.fn() },
+    ],
+    mwaDisplayName: () => 'Example',
+    formatSigningAccount: ({ address }: { address: string }) => address,
+    getStorageItem: jest.fn().mockResolvedValue(null),
+    mwaChainToNetworkId: () => 'solana-mainnet',
+    mwaDeauthorizeOrigin: () => null,
+    STORAGE_KEYS: { TRUSTED_APPS: 'trustedApps' },
+    mwaIconUrl: () => undefined,
+    getShortAddress: (address: string) => address,
+    newMwaAuthToken: () => new Uint8Array([7]),
+    encodeMwaAuthToken: () => 'token',
+    mwaAuthorizedAccount: (address: string) => ({ address }),
+    mwaSignIn: (...args: unknown[]) => mockSignIn(...args),
+    mwaSignMessages: (...args: unknown[]) => mockSignMessages(...args),
+    mwaSignTransactions: (...args: unknown[]) => mockSignTransactions(...args),
+    mwaSignAndSend: (...args: unknown[]) => mockSignAndSend(...args),
+    decodeDAppMessage: () => ({ text: 'Hello' }),
+    isSeedVaultError: (error: unknown) => (error as { seedVault?: boolean }).seedVault === true,
+    toSignAllTransactionsRequest: () => ({ method: 'signAllTransactions' }),
+    useSolanaTransactionApproval: () => ({
+      feeSol: null,
+      parsingError: null,
+      effects: null,
+      effectsLoading: false,
+      details: null,
+    }),
+    dappTransactionDisplay: () => ({}),
+    dappTransactionGate: () => ({ canApprove: true, requiresHold: false }),
+  })
+);
 
 jest.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 jest.mock('react-native-safe-area-context', () => ({

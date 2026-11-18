@@ -148,5 +148,3 @@ const stylesFor = (_t: Semantic) =>
       gap: vs(spacing.xl),
     },
   });
-
-export default ExplorerLinkButton;

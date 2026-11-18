@@ -17,51 +17,15 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
-import {
-  borderRadius,
-  borderWidth,
-  componentSizes,
-  fontFamilyNative,
-  s,
-  type Semantic,
-} from '@salmon/shared';
+import { borderWidth, componentSizes, iconBubbleLook, fontFamilyNative, s } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/useThemedStyles';
 import { usePressMotion } from '../../../hooks/usePressMotion';
 import { FleshBackground } from '../FleshBackground';
 import { PressSpecular } from '../PressSpecular';
-import type { IconBubbleProps, IconBubbleRadius, IconBubbleTone } from './types';
+import type { IconBubbleProps } from './types';
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
-
-/** Ground + ink per tone. The ink is not a choice the call site gets to make. */
-const tonesFor = (
-  t: Semantic
-): Record<IconBubbleTone, { background: string; ink: string; border?: string }> => ({
-  ink: { background: t.depth.abyss, ink: t.text.primary },
-  accent: { background: t.accent.fill, ink: t.accent.onFill },
-  'accent-tint': { background: t.accent.tint, ink: t.accent.ink },
-  surface: { background: t.surface.raised, ink: t.text.primary },
-  'success-tint': { background: t.status.successTint, ink: t.status.success },
-  outline: {
-    background: 'transparent',
-    ink: t.text.primary,
-    border: t.border.raised,
-  },
-  ghost: { background: 'transparent', ink: t.text.secondary },
-});
-
-/** A disabled control is a different object, not a dimmed one. */
-const disabledFor = (t: Semantic) => ({ background: t.surface.crest, ink: t.text.disabled });
-
-/** The two card corners a rounded bubble can take — `Card`'s own two steps. */
-const RADII: Record<IconBubbleRadius, number> = {
-  lg: borderRadius.r3,
-  xl: borderRadius.r4,
-};
-
-/** The drawn glyph-to-bubble ratio, from the design frames. */
-const ICON_RATIO = 0.45;
 
 export function IconBubble({
   size,
@@ -98,13 +62,21 @@ export function IconBubble({
   const isDisabled = !!onPress && disabled;
   const {
     background,
-    ink: toneInk,
+    ink,
     border,
-  } = isDisabled ? { ...disabledFor(t), border: undefined } : tonesFor(t)[tone];
-  // A disabled control is one object: its ink is not the call site's to pick.
-  const ink = isDisabled ? toneInk : (iconColor ?? toneInk);
+    cornerRadius,
+    glyph: glyphSize,
+  } = iconBubbleLook(t, {
+    tone,
+    shape,
+    radius,
+    size,
+    iconSize,
+    iconColor,
+    disabled: isDisabled,
+  });
   const box = s(size);
-  const glyph = s(iconSize ?? Math.round(size * ICON_RATIO));
+  const glyph = s(glyphSize);
 
   const shell = [
     styles.bubble,
@@ -112,7 +84,7 @@ export function IconBubble({
       width: box,
       height: box,
       backgroundColor: background,
-      borderRadius: shape === 'circle' ? borderRadius.full : RADII[radius],
+      borderRadius: cornerRadius,
     },
     border != null && { borderWidth: borderWidth.actionButton, borderColor: border },
     style,

@@ -29,7 +29,9 @@ jest.mock('../src/utils/haptics', () => ({
   ImpactFeedbackStyle: { Light: 'light' },
 }));
 
-jest.mock('@salmon/shared', () => jest.requireActual('@salmon/shared/src/theme'));
+jest.mock('@salmon/shared', () =>
+  require('../test-utils/sharedWith').sharedWith(jest.requireActual('@salmon/shared/src/theme'))
+);
 
 import { motionMs } from '@salmon/shared/src/theme';
 

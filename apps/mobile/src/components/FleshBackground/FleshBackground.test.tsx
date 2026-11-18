@@ -9,10 +9,12 @@ import { Path } from 'react-native-svg';
 // The @salmon/shared barrel drags the ESM-only @solana/kit into Jest; the
 // theme modules the component draws from are runtime-agnostic, so they are
 // loaded directly (the ReceiveSheet test's deep-requireActual convention).
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('@salmon/shared/src/theme/flesh'),
-  semantic: jest.requireActual('@salmon/shared/src/theme/semantic').semantic,
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('@salmon/shared/src/theme/flesh'),
+    semantic: jest.requireActual('@salmon/shared/src/theme/semantic').semantic,
+  })
+);
 
 import { fleshFills } from '@salmon/shared';
 

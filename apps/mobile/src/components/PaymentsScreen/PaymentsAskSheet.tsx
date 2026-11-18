@@ -103,5 +103,3 @@ const layout = StyleSheet.create({
     paddingTop: vs(spacing.sm),
   },
 });
-
-export default PaymentsAskSheet;

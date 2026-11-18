@@ -88,200 +88,204 @@ jest.mock('../src/utils/sinkAndFloat', () => ({
   sinkExiting: () => ({ verb: 'sink' }),
 }));
 
-jest.mock('@salmon/shared', () => ({
-  // The phrase check (DEV-208) is never due here.
-  usePhraseBackup: () => ({
-    needsBackup: false,
-    requireBackup: async () => true,
-    openBackup: () => {},
-    markUnconfirmed: async () => {},
-  }),
-  // The focus-mode clock is real: the screen reads Home in its resting phases.
-  ...jest.requireActual('../../../packages/shared/src/motion/useFocusModePhase'),
-  useAccountActivity: jest.fn(),
-  // The settle clock is identity here: the content follows the tap at once.
-  // The clock itself is covered in `useSettledSubTab.test.tsx`.
-  useSettledSubTab: ({ target }: { target: string }) => target,
-  useHomeSubTabContent: ({
-    effectiveSubTab,
-    focusPhase,
-  }: {
-    effectiveSubTab: string;
-    focusPhase: string;
-  }) => ({
-    isPowerupMode: focusPhase === 'gone',
-    settledSubTab: effectiveSubTab,
-    subTabPending: false,
-  }),
-  borderRadius: { sm: 8, md: 12, lg: 16, xl: 20, full: 999 },
-  motionMs: { drift: 280 },
-  SINK_OUT_MS: 225,
-  FLOAT_IN_MS: 560,
-  motionEasing: { settle: { native: [0.22, 1, 0.36, 1] } },
-  colors: {
-    accent: { primary: '#00ff99', tint: '#003322', border: '#00aa66' },
-    text: { primary: '#fff', secondary: '#aaa', tertiary: '#888', disabled: '#666' },
-    background: { primary: '#000', secondary: '#111', tertiary: '#222' },
-    border: { primary: '#333', secondary: '#444' },
-    status: { success: '#0f0', danger: '#f00', warning: '#fa0' },
-  },
-  semantic: {
-    accent: { fill: '#FF5C45', onFill: '#070911', ink: '#FF5C45' },
-    text: { primary: '#F6F8FB', secondary: '#A7B1C4', tertiary: '#8B96AD', disabled: '#6F7B95' },
-    border: { default: '#58637B', raised: '#6F7B95', strong: '#8B96AD' },
-    surface: { shelf: '#10131C', raised: '#161C2D', crest: '#1B2233' },
-    status: { success: '#33D6A6', danger: '#FF6B85', warning: '#FFB020' },
-    state: { hover: 'rgba(199,211,232,0.06)', selectedEdge: '#FF5C45' },
-    depth: { abyss: '#10131C' },
-    water: {
-      gradient: ['#10131C', '#070911'],
-      fadeTop: ['#10131C', 'rgba(16, 19, 28, 0)'],
-      fadeBottom: ['rgba(7, 9, 17, 0)', '#070911'],
+jest.mock('@salmon/shared', () =>
+  require('../test-utils/sharedWith').sharedWith({
+    // The phrase check (DEV-208) is never due here.
+    usePhraseBackup: () => ({
+      needsBackup: false,
+      requireBackup: async () => true,
+      openBackup: () => {},
+      markUnconfirmed: async () => {},
+    }),
+    // The focus-mode clock is real: the screen reads Home in its resting phases.
+    ...jest.requireActual('../../../packages/shared/src/motion/useFocusModePhase'),
+    useAccountActivity: jest.fn(),
+    // The settle clock is identity here: the content follows the tap at once.
+    // The clock itself is covered in `useSettledSubTab.test.tsx`.
+    useSettledSubTab: ({ target }: { target: string }) => target,
+    useHomeSubTabContent: ({
+      effectiveSubTab,
+      focusPhase,
+    }: {
+      effectiveSubTab: string;
+      focusPhase: string;
+    }) => ({
+      isPowerupMode: focusPhase === 'gone',
+      settledSubTab: effectiveSubTab,
+      subTabPending: false,
+    }),
+    borderRadius: { sm: 8, md: 12, lg: 16, xl: 20, full: 999 },
+    motionMs: { drift: 280 },
+    SINK_OUT_MS: 225,
+    FLOAT_IN_MS: 560,
+    motionEasing: { settle: { native: [0.22, 1, 0.36, 1] } },
+    colors: {
+      accent: { primary: '#00ff99', tint: '#003322', border: '#00aa66' },
+      text: { primary: '#fff', secondary: '#aaa', tertiary: '#888', disabled: '#666' },
+      background: { primary: '#000', secondary: '#111', tertiary: '#222' },
+      border: { primary: '#333', secondary: '#444' },
+      status: { success: '#0f0', danger: '#f00', warning: '#fa0' },
     },
-  },
-  componentSizes: { icon: { sm: 16, md: 20, lg: 24 }, button: { height: 44 } },
-  fontFamilyNative: { regular: 'System', medium: 'System', semiBold: 'System', bold: 'System' },
-  fontSize: {
-    xs: 11,
-    sm: 13,
-    base: 15,
-    md: 16,
-    bodyLg: 16,
-    subtitle: 16,
-    lg: 18,
-    xl: 20,
-    '2xl': 24,
-    '3xl': 30,
-  },
-  lineHeight: { snug: 1.3 },
-  spacing: {
-    xs: 4,
-    sm: 8,
-    md: 12,
-    lg: 16,
-    xl: 20,
-    '2xl': 24,
-    '3xl': 32,
-    headerPadding: 16,
-    screenGutter: 20,
-  },
-  s: (value: number) => value,
-  vs: (value: number) => value,
-  getShortAddress: () => 'Wall...et11',
-  useCoinMarketData: jest.requireActual('@salmon/shared/src/hooks/useCoinMarketData')
-    .useCoinMarketData,
-  coinInfoToMarketData: () => undefined,
-  getBlockchainFromNetworkId: (id: string) => id.split('-')[0],
-  getNetworkLabel: (id: string) => (id === 'solana-devnet' ? 'Devnet' : null),
-  getHeldNetworkIds: (account?: { networksAccounts?: Record<string, unknown[]> } | null) =>
-    Object.entries(account?.networksAccounts ?? {})
-      .filter(([, slots]) => slots?.some(Boolean))
-      .map(([id]) => id),
-  BLOCKCHAIN_TO_COINGECKO: { solana: 'solana', bitcoin: 'bitcoin' },
-  PERIOD_TO_DAYS: { '1D': 1, '1M': 30 },
-  useAccountsContext: () => [
-    {
-      ready: true,
-      activeAccount: {
-        getReceiveAddress: () => 'Wallet111',
-        networksAccounts: { 'solana-mainnet': [], 'bitcoin-mainnet': [] },
+    semantic: {
+      accent: { fill: '#FF5C45', onFill: '#070911', ink: '#FF5C45' },
+      text: { primary: '#F6F8FB', secondary: '#A7B1C4', tertiary: '#8B96AD', disabled: '#6F7B95' },
+      border: { default: '#58637B', raised: '#6F7B95', strong: '#8B96AD' },
+      surface: { shelf: '#10131C', raised: '#161C2D', crest: '#1B2233' },
+      status: { success: '#33D6A6', danger: '#FF6B85', warning: '#FFB020' },
+      state: { hover: 'rgba(199,211,232,0.06)', selectedEdge: '#FF5C45' },
+      depth: { abyss: '#10131C' },
+      water: {
+        gradient: ['#10131C', '#070911'],
+        fadeTop: ['#10131C', 'rgba(16, 19, 28, 0)'],
+        fadeBottom: ['rgba(7, 9, 17, 0)', '#070911'],
       },
-      activeBlockchainAccount: { getReceiveAddress: () => 'Wallet111' },
-      networkId: networksState.networkId,
-      pathIndex: 0,
-      switchingNetwork: false,
     },
-    { clearSwitchingNetwork: jest.fn(), changeNetwork: mockChangeNetwork },
-  ],
-  // A faithful fake of the hook's one subtle contract: its internal
-  // `useUserConfig` reads the flag from storage at mount and reloads only when
-  // the network it is keyed on changes, so a caller that does not pass the
-  // `developerNetworks` override keeps whatever the flag was when it mounted.
-  // Home must pass the override, or a toggle reaches the carousel only after
-  // the next chain change.
-  useAvailableNetworks: ({
-    developerNetworks,
-    activeNetworkId,
-  }: {
-    developerNetworks?: boolean;
-    activeNetworkId?: string | null;
-  }) => {
-    const ReactActual = require('react');
-    const flagAtMount = ReactActual.useRef(mockDeveloperNetworks.on).current;
-    const offered = developerNetworks ?? flagAtMount;
-    return {
-      allNetworks: offered
-        ? networksState.allNetworks
-        : // With the flag off the offer is the mainnets plus whatever network
-          // the session is standing on, so nobody is stranded on a page the
-          // carousel cannot reach (`visibleNetworkIds`).
-          networksState.allNetworks.filter(
-            (network) => network.id.endsWith('-mainnet') || network.id === activeNetworkId
-          ),
-    };
-  },
-  useBalance: () => ({
-    tokens: [],
-    usdTotal: 0,
-    changePercent: 0,
-    changeAmount: 0,
-    loading: false,
-    refreshing: false,
-    hasData: true,
-    state: 'ready' as const,
-    refresh: jest.fn(),
-    error: null,
-    isError: false,
-    hiddenBalance: false,
-    toggleHidden: jest.fn(),
-    lastUpdated: null,
-  }),
-  usePrefetchBalances: () => undefined,
-  useCurrencyContext: () => [{ currency: 'USD' }],
-  useTransactions: () => ({
-    transactions: [],
-    loading: false,
-    loadingMore: false,
-    error: null,
-    hasMore: false,
-    loadMore: jest.fn(),
-    refresh: jest.fn(),
-  }),
-  isWatchOnlyAccount: () => mockAccount.watchOnly,
-  // The arrangement is the shared hook's business (its own suite covers the
-  // reconciliation); Home only has to render whatever order it hands back.
-  useHomeTabOrder: (defaults: string[]) => ({
-    order: mockStoredTabOrder ?? defaults,
-    setOrder: mockSetTabOrder,
-  }),
-  // The task chrome and the Home shell are the real modules: their own suites
-  // cover the logic, and Home is rendered here with what they hand back.
-  ...jest.requireActual('@salmon/shared/src/contexts/TaskChromeContext'),
-  useHomeShell: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').useHomeShell,
-  useHomeStaking: ({ usdTotal }: { usdTotal: number | undefined }) => ({
-    tokens: [],
-    totalWithStakes: usdTotal,
-  }),
-  stakingSectionBlocks: () => [],
-  STAKED_SOL_KEY: 'staked-sol',
-  STAKED_SKR_KEY: 'staked-skr',
-  useHomePowerupTabs: jest.requireActual('@salmon/shared/src/hooks/useHomePowerups')
-    .useHomePowerupTabs,
-  useHomePowerupsCatalog: jest.requireActual('@salmon/shared/src/hooks/useHomePowerups')
-    .useHomePowerupsCatalog,
-  // Nothing is installed unless a test installs Memo.
-  useNetworkPowerups: () => ({ enabled: ['memo'], disabled: {}, providers: {} }),
-  allowlistForDevice: (allowlist: unknown) => allowlist,
-  EMPTY_POWERUP_ALLOWLIST: { enabled: [], disabled: {}, providers: {} },
-  useInstalledPowerups: () => ({
-    installed: mockAccount.installed,
-    isInstalled: (id: string) => mockAccount.installed.includes(id),
-    install: jest.fn(),
-    uninstall: jest.fn(),
-  }),
-  mapBalanceToToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').mapBalanceToToken,
-  buildBitcoinToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').buildBitcoinToken,
-}));
+    componentSizes: { icon: { sm: 16, md: 20, lg: 24 }, button: { height: 44 } },
+    fontFamilyNative: { regular: 'System', medium: 'System', semiBold: 'System', bold: 'System' },
+    fontSize: {
+      xs: 11,
+      sm: 13,
+      base: 15,
+      md: 16,
+      bodyLg: 16,
+      subtitle: 16,
+      lg: 18,
+      xl: 20,
+      '2xl': 24,
+      '3xl': 30,
+    },
+    lineHeight: { snug: 1.3 },
+    spacing: {
+      xs: 4,
+      sm: 8,
+      md: 12,
+      lg: 16,
+      xl: 20,
+      '2xl': 24,
+      '3xl': 32,
+      headerPadding: 16,
+      screenGutter: 20,
+    },
+    s: (value: number) => value,
+    vs: (value: number) => value,
+    getShortAddress: () => 'Wall...et11',
+    useCoinMarketData: jest.requireActual('@salmon/shared/src/hooks/useCoinMarketData')
+      .useCoinMarketData,
+    coinInfoToMarketData: () => undefined,
+    getBlockchainFromNetworkId: (id: string) => id.split('-')[0],
+    getNetworkLabel: (id: string) => (id === 'solana-devnet' ? 'Devnet' : null),
+    getHeldNetworkIds: (account?: { networksAccounts?: Record<string, unknown[]> } | null) =>
+      Object.entries(account?.networksAccounts ?? {})
+        .filter(([, slots]) => slots?.some(Boolean))
+        .map(([id]) => id),
+    BLOCKCHAIN_TO_COINGECKO: { solana: 'solana', bitcoin: 'bitcoin' },
+    PERIOD_TO_DAYS: { '1D': 1, '1M': 30 },
+    useAccountsContext: () => [
+      {
+        ready: true,
+        activeAccount: {
+          getReceiveAddress: () => 'Wallet111',
+          networksAccounts: { 'solana-mainnet': [], 'bitcoin-mainnet': [] },
+        },
+        activeBlockchainAccount: { getReceiveAddress: () => 'Wallet111' },
+        networkId: networksState.networkId,
+        pathIndex: 0,
+        switchingNetwork: false,
+      },
+      { clearSwitchingNetwork: jest.fn(), changeNetwork: mockChangeNetwork },
+    ],
+    // A faithful fake of the hook's one subtle contract: its internal
+    // `useUserConfig` reads the flag from storage at mount and reloads only when
+    // the network it is keyed on changes, so a caller that does not pass the
+    // `developerNetworks` override keeps whatever the flag was when it mounted.
+    // Home must pass the override, or a toggle reaches the carousel only after
+    // the next chain change.
+    useAvailableNetworks: ({
+      developerNetworks,
+      activeNetworkId,
+    }: {
+      developerNetworks?: boolean;
+      activeNetworkId?: string | null;
+    }) => {
+      const ReactActual = require('react');
+      const flagAtMount = ReactActual.useRef(mockDeveloperNetworks.on).current;
+      const offered = developerNetworks ?? flagAtMount;
+      return {
+        allNetworks: offered
+          ? networksState.allNetworks
+          : // With the flag off the offer is the mainnets plus whatever network
+            // the session is standing on, so nobody is stranded on a page the
+            // carousel cannot reach (`visibleNetworkIds`).
+            networksState.allNetworks.filter(
+              (network) => network.id.endsWith('-mainnet') || network.id === activeNetworkId
+            ),
+      };
+    },
+    useBalance: () => ({
+      tokens: [],
+      usdTotal: 0,
+      changePercent: 0,
+      changeAmount: 0,
+      loading: false,
+      refreshing: false,
+      hasData: true,
+      state: 'ready' as const,
+      refresh: jest.fn(),
+      error: null,
+      isError: false,
+      hiddenBalance: false,
+      toggleHidden: jest.fn(),
+      lastUpdated: null,
+    }),
+    usePrefetchBalances: () => undefined,
+    useCurrencyContext: () => [{ currency: 'USD' }],
+    useTransactions: () => ({
+      transactions: [],
+      loading: false,
+      loadingMore: false,
+      error: null,
+      hasMore: false,
+      loadMore: jest.fn(),
+      refresh: jest.fn(),
+    }),
+    isWatchOnlyAccount: () => mockAccount.watchOnly,
+    // The arrangement is the shared hook's business (its own suite covers the
+    // reconciliation); Home only has to render whatever order it hands back.
+    useHomeTabOrder: (defaults: string[]) => ({
+      order: mockStoredTabOrder ?? defaults,
+      setOrder: mockSetTabOrder,
+    }),
+    // The task chrome and the Home shell are the real modules: their own suites
+    // cover the logic, and Home is rendered here with what they hand back.
+    ...jest.requireActual('@salmon/shared/src/contexts/TaskChromeContext'),
+    useHomeShell: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').useHomeShell,
+    useHomeStaking: ({ usdTotal }: { usdTotal: number | undefined }) => ({
+      tokens: [],
+      totalWithStakes: usdTotal,
+    }),
+    stakingSectionBlocks: () => [],
+    STAKED_SOL_KEY: 'staked-sol',
+    STAKED_SKR_KEY: 'staked-skr',
+    useHomePowerupTabs: jest.requireActual('@salmon/shared/src/hooks/useHomePowerups')
+      .useHomePowerupTabs,
+    useHomePowerupsCatalog: jest.requireActual('@salmon/shared/src/hooks/useHomePowerups')
+      .useHomePowerupsCatalog,
+    // Nothing is installed unless a test installs Memo.
+    useNetworkPowerups: () => ({ enabled: ['memo'], disabled: {}, providers: {} }),
+    allowlistForDevice: (allowlist: unknown) => allowlist,
+    EMPTY_POWERUP_ALLOWLIST: { enabled: [], disabled: {}, providers: {} },
+    useInstalledPowerups: () => ({
+      installed: mockAccount.installed,
+      isInstalled: (id: string) => mockAccount.installed.includes(id),
+      install: jest.fn(),
+      uninstall: jest.fn(),
+    }),
+    mapBalanceToToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell')
+      .mapBalanceToToken,
+    buildBitcoinToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell')
+      .buildBitcoinToken,
+  })
+);
 
 // The real shell reads the tab order through its own module path, not the
 // barrel, so the arrangement is pinned there too.
@@ -382,15 +386,16 @@ function renderScreen(ui: React.ReactElement) {
   return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
 }
 
-describe('home sub-tabs', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockStoredTabOrder = null;
-    mockDeveloperNetworks.on = false;
-    networksState.networkId = 'solana-mainnet';
-    networksState.allNetworks = [{ id: 'solana-mainnet', name: 'Solana' }];
-  });
+// One starting state for every test in the file, whichever ran before it.
+beforeEach(() => {
+  mockStoredTabOrder = null;
+  mockDeveloperNetworks.on = false;
+  networksState.networkId = 'solana-mainnet';
+  networksState.allNetworks = [{ id: 'solana-mainnet', name: 'Solana' }];
+  Object.assign(mockAccount, { watchOnly: false, installed: [] });
+});
 
+describe('home sub-tabs', () => {
   it('does not offer the NFTs tab on Bitcoin', () => {
     networksState.networkId = 'bitcoin-mainnet';
     networksState.allNetworks = [
@@ -594,9 +599,6 @@ describe('home sub-tabs', () => {
 
 describe('home developer networks', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    mockDeveloperNetworks.on = false;
-    networksState.networkId = 'solana-mainnet';
     networksState.allNetworks = [
       { id: 'solana-mainnet', name: 'Solana' },
       { id: 'solana-devnet', name: 'Solana Devnet' },
@@ -671,14 +673,6 @@ describe('home surfacing', () => {
     return { ...view, surfaceTo: (key: number) => view.rerender(tree(key)) };
   }
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockStoredTabOrder = null;
-    mockDeveloperNetworks.on = false;
-    networksState.networkId = 'solana-mainnet';
-    networksState.allNetworks = [{ id: 'solana-mainnet', name: 'Solana' }];
-  });
-
   it('lets only the screen speak when it comes back, however it was left', () => {
     const { surfaceTo } = renderAtSurface(1);
 
@@ -708,10 +702,6 @@ describe('home surfacing', () => {
 });
 
 describe('home for a watch-only account', () => {
-  afterEach(() => {
-    Object.assign(mockAccount, { watchOnly: false, installed: [] });
-  });
-
   it('shows an installed Powerup and the + to a signing account', () => {
     mockAccount.installed = ['memo'];
     renderScreen(<HomeScreen />);

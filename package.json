@@ -13,6 +13,7 @@
     "url": "https://github.com/Salmon-HQ/salmon-wallet-frontend/issues"
   },
   "scripts": {
+    "prepare": "git config core.hooksPath .githooks || true",
     "preinstall": "node scripts/check-build-env.cjs",
     "dev": "turbo run dev",
     "build": "turbo run build",
@@ -35,6 +36,10 @@
     "extension:build:firefox:prod": "pnpm --filter @salmon/extension build:firefox:prod",
     "extension:zip:firefox": "pnpm --filter @salmon/extension zip:firefox",
     "check:i18n": "node scripts/check-i18n.mjs",
+    "check:dead-code": "knip",
+    "check:single-kit": "node scripts/check-single-solana-kit.mjs",
+    "check:audit": "pnpm audit --audit-level high",
+    "check:cycles": "madge --circular packages/shared/src packages/ui/src apps/extension/src apps/mobile/app apps/mobile/src apps/mobile/hooks apps/mobile/utils",
     "check:parity": "node scripts/check-dom-parity.mjs",
     "check:parity:report": "node scripts/check-dom-parity.mjs --report",
     "check:parity:test": "node --test scripts/check-dom-parity.test.mjs",
@@ -46,6 +51,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check:no-secrets": "node scripts/check-no-secrets.mjs",
+    "check:hidden-unicode": "node scripts/check-hidden-unicode.mjs",
+    "check:hidden-unicode:test": "node --test scripts/check-hidden-unicode.test.mjs",
     "check:no-secrets:test": "node --test scripts/check-no-secrets.test.mjs",
     "check:manifest": "node scripts/check-manifest-permissions.mjs",
     "check:fingerprint": "pnpm --filter @salmon/mobile fingerprint:check",
@@ -53,13 +60,19 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
+    "@solana-program/memo": "^0.15.0",
+    "@solana-program/system": "^0.15.0",
+    "@solana/kit": "^8.4.0",
     "@typescript-eslint/eslint-plugin": "^8.71.0",
     "@typescript-eslint/parser": "^8.71.0",
     "eslint": "^9.39.2",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "~7.0.1",
     "jscpd": "^5.3.3",
+    "knip": "6.45.0",
+    "madge": "8.0.0",
     "prettier": "3.9.9",
+    "qrcode": "1.5.4",
     "turbo": "^2.11.5"
   },
   "packageManager": "pnpm@10.34.5",
@@ -82,18 +95,19 @@
       }
     },
     "overrides": {
-      "react": "19.2.3",
-      "react-dom": "19.2.3",
+      "react": "19.3.0",
+      "react-dom": "19.3.0",
+      "react-test-renderer": "19.3.0",
       "tar": ">=7.5.7",
       "@xmldom/xmldom": ">=0.8.15 <0.9",
-      "node-forge": ">=1.4.0 <2",
+      "node-forge": ">=1.4.3 <2",
       "browserslist": ">=4.28.7 <5",
       "yaml@^2": ">=2.8.3 <3",
       "yaml@^1": ">=1.10.3 <2",
       "ws@^8": ">=8.21.0 <9",
       "ws@^7": ">=7.5.11 <8",
-      "vite": ">=7.3.5 <8",
-      "vitest": ">=4.1.11 <5",
+      "vite": ">=7.3.7 <8",
+      "vitest": ">=4.1.12 <5",
       "valibot": ">=1.4.2 <2",
       "brace-expansion@^1": ">=1.1.18 <2",
       "brace-expansion@^4": ">=5.0.9 <6",
@@ -107,12 +121,22 @@
       "esbuild": ">=0.28.1 <0.29",
       "flatted": ">=3.4.2 <4",
       "lodash": ">=4.18.0 <5",
-      "stream-json": ">=3.5.0 <4",
+      "stream-json": ">=3.7.0 <4",
       "js-yaml": ">=4.3.2 <5",
-      "@solana-name-service/sns-sdk-kit>@solana-program/token": "0.16.1"
+      "shell-quote": ">=1.11.0 <2",
+      "follow-redirects": ">=1.16.2 <2",
+      "source-map-js": ">=1.2.2 <2",
+      "undici@^8": ">=8.12.2 <9",
+      "zod@^4": ">=4.6.6 <5",
+      "uuid@^11": ">=11.1.1 <12",
+      "@solana-name-service/sns-sdk-kit>@solana-program/token": "0.16.1",
+      "@onsol/tldparser-kit>@solana-program/token": "0.16.1",
+      "@onsol/tldparser-kit>@solana/kit": "$@solana/kit",
+      "@solana-program/system@^0.14.0": "0.15.0"
     },
     "patchedDependencies": {
-      "expo-camera@57.0.5": "patches/expo-camera@57.0.5.patch"
+      "expo-camera@58.0.14": "patches/expo-camera@58.0.14.patch",
+      "react-native-fast-crypto@3.0.0": "patches/react-native-fast-crypto@3.0.0.patch"
     }
   }
 }

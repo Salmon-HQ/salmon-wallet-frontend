@@ -3,13 +3,13 @@
 import type { IdentifierString } from '@wallet-standard/base';
 
 /** Solana Mainnet (beta) cluster, e.g. https://api.mainnet-beta.solana.com */
-export const SOLANA_MAINNET_CHAIN = 'solana:mainnet';
+const SOLANA_MAINNET_CHAIN = 'solana:mainnet';
 
 /** Solana Devnet cluster, e.g. https://api.devnet.solana.com */
-export const SOLANA_DEVNET_CHAIN = 'solana:devnet';
+const SOLANA_DEVNET_CHAIN = 'solana:devnet';
 
 /** Solana Testnet cluster, e.g. https://api.testnet.solana.com */
-export const SOLANA_TESTNET_CHAIN = 'solana:testnet';
+const SOLANA_TESTNET_CHAIN = 'solana:testnet';
 
 /** Array of all Solana clusters */
 export const SOLANA_CHAINS = [

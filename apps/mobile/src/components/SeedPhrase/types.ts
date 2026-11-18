@@ -8,20 +8,17 @@ import type {
   SeedPhraseEntryPropsBase,
   SeedWordGridPropsBase,
   SeedWordInputPropsBase,
-  SeedWordValidationState,
 } from '@salmon/shared';
 import type { Ref } from 'react';
-import type { NativeSyntheticEvent, TextInput, TextInputKeyPressEventData } from 'react-native';
-
-export type ValidationState = SeedWordValidationState;
+import type { TextInputInstance, TextInputKeyPressEvent } from 'react-native';
 
 export type SeedWordGridProps = SeedWordGridPropsBase;
 
 export interface SeedWordInputProps extends SeedWordInputPropsBase {
   /** Handle to focus this box from a grid that owns the focus order. */
-  inputRef?: Ref<TextInput>;
+  inputRef?: Ref<TextInputInstance>;
   /** Raw key events — a grid uses this to move back on backspace. */
-  onKeyPress?: (event: NativeSyntheticEvent<TextInputKeyPressEventData>) => void;
+  onKeyPress?: (event: TextInputKeyPressEvent) => void;
   /** Keyboard's return key. `next` by default. */
   returnKeyType?: 'next' | 'done';
 }

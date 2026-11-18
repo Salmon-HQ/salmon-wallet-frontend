@@ -11,12 +11,13 @@
  * ever address a wallet.
  */
 import { render, screen } from '@testing-library/react-native';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 
-// The real barrel drags in @solana/kit, which jest-expo will not transform;
-// the theme folder imports nothing the transform chokes on, so the real
-// tokens stand in for it.
-jest.mock('@salmon/shared', () => jest.requireActual('../../../test-utils/themeTokens'));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith(
+    jest.requireActual('../../../test-utils/themeTokens')
+  )
+);
 
 jest.mock('../../../hooks/useSecretScreen', () => ({
   useSecretScreen: jest.fn(),
@@ -29,7 +30,8 @@ import { SeedWordGrid } from './SeedWordGrid';
 /** Obviously not a mnemonic — placeholder tokens, never BIP-39 words. */
 const words = ['zzplaceholder1', 'zzplaceholder2', 'zzplaceholder3'];
 
-const flat = (style: unknown) => StyleSheet.flatten(style) as Record<string, unknown>;
+const flat = (style: unknown) =>
+  StyleSheet.flatten(style as StyleProp<ViewStyle>) as Record<string, unknown>;
 
 describe('SeedWordGrid', () => {
   it('paints the word cell on an opaque ground, never a translucent wash', () => {

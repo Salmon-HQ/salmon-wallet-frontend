@@ -73,29 +73,34 @@ const mockBalanceState = {
   hiddenBalance: false,
 };
 
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('../../../../packages/shared/src/theme'),
-  s: (value: number) => value,
-  vs: (value: number) => value,
-  ms: (value: number) => value,
-  hiddenValue: '••••',
-  formatLargeNumber: (value: number) => String(value),
-  formatPercentage: (value: number) => `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`,
-  getShortAddress: (address: string, chars: number) =>
-    `${address.slice(0, chars)}...${address.slice(-chars)}`,
-  useAccountsContext: () => [mockAccountState, {}],
-  isSignableAccount: () => mockCanSign,
-  useBalance: () => mockBalanceState,
-  useCurrencyContext: () => [{ currency: 'usd' }, { formatValue: (value: number) => `$${value}` }],
-  // Real implementations — the mocked `api/services` module above is their
-  // only external dependency, so exercising them here catches wiring bugs a
-  // hand-stubbed hook return would hide.
-  useCoinMarketData: jest.requireActual('@salmon/shared/src/hooks/useCoinMarketData')
-    .useCoinMarketData,
-  PERIOD_TO_DAYS: jest.requireActual('@salmon/shared/src/utils/price-constants').PERIOD_TO_DAYS,
-  coinInfoToMarketData: jest.requireActual('@salmon/shared/src/utils/price-constants')
-    .coinInfoToMarketData,
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('../../../../packages/shared/src/theme'),
+    s: (value: number) => value,
+    vs: (value: number) => value,
+    ms: (value: number) => value,
+    hiddenValue: '••••',
+    formatLargeNumber: (value: number) => String(value),
+    formatPercentage: (value: number) => `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`,
+    getShortAddress: (address: string, chars: number) =>
+      `${address.slice(0, chars)}...${address.slice(-chars)}`,
+    useAccountsContext: () => [mockAccountState, {}],
+    isSignableAccount: () => mockCanSign,
+    useBalance: () => mockBalanceState,
+    useCurrencyContext: () => [
+      { currency: 'usd' },
+      { formatValue: (value: number) => `$${value}` },
+    ],
+    // Real implementations — the mocked `api/services` module above is their
+    // only external dependency, so exercising them here catches wiring bugs a
+    // hand-stubbed hook return would hide.
+    useCoinMarketData: jest.requireActual('@salmon/shared/src/hooks/useCoinMarketData')
+      .useCoinMarketData,
+    PERIOD_TO_DAYS: jest.requireActual('@salmon/shared/src/utils/price-constants').PERIOD_TO_DAYS,
+    coinInfoToMarketData: jest.requireActual('@salmon/shared/src/utils/price-constants')
+      .coinInfoToMarketData,
+  })
+);
 
 import { getTokenCoinInfo, getTokenMarketChart } from '@salmon/shared/src/api/services';
 

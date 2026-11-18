@@ -20,16 +20,8 @@
  * installed, so the grid renders straight with `loading="lazy"` on the art
  * (which `NftCard` sets) — the browser decodes what is on screen.
  */
-import React, { useCallback, useMemo, useState } from 'react';
-import {
-  canonicalNftToSolanaNftData,
-  spacing,
-  useAccountsContext,
-  useSolanaNfts,
-  type Nft,
-  type NftData,
-  type SolanaNetworkId,
-} from '@salmon/shared';
+import React from 'react';
+import { spacing, useNftsGrid } from '@salmon/shared';
 import { useTranslation } from 'react-i18next';
 
 import { NftCard, NftCardSkeleton } from '../NftCard';
@@ -64,41 +56,9 @@ export function NftsTab({
   testID = 'nfts-tab',
 }: NftsTabProps) {
   const { t } = useTranslation();
-  const [accountState] = useAccountsContext();
-  const { ready, activeAccount, networkId } = accountState;
-
-  // The grid follows the balance block. A Solana network is the only one with
-  // a collectibles surface, and the sub-tab is only offered on Solana, so this
-  // is the active network whenever the tab is on screen.
-  const activeNetworkId = (networkId ?? 'solana-mainnet') as SolanaNetworkId;
-
-  const ownerAddress = useMemo(
-    () => activeAccount?.networksAccounts?.[activeNetworkId]?.[0]?.getReceiveAddress(),
-    [activeAccount, activeNetworkId]
-  );
-
-  const { nfts, loading, error, partial, refresh } = useSolanaNfts({
-    publicKey: ready ? ownerAddress : undefined,
-    networkId: activeNetworkId,
+  const { cards, loading, loadError, isEmpty, partial, refreshing, handleRefresh } = useNftsGrid({
     includeSpam,
   });
-
-  const cards = useMemo<NftData[]>(() => (nfts as Nft[]).map(canonicalNftToSolanaNftData), [nfts]);
-
-  const [refreshing, setRefreshing] = useState(false);
-  const handleRefresh = useCallback(async () => {
-    setRefreshing(true);
-    try {
-      await refresh();
-    } finally {
-      setRefreshing(false);
-    }
-  }, [refresh]);
-
-  const loadError = error !== null;
-  // A failed load is not "you have no collectibles" — the error state owns
-  // that render, so the empty state stays out of it.
-  const isEmpty = !loading && !loadError && cards.length === 0;
 
   const grid: React.CSSProperties = {
     display: 'grid',
@@ -130,7 +90,7 @@ export function NftsTab({
         {/* A short list, not a failed one: the grid below is real, it is just
             missing whatever the failed page held. A warning over live content,
             so it stays a notice rather than a state. */}
-        {!loadError && !!partial && (
+        {!loadError && partial && (
           <WarningNotice
             tone="warning"
             testID="collectibles-partial-load"

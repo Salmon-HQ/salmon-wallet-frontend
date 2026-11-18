@@ -78,6 +78,7 @@ let mockActiveAccount: { secret: { kind: string; mnemonic?: string; address?: st
 // imports) — a stub on the barrel alone would leave the hook talking to the
 // real modules.
 jest.mock('@salmon/shared/src/contexts/AccountsContext', () => ({
+  ...jest.requireActual('@salmon/shared/src/contexts/AccountsContext'),
   useAccountsContext: () => [
     {
       accounts: [{ id: 'a1' }, { id: 'a2' }],
@@ -87,20 +88,24 @@ jest.mock('@salmon/shared/src/contexts/AccountsContext', () => ({
   ],
 }));
 jest.mock('@salmon/shared/src/utils/derived-accounts', () => ({
+  ...jest.requireActual('@salmon/shared/src/utils/derived-accounts'),
   getScanNetworks: jest.fn().mockResolvedValue(['solana-mainnet']),
   getScanNetworksWithMirrors: jest.fn().mockResolvedValue(['solana-mainnet', 'solana-devnet']),
   scanDerivedAccounts: (...args: unknown[]) => mockScanDerivedAccounts(...args),
 }));
 jest.mock('@salmon/shared/src/crypto/mnemonic', () => ({
+  ...jest.requireActual('@salmon/shared/src/crypto/mnemonic'),
   validateMnemonic: (value: string) => value === 'valid seed phrase',
   normalizeMnemonic: (value: string) => value.trim().replace(/\s+/g, ' '),
 }));
 jest.mock('@salmon/shared/src/factories/account-factory', () => ({
+  ...jest.requireActual('@salmon/shared/src/factories/account-factory'),
   createAccount: (...args: unknown[]) => mockCreateAccount(...args),
   importAccountFromPrivateKey: (...args: unknown[]) => mockImportAccountFromPrivateKey(...args),
   importWatchOnlyAccount: (...args: unknown[]) => mockImportWatchOnlyAccount(...args),
 }));
 jest.mock('@salmon/shared/src/crypto/encrypt-mnemonics', () => ({
+  ...jest.requireActual('@salmon/shared/src/crypto/encrypt-mnemonics'),
   isVaultKeyCached: () => mockIsVaultKeyCached(),
   EncryptionMaterialMissingError: class EncryptionMaterialMissingError extends Error {
     constructor(message?: string) {
@@ -110,44 +115,52 @@ jest.mock('@salmon/shared/src/crypto/encrypt-mnemonics', () => ({
     }
   },
 }));
-jest.mock('@salmon/shared/src/analytics/client', () => ({ trackEvent: jest.fn() }));
+jest.mock('@salmon/shared/src/analytics/client', () => ({
+  ...jest.requireActual('@salmon/shared/src/analytics/client'),
+  trackEvent: jest.fn(),
+}));
 // Stubbed rather than requireActual'd: the real hooks reach @solana/kit,
 // whose ESM build Jest cannot parse here. Their own behaviour (parsing,
 // duplicate rejection) is covered in packages/shared.
 jest.mock('@salmon/shared/src/hooks/useImportPrivateKey', () => ({
+  ...jest.requireActual('@salmon/shared/src/hooks/useImportPrivateKey'),
   useImportPrivateKey: () => mockPrivateKeyImport,
 }));
 jest.mock('@salmon/shared/src/hooks/useImportWatchOnly', () => ({
+  ...jest.requireActual('@salmon/shared/src/hooks/useImportWatchOnly'),
   useImportWatchOnly: () => mockWatchOnlyImport,
 }));
 
 // The real signer pulls in @solana/kit's ESM build, which Jest does not parse;
 // the flow only asks whether an error came from Seed Vault.
 jest.mock('@salmon/shared/src/blockchain/solana/seed-vault-signer', () => ({
+  ...jest.requireActual('@salmon/shared/src/blockchain/solana/seed-vault-signer'),
   isSeedVaultError: (error: unknown) => error instanceof Error && error.name === 'SeedVaultError',
 }));
 
-jest.mock('@salmon/shared', () => ({
-  // The real design tokens: hand-listing the subset a screen happens to read
-  // breaks this test whenever the panel starts reading one more (see
-  // test-utils/themeTokens).
-  ...jest.requireActual('../../../test-utils/themeTokens'),
-  ...jest.requireMock('@salmon/shared/src/contexts/AccountsContext'),
-  ...jest.requireMock('@salmon/shared/src/utils/derived-accounts'),
-  ...jest.requireMock('@salmon/shared/src/crypto/mnemonic'),
-  ...jest.requireMock('@salmon/shared/src/factories/account-factory'),
-  ...jest.requireMock('@salmon/shared/src/crypto/encrypt-mnemonics'),
-  ...jest.requireMock('@salmon/shared/src/analytics/client'),
-  ...jest.requireMock('@salmon/shared/src/hooks/useImportPrivateKey'),
-  ...jest.requireMock('@salmon/shared/src/hooks/useImportWatchOnly'),
-  ...jest.requireActual('@salmon/shared/src/utils/account-secret'),
-  ...jest.requireActual('@salmon/shared/src/utils/accountAddPanelCopy'),
-  useAccountAddFlow: jest.requireActual('@salmon/shared/src/hooks/useAccountAddFlow')
-    .useAccountAddFlow,
-  SHORT_PHRASE: 12,
-  getShortAddress: (address: string) => `${address.slice(0, 4)}...${address.slice(-4)}`,
-  NETWORK_DISPLAY: { 'solana-mainnet': { blockchain: 'solana' } },
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    // The real design tokens: hand-listing the subset a screen happens to read
+    // breaks this test whenever the panel starts reading one more (see
+    // test-utils/themeTokens).
+    ...jest.requireActual('../../../test-utils/themeTokens'),
+    ...jest.requireMock('@salmon/shared/src/contexts/AccountsContext'),
+    ...jest.requireMock('@salmon/shared/src/utils/derived-accounts'),
+    ...jest.requireMock('@salmon/shared/src/crypto/mnemonic'),
+    ...jest.requireMock('@salmon/shared/src/factories/account-factory'),
+    ...jest.requireMock('@salmon/shared/src/crypto/encrypt-mnemonics'),
+    ...jest.requireMock('@salmon/shared/src/analytics/client'),
+    ...jest.requireMock('@salmon/shared/src/hooks/useImportPrivateKey'),
+    ...jest.requireMock('@salmon/shared/src/hooks/useImportWatchOnly'),
+    ...jest.requireActual('@salmon/shared/src/utils/account-secret'),
+    ...jest.requireActual('@salmon/shared/src/utils/accountAddPanelCopy'),
+    useAccountAddFlow: jest.requireActual('@salmon/shared/src/hooks/useAccountAddFlow')
+      .useAccountAddFlow,
+    SHORT_PHRASE: 12,
+    getShortAddress: (address: string) => `${address.slice(0, 4)}...${address.slice(-4)}`,
+    NETWORK_DISPLAY: { 'solana-mainnet': { blockchain: 'solana' } },
+  })
+);
 
 // No worklets runtime in Jest: the kit's animated blocks (IconBubble, the
 // pressable Card under every method row) need plain-JS stand-ins.

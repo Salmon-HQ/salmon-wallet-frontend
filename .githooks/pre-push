@@ -1,0 +1,7 @@
+#!/bin/sh
+# Types and lint before the branch leaves the machine. Turbo replays what did
+# not change, so a push with nothing new takes under a second.
+# Skip once with `git push --no-verify`.
+set -e
+
+pnpm turbo run typecheck lint

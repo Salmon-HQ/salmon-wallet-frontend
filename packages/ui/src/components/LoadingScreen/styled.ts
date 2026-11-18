@@ -53,7 +53,7 @@ import { waterColumnHost } from '../WaterColumn';
  * The recovery is **monotonic** — `settle`, no overshoot. A spring that
  * overshoots is the jump product had just had removed from the words.
  */
-export const sinkKeyframes = keyframes`
+const sinkKeyframes = keyframes`
   0% { transform: scale(1); opacity: 1; animation-timing-function: ${motionEasing.sink.css}; }
   ${(WAVEFRONT_SINK_MS / WAVEFRONT_PERIOD_MS) * 100}% {
     transform: scale(${1 - MARK_SINK_SCALE});
@@ -77,7 +77,7 @@ export const sinkKeyframes = keyframes`
  * replaces: the compositor scales a rasterised layer, it does not re-run a
  * gradient per frame.
  */
-export const crestKeyframes = keyframes`
+const crestKeyframes = keyframes`
   0% { transform: translate(-50%, -50%) scale(0.02); opacity: 0; }
   ${(0.04 * WAVEFRONT_CROSS_MS * 100) / WAVEFRONT_PERIOD_MS}% { opacity: 1; }
   ${((CREST_FADE_FROM * WAVEFRONT_CROSS_MS) / WAVEFRONT_PERIOD_MS) * 100}% {
@@ -90,12 +90,12 @@ export const crestKeyframes = keyframes`
   100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
 `;
 
-export const fadeInKeyframes = keyframes`
+const fadeInKeyframes = keyframes`
   from { opacity: 0; }
   to { opacity: 1; }
 `;
 
-export const fadeOutKeyframes = keyframes`
+const fadeOutKeyframes = keyframes`
   from { opacity: 1; }
   to { opacity: 0; }
 `;
@@ -107,12 +107,12 @@ export const fadeOutKeyframes = keyframes`
  * bezier to Beer-Lambert. Two media, one event, so two animations rather than
  * one keyframe set. DESIGN.md §The sink and the float.
  */
-export const floatTravelKeyframes = keyframes`
+const floatTravelKeyframes = keyframes`
   from { transform: translateY(${SINK_FLOAT_TRAVEL}px) scale(${FLOAT_ENTER_SCALE}); }
   to { transform: none; }
 `;
 
-export const floatLightKeyframes = keyframes`
+const floatLightKeyframes = keyframes`
   from { opacity: 0; }
   to { opacity: 1; }
 `;
@@ -123,7 +123,7 @@ export const floatLightKeyframes = keyframes`
  * gesture rather than as a fade with stragglers. Only the travel lives here —
  * the light is the overlay's, which is fading over exactly this window.
  */
-export const sinkOutKeyframes = keyframes`
+const sinkOutKeyframes = keyframes`
   from { transform: none; }
   to { transform: translateY(${SINK_FLOAT_TRAVEL}px); }
 `;
@@ -203,10 +203,10 @@ export const Cluster = styled('div')<{ $waveOut: boolean }>(({ $waveOut }) => ({
 }));
 
 /** Diameter of the mark that emits the wave, px. */
-export const MARK_SIZE = componentSizes.markHero;
+const MARK_SIZE = componentSizes.markHero;
 
 /** Clear space between the mark's edge and the first word under it. */
-export const MARK_TO_WORDS = spacing['3xl'];
+const MARK_TO_WORDS = spacing['3xl'];
 
 /**
  * The words, and only the words. Pinned to start *below* the centre point
@@ -385,7 +385,7 @@ export const tipsAnchor = {
  * time the sentence changed line count. Reserving the tallest case keeps the
  * label still and lets the sentence use the room below it.
  */
-export const TIP_LINE_HEIGHT_PX = Math.round(fontSize.base * lineHeight.tokenListItem);
+const TIP_LINE_HEIGHT_PX = Math.round(fontSize.base * lineHeight.tokenListItem);
 
 export const TipsContainer = styled('div')({
   textAlign: 'center',

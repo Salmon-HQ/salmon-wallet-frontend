@@ -9,47 +9,49 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
-jest.mock('@salmon/shared', () => ({
-  ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
-  // The mobile wrapper hook reads the real motion vocabulary.
-  ...jest.requireActual('@salmon/shared/src/theme/durations'),
-  semantic: {
-    accent: { fill: '#FF5C45', onFill: '#070911' },
-    text: { primary: '#F6F8FB', secondary: '#A7B1C4' },
-    border: { raised: '#6F7B95' },
-    surface: { raised: '#161C2D' },
-    status: { success: '#33D6A6', danger: '#FF6B85', warning: '#FFB020' },
-    depth: { abyss: '#070911' },
-  },
-  colors: {
-    text: { primary: '#fff' },
-    button: { primaryBackground: '#FF5C45', primaryText: '#070911' },
-    status: { warningBackground: '#3A2C10', errorBackground: '#3A1620' },
-  },
-  fontSize: { xs: 10, sm: 14, base: 16, mono: 13, bodyLg: 18, headline: 24 },
-  fontFamilyNative: {
-    bold: 'System',
-    semiBold: 'System',
-    medium: 'System',
-    regular: 'System',
-    mono: 'GeistMonoRegular',
-  },
-  letterSpacing: { label: 0.3, snug: -0.12, change: 0 },
-  lineHeight: { condensed: 1.2, snug: 1.4 },
-  spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, headerPadding: 16 },
-  borderRadius: { r1: 4, lg: 16, xl: 20, full: 9999 },
-  chunkAddress: (address: string) => address.replace(/(.{4})/g, '$1 ').trim(),
-  componentSizes: {
-    qrBorderWidth: 8,
-    copyButtonWidth: 160,
-    buttonHeightCompact: 44,
-  },
-  ms: (value: number) => value,
-  vs: (value: number) => value,
-  s: (value: number) => value,
-  getChainDisplayName: (chain?: string) =>
-    chain === 'bitcoin' ? 'Bitcoin' : chain === 'ethereum' ? 'Ethereum' : 'Solana',
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
+    // The mobile wrapper hook reads the real motion vocabulary.
+    ...jest.requireActual('@salmon/shared/src/theme/durations'),
+    semantic: {
+      accent: { fill: '#FF5C45', onFill: '#070911' },
+      text: { primary: '#F6F8FB', secondary: '#A7B1C4' },
+      border: { raised: '#6F7B95' },
+      surface: { raised: '#161C2D' },
+      status: { success: '#33D6A6', danger: '#FF6B85', warning: '#FFB020' },
+      depth: { abyss: '#070911' },
+    },
+    colors: {
+      text: { primary: '#fff' },
+      button: { primaryBackground: '#FF5C45', primaryText: '#070911' },
+      status: { warningBackground: '#3A2C10', errorBackground: '#3A1620' },
+    },
+    fontSize: { xs: 10, sm: 14, base: 16, mono: 13, bodyLg: 18, headline: 24 },
+    fontFamilyNative: {
+      bold: 'System',
+      semiBold: 'System',
+      medium: 'System',
+      regular: 'System',
+      mono: 'GeistMonoRegular',
+    },
+    letterSpacing: { label: 0.3, snug: -0.12, change: 0 },
+    lineHeight: { condensed: 1.2, snug: 1.4 },
+    spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, headerPadding: 16 },
+    borderRadius: { r1: 4, lg: 16, xl: 20, full: 9999 },
+    chunkAddress: (address: string) => address.replace(/(.{4})/g, '$1 ').trim(),
+    componentSizes: {
+      qrBorderWidth: 8,
+      copyButtonWidth: 160,
+      buttonHeightCompact: 44,
+    },
+    ms: (value: number) => value,
+    vs: (value: number) => value,
+    s: (value: number) => value,
+    getChainDisplayName: (chain?: string) =>
+      chain === 'bitcoin' ? 'Bitcoin' : chain === 'ethereum' ? 'Ethereum' : 'Solana',
+  })
+);
 
 jest.mock('../../../hooks/useBottomSheetChrome', () => ({
   useBottomSheetChrome: () => ({ bottomInset: 0, spaciousContentBottomPadding: 0 }),

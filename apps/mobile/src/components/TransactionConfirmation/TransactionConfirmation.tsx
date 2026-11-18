@@ -204,5 +204,3 @@ const stylesFor = (t: Semantic) =>
       marginBottom: vs(spacing.md),
     },
   });
-
-export default TransactionConfirmation;

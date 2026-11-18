@@ -4,15 +4,17 @@ import { render, fireEvent } from '@testing-library/react-native';
 // The @salmon/shared barrel drags the ESM-only @solana/kit into Jest; the
 // theme modules the component draws from are runtime-agnostic, so they are
 // loaded directly (the FleshBackground test's convention).
-jest.mock('@salmon/shared', () => ({
-  overflowEdges: jest.requireActual('@salmon/shared/src/utils/overflowEdges').overflowEdges,
-  ...jest.requireActual('@salmon/shared/src/theme/spacing'),
-  ...jest.requireActual('@salmon/shared/src/theme/typography'),
-  ...jest.requireActual('@salmon/shared/src/theme/durations'),
-  semantic: jest.requireActual('@salmon/shared/src/theme/semantic').semantic,
-  s: (value: number) => value,
-  vs: (value: number) => value,
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../../test-utils/sharedWith').sharedWith({
+    overflowEdges: jest.requireActual('@salmon/shared/src/utils/overflowEdges').overflowEdges,
+    ...jest.requireActual('@salmon/shared/src/theme/spacing'),
+    ...jest.requireActual('@salmon/shared/src/theme/typography'),
+    ...jest.requireActual('@salmon/shared/src/theme/durations'),
+    semantic: jest.requireActual('@salmon/shared/src/theme/semantic').semantic,
+    s: (value: number) => value,
+    vs: (value: number) => value,
+  })
+);
 
 // No worklets runtime under Jest. `useSharedValue` is backed by a real
 // `useRef` so mutations made in an effect survive the next render — the

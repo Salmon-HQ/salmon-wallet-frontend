@@ -35,6 +35,7 @@ import {
   StyleSheet,
   Text,
   View,
+  type ViewInstance,
 } from 'react-native';
 import Reanimated, { Easing, LinearTransition, useReducedMotion } from 'react-native-reanimated';
 
@@ -232,7 +233,7 @@ export default function HomeScreen() {
   // `useHomePowerupsCatalog`'s state, set up further down with the rest of
   // the Powerups slice.
   const [subTabsTop, setSubTabsTop] = useState(0);
-  const subTabsRef = useRef<View>(null);
+  const subTabsRef = useRef<ViewInstance>(null);
   const handleSubTabsLayout = useCallback(() => {
     subTabsRef.current?.measureInWindow((_x, y) => setSubTabsTop(y));
   }, []);

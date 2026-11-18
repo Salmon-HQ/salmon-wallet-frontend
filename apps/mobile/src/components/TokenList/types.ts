@@ -1,8 +1,6 @@
 import type { NativeScrollEvent, NativeSyntheticEvent, ViewStyle } from 'react-native';
 import type { TokenListItemPropsBase, TokenListPropsBase } from '@salmon/shared';
 
-export type { TokenListBlockchain as BlockchainType } from '@salmon/shared';
-
 /** The mobile half of `TokenListItemPropsBase`: the contract plus a style. */
 export interface TokenListItemProps extends TokenListItemPropsBase {
   /** Optional custom styles for the container */

@@ -15,7 +15,7 @@ export { IconDefaults, iconSize } from './icons';
 export type { IconComponent, IconSizeToken } from './icons';
 
 // Theme
-export { focusRing, focusRingNone, focusRingOnWrapper } from './theme';
+export { focusRing, focusRingNone } from './theme';
 export {
   SalmonThemeProvider,
   useSemantic,

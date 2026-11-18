@@ -35,35 +35,37 @@ jest.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
-jest.mock('@salmon/shared', () => ({
-  readSettledPaymentLink: (...args: unknown[]) => mockReadSettledPaymentLink(...args),
-  formatTokenAmount: (value: number) => String(value),
-  getShortAddress: (value: string) => value,
-  s: (value: number) => value,
-  vs: (value: number) => value,
-  spacing: { sm: 8 },
-  useAddressValidation: () => ({
-    validationState: 'idle',
-    isValidating: false,
-    isValid: false,
-    resolvedAddress: null,
-    message: null,
-    messageType: null,
-  }),
-  useValidationDirty: () => ({ dirty: false, markDirty: () => undefined }),
-  // The real hook, from its own file: it only depends on React.
-  useSettledPaymentLink: jest.requireActual(
-    '../../../../packages/shared/src/hooks/useSettledPaymentLink'
-  ).useSettledPaymentLink,
-  useRecipientOptions: () => ({
-    recents: [],
-    contactRows: [],
-    walletRows: [],
-    recipientFor: (address: string) => ({ address }),
-  }),
-  useSendContacts: () => ({ contacts: [], ownWallets: [] }),
-  useTransactions: () => ({ transactions: [], loading: false }),
-}));
+jest.mock('@salmon/shared', () =>
+  require('../../test-utils/sharedWith').sharedWith({
+    readSettledPaymentLink: (...args: unknown[]) => mockReadSettledPaymentLink(...args),
+    formatTokenAmount: (value: number) => String(value),
+    getShortAddress: (value: string) => value,
+    s: (value: number) => value,
+    vs: (value: number) => value,
+    spacing: { sm: 8 },
+    useAddressValidation: () => ({
+      validationState: 'idle',
+      isValidating: false,
+      isValid: false,
+      resolvedAddress: null,
+      message: null,
+      messageType: null,
+    }),
+    useValidationDirty: () => ({ dirty: false, markDirty: () => undefined }),
+    // The real hook, from its own file: it only depends on React.
+    useSettledPaymentLink: jest.requireActual(
+      '../../../../packages/shared/src/hooks/useSettledPaymentLink'
+    ).useSettledPaymentLink,
+    useRecipientOptions: () => ({
+      recents: [],
+      contactRows: [],
+      walletRows: [],
+      recipientFor: (address: string) => ({ address }),
+    }),
+    useSendContacts: () => ({ contacts: [], ownWallets: [] }),
+    useTransactions: () => ({ transactions: [], loading: false }),
+  })
+);
 
 jest.mock('../../src/components', () => {
   const ReactActual = require('react');

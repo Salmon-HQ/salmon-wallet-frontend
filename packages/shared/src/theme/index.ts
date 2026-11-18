@@ -30,6 +30,7 @@ export { semantic, createSemantic } from './semantic';
 // A token at another alpha — the only sanctioned end of a fade (never
 // `'transparent'`, which is black at alpha 0 and tints the ramp on its way out).
 export { withAlpha } from './withAlpha';
+export { iconBubbleLook } from './iconBubble';
 export type { Semantic, ThemeMode } from './semantic';
 
 // Brand geometry — the mark as path data every platform can draw.

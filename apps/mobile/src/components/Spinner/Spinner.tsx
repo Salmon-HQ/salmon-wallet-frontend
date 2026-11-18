@@ -16,5 +16,3 @@ export const Spinner: React.FC<SpinnerProps> = ({ color, size = SPINNER_DEFAULT_
     size={size >= SPINNER_LARGE_FROM ? 'large' : 'small'}
   />
 );
-
-export default Spinner;

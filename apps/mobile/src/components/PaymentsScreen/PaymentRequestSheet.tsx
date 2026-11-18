@@ -121,5 +121,3 @@ const stylesFor = (t: Semantic) =>
       textAlign: 'center',
     },
   });
-
-export default PaymentRequestSheet;
