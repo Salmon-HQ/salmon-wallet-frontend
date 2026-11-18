@@ -13,6 +13,7 @@
     "url": "https://github.com/Salmon-HQ/salmon-wallet-frontend/issues"
   },
   "scripts": {
+    "prepare": "git config core.hooksPath .githooks || true",
     "preinstall": "node scripts/check-build-env.cjs",
     "dev": "turbo run dev",
     "build": "turbo run build",
@@ -48,6 +49,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check:no-secrets": "node scripts/check-no-secrets.mjs",
+    "check:hidden-unicode": "node scripts/check-hidden-unicode.mjs",
+    "check:hidden-unicode:test": "node --test scripts/check-hidden-unicode.test.mjs",
     "check:no-secrets:test": "node --test scripts/check-no-secrets.test.mjs",
     "check:manifest": "node scripts/check-manifest-permissions.mjs",
     "check:fingerprint": "pnpm --filter @salmon/mobile fingerprint:check",

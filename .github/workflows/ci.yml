@@ -59,6 +59,14 @@ jobs:
           node --test scripts/check-no-secrets.test.mjs
           pnpm check:no-secrets
 
+      # Zero-width, bidirectional and tag characters in tracked files. The
+      # diff view does not draw them, so a reviewer cannot see an instruction
+      # written with them, while an agent that loads AGENTS.md or a skill does.
+      - name: No hidden characters in the tree
+        run: |
+          node --test scripts/check-hidden-unicode.test.mjs
+          pnpm check:hidden-unicode
+
       # test:coverage, not test: every package carries a coverage floor in its
       # vitest/jest config (a ratchet — set just under the measured value, only
       # ever raised), so a PR that drops below fails here.

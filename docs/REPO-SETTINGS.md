@@ -23,6 +23,21 @@ Equivalent CLI: `gh api repos/Salmon-HQ/salmon-wallet-frontend/rulesets
 --method POST --input <ruleset.json>` — ask before scripting this; the UI is
 clearer the first time.
 
+### `staging` carries the same checks
+
+Work lands on `staging` first, so the ruleset "Protect staging" needs the same
+**Require status checks to pass** list as `main`. With only "Block force
+pushes" and "Restrict deletions" on it, CI reports but does not block.
+
+### Agent review (advisory)
+
+`.github/workflows/agent-review.yml` runs a model over each pull request from a
+branch of this repository and leaves inline comments. It needs two things set
+once: the Claude GitHub App installed on the repository, and an Actions secret
+named `ANTHROPIC_API_KEY`. Do not add it to the required checks: it advises, a
+maintainer decides. It does not run on fork pull requests, which carry no
+secrets.
+
 ## 2. Merge settings for the staging flow
 
 PRs into `staging` are squash-merged, so the PR title becomes the commit and

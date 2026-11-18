@@ -27,6 +27,14 @@
 # CI/CD and deploy configuration.
 /.github/  @Luquish
 
+# What coding agents obey: instructions, skills, agent definitions and the git
+# hooks. A change here changes how every later change is written, so it is
+# reviewed like code that runs.
+AGENTS.md     @Luquish
+CLAUDE.md     @Luquish
+/.claude/     @Luquish
+/.githooks/   @Luquish
+
 # Security-sensitive paths — these areas can lose user funds if broken.
 # Key material, seed encryption, persistence.
 /packages/shared/src/crypto/   @Luquish

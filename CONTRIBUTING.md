@@ -24,12 +24,18 @@ pnpm check:dead-code                 # no unused export or file, every import de
 pnpm check:cycles                    # no import cycle at run time
 pnpm check:manifest                  # extension permissions match the reviewed baseline (after an extension build)
 pnpm check:no-secrets                # nothing that looks like a seed phrase or a keypair in tracked files
+pnpm check:hidden-unicode            # no zero-width, bidirectional or tag character in tracked files
 pnpm check:powerups-bundle apps/extension/dist/chrome-mv3   # a Powerups-off build carries no Powerup (spec 027 §3)
 pnpm check:fingerprint               # native surface unchanged since the last mobile binary, or expo.version bumped
 ```
 
 Package names: `@salmon/shared`, `@salmon/ui`, `@salmon/mobile`,
 `@salmon/extension`.
+
+`pnpm install` points git at the hooks in `.githooks/`: the fast checks run
+before each commit (a few seconds) and types and lint before each push. They
+only bring CI's answer forward — CI is what blocks a merge — and
+`--no-verify` skips them once.
 
 ## Pull requests
 
@@ -54,6 +60,15 @@ Package names: `@salmon/shared`, `@salmon/ui`, `@salmon/mobile`,
 - Never include seed phrases, private keys, or real wallet credentials in code,
   tests, fixtures, or PR descriptions. Test secrets live in gitignored
   `.env.test` files.
+
+### Automated review
+
+A pull request from a branch of this repository also gets an automated reader
+(`.github/workflows/agent-review.yml`): a model that sees the diff and the
+rules in `AGENTS.md`, nothing else, and comments inline. Its comments are
+advice; the required checks and a maintainer's review are what decide a merge.
+A pull request from a fork is reviewed by a maintainer only, and its workflow
+runs wait for a maintainer's approval.
 
 ## Reporting security issues
 

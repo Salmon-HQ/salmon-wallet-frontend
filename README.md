@@ -223,6 +223,7 @@ pnpm check:dead-code                    # no unused export or file, every import
 pnpm check:cycles                       # no import cycle at run time (madge)
 pnpm check:manifest                     # extension permissions match the reviewed baseline (after an extension build)
 pnpm check:no-secrets                   # nothing that looks like a seed phrase or a keypair in tracked files
+pnpm check:hidden-unicode               # no zero-width, bidirectional or tag character in tracked files
 pnpm check:powerups-bundle apps/extension/dist/chrome-mv3   # a Powerups-off build carries no Powerup (after a build with VITE_POWERUPS=off)
 pnpm check:fingerprint                  # mobile native surface unchanged since the last binary, or expo.version bumped
 ```

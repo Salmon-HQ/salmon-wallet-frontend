@@ -1,0 +1,17 @@
+#!/bin/sh
+# The fast gates, before a commit exists. CI runs the same ones and is what
+# blocks a merge; this only brings the answer forward by a few minutes.
+# Skip once with `git commit --no-verify`.
+set -e
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -z "$staged" ] && exit 0
+
+git diff --cached --name-only --diff-filter=ACMR -z |
+  xargs -0 pnpm exec prettier --check --ignore-unknown
+
+pnpm check:no-secrets
+pnpm check:hidden-unicode
+pnpm check:parity
+pnpm check:dead-code
+pnpm check:cycles
