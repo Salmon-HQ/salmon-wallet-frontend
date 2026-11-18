@@ -578,5 +578,51 @@ describe('Encryption Module', () => {
       );
       expect(unlockWithKey<typeof TEST_DATA>(freshVault, freshKey)).toEqual(TEST_DATA);
     });
+
+    it('lockAndGetKey writes the same vault shape lock does, and a cache for that vault', async () => {
+      const before = Date.now();
+      const { vault: freshVault, keyCache: freshKey } = await lockAndGetKey(
+        TEST_DATA,
+        TEST_PASSWORD,
+        TEST_OPTIONS
+      );
+
+      expect(Object.keys(freshVault).sort()).toEqual(Object.keys(vault).sort());
+      expect(freshVault.kdf).toBe('pbkdf2');
+      expect(freshVault.iterations).toBe(vault.iterations);
+      expect(freshVault.digest).toBe(vault.digest);
+      expect(freshKey.salt).toBe(freshVault.salt);
+      expect(freshKey.iterations).toBe(freshVault.iterations);
+      expect(freshKey.digest).toBe(freshVault.digest);
+      expect(freshKey.key).toHaveLength(32);
+      expect(freshKey.expiresAt).toBeGreaterThanOrEqual(before + KEY_CACHE_TTL);
+      expect(await unlock<typeof TEST_DATA>(freshVault, TEST_PASSWORD)).toEqual(TEST_DATA);
+    });
+
+    it('lockWithKey writes the same vault shape lock does', () => {
+      const relocked = lockWithKey(TEST_DATA, keyCache);
+      expect(Object.keys(relocked).sort()).toEqual(Object.keys(vault).sort());
+      expect(relocked.kdf).toBe('pbkdf2');
+    });
+
+    it('unlockAndGetKey rejects a structurally broken vault and an unsupported digest', async () => {
+      await expect(
+        unlockAndGetKey({ ...vault, salt: 7 } as unknown as LockedVault, TEST_PASSWORD)
+      ).rejects.toThrow(InvalidVaultError);
+      await expect(
+        unlockAndGetKey({ ...vault, digest: 'md5' } as unknown as LockedVault, TEST_PASSWORD)
+      ).rejects.toThrow(InvalidVaultError);
+    });
+
+    it('unlockWithKey does not read the digest: the cached key already carries the derivation', () => {
+      const relabelled = { ...vault, digest: 'md5' } as unknown as LockedVault;
+      expect(unlockWithKey<typeof TEST_DATA>(relabelled, keyCache)).toEqual(TEST_DATA);
+    });
+
+    it('unlockWithKey and unlock fail closed on vault data that is not base58', async () => {
+      const undecodable = { ...vault, encrypted: '0OIl' };
+      expect(() => unlockWithKey(undecodable, keyCache)).toThrow(IncorrectPasswordError);
+      await expect(unlock(undecodable, TEST_PASSWORD)).rejects.toThrow(IncorrectPasswordError);
+    });
   });
 });
