@@ -37,6 +37,7 @@
     "extension:zip:firefox": "pnpm --filter @salmon/extension zip:firefox",
     "check:i18n": "node scripts/check-i18n.mjs",
     "check:dead-code": "knip",
+    "check:single-kit": "node scripts/check-single-solana-kit.mjs",
     "check:cycles": "madge --circular packages/shared/src packages/ui/src apps/extension/src apps/mobile/app apps/mobile/src apps/mobile/hooks apps/mobile/utils",
     "check:parity": "node scripts/check-dom-parity.mjs",
     "check:parity:report": "node scripts/check-dom-parity.mjs --report",
@@ -121,7 +122,10 @@
       "lodash": ">=4.18.0 <5",
       "stream-json": ">=3.5.0 <4",
       "js-yaml": ">=4.3.2 <5",
-      "@solana-name-service/sns-sdk-kit>@solana-program/token": "0.16.1"
+      "@solana-name-service/sns-sdk-kit>@solana-program/token": "0.16.1",
+      "@onsol/tldparser-kit>@solana-program/token": "0.16.1",
+      "@onsol/tldparser-kit>@solana/kit": "$@solana/kit",
+      "@solana-program/system@^0.14.0": "0.15.0"
     },
     "patchedDependencies": {
       "expo-camera@58.0.14": "patches/expo-camera@58.0.14.patch",

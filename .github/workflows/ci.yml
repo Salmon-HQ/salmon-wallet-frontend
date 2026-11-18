@@ -126,6 +126,11 @@ jobs:
       - name: Import cycles
         run: pnpm check:cycles
 
+      # One version of @solana/kit and of each @solana-program client in the
+      # lockfile: a second kit is about forty extra packages in every bundle.
+      - name: One Solana kit
+        run: pnpm check:single-kit
+
       # Every selector the e2e suites use still exists (spec 035): a flow on a
       # removed element fails here, naming it, not minutes into a device run.
       - name: e2e selector audit

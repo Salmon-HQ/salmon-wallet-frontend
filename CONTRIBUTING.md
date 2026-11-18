@@ -22,6 +22,7 @@ pnpm check:i18n                      # locale parity, missing keys and orphans
 pnpm check:parity                    # every mobile component/screen has its DOM twin on one contract
 pnpm check:dead-code                 # no unused export or file, every import declared in its own package.json
 pnpm check:cycles                    # no import cycle at run time
+pnpm check:single-kit                # one version of @solana/kit and of each @solana-program client in the lockfile
 pnpm check:manifest                  # extension permissions match the reviewed baseline (after an extension build)
 pnpm check:no-secrets                # nothing that looks like a seed phrase or a keypair in tracked files
 pnpm check:hidden-unicode            # no zero-width, bidirectional or tag character in tracked files

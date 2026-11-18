@@ -156,6 +156,12 @@ Package names: `@salmon/shared`, `@salmon/ui`, `@salmon/mobile`,
 - Import cycles: `pnpm check:cycles` (madge, strict in CI). Two modules
   that need each other at run time share a third one they both import;
   `import type` does not count.
+- One Solana kit: `pnpm check:single-kit` (strict in CI) after adding or
+  upgrading a dependency. The lockfile holds one version of `@solana/kit`
+  and of each `@solana-program/*` client, because a second kit adds about
+  forty packages to every bundle. A dependency that asks for an older one
+  gets an entry under `pnpm.overrides`, after checking that every function
+  it calls exists in the current version.
 - Package boundaries are lint errors: `packages/shared` imports no
   platform package outside a `*.native.*` file and nothing from
   `packages/ui` or an app; `packages/ui` imports no React Native.
