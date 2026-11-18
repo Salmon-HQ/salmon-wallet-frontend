@@ -5,29 +5,32 @@ themselves. Apply after the CI workflow (`.github/workflows/ci.yml`) has
 landed on `main`, so the required checks exist. Everything here is idempotent
 and takes effect immediately.
 
-## 1. Branch protection for `main` (ruleset)
+## 1. Branch protection for `main` and `staging`
 
-Without this, CODEOWNERS is decorative, force-pushes to `main` are possible,
-and CI is advisory. Settings → Rules → Rulesets → New branch ruleset:
+Both branches carry the same protection (Settings → Branches), so CI blocks a
+merge instead of reporting on it:
 
-- **Target**: `main` (include default branch), enforcement **Active**.
-- **Require a pull request before merging**: 1 approval, **Require review
-  from Code Owners** ON, dismiss stale approvals ON.
-- **Require status checks to pass**: add `typecheck / lint / test / i18n`,
-  `conventional PR title`, `workflow security lint`. Require branches to be
-  up to date: OFF (solo maintainer; turn on if the repo gains write
-  collaborators).
-- **Block force pushes** and **Restrict deletions**: ON.
+- **Require a pull request before merging**: ON, with no approval count, since
+  one maintainer merges. Nothing reaches either branch by a direct push.
+- **Require status checks to pass**: `typecheck / lint / test / i18n`,
+  `dependency audit`, `workflow security lint`, `conventional PR title`; `main`
+  also requires `main takes PRs from staging`. Require branches to be up to
+  date: OFF.
+- **Restrict who can push**: the one maintainer who merges. Merging a pull
+  request is a push, so nobody else can merge.
+- **Do not allow bypassing the above settings**: ON, so the rules hold for
+  administrators too.
+- Force pushes and deletions: blocked.
 
-Equivalent CLI: `gh api repos/Salmon-HQ/salmon-wallet-frontend/rulesets
---method POST --input <ruleset.json>` — ask before scripting this; the UI is
-clearer the first time.
+A required check has to exist on the pull request's branch: a branch opened
+before a check was added to CI is updated from `staging` once to pick it up.
 
-### `staging` carries the same checks
+To read or reapply it:
 
-Work lands on `staging` first, so the ruleset "Protect staging" needs the same
-**Require status checks to pass** list as `main`. With only "Block force
-pushes" and "Restrict deletions" on it, CI reports but does not block.
+```bash
+gh api repos/Salmon-HQ/salmon-wallet-frontend/branches/staging/protection
+gh api -X PUT repos/Salmon-HQ/salmon-wallet-frontend/branches/staging/protection --input protection.json
+```
 
 ### Agent review (advisory)
 
@@ -66,10 +69,13 @@ returns, gate it: Settings → Environments → New environment `production`
 with yourself as **Required reviewer**, and `environment: production` on the
 deploy job.
 
-## 4. Advanced Security toggles (one screen, three switches)
+## 4. Advanced Security toggles
 
 Settings → Advanced Security:
 
+- **Secret scanning** and **Push protection**: ON. A push that carries a
+  provider token is refused before it lands. Seed phrases and private keys
+  are not provider tokens; `pnpm check:no-secrets` covers those.
 - **Private vulnerability reporting**: ON. SECURITY.md and the issue
   templates point users to GitHub Security Advisories; without this switch
   that flow does not exist. (Not automatic on public repos.)
