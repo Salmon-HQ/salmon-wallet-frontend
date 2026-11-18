@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { findHidden } from './check-hidden-unicode.mjs';
+import { findHidden, TEXT_FILE } from './check-hidden-unicode.mjs';
 
 // Every hidden character below is written as an escape: this file is tracked,
 // and the gate reads it too.
@@ -36,4 +36,24 @@ test('a joiner that is not between two pictographs is reported', () => {
 
 test('a byte-order mark in the middle of a file is reported', () => {
   assert.equal(findHidden('a\uFEFFb').length, 1);
+});
+
+test('instruction, code and configuration files count as text by their name', () => {
+  for (const file of [
+    'AGENTS.md',
+    '.claude/skills/x/SKILL.md',
+    '.github/workflows/ci.yml',
+    '.githooks/pre-commit',
+    'src/index.js',
+    'package.json',
+  ]) {
+    assert.ok(TEXT_FILE.test(file), file);
+  }
+  for (const file of [
+    'assets/logo.png',
+    'src/availability/data/dbip-country-lite.mmdb',
+    'vendor/pkg.tgz',
+  ]) {
+    assert.ok(!TEXT_FILE.test(file), file);
+  }
 });

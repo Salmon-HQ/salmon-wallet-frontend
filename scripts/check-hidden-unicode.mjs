@@ -17,6 +17,10 @@ const HIDDEN = /[\u200B-\u200F\u202A-\u202E\u2060-\u2064\u2066-\u2069\uFEFF\u{E0
 // written, and a variation selector is not in the set at all.
 const EMOJI_JOINER = /(?<=\p{Extended_Pictographic}\uFE0F?)\u200D(?=\p{Extended_Pictographic})/gu;
 
+// Files that are text by their name: instructions, code, configuration.
+export const TEXT_FILE =
+  /(^|\/)(\.[a-z]+rc|\.gitignore|\.gitattributes|CODEOWNERS|Dockerfile|pre-commit|pre-push)$|\.(md|mdc|txt|js|mjs|cjs|jsx|ts|tsx|json|ya?ml|toml|sh|css|html|svg|env\.example)$/i;
+
 export function findHidden(text) {
   const findings = [];
   const body = text.replace(/^\uFEFF/, '').replace(EMOJI_JOINER, '');
@@ -41,7 +45,16 @@ function main() {
     } catch {
       continue; // listed but not on disk (a deletion not yet committed)
     }
-    if (buffer.includes(0)) continue; // binary
+    if (buffer.includes(0)) {
+      // A NUL byte marks a binary file, which has no text to hide in. In a
+      // file that is text by its name it is a way to be skipped by this very
+      // check (UTF-16 has one in every other byte), so there it is a finding.
+      if (TEXT_FILE.test(file)) {
+        count += 1;
+        console.error(`${file}  NUL byte in a text file: it must be UTF-8 text`);
+      }
+      continue;
+    }
     for (const finding of findHidden(buffer.toString('utf8'))) {
       count += 1;
       console.error(`${file}:${finding.line}:${finding.column}  hidden character ${finding.code}`);
@@ -49,7 +62,7 @@ function main() {
   }
   if (count > 0) {
     console.error(
-      `\nhidden-unicode: ${count} hidden character(s). Remove them, or write the escape (\\u200B) where the code needs one.`
+      `\nhidden-unicode: ${count} finding(s). Remove the character, or write the escape (\\u200B) where the code needs one.`
     );
     process.exit(1);
   }
