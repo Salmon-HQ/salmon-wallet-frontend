@@ -12,7 +12,8 @@
         "src/polyfills/*.ts",
         "src/buffer-shim.js"
       ],
-      "project": ["src/**/*.{ts,tsx}", ".playwright/**/*.{ts,mjs}"]
+      "project": ["src/**/*.{ts,tsx}", ".playwright/**/*.{ts,mjs}"],
+      "playwright": false
     },
     "apps/mobile": {
       "entry": [
