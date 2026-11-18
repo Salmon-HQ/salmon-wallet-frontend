@@ -74,7 +74,6 @@
     "i18next": "^25.10.10",
     "phosphor-react-native": "^3.0.6",
     "react": "19.3.0",
-    "react-content-loader": "^7.1.1",
     "react-dom": "19.3.0",
     "react-i18next": "^16.6.6",
     "react-native": "0.88.1",
@@ -93,9 +92,13 @@
   "devDependencies": {
     "@expo/fingerprint": "0.21.10",
     "@react-native/jest-preset": "0.88.1",
+    "@solana/kit": "^8.4.0",
+    "@tanstack/react-query": "5.104.0",
     "@testing-library/react-native": "^13.3.3",
     "@types/jest": "^30.0.0",
     "@types/react": "~19.3.0",
+    "abort-controller": "3.0.0",
+    "babel-preset-expo": "~58.0.25",
     "jest": "~30.5.2",
     "jest-expo": "~58.0.14",
     "typescript": "~5.9.2"

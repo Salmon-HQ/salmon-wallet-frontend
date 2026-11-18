@@ -1,0 +1,57 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": ["scripts/*.{mjs,cjs}", "store-assets/**/*.mjs"]
+    },
+    "apps/extension": {
+      "entry": [
+        "src/entrypoints/**/*.{ts,tsx,html}",
+        "wxt.config.ts",
+        ".playwright/**/*.{ts,mjs}",
+        "src/stubs/*.ts",
+        "src/polyfills/*.ts",
+        "src/buffer-shim.js"
+      ],
+      "project": ["src/**/*.{ts,tsx}", ".playwright/**/*.{ts,mjs}"]
+    },
+    "apps/mobile": {
+      "entry": [
+        "index.js",
+        "app/**/*.{ts,tsx}",
+        "plugins/*.js",
+        "scripts/*.mjs",
+        "src/powerups/index.off.ts",
+        "**/*.native.{ts,tsx}"
+      ],
+      "project": [
+        "app/**/*.{ts,tsx}",
+        "src/**/*.{ts,tsx}",
+        "hooks/**/*.{ts,tsx}",
+        "utils/**/*.{ts,tsx}"
+      ],
+      "ignoreBinaries": ["eas"],
+      "ignoreDependencies": ["buffer"]
+    },
+    "packages/shared": {
+      "entry": [
+        "src/index.ts",
+        "src/powerups/index.ts",
+        "src/powerups/index.off.ts",
+        "scripts/*.mjs",
+        "src/**/*.native.{ts,tsx}"
+      ],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignore": ["src/blockchain/ethereum/**"],
+      "ignoreDependencies": ["react-native", "react-native-fast-crypto"]
+    },
+    "packages/ui": {
+      "entry": ["src/index.ts", "src/powerups.ts", "src/powerups.off.ts"],
+      "project": ["src/**/*.{ts,tsx}"]
+    },
+    "packages/assets": {
+      "entry": ["src/index.ts"],
+      "ignoreDependencies": ["react-native-svg"]
+    }
+  }
+}

@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@bitcoinerlab/secp256k1": "2.0.0",
+    "@noble/hashes": "^1.8.0",
     "@onsol/tldparser-kit": "^1.0.2",
     "@scure/bip39": "~2.4.0",
     "@solana-name-service/sns-sdk-kit": "^1.0.1",
@@ -23,6 +24,7 @@
     "@solana-program/system": "^0.15.0",
     "@solana-program/token-2022": "^0.19.0",
     "@solana/addresses": "^8.4.0",
+    "@solana/errors": "^8.4.0",
     "@solana/kit": "^8.4.0",
     "@solana/offchain-messages": "^8.4.0",
     "@solana/transaction-confirmation": "^8.4.0",
@@ -34,7 +36,6 @@
     "bip32": "^5.0.0",
     "bitcoinjs-lib": "^7.0.2",
     "bs58": "^6.0.0",
-    "buffer": "^6.0.3",
     "date-fns": "^4.4.0",
     "ethers": "^6.17.0",
     "i18next": "^25.10.10",
@@ -52,11 +53,13 @@
     "@vitest/coverage-v8": "^4.1.11",
     "fast-check": "^4.10.0",
     "jsdom": "^30.0.1",
+    "react-i18next": "^16.6.6",
     "typescript": "~5.9.2",
     "vitest": "^4.1.10"
   },
   "peerDependencies": {
     "react": ">=18.0.0",
+    "react-i18next": ">=15.0.0",
     "react-native": ">=0.70.0",
     "react-native-fast-crypto": "^3.0.0"
   },
