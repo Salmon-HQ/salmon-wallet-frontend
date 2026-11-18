@@ -39,7 +39,7 @@
         "src/blockchain/ethereum/**/*.ts"
       ],
       "project": ["src/**/*.{ts,tsx}"],
-      "ignoreDependencies": ["react-native", "react-native-fast-crypto"]
+      "ignoreDependencies": ["react-native-fast-crypto"]
     },
     "packages/ui": {
       "entry": ["src/powerups.ts", "src/powerups.off.ts"],

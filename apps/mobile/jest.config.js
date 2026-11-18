@@ -6,8 +6,11 @@ module.exports = {
   // locally. Same headroom as the Vitest configs.
   testTimeout: 20000,
   setupFilesAfterEnv: ['./jest.setup.js'],
+  // Besides React Native and Expo, the ESM-only packages `@salmon/shared`
+  // imports: with them transformed, a test can load the real barrel
+  // (`test-utils/sharedWith.ts`).
   transformIgnorePatterns: [
-    'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|standard-navigation|@salmon/.*|@solana/.*|@solana-mobile/.*|phosphor-react-native/.*|decode-uri-component|lodash-es|.pnpm/.*)',
+    'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|standard-navigation|@salmon/.*|@solana/.*|@solana-mobile/.*|@onsol/.*|p-limit|yocto-queue|@noble/.*|@scure/.*|micro-key-producer|micro-packed|phosphor-react-native/.*|decode-uri-component|lodash-es|.pnpm/.*)',
   ],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',

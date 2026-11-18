@@ -54,6 +54,7 @@
     "fast-check": "^4.10.0",
     "jsdom": "^30.0.1",
     "react-i18next": "^16.6.6",
+    "react-native": "0.88.1",
     "typescript": "~5.9.2",
     "vitest": "^4.1.10"
   },

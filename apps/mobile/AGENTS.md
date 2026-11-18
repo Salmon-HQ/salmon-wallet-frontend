@@ -49,6 +49,9 @@ around it. The iOS blur blocks no screenshot, so it does not cost them that.
 ## Testing
 
 - Add or update mobile tests when RN behavior or mobile-only flows change.
+- A test that mocks `@salmon/shared` builds on the real package with
+  `sharedWith({...})` (`test-utils/sharedWith.ts`) and replaces only what it
+  controls, so moving logic into a shared hook does not break it.
 - Mobile end-to-end UI tests live in `.maestro/` (Maestro flows against
   the iOS Simulator or Android emulator with the Expo dev build
   installed). See `.maestro/README.md` for setup and `.maestro/AGENTS.md`

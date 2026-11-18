@@ -32,6 +32,7 @@ Do not guess broad test scope if the answer changes cost or tooling.
 - Use Jest and `@testing-library/react-native`, not Vitest
 - Prefer user-visible text, accessibility labels, and callback assertions
 - Keep mocks minimal and local to the test file
+- To mock `@salmon/shared`, start from the real package and replace only what the test controls: `sharedWith({...})` from `apps/mobile/test-utils/sharedWith.ts`. A hand-listed mock of the barrel breaks whenever the component reads one more export, which is what happens each time logic is hoisted into a shared hook
 - Test the public module export unless platform-specific behavior is the reason for the test
 - Keep snapshots opt-in, not default
 - Co-locate tests next to the component they cover
