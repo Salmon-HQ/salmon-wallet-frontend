@@ -49,6 +49,15 @@ duplication that drifts.
   the same JSX on two platforms is rendering; a pair that computes the same
   value twice is logic and belongs in `packages/shared`.
 
+## The same-side ceiling
+
+The same jscpd pass also counts every clone that is not cross-platform: two
+files in `apps/mobile`, two in the DOM (`packages/ui`, `apps/extension`), or
+anything inside `packages/shared`. No design asks for that code to exist
+twice, so `SAME_SIDE_CLONE_LINES_MAX` only goes down: when a change trips it,
+reuse the helper that already exists or extract one, and when the measured
+number falls, lower the constant to it in the same commit.
+
 Related: `AGENTS.md` (§ Twins, § Gates that carry a baseline),
 `docs/ARCHITECTURE.md` (the twins section), spec 028 (the redesign that
 introduced the guard).
