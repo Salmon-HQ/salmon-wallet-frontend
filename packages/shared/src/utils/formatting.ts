@@ -178,7 +178,11 @@ export function formatBaseUnits(amount: bigint, decimals: number, locale?: strin
 
   const digits = magnitude.toString().padStart(decimals + 1, '0');
   const whole = digits.slice(0, digits.length - decimals);
-  const fraction = digits.slice(digits.length - decimals).replace(/0+$/, '');
+  // Trailing zeros are dropped by index: `/0+$/` rescans from every zero and is
+  // quadratic on a long run of them that does not reach the end.
+  let end = digits.length;
+  while (end > digits.length - decimals && digits[end - 1] === '0') end -= 1;
+  const fraction = digits.slice(digits.length - decimals, end);
   return fraction ? `${whole}${decimalSeparator(locale)}${fraction}` : whole;
 }
 

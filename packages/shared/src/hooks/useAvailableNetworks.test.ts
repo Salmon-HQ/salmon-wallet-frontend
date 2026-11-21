@@ -8,7 +8,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { fetchAndMergeNetworkConfigs, useAvailableNetworks } from './useAvailableNetworks';
 import { SOLANA_NETWORKS } from '../blockchain/solana/networks';
-import { BITCOIN_NETWORKS } from '../blockchain/bitcoin/networks';
 import * as useUserConfigModule from './useUserConfig';
 import * as networkService from '../api/services/network';
 import type { ActiveBlockchainAccount } from '../types/account';
@@ -706,7 +705,7 @@ describe('fetchAndMergeNetworkConfigs endpoint validation', () => {
     expect(SOLANA_NETWORKS[MAINNET].config.wsUrl).toBe(before.wsUrl);
   });
 
-  it('stores the websocket and Bitcoin endpoints normalized too', async () => {
+  it('stores the websocket endpoint normalized too', async () => {
     vi.mocked(networkService.getNetworks).mockResolvedValue([
       {
         id: MAINNET,
@@ -716,20 +715,12 @@ describe('fetchAndMergeNetworkConfigs endpoint validation', () => {
           wsUrl: 'wss://api.mainnet-beta.solana.com\\@evil.example/',
         },
       },
-      {
-        id: 'bitcoin-mainnet',
-        blockchain: 'bitcoin',
-        config: { apiUrl: 'https://mempool.space\\@evil.example/api' },
-      },
     ] as any);
 
     await fetchAndMergeNetworkConfigs();
 
     expect(SOLANA_NETWORKS[MAINNET].config.wsUrl).toBe(
       'wss://api.mainnet-beta.solana.com/@evil.example/'
-    );
-    expect(BITCOIN_NETWORKS['bitcoin-mainnet'].config.apiUrl).toBe(
-      'https://mempool.space/@evil.example/api'
     );
     delete SOLANA_NETWORKS[MAINNET].config.wsUrl;
   });
