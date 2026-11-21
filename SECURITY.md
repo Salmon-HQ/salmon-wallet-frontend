@@ -34,6 +34,6 @@ What data the wallet sends for pseudonymous, opt-in analytics is catalogued in [
 
 ## Notes for maintainers
 
-- Private vulnerability reporting is a GitHub feature for **public** repositories. This repository is now public but the feature is not yet enabled; an admin must turn it on once under **Settings → Advanced Security → Private vulnerability reporting**.
+- Private vulnerability reporting is enabled (**Settings → Advanced Security → Private vulnerability reporting**). Reports arrive as draft advisories under the **Security** tab; watch the repository with **Custom → Security alerts** to be notified.
 - Never commit seed phrases, private keys, or real wallet credentials — including in tests and fixtures. Test secrets live in gitignored `.env.test` files (see [CONTRIBUTING.md](CONTRIBUTING.md)); CI runs
   `pnpm check:no-secrets` against every tracked file.

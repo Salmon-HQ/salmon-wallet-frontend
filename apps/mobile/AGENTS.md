@@ -158,7 +158,9 @@ Pre-build checklist — run in order before `eas build --profile production`:
    The `versionCode` / `buildNumber` is assigned by EAS during the build;
    read it from the build page or `keytool -printcert -jarfile <file>` when
    you need it for handoff. `pnpm build:aab` / `pnpm build:apk` are the
-   `--local` fallbacks and need 8+ GB free disk and RAM.
+   `--local` fallbacks and need 8+ GB free disk and RAM. Every build
+   refuses a tree with uncommitted changes (`requireCommit` in `eas.json`),
+   so a binary always matches a commit.
 
 Post-build:
 
