@@ -10,7 +10,7 @@ import type {
   UndeterminedReason,
 } from '../blockchain/solana/simulation-types';
 import type { ConfirmationRow, ProposalDisplay } from '../core/confirmation/types';
-import type { SigningAccount } from '../types/ui/dapp-approval';
+import type { DAppBatchItem, SigningAccount } from '../types/ui/dapp-approval';
 import { formatBaseUnits } from './formatting';
 import { getShortAddress } from './address';
 
@@ -47,6 +47,8 @@ export interface DAppTransactionDisplayInput {
   effectsLoading: boolean;
   feeSol: string | null;
   transactionCount: number;
+  /** Every transaction of a batch, in signing order; `feeSol` is then the batch's fee. */
+  batch?: DAppBatchItem[] | null;
   parsingError: string | null;
   /** Who asks (a Solana Pay merchant): drawn as the identity, replacing the site row. */
   requester?: ProposalDisplay['requester'];
@@ -175,7 +177,10 @@ export function dappTransactionDisplay(
       value: t('solanaPay.feePaidBy', { address: getShortAddress(sponsor, 4) ?? sponsor }),
     });
   } else if (input.feeSol) {
-    rows.push({ label: t('dapp.transaction_fee'), value: `${input.feeSol} SOL` });
+    rows.push({
+      label: t(input.batch ? 'dapp.batch_total_fee' : 'dapp.transaction_fee'),
+      value: `${input.feeSol} SOL`,
+    });
   }
 
   return {
@@ -184,7 +189,18 @@ export function dappTransactionDisplay(
     rows,
     advancedRows:
       input.transactionCount > 1
-        ? [{ label: t('dapp.batch_size'), value: String(input.transactionCount) }]
+        ? [
+            { label: t('dapp.batch_size'), value: String(input.transactionCount) },
+            ...(input.batch ?? []).map((item, index) => {
+              const instructions = t('dapp.batch_item_instructions', {
+                count: item.instructionCount,
+              });
+              return {
+                label: t('dapp.batch_item', { number: index + 1 }),
+                value: item.feeSol ? `${instructions} · ${item.feeSol} SOL` : instructions,
+              };
+            }),
+          ]
         : undefined,
     warning,
     pendingTitle: t('dapp.transaction_title'),

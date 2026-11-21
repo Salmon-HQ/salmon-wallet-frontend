@@ -12,6 +12,7 @@ import { AppIdentity } from './AppIdentity';
 import { ApproveArea, CardHead, SigningAccountCard, bodyText, cardColumn } from './common';
 import { HoldToApproveButton } from '../HoldToApproveButton';
 import { TransactionEffectsCard } from './TransactionEffectsCard';
+import type { DAppBatchItem } from '@salmon/shared';
 import type { DAppTransactionApprovalViewProps } from './types';
 import { useApprovalArming } from './useApprovalArming';
 
@@ -29,6 +30,7 @@ export function DAppTransactionApprovalView({
   feePayer,
   recentBlockhash,
   transactionCount = 1,
+  batch = null,
   parsingError,
   networkMismatch = null,
   disabled = false,
@@ -41,6 +43,14 @@ export function DAppTransactionApprovalView({
   const { armed } = arming;
   const tokens = useSemantic();
   const displayOrigin = formatOrigin(origin);
+
+  // "3 instructions · 0.000005 SOL": what one transaction of a batch is.
+  const batchItemText = (item: DAppBatchItem): string => {
+    const instructions = t('dapp.batch_item_instructions', '{{count}} instructions', {
+      count: item.instructionCount,
+    });
+    return item.feeSol ? `${instructions} · ${item.feeSol} SOL` : instructions;
+  };
 
   // A delegation, a failing transaction, an unreadable one and a preview that
   // settled with no answer are what a reflex tap should not be able to sign.
@@ -101,31 +111,39 @@ export function DAppTransactionApprovalView({
             <KeyValueRow label={t('dapp.method', 'Method')} value={requestSummary} />
             {transactionCount > 1 && (
               <KeyValueRow
-                layout="stacked"
                 label={t('dapp.batch_size', 'Transactions in this request')}
-                value={t(
-                  'dapp.batch_first_only',
-                  '{{count}} transactions will be signed. The fee, instruction count, fee payer and blockhash below describe only the first one.',
-                  { count: transactionCount }
-                )}
-                valueTone="danger"
-                testID="batch-first-only"
+                value={String(transactionCount)}
+                testID="batch-size"
               />
             )}
             <KeyValueRow
-              label={t('dapp.transaction_fee', 'Estimated fee')}
+              label={
+                batch
+                  ? t('dapp.batch_total_fee', 'Estimated fee, all transactions')
+                  : t('dapp.transaction_fee', 'Estimated fee')
+              }
               value={feeSol ? `${feeSol} SOL` : '-'}
             />
-            {priorityFeeSol && (
+            {batch?.map((item, index) => (
+              <KeyValueRow
+                key={index}
+                label={t('dapp.batch_item', 'Transaction {{number}}', { number: index + 1 })}
+                value={batchItemText(item)}
+                testID={`batch-item-${index}`}
+              />
+            ))}
+            {!batch && priorityFeeSol && (
               <KeyValueRow
                 label={t('dapp.priority_fee', 'Priority fee')}
                 value={`${priorityFeeSol} SOL`}
               />
             )}
-            <KeyValueRow
-              label={t('dapp.instructions', 'Instructions')}
-              value={instructionCount != null ? String(instructionCount) : '-'}
-            />
+            {!batch && (
+              <KeyValueRow
+                label={t('dapp.instructions', 'Instructions')}
+                value={instructionCount != null ? String(instructionCount) : '-'}
+              />
+            )}
             <KeyValueRow
               label={t('dapp.transaction_status', 'Approval')}
               value={
@@ -137,15 +155,20 @@ export function DAppTransactionApprovalView({
             <KeyValueRow
               layout="stacked"
               label={t('dapp.fee_payer', 'Fee payer')}
-              value={feePayer || '-'}
-              valueFont="mono"
+              value={
+                feePayer ||
+                (batch ? t('dapp.batch_fee_payer_varies', 'Different in each transaction') : '-')
+              }
+              valueFont={feePayer ? 'mono' : undefined}
             />
-            <KeyValueRow
-              layout="stacked"
-              label={t('dapp.blockhash', 'Recent blockhash')}
-              value={recentBlockhash || '-'}
-              valueFont="mono"
-            />
+            {!batch && (
+              <KeyValueRow
+                layout="stacked"
+                label={t('dapp.blockhash', 'Recent blockhash')}
+                value={recentBlockhash || '-'}
+                valueFont="mono"
+              />
+            )}
             {networkMismatch && (
               <KeyValueRow
                 layout="stacked"

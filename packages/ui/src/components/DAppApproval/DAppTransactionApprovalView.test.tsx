@@ -8,10 +8,18 @@ import '@testing-library/jest-dom/vitest';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string, fallback?: string | Record<string, unknown>) =>
-      typeof fallback === 'string'
+    // The fallback text with its `{{values}}` filled in, as i18next would.
+    t: (
+      key: string,
+      fallback?: string | Record<string, unknown>,
+      values: Record<string, unknown> = {}
+    ) =>
+      (typeof fallback === 'string'
         ? fallback
-        : String((fallback as Record<string, unknown> | undefined)?.defaultValue ?? key),
+        : String((fallback as Record<string, unknown> | undefined)?.defaultValue ?? key)
+      ).replace(/\{\{(\w+)\}\}/g, (slot: string, name: string) =>
+        name in values ? String(values[name]) : slot
+      ),
   }),
 }));
 
@@ -61,12 +69,18 @@ describe('DAppTransactionApprovalView', () => {
     expect(row).toHaveTextContent('Fg6P...KzXf');
   });
 
-  it('says the overview covers only the first transaction of a batch', () => {
+  it('lists every transaction of a batch with the fee of all of them', () => {
     render(
       <DAppTransactionApprovalView
         {...baseProps}
         requestSummary="signAllTransactions"
-        transactionCount={4}
+        transactionCount={3}
+        feeSol="0.00009"
+        batch={[
+          { instructionCount: 2, feeSol: '0.000005' },
+          { instructionCount: 31, feeSol: '0.00008' },
+          { instructionCount: 1, feeSol: null },
+        ]}
         effects={{
           kind: 'undetermined',
           account: ACCOUNT,
@@ -76,7 +90,15 @@ describe('DAppTransactionApprovalView', () => {
       />
     );
 
-    expect(screen.getByTestId('batch-first-only')).toHaveTextContent('describe only the first one');
+    expect(screen.getByTestId('batch-size')).toHaveTextContent('3');
+    expect(screen.getByText('Estimated fee, all transactions')).toBeInTheDocument();
+    expect(screen.getByTestId('batch-item-0')).toHaveTextContent('2 instructions · 0.000005 SOL');
+    expect(screen.getByTestId('batch-item-1')).toHaveTextContent('31 instructions · 0.00008 SOL');
+    expect(screen.getByTestId('batch-item-2')).toHaveTextContent('Transaction 3');
+    expect(screen.getByTestId('batch-item-2')).toHaveTextContent('1 instructions');
+    expect(screen.getByTestId('batch-item-2')).not.toHaveTextContent('SOL');
+    // The first transaction's own figures no longer stand in for the batch.
+    expect(screen.queryByText('Recent blockhash')).not.toBeInTheDocument();
   });
 
   it('leaves the overview unqualified for a single transaction', () => {
@@ -87,7 +109,9 @@ describe('DAppTransactionApprovalView', () => {
       />
     );
 
-    expect(screen.queryByTestId('batch-first-only')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('batch-size')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('batch-item-0')).not.toBeInTheDocument();
+    expect(screen.getByText('Recent blockhash')).toBeInTheDocument();
   });
 
   it('cannot be approved while the preview is still running', () => {

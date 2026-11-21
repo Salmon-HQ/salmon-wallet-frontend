@@ -450,10 +450,11 @@ function TransactionApproval({
   }, [preview, payloads, respond]);
 
   const { requireBackup } = usePhraseBackup();
-  const { feeSol, parsingError, effects, effectsLoading, details } = useSolanaTransactionApproval({
-    account,
-    request: preview,
-  });
+  const { feeSol, batch, parsingError, effects, effectsLoading, details } =
+    useSolanaTransactionApproval({
+      account,
+      request: preview,
+    });
 
   if (!preview) return null;
 
@@ -465,6 +466,7 @@ function TransactionApproval({
       effectsLoading,
       feeSol,
       transactionCount: details?.transactionCount ?? payloads.length,
+      batch,
       parsingError,
     },
     t

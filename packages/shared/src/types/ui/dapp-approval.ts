@@ -71,6 +71,13 @@ export interface DAppSignInApprovalViewPropsBase extends DAppApprovalBase {
   isOffchainMessage?: boolean;
 }
 
+/** One transaction of a batch, as the approval screens list it. */
+export interface DAppBatchItem {
+  instructionCount: number;
+  /** `null` when the fee is not known. */
+  feeSol: string | null;
+}
+
 export interface DAppTransactionApprovalViewPropsBase extends DAppApprovalBase {
   /** Shown so the user sees which of their accounts signs. Absent while none can. */
   signingAccount?: SigningAccount;
@@ -84,11 +91,14 @@ export interface DAppTransactionApprovalViewPropsBase extends DAppApprovalBase {
   instructionCount: number | null;
   feePayer: string | null;
   recentBlockhash: string | null;
-  /**
-   * Transactions in the request. Above 1, the fee, instruction count, fee
-   * payer and blockhash describe only the first, and the view says so.
-   */
+  /** Transactions in the request. */
   transactionCount?: number;
+  /**
+   * Every transaction of a batch, in signing order. When set, `feeSol` is the
+   * fee of the whole batch and the view lists these instead of the first
+   * transaction's instruction count, priority fee and blockhash.
+   */
+  batch?: DAppBatchItem[] | null;
   parsingError: string | null;
   /**
    * Set when the request names a network other than the one the wallet is

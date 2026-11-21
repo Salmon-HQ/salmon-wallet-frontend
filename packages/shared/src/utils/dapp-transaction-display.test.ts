@@ -230,6 +230,26 @@ describe('dappTransactionDisplay', () => {
     const display = dappTransactionDisplay({ ...base, transactionCount: 3 }, t);
     expect(display.advancedRows).toContainEqual({ label: 'dapp.batch_size', value: '3' });
   });
+
+  it('lists each transaction of a batch and labels the fee as the batch total', () => {
+    const display = dappTransactionDisplay(
+      {
+        ...base,
+        feeSol: '0.00009',
+        transactionCount: 2,
+        batch: [
+          { instructionCount: 2, feeSol: '0.000005' },
+          { instructionCount: 31, feeSol: null },
+        ],
+      },
+      t
+    );
+
+    expect(display.rows.map((row) => row.label)).toContain('dapp.batch_total_fee');
+    expect(display.advancedRows).toHaveLength(3);
+    expect(display.advancedRows?.[1].value).toContain('0.000005 SOL');
+    expect(display.advancedRows?.[2].value).not.toContain('SOL');
+  });
 });
 
 describe('every spending permission is shown', () => {
