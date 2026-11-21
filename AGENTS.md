@@ -306,6 +306,16 @@ keep, and `scripts/check-dom-parity.mjs` enforces:
   the failure is user-relevant.
 - Prefer unit and integration coverage in the owning package before adding
   E2E coverage — E2E is slower and flakier per bug caught.
+- A security fix lands with a `*.security.test.ts` beside the code it
+  attacks: a `describe('abuse: …')` that says what an attacker tries, and
+  tests that play the attacker and assert the attempt fails — over fast-check
+  generated input where the rule is a property ("whatever the catalogue says,
+  the host stays one this build shipped with"). The test must fail without
+  the fix: stash the fix once and watch it go red, because a test that cannot
+  fail protects nothing. `pnpm test:security` runs these alone; they also run
+  in every package's `test`. The same idea in a real browser, a hostile page
+  against the injected provider, is
+  `apps/extension/.playwright/tests/dapp-security.spec.ts`.
 - Tests run in a random order on every run, in every package, and call
   counts start at zero in each test. A test sets the state it needs in
   `beforeEach` and restores what it changed outside its own tree (globals,
