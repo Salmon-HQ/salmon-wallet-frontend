@@ -62,7 +62,7 @@ const NETWORK_ORDER = {
 
 /**
  * Fetches network configs from the backend API and merges them into the
- * global SOLANA_NETWORKS, ETHEREUM_NETWORKS, and BITCOIN_NETWORKS objects.
+ * global SOLANA_NETWORKS and ETHEREUM_NETWORKS objects.
  *
  * This can be called imperatively (e.g. before a derivation scan) or from
  * the useAvailableNetworks hook.  The underlying getNetworks() call is
@@ -87,21 +87,23 @@ const NETWORK_ORDER = {
  * What a build accepts depends on what it declares in SALMON_ENV (a build that
  * declares nothing is production):
  * - production and staging (TestFlight builds run as staging): https/wss only,
- *   and the Solana RPC only on `SOLANA_RPC_HOSTS` — Triton, which the wallet
- *   uses, and the public clusters. A new provider ships with a release.
+ *   and only on a host this build already knows: the Solana RPC on
+ *   `SOLANA_RPC_HOSTS` — Triton, which the wallet uses, and the public
+ *   clusters — and the Ethereum RPC on the host of its compiled default. A new
+ *   provider ships with a release.
  * - local: https/wss on any host, plus plain http/ws on this machine's
  *   loopback, for a validator or test provider a developer runs.
  *
  * @param value - the candidate endpoint from the catalogue response.
  * @param schemes - the encrypted scheme this field must use, and its plain
  *   counterpart a local build may use on loopback.
- * @param pinned - whether a non-local build holds this field to `SOLANA_RPC_HOSTS`.
+ * @param isKnownHost - the hosts a non-local build accepts for this field.
  * @returns the value when it is usable, or null to keep the existing default.
  */
 function acceptEndpoint(
   value: unknown,
   schemes: { secure: string; loopback: string },
-  pinned = false
+  isKnownHost: (hostname: string) => boolean
 ): string | null {
   if (typeof value !== 'string' || value.length === 0) return null;
   const environment = declaredEnvironment() ?? 'production';
@@ -113,8 +115,7 @@ function acceptEndpoint(
     const url = new URL(value);
     if (url.username || url.password) return null;
     if (url.protocol === schemes.secure) {
-      const allowed = !pinned || environment === 'local' || isSolanaRpcHost(url.hostname);
-      return allowed ? url.href : null;
+      return environment === 'local' || isKnownHost(url.hostname) ? url.href : null;
     }
     const onLoopback =
       url.protocol === schemes.loopback &&
@@ -134,6 +135,12 @@ const SOLANA_RPC_DOMAIN = '.rpcpool.com';
 const isSolanaRpcHost = (hostname: string): boolean =>
   SOLANA_RPC_HOSTS.includes(hostname) || hostname.endsWith(SOLANA_RPC_DOMAIN);
 
+/** True for the host of `compiledUrl`, the endpoint this build shipped with. */
+const sameHostAs =
+  (compiledUrl: string) =>
+  (hostname: string): boolean =>
+    hostname === new URL(compiledUrl).hostname;
+
 const LOOPBACK_HOSTS = ['localhost', '127.0.0.1', '[::1]'];
 const HTTP_SCHEMES = { secure: 'https:', loopback: 'http:' };
 const WS_SCHEMES = { secure: 'wss:', loopback: 'ws:' };
@@ -147,17 +154,19 @@ export async function fetchAndMergeNetworkConfigs(): Promise<boolean> {
 
       const chain = blockchain?.toLowerCase();
       if (chain === 'solana' && SOLANA_NETWORKS[id]) {
-        const nodeUrl = 'nodeUrl' in cfg ? acceptEndpoint(cfg.nodeUrl, HTTP_SCHEMES, true) : null;
+        const nodeUrl =
+          'nodeUrl' in cfg ? acceptEndpoint(cfg.nodeUrl, HTTP_SCHEMES, isSolanaRpcHost) : null;
         if (nodeUrl) SOLANA_NETWORKS[id].config.nodeUrl = nodeUrl;
-        const wsUrl = 'wsUrl' in cfg ? acceptEndpoint(cfg.wsUrl, WS_SCHEMES, true) : null;
+        const wsUrl =
+          'wsUrl' in cfg ? acceptEndpoint(cfg.wsUrl, WS_SCHEMES, isSolanaRpcHost) : null;
         if (wsUrl) SOLANA_NETWORKS[id].config.wsUrl = wsUrl;
       } else if (chain === 'ethereum' && ETHEREUM_NETWORKS[id]) {
-        const rpcUrl = 'rpcUrl' in cfg ? acceptEndpoint(cfg.rpcUrl, HTTP_SCHEMES) : null;
+        const known = sameHostAs(ETHEREUM_NETWORKS[id].config.rpcUrl);
+        const rpcUrl = 'rpcUrl' in cfg ? acceptEndpoint(cfg.rpcUrl, HTTP_SCHEMES, known) : null;
         if (rpcUrl) ETHEREUM_NETWORKS[id].config.rpcUrl = rpcUrl;
-      } else if (chain === 'bitcoin' && BITCOIN_NETWORKS[id]) {
-        const apiUrl = 'apiUrl' in cfg ? acceptEndpoint(cfg.apiUrl, HTTP_SCHEMES) : null;
-        if (apiUrl) BITCOIN_NETWORKS[id].config.apiUrl = apiUrl;
       }
+      // Bitcoin has no endpoint to merge: the wallet reads Bitcoin through
+      // salmon-api, never from a host the catalogue names.
     }
     return true;
   } catch {

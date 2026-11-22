@@ -27,9 +27,19 @@ import type { SolanaRpc } from './networks';
 const SNS_TLD = '.sns';
 const LEGACY_SOL_TLD = '.sol';
 
+/**
+ * The SNS suffix a name ends in, lowercased, or null. Read in any letter
+ * case: `NAME.SOL` typed in capitals is still an SNS name, and must reach the
+ * SNS resolver and its pause check instead of falling through to AllDomains.
+ */
+function snsSuffix(domain: string): string | null {
+  const suffix = domain.slice(-SNS_TLD.length).toLowerCase();
+  return suffix === SNS_TLD || suffix === LEGACY_SOL_TLD ? suffix : null;
+}
+
 /** True for the two suffixes SNS resolves: the current `.sns` and the legacy `.sol`. */
 export function isSnsDomain(domain: string): boolean {
-  return domain.endsWith(SNS_TLD) || domain.endsWith(LEGACY_SOL_TLD);
+  return snsSuffix(domain) !== null;
 }
 
 /**
@@ -81,7 +91,8 @@ export async function getSnsDomain(rpc: SolanaRpc, walletAddress: Address): Prom
  * @throws SolDomainPausedError when a `.sol` name is refused after the pause
  */
 export async function resolveSnsDomain(rpc: SolanaRpc, domain: string): Promise<string | null> {
-  const fullName = isSnsDomain(domain) ? domain : domain + SNS_TLD;
+  const suffix = snsSuffix(domain);
+  const fullName = suffix ? domain.slice(0, -suffix.length) + suffix : domain + SNS_TLD;
   try {
     const owner = await resolve({ rpc, domain: fullName });
     if (!owner) {
