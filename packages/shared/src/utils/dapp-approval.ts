@@ -70,16 +70,36 @@ export interface ParsedSolanaTransaction {
   message: CompiledTransactionMessage & CompiledTransactionMessageWithLifetime;
 }
 
-export interface SolanaTransactionApprovalDetails {
-  /**
-   * How many transactions the request carries. Everything else in this object
-   * is read off the first one, so anything above 1 must be surfaced: the
-   * numbers do not describe what the user is about to sign in full.
-   */
-  transactionCount: number;
+interface SolanaTransactionSummary {
+  instructionCount: number;
   feeLamports: number | null;
+}
+
+/**
+ * Above this many transactions the per-transaction fees are not read: each is
+ * one RPC call, and the size of a batch is the requesting site's choice.
+ * Mobile Wallet Adapter caps a request at 10; a page calling the extension
+ * has no cap.
+ */
+const MAX_FEE_READS = 20;
+
+export interface SolanaTransactionApprovalDetails {
+  /** How many transactions the request carries. */
+  transactionCount: number;
+  /**
+   * One entry per transaction, in signing order: what each one is, read from
+   * the message itself. A batch is listed in full because every message in it
+   * is signed, and a count alone would let one outsized transaction hide
+   * behind an ordinary first one.
+   */
+  transactions: SolanaTransactionSummary[];
+  /** The fee of the whole request; `null` when any transaction's is unknown. */
+  feeLamports: number | null;
+  /** Of the first transaction. A batch reads `transactions` instead. */
   instructionCount: number | null;
+  /** Who pays, when every transaction names the same payer; `null` when they differ. */
   feePayer: string | null;
+  /** Of the first transaction. */
   recentBlockhash: string | null;
   /**
    * Resource settings a version-1 message carries in its `transactionConfig`
@@ -332,32 +352,46 @@ export async function loadSolanaTransactionApprovalDetails(
     request.method === 'signAllTransactions'
       ? (request.params?.messages ?? [])
       : [request.params?.message ?? ''];
-  const encodedMessage = encodedMessages[0] ?? '';
-
-  if (!encodedMessage) {
+  if (!encodedMessages[0]) {
     throw new Error(
       request.method === 'signAllTransactions' ? 'Missing messages' : 'Missing message'
     );
   }
 
-  const parsed = buildTransactionFromEncodedMessage(encodedMessage);
-  const { value } = await account
-    .getRpc()
-    .getFeeForMessage(
-      getBase64Decoder().decode(parsed.messageBytes) as TransactionMessageBytesBase64
-    )
-    .send();
+  // Every message is decoded, not just the first: one that cannot be read
+  // fails the whole request here, before anything is shown as signable.
+  const parsed = encodedMessages.map(buildTransactionFromEncodedMessage);
+  const readFee = async ({ messageBytes }: ParsedSolanaTransaction): Promise<number | null> => {
+    const { value } = await account
+      .getRpc()
+      .getFeeForMessage(getBase64Decoder().decode(messageBytes) as TransactionMessageBytesBase64)
+      .send();
+    return value != null ? Number(value) : null;
+  };
+  const fees =
+    parsed.length <= MAX_FEE_READS
+      ? await Promise.all(parsed.map(readFee))
+      : parsed.map(() => null);
+
+  const transactions = parsed.map(({ message }, index) => ({
+    instructionCount:
+      'instructions' in message ? message.instructions.length : message.numInstructions,
+    feeLamports: fees[index],
+  }));
+  const [first] = parsed;
+  const payers = new Set(parsed.map(({ message }) => message.staticAccounts[0] ?? null));
 
   return {
-    transactionCount: encodedMessages.length,
-    feeLamports: value != null ? Number(value) : null,
-    instructionCount:
-      'instructions' in parsed.message
-        ? parsed.message.instructions.length
-        : parsed.message.numInstructions,
-    feePayer: parsed.message.staticAccounts[0] ?? null,
-    recentBlockhash: parsed.message.lifetimeToken ?? null,
-    transactionConfig: readTransactionConfig(parsed.message),
+    transactionCount: parsed.length,
+    transactions,
+    feeLamports: fees.reduce<number | null>(
+      (total, fee) => (total == null || fee == null ? null : total + fee),
+      0
+    ),
+    instructionCount: transactions[0].instructionCount,
+    feePayer: payers.size === 1 ? (first.message.staticAccounts[0] ?? null) : null,
+    recentBlockhash: first.message.lifetimeToken ?? null,
+    transactionConfig: readTransactionConfig(first.message),
   };
 }
 

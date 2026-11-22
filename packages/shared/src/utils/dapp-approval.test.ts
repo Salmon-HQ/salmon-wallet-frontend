@@ -858,9 +858,70 @@ describe('version 1 transactions', () => {
       }
     );
 
-    // Everything else in the object was read off the first message; the count
-    // is what tells the approval screen to say so.
     expect(details.transactionCount).toBe(2);
+  });
+
+  // Every message of a batch is signed, so every one is described: a batch
+  // read off its first message lets the rest hide behind it.
+  describe('abuse: a batch whose first transaction looks ordinary', () => {
+    const batchOf = async (messages: string[], fee: () => bigint | null = () => 5000n) =>
+      loadSolanaTransactionApprovalDetails(
+        (await makeAccount({
+          getFeeForMessage: () => ({ send: async () => ({ value: fee() }) }),
+        })) as never,
+        { id: 'batch', method: 'signAllTransactions', params: { messages } }
+      );
+
+    it('lists every transaction and charges the fee of all of them', async () => {
+      const small = await v1Fixture({ withConfig: false });
+      const large = await v1Fixture();
+      const fees = [5000n, 80_000n, 5000n];
+
+      const details = await batchOf(
+        [small.encodedMessage, large.encodedMessage, small.encodedMessage],
+        () => fees.shift() ?? null
+      );
+
+      expect(details.transactions).toHaveLength(3);
+      expect(details.transactions.map((tx) => tx.feeLamports)).toEqual([5000, 80_000, 5000]);
+      expect(details.feeLamports).toBe(90_000);
+    });
+
+    it('refuses the whole request when a later message cannot be read', async () => {
+      const fixture = await v1Fixture();
+
+      await expect(batchOf([fixture.encodedMessage, 'not-a-transaction'])).rejects.toThrow();
+    });
+
+    it('does not present a partial total when one fee is unknown', async () => {
+      const fixture = await v1Fixture();
+      const fees: Array<bigint | null> = [5000n, null];
+
+      const details = await batchOf(
+        [fixture.encodedMessage, fixture.encodedMessage],
+        () => fees.shift() ?? null
+      );
+
+      expect(details.feeLamports).toBeNull();
+    });
+
+    it('reads no fee at all for a batch larger than the read cap, instead of one call per message', async () => {
+      const fixture = await v1Fixture();
+      const getFeeForMessage = vi.fn(() => ({ send: async () => ({ value: 5000n }) }));
+
+      const details = await loadSolanaTransactionApprovalDetails(
+        (await makeAccount({ getFeeForMessage })) as never,
+        {
+          id: 'huge-batch',
+          method: 'signAllTransactions',
+          params: { messages: Array.from({ length: 200 }, () => fixture.encodedMessage) },
+        }
+      );
+
+      expect(getFeeForMessage).not.toHaveBeenCalled();
+      expect(details.transactions).toHaveLength(200);
+      expect(details.feeLamports).toBeNull();
+    });
   });
 
   it('reads the v1 resource settings from transactionConfig in the approval details', async () => {
@@ -875,6 +936,7 @@ describe('version 1 transactions', () => {
 
     expect(details).toEqual({
       transactionCount: 1,
+      transactions: [{ instructionCount: 2, feeLamports: 5000 }],
       feeLamports: 5000,
       instructionCount: 2,
       feePayer: testKeypair(1).publicKey.toBase58(),

@@ -300,6 +300,7 @@ export type {
   DAppConnectApprovalViewPropsBase,
   DAppSignInApprovalViewPropsBase,
   DAppSignMessageApprovalViewPropsBase,
+  DAppBatchItem,
   DAppTransactionApprovalViewPropsBase,
   SigningAccount,
   SiwsFields,

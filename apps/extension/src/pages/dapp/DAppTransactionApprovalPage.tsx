@@ -69,7 +69,7 @@ export function DAppTransactionApprovalPage({
     () => (account && isSignableSolanaAccount(account) ? account : null),
     [account]
   );
-  const { details, feeSol, priorityFeeSol, parsingError, effects, effectsLoading } =
+  const { details, feeSol, priorityFeeSol, batch, parsingError, effects, effectsLoading } =
     useSolanaTransactionApproval({
       account: refused ? null : solanaAccount,
       request,
@@ -127,6 +127,7 @@ export function DAppTransactionApprovalPage({
       feePayer={details?.feePayer ?? null}
       recentBlockhash={details?.recentBlockhash ?? null}
       transactionCount={details?.transactionCount ?? 1}
+      batch={batch}
       parsingError={parsingError}
       networkMismatch={networkMismatch}
       disabled={!account || !networkId}

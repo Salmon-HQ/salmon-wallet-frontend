@@ -23,6 +23,7 @@ import { useTokenCatalog } from './useTokenCatalog';
 import type { EffectDetails, ResolveSymbolFn, TransactionEffects } from '../blockchain/solana';
 import type { SolanaAccount } from '../blockchain/solana';
 import type { DAppTransactionRequest } from '../types/dapp-approval';
+import type { DAppBatchItem } from '../types/ui/dapp-approval';
 import type { SolanaNetworkId } from '../types/blockchain';
 import { formatBaseUnits } from '../utils/formatting';
 
@@ -44,6 +45,12 @@ export interface UseSolanaTransactionApprovalResult {
    * either way there is no row to show.
    */
   priorityFeeSol: string | null;
+  /**
+   * One entry per transaction when the request carries more than one, in
+   * signing order; `null` for a single transaction. `feeSol` is then the fee
+   * of the whole batch.
+   */
+  batch: DAppBatchItem[] | null;
   /** Set when the transaction could not be decoded at all. Blocks approval. */
   parsingError: string | null;
   /** `null` only while the preview is still running. */
@@ -159,10 +166,23 @@ export function useSolanaTransactionApproval({
     [priorityFeeLamports]
   );
 
+  const transactions = details.data?.transactions;
+  const batch = useMemo(
+    () =>
+      transactions && transactions.length > 1
+        ? transactions.map(({ instructionCount, feeLamports }) => ({
+            instructionCount,
+            feeSol: formatLamports(feeLamports),
+          }))
+        : null,
+    [transactions]
+  );
+
   return {
     details: details.data ?? null,
     feeSol,
     priorityFeeSol,
+    batch,
     // A request with no message has nothing to preview and nothing loading;
     // left alone, the screens would read that as "still simulating".
     parsingError:
