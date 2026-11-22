@@ -2,4 +2,18 @@ packages:
   - 'apps/*'
   - 'packages/*'
 
+# A version must be 7 days old before it can be installed: most hijacked
+# releases are pulled within that window.
 minimumReleaseAge: 10080
+
+# Refuse a version published with weaker proof of origin than an earlier one of
+# the same package (the usual mark of a stolen publish token).
+trustPolicy: no-downgrade
+# ethers pins @types/node 22.7.5, which pins this release. It was published
+# without provenance after earlier releases had it; excluded so the tree the
+# lockfile already holds keeps resolving.
+trustPolicyExclude:
+  - 'undici-types@6.19.8'
+# A dependency of a dependency may only come from the registry, never from a
+# git URL or a tarball.
+blockExoticSubdeps: true
