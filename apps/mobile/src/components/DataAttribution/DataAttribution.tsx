@@ -2,8 +2,9 @@
  * DataAttribution — the data provider's credit, once per screen that shows
  * its prices or token list (Portfolio, the token picker, the confirmation).
  * Text and link come from the backend's network entry and are drawn
- * verbatim; the provider's terms fix the floor at 10pt, and `fontSize.sm`
- * sits above it. Nothing is drawn for a network that owes no credit.
+ * verbatim. The provider's terms fix the floor at 10pt, so the text is
+ * `fontSize.micro` and never scales below it on a narrow phone. Nothing is
+ * drawn for a network that owes no credit.
  *
  * The DOM twin is `packages/ui/src/components/DataAttribution`.
  */
@@ -53,7 +54,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
   },
   text: {
-    fontSize: ms(fontSize.sm),
+    fontSize: Math.max(fontSize.micro, ms(fontSize.micro)),
     fontFamily: fontFamilyNative.medium,
     color: colors.text.tertiary,
     opacity: opacity.soft,
