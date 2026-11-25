@@ -64,12 +64,13 @@ beforeEach(() => {
 });
 
 describe('useTokenListFold', () => {
-  const mount = (resetKey = 'wallet:mainnet:true') =>
+  type Where = { address: string | undefined; networkId: string | undefined };
+  const home: Where = { address: 'wallet', networkId: 'solana-mainnet' };
+  const mount = (where: Where = home) =>
     renderHook(
-      (props: { resetKey: string }) => useTokenListFold({ tokens, resetKey: props.resetKey }),
-      {
-        initialProps: { resetKey },
-      }
+      ({ list = tokens, ...where }: Where & { list?: Token[] }) =>
+        useTokenListFold({ tokens: list, ...where }),
+      { initialProps: where as Where & { list?: Token[] } }
     );
 
   it('renders every token when the preference is off', () => {
@@ -82,7 +83,7 @@ describe('useTokenListFold', () => {
     const { result, rerender } = mount();
 
     preference = { maxCount: 3, minValue: null };
-    rerender({ resetKey: 'wallet:mainnet:true' });
+    rerender(home);
 
     expect(addresses(result.current.tokens)).toEqual(['A', 'B', 'C']);
     expect(result.current.foldedCount).toBe(2);
@@ -103,15 +104,33 @@ describe('useTokenListFold', () => {
     expect(addresses(result.current.tokens)).toEqual(['A', 'B', 'C']);
   });
 
-  it('folds again when the reset key changes, and stays folded when it comes back', () => {
+  // Owner, 2026-11-25: a token visit and back leaves the list as it was. Home
+  // stays mounted under the token screen, so the visit is a rerender with the
+  // same wallet and network (the balances may have refreshed meanwhile).
+  it('stays unfolded across a token visit and back', () => {
     preference = { maxCount: 3, minValue: null };
     const { result, rerender } = mount();
 
     act(() => result.current.toggle());
-    rerender({ resetKey: 'wallet:mainnet:false' });
+    rerender({ ...home, list: [...tokens] });
+    rerender({ ...home, list: [...tokens] });
+
+    expect(result.current.expanded).toBe(true);
+    expect(addresses(result.current.tokens)).toEqual(['A', 'B', 'C', 'D', 'E']);
+  });
+
+  it.each([
+    ['another account', { address: 'other-wallet', networkId: 'solana-mainnet' }],
+    ['another network', { address: 'wallet', networkId: 'solana-devnet' }],
+  ])('folds again on %s, and stays folded when it comes back', (_, elsewhere) => {
+    preference = { maxCount: 3, minValue: null };
+    const { result, rerender } = mount();
+
+    act(() => result.current.toggle());
+    rerender(elsewhere);
     expect(result.current.expanded).toBe(false);
 
-    rerender({ resetKey: 'wallet:mainnet:true' });
+    rerender(home);
     expect(result.current.expanded).toBe(false);
     expect(addresses(result.current.tokens)).toEqual(['A', 'B', 'C']);
   });
@@ -122,7 +141,7 @@ describe('useTokenListFold', () => {
 
     act(() => result.current.toggle());
     preference = { maxCount: 3, minValue: 5 };
-    rerender({ resetKey: 'wallet:mainnet:true' });
+    rerender(home);
 
     expect(result.current.expanded).toBe(false);
     expect(addresses(result.current.tokens)).toEqual(['A', 'B', 'C']);

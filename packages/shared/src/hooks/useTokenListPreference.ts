@@ -16,10 +16,21 @@ import {
 } from '../utils/tokenListFold';
 
 /**
- * One per Home. The list folds again whenever `resetKey` or the preference
- * changes; nothing is stored, so a relaunch starts folded.
+ * One per Home. The list folds again on another wallet, account or network,
+ * or a new preference; nothing is stored, so a relaunch starts folded. Home
+ * stays mounted under every screen it opens, so a token visit and back keeps
+ * the list as the user left it (owner, 2026-11-25).
  */
-export function useTokenListFold({ tokens, resetKey }: { tokens: Token[]; resetKey: string }): {
+export function useTokenListFold({
+  tokens,
+  address,
+  networkId,
+}: {
+  tokens: Token[];
+  /** The active account's receive address: it changes with the wallet and the account. */
+  address: string | undefined;
+  networkId: string | undefined;
+}): {
   tokens: Token[];
   foldedCount: number;
   expanded: boolean;
@@ -32,9 +43,9 @@ export function useTokenListFold({ tokens, resetKey }: { tokens: Token[]; resetK
     [tokens, tokenListPreference, convert]
   );
 
-  // A key that comes back (Home left, then shown again) must not find the list
-  // still open, so the state remembers the key it was opened under.
-  const foldKey = `${resetKey}|${tokenListPreference.maxCount}|${tokenListPreference.minValue}`;
+  // A key that comes back (another network, then this one again) must not find
+  // the list still open, so the state remembers the key it was opened under.
+  const foldKey = `${address}|${networkId}|${tokenListPreference.maxCount}|${tokenListPreference.minValue}`;
   const [open, setOpen] = useState({ key: foldKey, expanded: false });
   if (open.key !== foldKey) setOpen({ key: foldKey, expanded: false });
   const expanded = open.key === foldKey && open.expanded;
