@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-25
 
-**Status**: Draft — three questions marked for clarification, the rest carry a recommended default
+**Status**: Clarified — every open question answered by the owner on 2026-11-25
 
 **Input**: Linear DEV-204 "Choose and manage Bitcoin support". Goal: each user decides which networks they use in Salmon Wallet. Onboarding offers two clear options, "Solana + Bitcoin" or "Solana only"; the choice persists and decides whether Bitcoin features and screens appear in the app. Settings gets a control to enable or disable Bitcoin after onboarding. Acceptance: onboarding lets the user choose; the choice is saved; with Bitcoin disabled, Bitcoin navigation and features are not shown; with it enabled, all of them are available; the user can change it in Settings at any time and the change applies and persists; enabling or disabling Bitcoin does not affect Solana accounts, funds or features; disabling Bitcoin deletes or loses no existing wallet information; the behaviour is consistent on desktop (extension) and mobile.
 
@@ -27,6 +27,23 @@ These facts shape the requirements below.
 - **Comparable settings are per device.** Developer Networks, "Show unverified tokens" and the token list choice (spec 044) live in one settings record on the device and apply to every wallet in that app. The same record also keeps a few per-wallet facts, keyed by wallet (which wallets count in the Wallets total).
 - **Precedent for switching a chain off under the user.** Turning Developer Networks off while standing on a test network first moves the session to that network's main network, so the session is never left on a page nobody can reach.
 
+## Clarifications
+
+### Session 2026-11-25
+
+The owner accepted the recommended default of every open question.
+
+- Q: One choice for the whole app, or one per wallet? → A: One for the whole app on that device, like Developer Networks, unverified tokens and the token list; the Settings switch then means one thing.
+- Q: Which setups ask the question? → A: Create and recover from a recovery phrase only. Seed Vault setup (those wallets are Solana only), private-key import and watch-only import do not ask; the choice stays as it is.
+- Q: Warn before hiding Bitcoin always, or only when the wallet holds Bitcoin? → A: Always, a short confirmation; no balance lookup, so it can never be wrong.
+- Q: What do users who set up before this feature get? → A: Bitcoin stays on and nobody is asked; hiding it on an update would make funds look gone.
+- Q: Where does the question sit in setup? → A: Right before the password screen, after the phrase is shown (create) or entered (recover).
+- Q: Exact copy? → A: Title "Choose your networks"; options "Solana + Bitcoin" — "Use Solana and Bitcoin in one wallet." and "Solana only" — "Just Solana. You can add Bitcoin later in Settings."; Spanish "Elegí tus redes", "Solana + Bitcoin" — "Usá Solana y Bitcoin en una sola wallet.", "Solo Solana" — "Solo Solana. Podés sumar Bitcoin después en Configuración." (voseo, like the rest of the Spanish copy). The owner edits wording in the pull request.
+- Q: Where does the Settings switch sit? → A: Last row of Preferences, labelled "Bitcoin", description "Show Bitcoin in your wallet".
+- Q: Does the derived-account search look on Bitcoin while it is off? → A: No, Solana only; a path funded only on Bitcoin is found once Bitcoin is on and the search runs again.
+- Q: Are Bitcoin contacts listed in the address book while Bitcoin is off? → A: Hidden, never deleted; they return when Bitcoin is turned on.
+- Q: Is the onboarding answer reported to analytics? → A: No; preferences report nothing and the consent copy lists what is sent.
+
 ## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Choose the networks when setting up (Priority: P1)
@@ -43,7 +60,8 @@ A new user creates a wallet. Before the wallet opens, a screen asks which networ
 2. **Given** the user picked "Solana only", **When** Home opens, **Then** the balance block shows Solana with no chain switch, and no screen offers Bitcoin.
 3. **Given** the user picked "Solana + Bitcoin", **When** Home opens, **Then** the app behaves exactly as it does today, Bitcoin included.
 4. **Given** the user picked either option, **When** the app is closed and opened again, **Then** the choice is still in force.
-5. **Given** the user recovers a wallet from a recovery phrase, **When** the setup reaches the same point, **Then** it asks the same question. [NEEDS CLARIFICATION: Does the question also appear when the wallet is set up with a Seed Vault (Seeker phone)? See Q2.]
+5. **Given** the user recovers a wallet from a recovery phrase, **When** the setup reaches the same point, **Then** it asks the same question.
+6. **Given** a fresh install, **When** the user sets up with a Seed Vault (Seeker phone), imports a private key or watches an address, **Then** the setup does not ask, and Bitcoin stays on (those wallets show no Bitcoin anyway; the Settings switch can still turn it off).
 
 ---
 
@@ -58,7 +76,7 @@ A user who chose "Solana only" later wants to receive Bitcoin. In Settings they 
 **Acceptance Scenarios**:
 
 1. **Given** Bitcoin is off, **When** the user turns the switch on, **Then** Home offers Bitcoin right away, without a restart, showing the address the recovery phrase controls and its balance.
-2. **Given** Bitcoin is on, **When** the user turns the switch off, **Then** the app first states that Bitcoin funds stay in the wallet and come back when Bitcoin is turned on again, and Bitcoin leaves every screen once the user confirms. [NEEDS CLARIFICATION: Is that confirmation shown every time, or only when the wallet holds Bitcoin? See Q3.]
+2. **Given** Bitcoin is on, **When** the user turns the switch off, **Then** the app always first states that Bitcoin funds stay in the wallet and come back when Bitcoin is turned on again, whatever the wallet holds, and Bitcoin leaves every screen once the user confirms.
 3. **Given** the user turned the switch either way, **When** the app is closed and opened again, **Then** the switch is where they left it.
 4. **Given** the user changes another setting (Developer Networks, "Show unverified tokens", the token list), **When** the app is opened again, **Then** the Bitcoin choice is unchanged, and changing the Bitcoin choice changes no other setting.
 
@@ -129,9 +147,9 @@ The onboarding question and the Settings switch look and behave the same on the 
 - **Bitcoin test network.** Turning Bitcoin off also hides the Bitcoin test network that Developer Networks offers. Turning Developer Networks on does not bring Bitcoin back.
 - **Bitcoin funds while hidden.** Bitcoin received while hidden still arrives on chain; it shows when Bitcoin is turned on again. The wallet makes no Bitcoin balance or history lookups while Bitcoin is off.
 - **Scanning or pasting a Bitcoin address.** With Bitcoin off, scanning or pasting a Bitcoin address on Solana gets the same "This address belongs to a different network" message it gets today on Solana.
-- **Address book.** Contacts saved on Bitcoin are kept. While Bitcoin is off they are not listed; they return when Bitcoin is turned on (see Q9).
+- **Address book.** Contacts saved on Bitcoin are kept. While Bitcoin is off they are not listed; they return when Bitcoin is turned on.
 - **Private key screen.** While Bitcoin is off, the private key screen lists Solana only; the Bitcoin key is still controlled by the recovery phrase and shows again when Bitcoin is turned on.
-- **Derived-account search.** While Bitcoin is off, "Check derivables" and the Wallets rescan look on Solana only (see Q8).
+- **Derived-account search.** While Bitcoin is off, "Check derivables" and the Wallets rescan look on Solana only.
 - **Extension with several windows.** A change made in one window (popup, side panel) applies in the others the next time they read settings, at the latest when they are reopened.
 - **Backend turns Bitcoin off.** If the Salmon backend disables Bitcoin for everyone, Bitcoin is not shown whatever the user chose, as today. The user's choice only ever hides Bitcoin; it never shows a network the backend disabled.
 - **Network outage during setup.** Picking an option makes no network request, so an offline device can still answer the question.
@@ -142,24 +160,24 @@ The onboarding question and the Settings switch look and behave the same on the 
 
 **The choice**
 
-- **FR-001**: The app MUST keep one Bitcoin choice with two values, on ("Solana + Bitcoin") and off ("Solana only"). [NEEDS CLARIFICATION: Does the choice apply to the whole app on that device, or to each wallet separately? See Q1. Recommended: the whole app on that device.]
+- **FR-001**: The app MUST keep one Bitcoin choice with two values, on ("Solana + Bitcoin") and off ("Solana only"). The choice applies to the whole app on that device, to every wallet in it, never per wallet.
 - **FR-002**: The choice MUST persist across restarts and app updates, on both apps.
-- **FR-003**: An install set up before this feature MUST read the choice as on.
+- **FR-003**: An install set up before this feature MUST read the choice as on and MUST NOT be asked the onboarding question.
 - **FR-004**: The choice MUST NOT be synced between devices; the extension and the phone are set separately, like every other setting.
 
 **Onboarding**
 
-- **FR-005**: When a wallet is created or recovered from a recovery phrase during first setup, the setup MUST ask "Solana + Bitcoin" or "Solana only", MUST NOT continue until one is picked, and MUST save the answer before the wallet opens.
-- **FR-006**: The two options MUST be presented with equal weight, each with a one-line plain explanation. Neither option is preselected.
-- **FR-007**: The question MUST appear at the same step on both apps (see Q5 for where).
+- **FR-005**: When a wallet is created or recovered from a recovery phrase during first setup, and only then, the setup MUST ask "Solana + Bitcoin" or "Solana only", MUST NOT continue until one is picked, and MUST save the answer before the wallet opens. Seed Vault setup, private-key import and watch-only import MUST NOT ask; they leave the choice as it is (on for a fresh install).
+- **FR-006**: The screen is titled "Choose your networks" ("Elegí tus redes"). The two options, "Solana + Bitcoin" — "Use Solana and Bitcoin in one wallet." and "Solana only" — "Just Solana. You can add Bitcoin later in Settings." ("Solana + Bitcoin" — "Usá Solana y Bitcoin en una sola wallet.", "Solo Solana" — "Solo Solana. Podés sumar Bitcoin después en Configuración."), MUST be presented with equal weight. Neither option is preselected.
+- **FR-007**: The question MUST appear at the same step on both apps: right before the password screen, after the phrase is shown (create) or entered (recover).
 - **FR-008**: Adding another wallet after setup MUST NOT ask the question.
 - **FR-009**: Setting up again after "Remove all wallets" MUST ask the question again and save the new answer.
 
 **Settings**
 
-- **FR-010**: Settings MUST show a "Bitcoin" switch with a one-line description, on both apps, in the same position (see Q7), reading on or off as the choice is.
+- **FR-010**: Settings MUST show a switch labelled "Bitcoin" with the description "Show Bitcoin in your wallet", as the last row of Preferences on both apps, reading on or off as the choice is.
 - **FR-011**: Turning the switch on MUST make Bitcoin available on Home and every screen that follows the selected chain, immediately and without a restart.
-- **FR-012**: Turning the switch off MUST first tell the user, in plain words, that Bitcoin funds stay in the wallet and return when Bitcoin is turned on again, and MUST apply only once the user confirms; cancelling leaves the switch on.
+- **FR-012**: Turning the switch off MUST always first tell the user, in plain words, that Bitcoin funds stay in the wallet and return when Bitcoin is turned on again, and MUST apply only once the user confirms; cancelling leaves the switch on. The confirmation makes no balance lookup.
 - **FR-013**: Changing the Bitcoin switch MUST NOT change any other setting, and changing any other setting MUST NOT change the Bitcoin switch.
 
 **With Bitcoin off**
@@ -180,11 +198,11 @@ The onboarding question and the Settings switch look and behave the same on the 
 - **FR-021**: Both apps MUST read the choice from one shared definition and apply one shared rule for which networks are offered, so the two apps can never disagree on whether Bitcoin is shown.
 - **FR-022**: Every new user-facing string MUST exist in English and Spanish; the Spanish copy is written by the implementer and reviewed by the owner in the pull request, as in specs 043 and 044.
 - **FR-023**: The onboarding screen and the Settings switch MUST be built from components both apps already have (the onboarding layout and buttons, the Settings switch row used by Developer Networks); any new piece of UI is signed off by the owner before it is built.
-- **FR-024**: Changing the switch in Settings MUST report nothing to analytics, like every other preference. Whether the onboarding answer is reported is Q10.
+- **FR-024**: Neither the onboarding answer nor changing the switch in Settings MUST report anything to analytics, like every other preference.
 
 ### Key Entities
 
-- **Bitcoin choice**: whether the user wants Bitcoin shown — on ("Solana + Bitcoin") or off ("Solana only"). Set during first setup, changed in Settings. One per app install (pending Q1).
+- **Bitcoin choice**: whether the user wants Bitcoin shown — on ("Solana + Bitcoin") or off ("Solana only"). Set during first setup, changed in Settings. One per app install, shared by every wallet in it.
 - **Offered networks**: the networks Home and the chain-dependent screens let the user reach. Today it is what the backend enables, narrowed by Developer Networks and by what the active wallet holds; this feature narrows it further by the Bitcoin choice.
 - **Bitcoin address**: the address the recovery phrase controls on Bitcoin. It exists whether or not Bitcoin is shown; the choice only decides whether the app shows it.
 
@@ -199,40 +217,6 @@ The onboarding question and the Settings switch look and behave the same on the 
 - **SC-005**: An install updated from the previous version shows Bitcoin exactly as before, with the switch on.
 - **SC-006**: With Bitcoin off, a session of normal use (Home, Receive, Send, Activity, Wallets) makes zero Bitcoin requests.
 - **SC-007**: Every gate the repository already runs (typecheck, lint, tests, DOM parity, i18n, dead code) stays green on both apps.
-
-## Open questions for the owner
-
-Each question has a recommended default; the spec is written with that default. The first three are marked for clarification above because they change scope or what the user is told about their funds.
-
-**Q1 — One choice for the app, or one per wallet?** _(marked: NEEDS CLARIFICATION, FR-001)_
-Recommended: **one for the app** on that device. Every comparable setting (Developer Networks, unverified tokens, token list) works this way, and the Settings switch then means one thing. Per wallet would let a user keep Bitcoin on one wallet and not another, but the switch would have to say which wallet it acts on, and a second wallet added later would need its own answer.
-
-**Q2 — Which setups ask the question?** _(marked: NEEDS CLARIFICATION, User Story 1)_
-Recommended: **create and recover from a recovery phrase only**. A Seed Vault wallet holds no Bitcoin, so asking a Seeker user is a question with no visible effect; the choice stays on and the Settings switch can still turn it off. Answer "all" to ask on Seed Vault setup too.
-
-**Q3 — Warn before hiding Bitcoin: always, or only when the wallet holds Bitcoin?** _(marked: NEEDS CLARIFICATION, FR-012)_
-Recommended: **always**, a short confirmation saying Bitcoin funds stay in the wallet and come back when Bitcoin is turned on. It needs no balance lookup and cannot be wrong. "Only with a balance" asks less of most users but must look up the Bitcoin balance of every phrase wallet first, and has to decide what to do when that lookup fails.
-
-**Q4 — What do users who set up before this feature get?**
-Recommended: **Bitcoin stays on**, nobody is asked. Anyone may already hold Bitcoin; hiding it on an update would make funds look gone.
-
-**Q5 — Where does the question sit in setup?**
-Recommended: **right before the password screen**, after the phrase is shown (create) or entered (recover). It is the last decision before the wallet exists, both apps have that step, and the user answers it once on either path. Alternative: right after the wallet is created, before the success screen.
-
-**Q6 — Exact copy of the two options.**
-Recommended: title "Choose your networks"; options "Solana + Bitcoin" — "Use Solana and Bitcoin in one wallet." and "Solana only" — "Just Solana. You can add Bitcoin later in Settings."; Spanish "Elegí tus redes", "Solana + Bitcoin" — "Usá Solana y Bitcoin en una sola wallet.", "Solo Solana" — "Solo Solana. Podés sumar Bitcoin después en Configuración." The owner edits in the pull request.
-
-**Q7 — Where does the Settings switch sit?**
-Recommended: **Preferences, as its last row**, labelled "Bitcoin" with the description "Show Bitcoin in your wallet". It is an everyday choice, not a developer one. Alternative: Advanced, next to Developer Networks, where every other switch lives today.
-
-**Q8 — Does the derived-account search look on Bitcoin while Bitcoin is off?**
-Recommended: **no, Solana only**. A path funded only on Bitcoin is found once Bitcoin is turned on and the search is run again.
-
-**Q9 — Are Bitcoin contacts listed in the address book while Bitcoin is off?**
-Recommended: **hidden, kept**. They return when Bitcoin is turned on.
-
-**Q10 — Is the onboarding answer reported to analytics?**
-Recommended: **no**. Preferences report nothing today, and the consent copy lists what is sent. Answer "yes" to add which option was picked to the existing "wallet created / recovered" event, which changes the analytics documentation and both allow-lists.
 
 ## Assumptions
 
