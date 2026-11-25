@@ -108,7 +108,7 @@ A stored value that is not one of the presets (a corrupted record, a future pres
 
 **Facts**: every other Preferences screen is a twin panel component (`AppearanceSelector`, `CurrencySelector`, `LanguageSelector`) that wraps `SettingsPanelContent` / `SettingsScreenLayout` around one `SettingsSelectorList`. The option lists come from shared helpers where they need copy (`appearanceRows`, `packages/shared/src/utils/appearanceOptions.ts:46`).
 
-**Decision**: the brief limits new components to the "Show more" row, so the Token list screen is composed directly in each registry entry (`tokenList` in `apps/mobile/src/settings/panelRegistry.tsx` and `apps/extension/src/settings/panelRegistry.tsx`): the frame, two `SectionLabel variant="group"` headings, two `SettingsSelectorList`s. The options and their labels come from one shared hook, `useTokenListLabels`, so the two registries hold only markup. If the owner prefers the house idiom of one panel component per screen, the same markup moves into a `TokenListPanel` twin with no change of behaviour.
+**Decision**: the screen is made once in shared, `createTokenListPanel` in `packages/shared/src/kit/` (the `createBlockList` pattern), from a platform's frame, `SectionLabel` and `SettingsSelectorList`; each registry makes it at load and its `tokenList` entry renders it. Its options and labels come from `useTokenListLabels`. Writing the same markup in both registries put the cross-platform clone count over its ceiling, so the markup lives once.
 
 ## R9. The Settings row
 

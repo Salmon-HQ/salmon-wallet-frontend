@@ -64,6 +64,23 @@ describe('SETTINGS_GROUPS', () => {
     expect(new Set(toggles.map((r) => r.testId)).size).toBe(toggles.length);
   });
 
+  it('puts Token list second in Preferences, under Display Language', () => {
+    const preferences = SETTINGS_GROUPS.find((g) => g.titleKey === 'settings.sections.preferences');
+    expect(preferences?.rows.map((r) => r.id)).toEqual([
+      'language',
+      'tokenList',
+      'currency',
+      'explorer',
+      'appearance',
+    ]);
+    expect(preferences?.rows[1]).toEqual({
+      id: 'tokenList',
+      kind: 'panel',
+      icon: 'stack',
+      labelKey: 'settings.token_list',
+    });
+  });
+
   it('gives every row a distinct id', () => {
     expect(new Set(rows.map((r) => r.id)).size).toBe(rows.length);
   });

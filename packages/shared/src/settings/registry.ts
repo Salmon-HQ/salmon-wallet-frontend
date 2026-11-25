@@ -18,6 +18,7 @@ export type SettingsIconName =
   | 'key'
   | 'lock'
   | 'translate'
+  | 'stack'
   | 'money'
   | 'arrowSquareOut'
   | 'circleHalf'
@@ -89,6 +90,7 @@ export const SETTINGS_GROUPS: readonly SettingsGroupDef[] = [
     titleKey: 'settings.sections.preferences',
     rows: [
       { id: 'language', kind: 'panel', icon: 'translate', labelKey: 'settings.display_language' },
+      { id: 'tokenList', kind: 'panel', icon: 'stack', labelKey: 'settings.token_list' },
       { id: 'currency', kind: 'panel', icon: 'money', labelKey: 'settings.currency' },
       {
         id: 'explorer',

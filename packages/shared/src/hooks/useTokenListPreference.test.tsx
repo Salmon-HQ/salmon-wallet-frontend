@@ -45,7 +45,11 @@ vi.mock('react-i18next', async () => {
   return { useTranslation: () => ({ t: i18next.t.bind(i18next) }) };
 });
 
-import { useTokenListFold, useTokenListLabels } from './useTokenListPreference';
+import {
+  useTokenListFold,
+  useTokenListFoldLabel,
+  useTokenListLabels,
+} from './useTokenListPreference';
 
 const token = (address: string, usdBalance: number | null): Token => ({
   address,
@@ -203,5 +207,15 @@ describe('useTokenListLabels', () => {
     preference = { maxCount: null, minValue: 5 };
 
     expect(labels().rowValue).toBe('from €5.00');
+  });
+});
+
+describe('useTokenListFoldLabel', () => {
+  it('says how many tokens are folded, and "Show less" once open', () => {
+    const label = (foldedCount: number, expanded: boolean) =>
+      renderHook(() => useTokenListFoldLabel(foldedCount, expanded)).result.current;
+
+    expect(label(7, false)).toBe('Show 7 more');
+    expect(label(7, true)).toBe('Show less');
   });
 });

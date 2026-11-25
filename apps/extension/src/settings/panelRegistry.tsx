@@ -26,6 +26,7 @@ import {
   useDeveloperModeSettings,
   useLanguage,
   useTheme,
+  createTokenListPanel,
   type AddressBookItem,
   type AddressInput,
   type AppearancePreference,
@@ -49,12 +50,21 @@ import {
   ExplorerSelector,
   LanguageSelector,
   PrivateKeyPanel,
+  SectionLabel,
   SecurityPanel,
+  SettingsPanelContent,
+  SettingsSelectorList,
   SupportSelector,
   TrustedAppsSelector,
   type PanelRegistry,
 } from '../components';
 import { clearSessionKey } from '../utils/sessionKeyCache';
+
+const TokenListPanel = createTokenListPanel({
+  Frame: SettingsPanelContent,
+  SectionLabel,
+  SettingsSelectorList,
+});
 
 export function useSettingsPanelRegistry(): PanelRegistry {
   const { t } = useTranslation();
@@ -162,6 +172,7 @@ export function useSettingsPanelRegistry(): PanelRegistry {
           onBack={onBack}
         />
       ),
+      tokenList: ({ onBack }) => <TokenListPanel onBack={onBack} />,
       explorer: ({ onBack }) => (
         <ExplorerSelector
           explorers={toExplorerItems(explorers)}

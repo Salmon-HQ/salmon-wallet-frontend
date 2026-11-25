@@ -1,5 +1,9 @@
 import type { CSSProperties } from 'react';
-import type { TokenListItemPropsBase, TokenListPropsBase } from '@salmon/shared';
+import type {
+  TokenListFoldRowPropsBase,
+  TokenListItemPropsBase,
+  TokenListPropsBase,
+} from '@salmon/shared';
 
 /** The DOM half of `TokenListItemPropsBase`: the contract plus a style. */
 export interface TokenListItemProps extends TokenListItemPropsBase {
@@ -14,6 +18,9 @@ export interface TokenListProps extends TokenListPropsBase {
   style?: CSSProperties;
   className?: string;
 }
+
+/** The fold row draws no platform style of its own: the contract is all of it. */
+export type TokenListFoldRowProps = TokenListFoldRowPropsBase;
 
 /**
  * Props for the TokenListSkeleton component

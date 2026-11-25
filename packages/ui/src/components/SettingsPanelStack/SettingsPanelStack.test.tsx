@@ -60,6 +60,7 @@ const makeRegistry = (): PanelRegistry => ({
   backup: () => <div data-testid="panel-backup">A</div>,
   privateKey: () => <div data-testid="panel-privateKey">A</div>,
   language: () => <div data-testid="panel-language">A</div>,
+  tokenList: () => <div data-testid="panel-tokenList">A</div>,
   currency: () => <div data-testid="panel-currency">A</div>,
   explorer: () => <div data-testid="panel-explorer">A</div>,
   appearance: () => <div data-testid="panel-appearance">A</div>,
@@ -92,6 +93,7 @@ describe('SettingsPanelStack — menu routing', () => {
     ['settings.currency', 'panel-currency'],
     ['settings.private_key', 'panel-privateKey'],
     ['settings.display_language', 'panel-language'],
+    ['settings.token_list', 'panel-tokenList'],
     ['settings.select_explorer', 'panel-explorer'],
     ['settings.appearance', 'panel-appearance'],
     ['settings.backup', 'panel-backup'],
@@ -115,9 +117,14 @@ describe('SettingsPanelStack — menu routing', () => {
   });
 
   it('states the current choice beside a choosable row', () => {
-    renderStack({ rowValues: { language: 'English', currency: 'USD' } });
+    renderStack({
+      rowValues: { language: 'English', currency: 'USD', tokenList: '3 tokens · from $5.00' },
+    });
 
     expect(screen.getByTestId('settings-item-display-language-value').textContent).toBe('English');
+    expect(screen.getByTestId('settings-item-token-list-value').textContent).toBe(
+      '3 tokens · from $5.00'
+    );
     expect(screen.getByTestId('settings-item-display-currency-value').textContent).toBe('USD');
   });
 

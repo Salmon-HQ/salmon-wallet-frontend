@@ -64,7 +64,15 @@ export function useTokenListFold({
   return { tokens: shown, foldedCount: folded.length, expanded, toggle };
 }
 
-interface TokenListOption {
+/** What the "Show more" row says: how many tokens wait behind it, or "Show less". */
+export function useTokenListFoldLabel(foldedCount: number, expanded: boolean): string {
+  const { t } = useTranslation();
+  return expanded
+    ? t('wallet.show_less_tokens')
+    : t('wallet.show_more_tokens', { count: foldedCount });
+}
+
+export interface TokenListOption {
   key: string;
   value: number | null;
   label: string;

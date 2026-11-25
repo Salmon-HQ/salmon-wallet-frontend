@@ -264,6 +264,13 @@ jest.mock('@salmon/shared', () =>
       totalWithStakes: usdTotal,
     }),
     stakingSectionBlocks: () => [],
+    // Folding has its own suite (home-token-list-fold); here every token shows.
+    useTokenListFold: ({ tokens }: { tokens: unknown[] }) => ({
+      tokens,
+      foldedCount: 0,
+      expanded: false,
+      toggle: () => {},
+    }),
     STAKED_SOL_KEY: 'staked-sol',
     STAKED_SKR_KEY: 'staked-skr',
     useHomePowerupTabs: jest.requireActual('@salmon/shared/src/hooks/useHomePowerups')

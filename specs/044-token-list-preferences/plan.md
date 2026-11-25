@@ -78,7 +78,7 @@ The owner's answers of 2026-11-25:
 - **Q1, a token visit**: opening a token from the unfolded list and coming back leaves the list as it was, not folded again. It still folds again when the wallet, the account, the network or the preference changes, and on relaunch (spec FR-015, research R6).
 - **Q2, staked positions**: they never count toward N and are always shown (spec FR-013).
 - **Q3, the threshold's currency**: 1, 5, 10 and 50 are in the display currency (spec FR-011).
-- **Where the Token list screen lives** (left to the implementer): inline in each app's panel registry, research R8. The neighbouring Preferences screens are panel components, but a twin component pair adds a contract, two types files, two barrels and two tests for markup that only composes existing parts; the registry entry is the smaller diff and moves into a `TokenListPanel` twin later with no change of behaviour.
+- **Where the Token list screen lives** (left to the implementer): made once in shared, `createTokenListPanel` in `packages/shared/src/kit/`, from each platform's settings frame, section label and selector list; each app's panel registry makes it at load and its `tokenList` entry renders it. The neighbouring Preferences screens are twin panel components, but markup written in both registries put the cross-platform clone count over its ceiling, and a twin component pair adds a contract, two types files, two barrels and two tests for markup that only composes existing parts.
 
 **Home, folded** (count 3, staked SOL held; the total counts everything):
 

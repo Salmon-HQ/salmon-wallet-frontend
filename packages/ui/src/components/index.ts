@@ -18,7 +18,7 @@ export { WalletHeader } from './WalletHeader';
 export type { WalletHeaderProps } from './WalletHeader';
 
 // TokenList - Token list display components
-export { TokenList, TokenListItem, TokenListSkeleton } from './TokenList';
+export { TokenList, TokenListFoldRow, TokenListItem, TokenListSkeleton } from './TokenList';
 export { BlockList } from './BlockList';
 export type { BlockListProps } from './BlockList';
 export { StakeAccountsPage } from './StakeAccountsPage';
@@ -26,7 +26,12 @@ export type { StakeAccountsPageProps } from './StakeAccountsPage';
 // TokenLogo - a token's mark, the same one the list, the picker, the detail and the receipt draw
 export { TokenLogo } from './TokenLogo';
 export type { TokenLogoProps } from './TokenLogo';
-export type { TokenListItemProps, TokenListProps, TokenListSkeletonProps } from './TokenList';
+export type {
+  TokenListFoldRowProps,
+  TokenListItemProps,
+  TokenListProps,
+  TokenListSkeletonProps,
+} from './TokenList';
 
 // LoadingScreen - Animated loading overlay
 export { LoadingScreen } from './LoadingScreen';

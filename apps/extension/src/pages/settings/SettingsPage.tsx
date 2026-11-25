@@ -23,6 +23,7 @@ import {
   useCurrencyContext,
   useLanguage,
   useTheme,
+  useTokenListLabels,
   useUserConfig,
   type SettingsPanelEntry,
 } from '@salmon/shared';
@@ -43,6 +44,7 @@ export function SettingsPage({ onClose, initialPanels }: SettingsPageProps): Rea
   const [{ activeAccount, activeBlockchainAccount, networkId }, actions] = useAccountsContext();
   const [{ currency }] = useCurrencyContext();
   const { preference: appearancePreference } = useTheme();
+  const { rowValue: tokenListValue } = useTokenListLabels();
   const { currentLanguage } = useLanguage();
   // Anonymous usage-analytics consent (opt-in). The first-run prompt lives in
   // onboarding; here we only bind the Settings toggle.
@@ -76,8 +78,9 @@ export function SettingsPage({ onClose, initialPanels }: SettingsPageProps): Rea
           light: t('settings.appearance_options.light', 'Light'),
           dark: t('settings.appearance_options.dark', 'Dark'),
         },
+        tokenList: tokenListValue,
       }),
-    [currentLanguage, currency, explorer, appearancePreference, t]
+    [currentLanguage, currency, explorer, appearancePreference, tokenListValue, t]
   );
 
   // The two removals are confirmed over Settings, not by leaving it first:

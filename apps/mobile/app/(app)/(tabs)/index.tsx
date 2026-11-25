@@ -54,6 +54,7 @@ import {
   STAKED_SOL_KEY,
   stakingSectionBlocks,
   useHomeStaking,
+  useTokenListFold,
   usePhraseBackup,
   type HomeSubTabKey,
   isWatchOnlyAccount,
@@ -89,6 +90,7 @@ import {
   SkeletonRow,
   StateBlock,
   TokenList,
+  TokenListFoldRow,
   WalletHeader,
   TextButton,
   WarningNotice,
@@ -472,6 +474,14 @@ export default function HomeScreen() {
   // BE drops unknown-only-tagged SPL tokens by default; developer mode opts
   // in via `includeSpam` on `useBalance` above. Trust the BE list as-is.
   const tokenListItems = useMemo(() => tokens.map(mapBalanceToToken), [tokens]);
+  // The token list preference (spec 044): which rows show and whether the rest
+  // are unfolded. The tab stays mounted under a token's screen, so the state
+  // survives the visit.
+  const tokenFold = useTokenListFold({
+    tokens: tokenListItems,
+    address: activeBlockchainAccount?.getReceiveAddress(),
+    networkId: currentNetworkId,
+  });
 
   // Bitcoin coin info + chart data via the shared React Query hook (WP4) —
   // same hook web/extension's HomePage and this app's token detail screen use.
@@ -957,7 +967,7 @@ export default function HomeScreen() {
                       ) : (
                         // Normal token list for Solana/Ethereum
                         <TokenList
-                          tokens={tokenListItems}
+                          tokens={tokenFold.tokens}
                           loading={balanceState === 'loading'}
                           onTokenPress={handleTokenPress}
                           hiddenBalance={hiddenBalance}
@@ -966,6 +976,13 @@ export default function HomeScreen() {
                           // terms: once per screen that shows its prices).
                           ListFooterComponent={
                             <>
+                              {tokenFold.foldedCount > 0 && balanceState !== 'loading' && (
+                                <TokenListFoldRow
+                                  foldedCount={tokenFold.foldedCount}
+                                  expanded={tokenFold.expanded}
+                                  onToggle={tokenFold.toggle}
+                                />
+                              )}
                               {stakingBlocks.length > 0 && (
                                 <View style={styles.stakingSection}>
                                   <BlockList testID="staking-section" blocks={stakingBlocks} />

@@ -112,6 +112,7 @@ export { ShieldCheckIcon } from '@phosphor-icons/react/dist/csr/ShieldCheck';
 export { SlidersIcon } from '@phosphor-icons/react/dist/csr/Sliders';
 export { SparkleIcon } from '@phosphor-icons/react/dist/csr/Sparkle';
 export { SquaresFourIcon } from '@phosphor-icons/react/dist/csr/SquaresFour';
+export { StackIcon } from '@phosphor-icons/react/dist/csr/Stack';
 export { SunIcon } from '@phosphor-icons/react/dist/csr/Sun';
 export { TextTIcon } from '@phosphor-icons/react/dist/csr/TextT';
 export { TranslateIcon } from '@phosphor-icons/react/dist/csr/Translate';
