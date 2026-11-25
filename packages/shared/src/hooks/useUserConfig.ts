@@ -20,6 +20,7 @@ import {
 } from '../config/explorers';
 import type { UserConfig, ActiveBlockchainAccount } from '../types/account';
 import { getMainnetSibling } from '../utils/network';
+import { normalizeTokenListPreference, type TokenListPreference } from '../utils/tokenListFold';
 
 // ============================================================================
 // Types
@@ -78,6 +79,10 @@ export interface UseUserConfigResult {
   derivedScannedAccountIds: string[];
   /** Records that one wallet's derived-account scan finished */
   markDerivedScanned: (walletId: string) => Promise<void>;
+  /** How many tokens Home shows and from what value; every token when never chosen */
+  tokenListPreference: TokenListPreference;
+  /** Stores the token list preference */
+  setTokenListPreference: (next: TokenListPreference) => Promise<void>;
   /** Whether the configuration is still loading */
   isLoading: boolean;
 }
@@ -366,6 +371,24 @@ export function useUserConfig({
     [userConfig, derivedScannedAccountIds, applyConfig]
   );
 
+  const tokenListPreference = useMemo(
+    () => normalizeTokenListPreference(userConfig?.tokenList),
+    [userConfig]
+  );
+
+  const setTokenListPreference = useCallback(
+    async (next: TokenListPreference): Promise<void> => {
+      if (!userConfig) return;
+
+      try {
+        applyConfig(await persistPatch({ tokenList: next }));
+      } catch (error) {
+        console.error('Failed to save token list preference:', error);
+      }
+    },
+    [userConfig, applyConfig]
+  );
+
   return {
     userConfig,
     explorer,
@@ -379,6 +402,8 @@ export function useUserConfig({
     setIncludedInTotal,
     derivedScannedAccountIds,
     markDerivedScanned,
+    tokenListPreference,
+    setTokenListPreference,
     isLoading,
   };
 }

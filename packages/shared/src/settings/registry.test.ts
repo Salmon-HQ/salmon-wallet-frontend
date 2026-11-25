@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 import en from '../locales/en/translation.json';
 import es from '../locales/es/translation.json';
 import type { UserConfig } from '../types/account';
+import { getSettingsItemTestId } from '../types/settings';
 import { CURRENCY_ITEMS, toAddressBookItems, toLanguageItems, toTrustedAppItems } from './items';
 import { SETTINGS_GROUPS, settingsRowValues, type SettingsToggleKey } from './registry';
 
@@ -90,6 +91,19 @@ describe('settingsRowValues', () => {
       explorer: undefined,
       appearance: 'System',
     });
+  });
+
+  it('passes the token list value through, and leaves it out when not given', () => {
+    const base = { language: 'en', appearance: 'system', appearanceLabels };
+
+    expect(settingsRowValues({ ...base, tokenList: '3 tokens' }).tokenList).toBe('3 tokens');
+    expect(settingsRowValues(base).tokenList).toBeUndefined();
+  });
+});
+
+describe('getSettingsItemTestId', () => {
+  it('gives the token list row its slug', () => {
+    expect(getSettingsItemTestId('tokenList')).toBe('settings-item-token-list');
   });
 });
 

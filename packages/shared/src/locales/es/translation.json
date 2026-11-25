@@ -182,6 +182,10 @@
   },
   "settings": {
     "title": "Configuración",
+    "token_list_all": "Todos",
+    "token_list_off": "Desactivado",
+    "token_list_count": "{{count}} tokens",
+    "token_list_from": "desde {{value}}",
     "address_book": "Contactos",
     "address_book_subtitle": "Guardá direcciones a las que enviás seguido.",
     "display_language": "Idioma",

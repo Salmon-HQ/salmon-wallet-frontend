@@ -14,6 +14,7 @@ export type SettingsScreen =
   | 'language'
   | 'currency'
   | 'appearance'
+  | 'tokenList'
   | 'about'
   | 'backup'
   | 'privateKey'
@@ -372,6 +373,7 @@ export const SETTINGS_ITEM_SLUGS: Record<string, string> = {
   language: 'display-language',
   currency: 'display-currency',
   appearance: 'appearance',
+  tokenList: 'token-list',
   explorer: 'block-explorer',
   addressBook: 'address-book',
   trustedApps: 'trusted-apps',

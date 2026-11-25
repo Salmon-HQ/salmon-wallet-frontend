@@ -182,6 +182,10 @@
   },
   "settings": {
     "title": "Settings",
+    "token_list_all": "All",
+    "token_list_off": "Off",
+    "token_list_count": "{{count}} tokens",
+    "token_list_from": "from {{value}}",
     "address_book": "Address Book",
     "address_book_subtitle": "Save addresses you send to often.",
     "display_language": "Display Language",

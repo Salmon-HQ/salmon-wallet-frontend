@@ -315,6 +315,7 @@ export type {
 } from './useSeedPhraseEntryLogic';
 export { useDeveloperModeToggles } from './useDeveloperModeToggles';
 export type { UseDeveloperModeTogglesResult } from './useDeveloperModeToggles';
+export { useTokenListFold, useTokenListLabels } from './useTokenListPreference';
 
 // Home Powerups (installed-ids -> sub-tabs, and the catalogue drawer's state)
 export { useHomePowerupTabs, useHomePowerupsCatalog } from './useHomePowerups';

@@ -24,6 +24,7 @@ vi.mock('../storage', () => ({
 
 import { useUserConfig } from './useUserConfig';
 import type { UserConfig } from '../types/account';
+import { DEFAULT_TOKEN_LIST_PREFERENCE } from '../utils/tokenListFold';
 
 const account = {
   network: { environment: 'solana-mainnet' as const, blockchain: 'solana' },
@@ -94,5 +95,67 @@ describe('useUserConfig — two live instances', () => {
     await mount();
 
     expect(setItem).not.toHaveBeenCalled();
+  });
+});
+
+describe('useUserConfig — the token list preference', () => {
+  it('reads the default and writes nothing when the record has no token list', async () => {
+    store.set('settings', { explorers: { SOLANA: 'SOLSCAN' }, developerNetworks: false });
+
+    const result = await mount();
+
+    expect(result.current.tokenListPreference).toEqual(DEFAULT_TOKEN_LIST_PREFERENCE);
+    expect(setItem).not.toHaveBeenCalled();
+  });
+
+  it('reads a stored half that is not a preset as off', async () => {
+    store.set('settings', {
+      explorers: {},
+      developerNetworks: false,
+      tokenList: { maxCount: 4, minValue: 5 },
+    });
+
+    const result = await mount();
+
+    expect(result.current.tokenListPreference).toEqual({ maxCount: null, minValue: 5 });
+  });
+
+  it('keeps the preference when another instance writes its own fields afterwards', async () => {
+    const provider = await mount();
+    const panel = await mount();
+
+    await act(async () => {
+      await provider.current.setTokenListPreference({ maxCount: 3, minValue: 5 });
+    });
+    await act(async () => {
+      await panel.current.changeExplorer('SOLANA_FM');
+    });
+    await act(async () => {
+      await panel.current.setShowUnverifiedTokens(true);
+    });
+
+    expect(stored().tokenList).toEqual({ maxCount: 3, minValue: 5 });
+    expect(stored().explorers.SOLANA).toBe('SOLANA_FM');
+    expect(stored().showUnverifiedTokens).toBe(true);
+  });
+
+  it('keeps the other fields when the preference is written last', async () => {
+    const provider = await mount();
+    const panel = await mount();
+
+    await act(async () => {
+      await panel.current.changeExplorer('SOLANA_FM');
+    });
+    await act(async () => {
+      await panel.current.setShowUnverifiedTokens(true);
+    });
+    await act(async () => {
+      await provider.current.setTokenListPreference({ maxCount: 3, minValue: 5 });
+    });
+
+    expect(provider.current.tokenListPreference).toEqual({ maxCount: 3, minValue: 5 });
+    expect(stored().tokenList).toEqual({ maxCount: 3, minValue: 5 });
+    expect(stored().explorers.SOLANA).toBe('SOLANA_FM');
+    expect(stored().showUnverifiedTokens).toBe(true);
   });
 });
