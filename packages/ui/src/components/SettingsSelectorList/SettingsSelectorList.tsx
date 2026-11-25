@@ -51,7 +51,9 @@ export function SettingsSelectorList<T>({
       // No art of its own (Explorer, Language): the row still carries a
       // leading well, filled with the same short code its subtitle already
       // states, rather than mixing bare and bubbled rows in one list.
-      const leading = renderLeadingElement?.(item) ?? (
+      const leading = renderLeadingElement ? (
+        renderLeadingElement(item)
+      ) : (
         <IconBubble size={ROW_BUBBLE_SIZE} tone="surface">
           {(secondary ?? primary).slice(0, 2).toUpperCase()}
         </IconBubble>

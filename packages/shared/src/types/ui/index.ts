@@ -20,7 +20,12 @@ export type { DataAttributionPropsBase } from './data-attribution';
 export type { MarketData, TokenMarketDataPropsBase } from './token-market-data';
 
 // Token List
-export type { TokenListBlockchain, TokenListItemPropsBase, TokenListPropsBase } from './token-list';
+export type {
+  TokenListBlockchain,
+  TokenListFoldRowPropsBase,
+  TokenListItemPropsBase,
+  TokenListPropsBase,
+} from './token-list';
 export type { StakeAccountsBodyPropsBase } from './stake-accounts';
 export type { SkrScreenPropsBase } from './skr-screen';
 export type { BlockListPropsBase, KitBlock, KitCardPropsBase, KitRowPropsBase } from './block-list';

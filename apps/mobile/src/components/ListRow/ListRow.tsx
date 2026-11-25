@@ -35,6 +35,7 @@ export function ListRow({
   emphasis = 'default',
   accessibilityLabel,
   style,
+  accessibilityExpanded,
   testID,
 }: ListRowProps) {
   const styles = useThemedStyles(stylesFor);
@@ -46,6 +47,7 @@ export function ListRow({
       testID={testID}
       onPress={onPress}
       accessibilityRole={accessibilityRole}
+      accessibilityExpanded={accessibilityExpanded}
       tone={tone}
       accessibilityLabel={spokenName}
       padding={padding}

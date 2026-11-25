@@ -48,6 +48,8 @@ export interface CardPropsBase extends Testable {
    */
   accessibilityRole?: 'button' | 'link';
   accessibilityLabel?: string;
+  /** A disclosure's open state, announced to screen readers. Omit on every other row. */
+  accessibilityExpanded?: boolean;
   children?: ReactNode;
 }
 

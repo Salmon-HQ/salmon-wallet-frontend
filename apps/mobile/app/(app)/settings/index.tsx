@@ -27,6 +27,7 @@ import {
   ShieldCheckIcon,
   SignOutIcon,
   SquaresFourIcon,
+  StackIcon,
   EyeIcon,
   TranslateIcon,
   TrashIcon,
@@ -42,6 +43,7 @@ import {
   useDeveloperModeToggles,
   useTheme,
   useUserConfig,
+  useTokenListLabels,
   getSettingsItemTestId,
   fontFamilyNative,
   fontSize,
@@ -82,6 +84,7 @@ const SETTINGS_ICONS: Record<
   key: KeyIcon,
   lock: LockIcon,
   translate: TranslateIcon,
+  stack: StackIcon,
   money: MoneyIcon,
   arrowSquareOut: ArrowSquareOutIcon,
   circleHalf: CircleHalfIcon,
@@ -148,6 +151,7 @@ export default function SettingsScreenIndex() {
   const { currentLanguage } = useLanguage();
   const [{ currency }] = useCurrencyContext();
   const { preference: appearancePreference } = useTheme();
+  const { rowValue: tokenListValue } = useTokenListLabels();
   const { disarm: disarmBiometric } = useBiometric();
   const accountRemoval = useAccountRemoval();
   const [removeWalletVisible, setRemoveWalletVisible] = useState(false);
@@ -172,8 +176,9 @@ export default function SettingsScreenIndex() {
         explorerName: explorer?.name,
         appearance: appearancePreference,
         appearanceLabels,
+        tokenList: tokenListValue,
       }),
-    [currentLanguage, currency, explorer, appearanceLabels, appearancePreference]
+    [currentLanguage, currency, explorer, appearanceLabels, appearancePreference, tokenListValue]
   );
 
   // Asked in the kit's danger sheet, as the DOM twin does; the sheet's own

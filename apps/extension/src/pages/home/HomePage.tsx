@@ -18,6 +18,7 @@ import {
   STAKED_SOL_KEY,
   useStakeAccountsScreen,
   useHomeStaking,
+  useTokenListFold,
   type HomeSubTabKey,
   getNetworkLabel,
   getHeldNetworkIds,
@@ -594,6 +595,14 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   // BE handles spam/unknown filtering via `includeSpam` above; the rows are
   // mobile's mapping, from shared.
   const formattedTokens = useMemo(() => tokens.map(mapBalanceToToken), [tokens]);
+  // The token list preference (spec 044): which rows show and whether the rest
+  // are unfolded. Home stays mounted under a token's page, so the state
+  // survives the visit.
+  const tokenFold = useTokenListFold({
+    tokens: formattedTokens,
+    address: activeBlockchainAccount?.getReceiveAddress(),
+    networkId: currentNetworkId,
+  });
 
   // Bitcoin's row inside Portfolio and the selected token's detail page.
   const { bitcoin, selectedToken: selectedTokenMarket } = useHomeMarketData({
@@ -962,6 +971,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                       balanceError={balanceError}
                       hiddenBalance={hiddenBalance}
                       tokens={formattedTokens}
+                      tokenFold={tokenFold}
                       onTokenPress={handleTokenPress}
                       stakingTokens={staking.tokens}
                       onStakingPress={handleStakingPress}

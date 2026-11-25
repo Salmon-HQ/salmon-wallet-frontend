@@ -1,0 +1,55 @@
+appId: io.salmonwallet.app
+---
+# Token list (spec 044): pick 3 and a $1 floor, read the row's value, see Home fold behind
+# "Show more", then set All again so the device is left as found.
+- runFlow: ../../../subflows/onboard-walletA.yaml
+- runFlow: ../../../subflows/open-settings.yaml
+- assertVisible:
+    id: 'settings-screen'
+- tapOn:
+    id: 'settings-item-token-list'
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: screenshots/smoke/settings/token-list
+- tapOn:
+    id: 'token-list-count-3'
+# Wallet A holds three tokens, one of them dust: the value floor is what folds
+# a row there.
+- tapOn:
+    id: 'token-list-min-value-1'
+- runFlow: ../../../subflows/settings-back.yaml
+# The value reads "3 tokens"; the selector gate accepts only literal copy, so
+# the screenshot carries it.
+- assertVisible:
+    id: 'settings-item-token-list-value'
+- takeScreenshot: screenshots/smoke/settings/token-list-row-3
+- runFlow: ../../../subflows/settings-close.yaml
+- assertVisible:
+    id: 'home-screen'
+- takeScreenshot: screenshots/smoke/settings/token-list-home-folded
+# The row exists only when the wallet holds a token under the floor or more than three.
+- runFlow:
+    when:
+      visible:
+        id: 'token-list-fold-row'
+    commands:
+      - tapOn:
+          id: 'token-list-fold-row'
+      - waitForAnimationToEnd:
+          timeout: 2000
+      - takeScreenshot: screenshots/smoke/settings/token-list-home-unfolded
+# Back to All.
+- runFlow: ../../../subflows/open-settings.yaml
+- tapOn:
+    id: 'settings-item-token-list'
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn:
+    id: 'token-list-count-all'
+- tapOn:
+    id: 'token-list-min-value-off'
+- runFlow: ../../../subflows/settings-back.yaml
+- assertVisible:
+    id: 'settings-item-token-list-value'
+    text: 'All'
+- runFlow: ../../../subflows/settings-close.yaml

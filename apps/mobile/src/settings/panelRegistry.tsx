@@ -19,6 +19,7 @@ import {
   useCurrencyContext,
   useSettingsPanelData,
   useTheme,
+  createTokenListPanel,
   AddressbookError,
   buildNetworkListFromAccount,
   CURRENCY_ITEMS,
@@ -55,12 +56,21 @@ import {
   BackupPanel,
   AboutPanel,
   ConfirmSheet,
+  SectionLabel,
+  SettingsScreenLayout,
+  SettingsSelectorList,
 } from '../components';
 import { useDeveloperMode } from '../contexts/DeveloperModeContext';
 import { useLanguage } from '../i18n';
 import { useBiometric } from '../contexts/BiometricContext';
 import type { MobilePanelRegistry } from './types';
 import { useOpenExternalLink } from '../../hooks/useOpenExternalLink';
+
+const TokenListPanel = createTokenListPanel({
+  Frame: SettingsScreenLayout,
+  SectionLabel,
+  SettingsSelectorList,
+});
 
 export function useSettingsPanelRegistry(): MobilePanelRegistry {
   const { t } = useTranslation();
@@ -265,6 +275,7 @@ export function useSettingsPanelRegistry(): MobilePanelRegistry {
           onBack={onBack}
         />
       ),
+      tokenList: ({ onBack }) => <TokenListPanel onBack={onBack} />,
       explorer: ({ onBack }) => {
         return (
           <ExplorerSelector

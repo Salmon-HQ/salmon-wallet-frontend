@@ -269,4 +269,10 @@ export interface UserConfig {
    * install and every pre-existing config get the scan for free.
    */
   derivedScannedAccountIds?: string[];
+  /**
+   * How many tokens Home shows and from what value (spec 044). Absent means
+   * every token is shown. Read through `normalizeTokenListPreference`, so a
+   * value that is not a preset shows more tokens, never fewer.
+   */
+  tokenList?: { maxCount: number | null; minValue: number | null };
 }

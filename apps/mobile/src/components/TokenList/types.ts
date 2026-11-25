@@ -1,5 +1,9 @@
 import type { NativeScrollEvent, NativeSyntheticEvent, ViewStyle } from 'react-native';
-import type { TokenListItemPropsBase, TokenListPropsBase } from '@salmon/shared';
+import type {
+  TokenListFoldRowPropsBase,
+  TokenListItemPropsBase,
+  TokenListPropsBase,
+} from '@salmon/shared';
 
 /** The mobile half of `TokenListItemPropsBase`: the contract plus a style. */
 export interface TokenListItemProps extends TokenListItemPropsBase {
@@ -32,3 +36,6 @@ export interface TokenListProps extends TokenListPropsBase {
   /** How often to fire scroll events (ms) */
   scrollEventThrottle?: number;
 }
+
+/** The fold row draws no platform style of its own: the contract is all of it. */
+export type TokenListFoldRowProps = TokenListFoldRowPropsBase;

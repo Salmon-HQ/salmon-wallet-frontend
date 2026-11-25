@@ -74,6 +74,7 @@ export function Card({
   onPress,
   accessibilityRole = 'button',
   accessibilityLabel,
+  accessibilityExpanded,
   style,
   children,
   testID,
@@ -129,6 +130,9 @@ export function Card({
       testID={testID}
       accessibilityRole={accessibilityRole}
       accessibilityLabel={accessibilityLabel}
+      accessibilityState={
+        accessibilityExpanded === undefined ? undefined : { expanded: accessibilityExpanded }
+      }
       onPress={onPress}
       activeOpacity={0.7}
       style={box}

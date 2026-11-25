@@ -35,6 +35,7 @@ export function ListRow({
   accessibilityLabel,
   style,
   className,
+  accessibilityExpanded,
   testID,
 }: ListRowProps) {
   const t = useSemantic();
@@ -54,6 +55,7 @@ export function ListRow({
       testID={testID}
       onPress={onPress}
       accessibilityRole={accessibilityRole}
+      accessibilityExpanded={accessibilityExpanded}
       tone={tone}
       accessibilityLabel={spokenName}
       padding={padding}

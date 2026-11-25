@@ -25,6 +25,11 @@ function getDecimals(code: CurrencyCode): number {
   return CURRENCY_MAP[code]?.decimals ?? 2;
 }
 
+/** An amount already in `code`, rounded to the decimals that currency prints. */
+export function roundToCurrency(amount: number, code: CurrencyCode): number {
+  return round(amount, getDecimals(code));
+}
+
 /**
  * `Intl` options for a fiat magnitude: the currency's own fraction digits,
  * fixed, and thousands grouping on.

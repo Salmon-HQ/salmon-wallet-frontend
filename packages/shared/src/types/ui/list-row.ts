@@ -42,4 +42,6 @@ export interface ListRowPropsBase extends Testable {
   emphasis?: ListRowEmphasis;
   /** Overrides the "title, subtitle" name the row builds for itself. */
   accessibilityLabel?: string;
+  /** A disclosure's open state, announced to screen readers. Omit on every other row. */
+  accessibilityExpanded?: boolean;
 }

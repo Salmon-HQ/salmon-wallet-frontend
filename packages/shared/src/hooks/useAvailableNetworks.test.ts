@@ -11,6 +11,7 @@ import { SOLANA_NETWORKS } from '../blockchain/solana/networks';
 import * as useUserConfigModule from './useUserConfig';
 import * as networkService from '../api/services/network';
 import type { ActiveBlockchainAccount } from '../types/account';
+import { DEFAULT_TOKEN_LIST_PREFERENCE } from '../utils/tokenListFold';
 
 // ============================================================================
 // Mocks
@@ -204,6 +205,8 @@ describe('useAvailableNetworks Hook', () => {
         setIncludedInTotal: vi.fn(),
         derivedScannedAccountIds: [],
         markDerivedScanned: vi.fn(),
+        tokenListPreference: DEFAULT_TOKEN_LIST_PREFERENCE,
+        setTokenListPreference: vi.fn(),
       });
     });
 
@@ -351,6 +354,8 @@ describe('useAvailableNetworks Hook', () => {
         setIncludedInTotal: vi.fn(),
         derivedScannedAccountIds: [],
         markDerivedScanned: vi.fn(),
+        tokenListPreference: DEFAULT_TOKEN_LIST_PREFERENCE,
+        setTokenListPreference: vi.fn(),
       });
     });
 
@@ -417,6 +422,8 @@ describe('useAvailableNetworks Hook', () => {
         setIncludedInTotal: vi.fn(),
         derivedScannedAccountIds: [],
         markDerivedScanned: vi.fn(),
+        tokenListPreference: DEFAULT_TOKEN_LIST_PREFERENCE,
+        setTokenListPreference: vi.fn(),
       });
 
       const { result } = renderHook(() =>
@@ -456,6 +463,8 @@ describe('useAvailableNetworks Hook', () => {
         setIncludedInTotal: vi.fn(),
         derivedScannedAccountIds: [],
         markDerivedScanned: vi.fn(),
+        tokenListPreference: DEFAULT_TOKEN_LIST_PREFERENCE,
+        setTokenListPreference: vi.fn(),
       });
 
       const { result } = renderHook(() =>
@@ -490,6 +499,8 @@ describe('useAvailableNetworks Hook', () => {
         setIncludedInTotal: vi.fn(),
         derivedScannedAccountIds: [],
         markDerivedScanned: vi.fn(),
+        tokenListPreference: DEFAULT_TOKEN_LIST_PREFERENCE,
+        setTokenListPreference: vi.fn(),
       });
 
       const { result } = renderHook(() =>
@@ -521,6 +532,8 @@ describe('useAvailableNetworks Hook', () => {
         setIncludedInTotal: vi.fn(),
         derivedScannedAccountIds: [],
         markDerivedScanned: vi.fn(),
+        tokenListPreference: DEFAULT_TOKEN_LIST_PREFERENCE,
+        setTokenListPreference: vi.fn(),
       });
 
       const { result } = renderHook(() =>
@@ -554,6 +567,8 @@ describe('useAvailableNetworks Hook', () => {
         setIncludedInTotal: vi.fn(),
         derivedScannedAccountIds: [],
         markDerivedScanned: vi.fn(),
+        tokenListPreference: DEFAULT_TOKEN_LIST_PREFERENCE,
+        setTokenListPreference: vi.fn(),
       });
 
       const { result } = renderHook(() =>
@@ -585,6 +600,8 @@ describe('useAvailableNetworks Hook', () => {
         setIncludedInTotal: vi.fn(),
         derivedScannedAccountIds: [],
         markDerivedScanned: vi.fn(),
+        tokenListPreference: DEFAULT_TOKEN_LIST_PREFERENCE,
+        setTokenListPreference: vi.fn(),
       });
 
       const { result } = renderHook(() =>

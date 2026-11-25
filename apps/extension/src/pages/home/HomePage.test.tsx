@@ -36,7 +36,9 @@ vi.mock('../../components', () => ({
       <button type="button" data-testid="open-wallets" onClick={onWalletPress} />
     </div>
   ),
-  BalanceHeader: () => <div data-testid="balance-header" />,
+  BalanceHeader: ({ blockchains }: { blockchains?: unknown }) => (
+    <div data-testid="balance-header" data-blockchains={JSON.stringify(blockchains)} />
+  ),
   PortfolioSubTabs: ({ tabs }: { tabs: Array<{ key: string; label: string }> }) => (
     <div data-testid="home-sub-tabs">{tabs.map((tab) => tab.key).join('|')}</div>
   ),
@@ -50,14 +52,52 @@ vi.mock('../../components', () => ({
   NftsTab: () => <div data-testid="nfts-tab" />,
   StateBlock: () => <div data-testid="state-block" />,
   WarningNotice: () => null,
-  TokenList: () => <div data-testid="token-list" />,
+  TokenList: ({
+    tokens,
+    onTokenPress,
+  }: {
+    tokens: Array<{ symbol: string }>;
+    onTokenPress: (token: unknown) => void;
+  }) => (
+    <div data-testid="token-list">
+      {tokens.map((token) => (
+        <button
+          key={token.symbol}
+          type="button"
+          data-testid={`token-row-${token.symbol}`}
+          onClick={() => onTokenPress(token)}
+        />
+      ))}
+    </div>
+  ),
+  TokenListFoldRow: ({
+    foldedCount,
+    expanded,
+    onToggle,
+  }: {
+    foldedCount: number;
+    expanded: boolean;
+    onToggle: () => void;
+  }) => (
+    <button
+      type="button"
+      data-testid="token-list-fold-row"
+      aria-expanded={expanded}
+      onClick={onToggle}
+    >
+      {foldedCount}
+    </button>
+  ),
+  BlockList: ({ testID }: { testID?: string }) => <div data-testid={testID} />,
   SinkFloat: ({ children, testID }: PropsWithChildren<{ testID?: string }>) => (
     <div data-testid={testID}>{children}</div>
   ),
   SlideStack: ({ children, testID }: PropsWithChildren<{ testID?: string }>) => (
     <div data-testid={testID}>{children}</div>
   ),
-  TokenDetailPage: () => null,
+  TokenDetailPage: ({ onBack }: { onBack: () => void }) => (
+    <button type="button" data-testid="token-detail-back" onClick={onBack} />
+  ),
   NftDetailPage: () => null,
   ActivityPage: () => null,
   ReceiveSheet: () => null,
@@ -70,6 +110,8 @@ vi.mock('../../components', () => ({
   SettingsPanelStack: () => null,
   WalletsScreen: () => <div data-testid="wallets-screen" />,
   SettingsPanelContent: ({ children }: PropsWithChildren) => <div>{children}</div>,
+  SectionLabel: () => null,
+  SettingsSelectorList: () => null,
   useSemantic: () => ({ text: { primary: '#fff', secondary: '#aaa' } }),
   ConfirmDialog: () => null,
   DepthBackground: stub('depth-background'),
@@ -139,6 +181,20 @@ const accountsState = {
 // same treatment every other page suite here gives it: name what the page
 // actually reads.
 const derivedScanState = vi.hoisted(() => ({}) as Record<string, unknown>);
+// What the wallet holds and how Home is asked to fold it (spec 044).
+const SOL_TOKEN = vi.hoisted(() => ({
+  address: 'So11111111111111111111111111111111111111112',
+  name: 'Solana',
+  symbol: 'SOL',
+  uiAmount: 1,
+  usdBalance: 100,
+}));
+const wallet = vi.hoisted(() => ({
+  tokens: [] as Array<Record<string, unknown>>,
+  state: 'ready',
+  staked: [] as Array<Record<string, unknown>>,
+  preference: { maxCount: null as number | null, minValue: null as number | null },
+}));
 const account = vi.hoisted(() => ({ watchOnly: false, installed: [] as string[] }));
 
 vi.mock('@salmon/shared', async () => {
@@ -155,6 +211,9 @@ vi.mock('@salmon/shared', async () => {
     '@salmon/shared/motion/useFocusModePhase'
   );
   // Outside its provider the phrase check is never due: no reminder on Home.
+  const tokenListFold = await vi.importActual<
+    typeof import('@salmon/shared/hooks/useTokenListPreference')
+  >('@salmon/shared/hooks/useTokenListPreference');
   const phraseBackup = await vi.importActual<
     typeof import('@salmon/shared/contexts/PhraseBackupContext')
   >('@salmon/shared/contexts/PhraseBackupContext');
@@ -197,6 +256,7 @@ vi.mock('@salmon/shared', async () => {
     useTheme: () => ({ preference: 'system', setPreference: vi.fn() }),
     useSendContacts: () => ({ contacts: [], ownWallets: [], loading: false }),
     isWatchOnlyAccount: () => account.watchOnly,
+    isSignableAccount: () => !account.watchOnly,
     AddressbookError: class AddressbookError extends Error {},
     getBlockchainFromNetworkId: (id: string) => id.split('-')[0],
     getNetworkLabel: () => null,
@@ -243,13 +303,13 @@ vi.mock('@salmon/shared', async () => {
       },
     ],
     useBalance: () => ({
-      tokens: [{ address: 'So111', name: 'Solana', symbol: 'SOL', uiAmount: 1, usdBalance: 100 }],
+      tokens: wallet.tokens.length > 0 ? wallet.tokens : [SOL_TOKEN],
       usdTotal: 100,
       nativeAmount: 1,
       changePercent: 1,
       changeAmount: 1,
       hasData: true,
-      state: 'ready',
+      state: wallet.state,
       refresh: vi.fn(),
       error: null,
       hiddenBalance: false,
@@ -310,11 +370,15 @@ vi.mock('@salmon/shared', async () => {
     ...settings,
     useHomeShell: homeShell.useHomeShell,
     useHomeStaking: ({ usdTotal }: { usdTotal: number | undefined }) => ({
-      tokens: [],
+      tokens: wallet.staked,
       totalWithStakes: usdTotal,
     }),
     useStakeAccountsScreen: () => ({ state: 'loading', cards: [], refresh: async () => {} }),
-    stakingSectionBlocks: () => [],
+    stakingSectionBlocks: ({ tokens }: { tokens: unknown[] }) =>
+      tokens.length > 0 ? [{ kind: 'label', key: 'staking' }] : [],
+    useTokenListFold: tokenListFold.useTokenListFold,
+    // The Settings registry makes its Token list screen at load; Settings is not under test.
+    createTokenListPanel: () => () => null,
     STAKED_SOL_KEY: 'staked-sol',
     STAKED_SKR_KEY: 'staked-skr',
     useHomePowerupTabs: homePowerups.useHomePowerupTabs,
@@ -337,6 +401,23 @@ vi.mock('@salmon/shared', async () => {
 // barrel: the user never arranged the row, so it is the shell's default.
 vi.mock('@salmon/shared/hooks/useHomeTabOrder', () => ({
   useHomeTabOrder: (defaults: string[]) => ({ order: defaults, setOrder: vi.fn() }),
+}));
+
+// The fold hook is the real one; it reads the stored choice and the display
+// currency through its own module paths.
+vi.mock('@salmon/shared/contexts/DeveloperModeContext', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  useTokenListPreference: () => ({
+    tokenListPreference: wallet.preference,
+    setTokenListPreference: vi.fn(),
+  }),
+}));
+vi.mock('@salmon/shared/contexts/CurrencyContext', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  useCurrencyContext: () => [
+    { currency: 'usd', exchangeRate: 1 },
+    { convert: (usd: number) => usd },
+  ],
 }));
 
 vi.mock('@salmon/shared/utils/account', () => ({
@@ -429,5 +510,125 @@ describe('HomePage — a watch-only account', () => {
 
     expect(screen.getByTestId('home-sub-tabs').textContent).toBe('portfolio|nfts');
     expect(screen.queryByTestId('powerups-fab')).toBeNull();
+  });
+});
+
+describe('HomePage — the token list folds behind "Show more" (spec 044)', () => {
+  const token = (symbol: string, usdBalance: number | null) => ({
+    address: `${symbol}-mint`,
+    name: symbol,
+    symbol,
+    uiAmount: 1,
+    usdBalance,
+  });
+  const five = [
+    SOL_TOKEN,
+    token('JUP', 80),
+    token('BONK', 60),
+    token('WIF', 40),
+    token('USDC', 20),
+  ];
+  const rows = () =>
+    screen
+      .queryAllByTestId(/^token-row-/)
+      .map((row) => row.dataset.testid?.replace('token-row-', ''));
+  const foldRow = () => screen.queryByTestId('token-list-fold-row');
+
+  afterEach(() => {
+    cleanup();
+    Object.assign(wallet, {
+      tokens: [],
+      state: 'ready',
+      staked: [],
+      preference: { maxCount: null, minValue: null },
+    });
+  });
+
+  it('shows the first three of five tokens, and the other two behind the row', () => {
+    Object.assign(wallet, { tokens: five, preference: { maxCount: 3, minValue: null } });
+    render(<HomePage onAddAccount={vi.fn()} />);
+
+    expect(rows()).toEqual(['SOL', 'JUP', 'BONK']);
+    expect(foldRow()?.textContent).toBe('2');
+    expect(foldRow()?.getAttribute('aria-expanded')).toBe('false');
+
+    fireEvent.click(foldRow()!);
+    expect(rows()).toEqual(['SOL', 'JUP', 'BONK', 'WIF', 'USDC']);
+    expect(foldRow()?.getAttribute('aria-expanded')).toBe('true');
+
+    fireEvent.click(foldRow()!);
+    expect(rows()).toEqual(['SOL', 'JUP', 'BONK']);
+  });
+
+  it('keeps the Staking section under the list, folded and unfolded', () => {
+    Object.assign(wallet, {
+      tokens: five,
+      staked: [token('staked-sol', 0.5)],
+      preference: { maxCount: 3, minValue: null },
+    });
+    render(<HomePage onAddAccount={vi.fn()} />);
+
+    expect(screen.getByTestId('staking-section')).toBeTruthy();
+    fireEvent.click(foldRow()!);
+    expect(screen.getByTestId('staking-section')).toBeTruthy();
+  });
+
+  it('folds tokens worth less than the minimum and unpriced ones, but never SOL', () => {
+    Object.assign(wallet, {
+      tokens: [
+        { ...SOL_TOKEN, usdBalance: 2 },
+        token('JUP', 120),
+        token('DUST', 4.99),
+        token('NOPRICE', null),
+      ],
+      preference: { maxCount: null, minValue: 5 },
+    });
+    render(<HomePage onAddAccount={vi.fn()} />);
+
+    expect(rows()).toEqual(['SOL', 'JUP']);
+    expect(foldRow()?.textContent).toBe('2');
+  });
+
+  it('draws no row while the list loads', () => {
+    Object.assign(wallet, {
+      tokens: five,
+      state: 'loading',
+      preference: { maxCount: 3, minValue: null },
+    });
+    render(<HomePage onAddAccount={vi.fn()} />);
+
+    expect(foldRow()).toBeNull();
+  });
+
+  it('with both choices off, draws every token in order and no row', () => {
+    Object.assign(wallet, { tokens: five });
+    render(<HomePage onAddAccount={vi.fn()} />);
+
+    expect(rows()).toEqual(['SOL', 'JUP', 'BONK', 'WIF', 'USDC']);
+    expect(foldRow()).toBeNull();
+  });
+
+  it('leaves the total as it is', () => {
+    Object.assign(wallet, { tokens: five });
+    render(<HomePage onAddAccount={vi.fn()} />);
+    const unfolded = screen.getByTestId('balance-header').dataset.blockchains;
+    cleanup();
+
+    Object.assign(wallet, { preference: { maxCount: 3, minValue: 50 } });
+    render(<HomePage onAddAccount={vi.fn()} />);
+    expect(screen.getByTestId('balance-header').dataset.blockchains).toBe(unfolded);
+  });
+
+  // Owner, 2026-11-25: a token visit and back leaves the list as it was.
+  it('stays unfolded after opening a token and coming back', () => {
+    Object.assign(wallet, { tokens: five, preference: { maxCount: 3, minValue: null } });
+    render(<HomePage onAddAccount={vi.fn()} />);
+
+    fireEvent.click(foldRow()!);
+    fireEvent.click(screen.getByTestId('token-row-WIF'));
+    fireEvent.click(screen.getByTestId('token-detail-back'));
+
+    expect(rows()).toEqual(['SOL', 'JUP', 'BONK', 'WIF', 'USDC']);
+    expect(foldRow()?.getAttribute('aria-expanded')).toBe('true');
   });
 });

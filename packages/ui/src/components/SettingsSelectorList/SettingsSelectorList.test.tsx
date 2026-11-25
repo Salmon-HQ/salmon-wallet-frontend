@@ -77,4 +77,27 @@ describe('SettingsSelectorList — a row per choice, the chosen one marked', () 
 
     expect(screen.getByLabelText('general.loading')).toBeTruthy();
   });
+
+  it('carries a well with the short code when the selector gives no art', () => {
+    renderList('en');
+
+    expect(screen.getByText('EN')).toBeTruthy();
+  });
+
+  it('draws the text alone when the selector asks for no well', () => {
+    renderInMode(
+      'dark',
+      <SettingsSelectorList<Option>
+        items={OPTIONS}
+        getKey={(item) => item.id}
+        isSelected={() => false}
+        onSelect={vi.fn()}
+        getPrimaryText={(item) => item.label}
+        renderLeadingElement={() => null}
+      />
+    );
+
+    expect(screen.getByText('English')).toBeTruthy();
+    expect(screen.queryByText('EN')).toBeNull();
+  });
 });

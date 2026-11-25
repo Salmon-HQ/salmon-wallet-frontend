@@ -88,4 +88,27 @@ describe('ListRow', () => {
     fireEvent.click(row);
     expect(onPress).toHaveBeenCalledTimes(1);
   });
+
+  it("announces a disclosure's expanded state only when one is passed", () => {
+    const row = (expanded?: boolean) => (
+      <ListRow
+        testID="row"
+        leading={null}
+        title="Show more"
+        onPress={() => {}}
+        accessibilityExpanded={expanded}
+      />
+    );
+
+    renderInMode('dark', row(true));
+    expect(screen.getByTestId('row').getAttribute('aria-expanded')).toBe('true');
+    cleanup();
+
+    renderInMode('dark', row(false));
+    expect(screen.getByTestId('row').getAttribute('aria-expanded')).toBe('false');
+    cleanup();
+
+    renderInMode('dark', row());
+    expect(screen.getByTestId('row').hasAttribute('aria-expanded')).toBe(false);
+  });
 });

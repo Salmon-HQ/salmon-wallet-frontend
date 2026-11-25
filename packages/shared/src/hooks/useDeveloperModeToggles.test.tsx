@@ -13,6 +13,7 @@ import { renderHook } from '@testing-library/react';
 import { useDeveloperModeToggles } from './useDeveloperModeToggles';
 import { useAccountsContext } from '../contexts/AccountsContext';
 import { useDeveloperModeSettings } from '../contexts/DeveloperModeContext';
+import { DEFAULT_TOKEN_LIST_PREFERENCE } from '../utils/tokenListFold';
 
 vi.mock('../contexts/AccountsContext', () => ({ useAccountsContext: vi.fn() }));
 vi.mock('../contexts/DeveloperModeContext', () => ({ useDeveloperModeSettings: vi.fn() }));
@@ -35,6 +36,8 @@ beforeEach(() => {
     showUnverifiedTokens: false,
     toggleDeveloperNetworks,
     setShowUnverifiedTokens,
+    tokenListPreference: DEFAULT_TOKEN_LIST_PREFERENCE,
+    setTokenListPreference: vi.fn(),
   });
 });
 

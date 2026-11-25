@@ -182,6 +182,14 @@
   },
   "settings": {
     "title": "Settings",
+    "token_list": "Token list",
+    "token_list_subtitle": "Choose how many tokens Home shows. The rest stay one tap away.",
+    "token_list_count_title": "Tokens shown",
+    "token_list_min_value_title": "Hide tokens worth less than",
+    "token_list_all": "All",
+    "token_list_off": "Off",
+    "token_list_count": "{{count}} tokens",
+    "token_list_from": "from {{value}}",
     "address_book": "Address Book",
     "address_book_subtitle": "Save addresses you send to often.",
     "display_language": "Display Language",
@@ -477,6 +485,9 @@
     "password_label": "Password"
   },
   "wallet": {
+    "show_more_tokens_one": "Show {{count}} more token",
+    "show_more_tokens_other": "Show {{count}} more tokens",
+    "show_less_tokens": "Show less",
     "partial_load_error": "Some balances couldn't be loaded. Shown data may be incomplete.",
     "init_failed_title": "Couldn't load your wallet",
     "init_failed_body": "Your accounts and funds are safe. Please try again.",

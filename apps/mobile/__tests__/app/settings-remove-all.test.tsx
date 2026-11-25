@@ -85,6 +85,8 @@ jest.mock('@salmon/shared', () =>
     ],
     useAnalyticsConsent: () => ({ consent: false, setConsent: jest.fn() }),
     useCurrencyContext: () => [{ currency: 'usd' }],
+    // The Token list row's value has its own test (settings-token-list-row).
+    useTokenListLabels: () => ({ rowValue: 'All' }),
     useUserConfig: () => ({
       developerNetworks: false,
       toggleDeveloperNetworks: jest.fn(),

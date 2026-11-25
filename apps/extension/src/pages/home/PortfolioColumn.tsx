@@ -5,6 +5,7 @@ import {
   spacing,
   stakingSectionBlocks,
   usePhraseBackup,
+  type useTokenListFold,
   type BalanceLoadState,
   type BlockchainId,
   type PriceChartPeriod,
@@ -17,6 +18,7 @@ import {
   StateBlock,
   TextButton,
   TokenList,
+  TokenListFoldRow,
   WarningNotice,
 } from '../../components';
 
@@ -30,7 +32,10 @@ interface PortfolioColumnProps {
   balanceState: BalanceLoadState;
   balanceError: string | null;
   hiddenBalance: boolean;
+  /** Every token: the empty and error states are about the whole list. */
   tokens: Token[];
+  /** What the list draws, and the "Show more" row's state (spec 044). */
+  tokenFold: ReturnType<typeof useTokenListFold>;
   onTokenPress: (token: Token) => void;
   /** What is staked, under the tokens (spec 038). */
   stakingTokens: Token[];
@@ -56,6 +61,7 @@ export function PortfolioColumn({
   balanceError,
   hiddenBalance,
   tokens,
+  tokenFold,
   onTokenPress,
   stakingTokens,
   onStakingPress,
@@ -127,12 +133,19 @@ export function PortfolioColumn({
       ) : balanceState === 'loading' || tokens.length > 0 ? (
         <>
           <TokenList
-            tokens={tokens}
+            tokens={tokenFold.tokens}
             loading={balanceState === 'loading'}
             onTokenPress={onTokenPress}
             hiddenBalance={hiddenBalance}
             blockchain={getBlockchainFromNetworkId(currentNetworkId)}
           />
+          {tokenFold.foldedCount > 0 && balanceState !== 'loading' && (
+            <TokenListFoldRow
+              foldedCount={tokenFold.foldedCount}
+              expanded={tokenFold.expanded}
+              onToggle={tokenFold.toggle}
+            />
+          )}
           {stakingBlocks.length > 0 && (
             <div style={{ marginTop: spacing.xl }}>
               <BlockList testID="staking-section" blocks={stakingBlocks} />

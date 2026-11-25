@@ -19,6 +19,7 @@ import React, { createContext, useContext, useMemo } from 'react';
 
 import { useEnsureMirrorNetworks } from '../hooks/useEnsureMirrorNetworks';
 import { useUserConfig, type ToggleDeveloperNetworksOptions } from '../hooks/useUserConfig';
+import { DEFAULT_TOKEN_LIST_PREFERENCE, type TokenListPreference } from '../utils/tokenListFold';
 import { useAccountsContext } from './AccountsContext';
 
 export interface DeveloperModeContextValue {
@@ -26,6 +27,8 @@ export interface DeveloperModeContextValue {
   showUnverifiedTokens: boolean;
   toggleDeveloperNetworks: (options?: ToggleDeveloperNetworksOptions) => Promise<void>;
   setShowUnverifiedTokens: (show: boolean) => Promise<void>;
+  tokenListPreference: TokenListPreference;
+  setTokenListPreference: (next: Partial<TokenListPreference>) => Promise<void>;
 }
 
 const noop = async () => {};
@@ -35,6 +38,8 @@ const DeveloperModeContext = createContext<DeveloperModeContextValue>({
   showUnverifiedTokens: false,
   toggleDeveloperNetworks: noop,
   setShowUnverifiedTokens: noop,
+  tokenListPreference: DEFAULT_TOKEN_LIST_PREFERENCE,
+  setTokenListPreference: noop,
 });
 
 export function DeveloperModeProvider({ children }: { children: React.ReactNode }) {
@@ -60,6 +65,8 @@ export function DeveloperModeProvider({ children }: { children: React.ReactNode 
     toggleDeveloperNetworks,
     showUnverifiedTokens,
     setShowUnverifiedTokens,
+    tokenListPreference,
+    setTokenListPreference,
   } = useUserConfig({ activeBlockchainAccount: userConfigAccount });
 
   useEnsureMirrorNetworks(developerNetworks);
@@ -70,8 +77,17 @@ export function DeveloperModeProvider({ children }: { children: React.ReactNode 
       showUnverifiedTokens,
       toggleDeveloperNetworks,
       setShowUnverifiedTokens,
+      tokenListPreference,
+      setTokenListPreference,
     }),
-    [developerNetworks, showUnverifiedTokens, toggleDeveloperNetworks, setShowUnverifiedTokens]
+    [
+      developerNetworks,
+      showUnverifiedTokens,
+      toggleDeveloperNetworks,
+      setShowUnverifiedTokens,
+      tokenListPreference,
+      setTokenListPreference,
+    ]
   );
 
   return <DeveloperModeContext.Provider value={value}>{children}</DeveloperModeContext.Provider>;
@@ -85,6 +101,15 @@ export function useDeveloperMode(): boolean {
 /** Whether unverified (spam-flagged) tokens and collectibles are shown. */
 export function useUnverifiedTokens(): boolean {
   return useContext(DeveloperModeContext).showUnverifiedTokens;
+}
+
+/** How many tokens Home shows and from what value, and the setter Settings writes it with. */
+export function useTokenListPreference(): Pick<
+  DeveloperModeContextValue,
+  'tokenListPreference' | 'setTokenListPreference'
+> {
+  const { tokenListPreference, setTokenListPreference } = useContext(DeveloperModeContext);
+  return { tokenListPreference, setTokenListPreference };
 }
 
 /** The whole slice, for the Settings rows that write it. */

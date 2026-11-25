@@ -28,3 +28,10 @@ export interface TokenListPropsBase extends Testable {
   hiddenBalance?: boolean;
   blockchain?: TokenListBlockchain;
 }
+
+/** The "Show N more" / "Show less" disclosure that closes a folded token list. */
+export interface TokenListFoldRowPropsBase extends Testable {
+  foldedCount: number;
+  expanded: boolean;
+  onToggle: () => void;
+}

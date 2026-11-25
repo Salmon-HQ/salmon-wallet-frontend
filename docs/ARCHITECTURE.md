@@ -43,7 +43,7 @@ Es el núcleo. Capas, de abajo hacia arriba:
 - `theme/` — la única fuente de tokens (`createSemantic(mode)` para claro y oscuro, spacing, tipografía, sombras, geometría de la marca).
 - `motion/` — las constantes de movimiento que ambas plataformas leen.
 - `types/` — tipos de dominio; `types/ui/` los contratos de las gemelas.
-- `hooks/`, `contexts/`, `utils/`, `settings/` — **la lógica de pantalla, una sola vez.** El estado de un flujo (Home, Send, NFT, Wallets, Settings, confirmación con contraseña, cambio de contraseña, derivación de redes espejo, idioma) vive acá como hook o contexto que recibe inyectados la cuenta y las acciones; las plataformas son un proveedor delgado más el render. Las derivaciones puras (filas de actividad, cues del balance, orden de wallets, opciones de destinatario, geometría del gráfico de precio) son utilidades con test propio.
+- `hooks/`, `contexts/`, `utils/`, `settings/` — **la lógica de pantalla, una sola vez.** El estado de un flujo (Home, Send, NFT, Wallets, Settings, confirmación con contraseña, cambio de contraseña, derivación de redes espejo) vive acá como hook o contexto que recibe inyectados la cuenta y las acciones; las plataformas son un proveedor delgado más el render. El idioma es la excepción: la extensión lo lee de acá (`hooks/useLanguage.ts`), pero mobile mantiene el suyo en `apps/mobile/src/i18n/useLanguage.ts`. Las derivaciones puras (filas de actividad, cues del balance, orden de wallets, opciones de destinatario, geometría del gráfico de precio) son utilidades con test propio.
 - `locales/` — EN y ES; toda cadena visible pasa por `t()`.
 
 No contiene componentes DOM ni React Native.

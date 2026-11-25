@@ -18,6 +18,7 @@ export type SettingsIconName =
   | 'key'
   | 'lock'
   | 'translate'
+  | 'stack'
   | 'money'
   | 'arrowSquareOut'
   | 'circleHalf'
@@ -89,6 +90,7 @@ export const SETTINGS_GROUPS: readonly SettingsGroupDef[] = [
     titleKey: 'settings.sections.preferences',
     rows: [
       { id: 'language', kind: 'panel', icon: 'translate', labelKey: 'settings.display_language' },
+      { id: 'tokenList', kind: 'panel', icon: 'stack', labelKey: 'settings.token_list' },
       { id: 'currency', kind: 'panel', icon: 'money', labelKey: 'settings.currency' },
       {
         id: 'explorer',
@@ -173,7 +175,7 @@ export const SETTINGS_GROUPS: readonly SettingsGroupDef[] = [
 ];
 
 /** The rows whose trailing edge states the user's current choice. */
-export type SettingsValueRowId = 'language' | 'currency' | 'explorer' | 'appearance';
+export type SettingsValueRowId = 'language' | 'currency' | 'explorer' | 'appearance' | 'tokenList';
 
 export type SettingsRowValues = Partial<Record<SettingsValueRowId, string | undefined>>;
 
@@ -184,6 +186,8 @@ export interface SettingsRowValueInputs {
   appearance: string;
   /** The translated appearance option labels, keyed by preference. */
   appearanceLabels: Record<string, string>;
+  /** The token list row's value, already translated (`useTokenListLabels().rowValue`). */
+  tokenList?: string;
 }
 
 /**
@@ -197,11 +201,13 @@ export function settingsRowValues({
   explorerName,
   appearance,
   appearanceLabels,
+  tokenList,
 }: SettingsRowValueInputs): SettingsRowValues {
   return {
     language: LANGUAGE_NAMES[language as LanguageCode] || language,
     currency: currency?.toUpperCase(),
     explorer: explorerName,
     appearance: appearanceLabels[appearance],
+    tokenList,
   };
 }

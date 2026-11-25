@@ -59,4 +59,25 @@ describe('ListRow', () => {
 
     expect(screen.getByTestId('explorer-row').props.accessibilityRole).toBe('link');
   });
+
+  it("announces a disclosure's expanded state only when one is passed", () => {
+    const row = (expanded?: boolean) => (
+      <ListRow
+        testID="row"
+        leading={null}
+        title="Show more"
+        onPress={jest.fn()}
+        accessibilityExpanded={expanded}
+      />
+    );
+
+    const { rerender } = render(row(true));
+    expect(screen.getByTestId('row').props.accessibilityState.expanded).toBe(true);
+
+    rerender(row(false));
+    expect(screen.getByTestId('row').props.accessibilityState.expanded).toBe(false);
+
+    rerender(row());
+    expect(screen.getByTestId('row').props.accessibilityState?.expanded).toBeUndefined();
+  });
 });

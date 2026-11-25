@@ -120,7 +120,11 @@ import { fileURLToPath } from 'node:url';
 // `TrustedAppsSelector` twins is `usePendingAction` in shared.
 // 2026-11-18, later: 2495 → 2487. The `TransactionDetail` barrels re-exported
 // three props types nothing read.
-export const CROSS_PLATFORM_CLONE_LINES_MAX = 2263;
+// 2026-11-25: 2263 → 2264. Spec 044: one new twin pair (`TokenListFoldRow`)
+// whose row and the Token list screen are made once in shared
+// (`createTokenListFoldRow`, `createTokenListPanel`); the one line is the
+// `stack` glyph in both settings icon tables, data with no logic.
+export const CROSS_PLATFORM_CLONE_LINES_MAX = 2264;
 
 /**
  * The ceiling for every clone that is not cross-platform, in lines (same
