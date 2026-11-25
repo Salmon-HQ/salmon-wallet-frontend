@@ -92,9 +92,9 @@ A stored value that is not one of the presets (a corrupted record, a future pres
 
 **Facts**: on mobile the Home tab stays mounted under every pushed screen (Settings, a token, Wallets are stack routes). On the extension, `HomePage` stays mounted too and swaps its body by `currentPage` (`HomePage.tsx:173`, Settings at `:794`, token detail at `:396-400`).
 
-**Decision**: the state lives in a shared hook, `useTokenListFold({ tokens, resetKey })`, called once per Home. It folds again whenever `resetKey` or the preference changes. Each Home builds `resetKey` from the active account's receive address (it changes with the wallet and with the account), the network id and a "Home is on screen" part: on the extension `currentPage === 'home'`, on mobile a visit counter bumped by `useFocusEffect` from `expo-router` (already used by `apps/mobile/src/components/OnboardingLayout/OnboardingLayout.tsx:135`). A relaunch starts from `useState(false)`. Nothing is stored (FR-015).
+**Decision (owner Q1, 2026-11-25: a token visit leaves the list as it was)**: the state lives in a shared hook, `useTokenListFold({ tokens, address, networkId })`, called once per Home. It folds again whenever the address, the network or the preference changes; the hook builds that key itself, so neither Home can add a part of its own. `address` is the active account's receive address (it changes with the wallet and with the account). Because both Homes stay mounted under every screen they open, plain component state survives a token visit (or any other screen) and the return to Home with no "on screen" part and no focus listener. A relaunch starts from `useState(false)`. Nothing is stored (FR-015).
 
-**Consequence for the owner**: opening a folded token from the unfolded list and coming back shows the list folded again, as decided ("folds when the user leaves Home"). Keeping it open across a token visit is a one-line change to `resetKey` if the owner prefers it.
+**Consequence**: opening a token from the unfolded list and coming back shows the list still unfolded; so does a visit to Send, Settings or Activity. Switching wallet, account or network, changing the preference, or relaunching folds it.
 
 ## R7. The "Show more" row: `ListRow` needs one optional property
 

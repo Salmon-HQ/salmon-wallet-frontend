@@ -61,8 +61,13 @@ The walk is in data-model.md (TokenListFold). `convert` is `useCurrencyContext()
 ## `packages/shared/src/hooks/useTokenListPreference.ts` (new)
 
 ```ts
-/** One per Home. Reads the preference (DeveloperModeContext) and convert (CurrencyContext). */
-export function useTokenListFold(args: { tokens: Token[]; resetKey: string }): {
+/** One per Home. Reads the preference (DeveloperModeContext) and convert (CurrencyContext).
+ *  Folds again on a new address, network or preference; a token visit and back keeps it (owner Q1). */
+export function useTokenListFold(args: {
+  tokens: Token[];
+  address: string | undefined;
+  networkId: string | undefined;
+}): {
   tokens: Token[]; // what the list renders
   foldedCount: number;
   expanded: boolean;
@@ -77,7 +82,7 @@ export function useTokenListLabels(): {
 };
 ```
 
-`useTokenListLabels` prints a threshold with `formatValue(minValue / exchangeRate)` (research R3). Tests (`useTokenListPreference.test.tsx`, jsdom, the providers mocked the way `CurrencyContext.test.tsx` and `useUserConfig.*.test.tsx` do): fold follows a preference change without remount; `expanded` returns to false on a new `resetKey` and on a preference change; `tokens` is `visible` then `folded` when expanded; row value in each of the four shapes, in USD and EUR.
+`useTokenListLabels` prints a threshold with `formatValue(minValue / exchangeRate)` (research R3). Tests (`useTokenListPreference.test.tsx`, jsdom, the providers mocked the way `CurrencyContext.test.tsx` and `useUserConfig.*.test.tsx` do): fold follows a preference change without remount; `expanded` returns to false on a new address, a new network and a preference change, and stays true across rerenders with the same address and network (owner Q1); `tokens` is `visible` then `folded` when expanded; row value in each of the four shapes, in USD and EUR.
 
 ## `packages/shared/src/contexts/DeveloperModeContext.tsx` (changed)
 

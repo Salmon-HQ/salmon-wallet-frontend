@@ -31,7 +31,8 @@ A user holds ten tokens on Solana. In Settings → Preferences they open "Token 
 3. **Given** the folded tokens are hidden, **When** the user taps "Show more", **Then** every folded token appears below the visible ones, in the list's usual order, and the row reads "Show less".
 4. **Given** the list is unfolded, **When** the user taps "Show less", **Then** the list returns to N rows.
 5. **Given** the count is changed in Settings, **When** the user goes back to Home, **Then** the list already follows the new count, folded, without a restart or a refresh.
-6. **Given** the list is unfolded, **When** the user opens another screen, switches chain or wallet, or reopens the app, **Then** Home shows the list folded again.
+6. **Given** the list is unfolded, **When** the user opens a token (or any other screen) and comes back to Home, **Then** the list is still unfolded, as they left it.
+7. **Given** the list is unfolded, **When** the user switches chain, wallet or account, changes either choice, or reopens the app, **Then** Home shows the list folded again.
 
 ---
 
@@ -101,7 +102,7 @@ The "Token list" screen looks and behaves the same on the extension and on mobil
 - **Bitcoin.** The Bitcoin page shows one coin and no token list; neither dial changes it.
 - **Totals.** The total balance on Home, its 24-hour change, and the aggregated total on the Wallets screen keep counting every token, folded or not.
 - **Other lists.** The token pickers in Send and Swap, Activity and the NFT grid are not affected; they keep listing every token.
-- **The unfolded state does not stick.** Leaving Home for any other screen, switching chain or wallet, changing either dial, or reopening the app folds the list again.
+- **The unfolded state is not stored.** Opening a token (or any other screen) and coming back leaves the list as the user left it (owner, 2026-11-25). Switching chain, wallet or account, changing either dial, or reopening the app folds the list again.
 
 ## Requirements _(mandatory)_
 
@@ -126,7 +127,7 @@ The "Token list" screen looks and behaves the same on the extension and on mobil
 - **FR-012**: When both are set, a token MUST be visible only if both rules let it through.
 - **FR-013**: Staked positions MUST NOT be folded by either rule and MUST NOT count toward N. They stay in Home's Staking section, below the token list.
 - **FR-014**: When at least one token is folded, a "Show more" row MUST follow the visible tokens and state how many are folded; tapping it MUST show the folded tokens in place, below the visible ones, in the same order, and turn the row into "Show less", which folds them again.
-- **FR-015**: The unfolded state MUST last only while Home stays on screen for that chain and wallet with the same choices; it MUST NOT be stored. Leaving Home for any other screen, switching chain or wallet, changing either choice, or reopening the app folds the list again.
+- **FR-015**: The unfolded state MUST last only for that chain, wallet and account with the same choices, while the app stays open; it MUST NOT be stored. Opening a token or any other screen and coming back to Home MUST leave it as it was (owner, 2026-11-25). Switching chain, wallet or account, changing either choice, or reopening the app folds the list again.
 - **FR-016**: The "Show more" row MUST sit between the last token row and the blocks that follow the list today (the Staking section, the price provider's credit), which keep their place.
 - **FR-017**: Folding MUST NOT change any total, any balance, or what any other screen lists.
 - **FR-018**: The "Show more" row MUST be reachable and announced as a control by screen readers, with its expanded or collapsed state, on both apps.

@@ -46,16 +46,16 @@ With both halves `null`, `visible` is the input and `folded` is empty (SC-003).
 
 ## FoldState (derived, in memory)
 
-`useTokenListFold({ tokens, resetKey })`, one per Home.
+`useTokenListFold({ tokens, address, networkId })`, one per Home.
 
-| Field         | Type         | Rule                                                                                         |
-| ------------- | ------------ | -------------------------------------------------------------------------------------------- |
-| `expanded`    | `boolean`    | `false` on mount; back to `false` whenever `resetKey` or the preference changes (FR-015)     |
-| `tokens`      | `Token[]`    | `expanded ? [...visible, ...folded] : visible` — what the Home list renders                  |
-| `foldedCount` | `number`     | `folded.length`; the "Show more" row renders only when it is above 0 and the list has loaded |
-| `toggle`      | `() => void` | Flips `expanded`                                                                             |
+| Field         | Type         | Rule                                                                                                   |
+| ------------- | ------------ | ------------------------------------------------------------------------------------------------------ |
+| `expanded`    | `boolean`    | `false` on mount; back to `false` whenever the address, the network or the preference changes (FR-015) |
+| `tokens`      | `Token[]`    | `expanded ? [...visible, ...folded] : visible` — what the Home list renders                            |
+| `foldedCount` | `number`     | `folded.length`; the "Show more" row renders only when it is above 0 and the list has loaded           |
+| `toggle`      | `() => void` | Flips `expanded`                                                                                       |
 
-`resetKey` per Home: `${address}:${networkId}:${onScreen}`, where `address` is the active account's receive address (it changes with the wallet and with the account), and `onScreen` is `currentPage === 'home'` on the extension and a visit counter bumped by `useFocusEffect` on mobile (research R6).
+`address` is the active account's receive address (it changes with the wallet and with the account). Leaving Home for a token or any other screen does not fold the list: both Homes stay mounted, so the state is still there on return (owner Q1, 2026-11-25; research R6).
 
 ## State transitions
 
@@ -63,7 +63,8 @@ With both halves `null`, `visible` is the input and `folded` is empty (SC-003).
           tap "Show more"                 tap "Show less"
 FOLDED ───────────────────▶ EXPANDED ───────────────────▶ FOLDED
    ▲                            │
-   └── resetKey changes (wallet, network, Home left) / preference changes / relaunch
+   └── wallet, account or network changes / preference changes / relaunch
+       (a token visit or any other screen and back: no change)
 ```
 
 A list with `foldedCount === 0` has no row and no state to show; a later price refresh that folds a token shows the row in the FOLDED state.

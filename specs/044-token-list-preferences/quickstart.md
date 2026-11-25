@@ -27,7 +27,7 @@ Both read the wallet's own token count, so neither depends on what the test wall
 1. Settings → Preferences: rows read Display Language, Token list, Display Currency, Select Explorer, Appearance; Token list's trailing value reads "All".
 2. Token list → Tokens shown → 3. Back: the row reads "3 tokens". Home: SOL and two tokens, "Show N more", the Staking section and the credit below it; the total is the same as before.
 3. Tap "Show N more": every token, in the usual order, "Show less" at the end, staking still below. VoiceOver/TalkBack (mobile) or a screen reader (extension) announces the row as a button and its expanded state.
-4. Open a token, come back: the list is folded. Switch network or wallet: folded.
+4. Open a token, come back: the list is still unfolded (owner, 2026-11-25). Switch network or wallet: folded.
 5. Hide tokens worth less than → 5, with the display currency in euros: rows worth under €5 and unpriced tokens fold; SOL stays even under €5; the row reads "3 tokens · from €5.00". Switch the display currency to dollars: the threshold reads "$5.00" and the rows compare in dollars.
 6. Devnet with a threshold: only SOL is visible.
 7. Turn "Show unverified tokens" on, pick another explorer, quit and relaunch: the count, the threshold, the explorer and the unverified switch are all as left (the persistence fix).
