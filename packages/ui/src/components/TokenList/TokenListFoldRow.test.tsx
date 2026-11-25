@@ -30,7 +30,7 @@ describe('TokenListFoldRow', () => {
     renderInMode('dark', <TokenListFoldRow foldedCount={7} expanded={false} onToggle={() => {}} />);
 
     const row = screen.getByTestId('token-list-fold-row');
-    expect(screen.getByText('Show 7 more')).toBeTruthy();
+    expect(screen.getByText('Show 7 more tokens')).toBeTruthy();
     expect(row.getAttribute('aria-expanded')).toBe('false');
   });
 
@@ -45,7 +45,7 @@ describe('TokenListFoldRow', () => {
     const onToggle = vi.fn();
     renderInMode('dark', <TokenListFoldRow foldedCount={2} expanded={false} onToggle={onToggle} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Show 2 more' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show 2 more tokens' }));
     expect(onToggle).toHaveBeenCalledTimes(1);
   });
 });

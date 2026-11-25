@@ -58,7 +58,7 @@ test('folds Home to three tokens behind "Show more", and back to all', async ({ 
   const shown = await tokenRows(popup).count();
   expect(shown).toBeLessThan(held);
   expect(shown).toBeLessThanOrEqual(3);
-  await expect(foldRow).toHaveText(new RegExp(`Show ${held - shown} more`));
+  await expect(foldRow).toHaveText(new RegExp(`Show ${held - shown} more token`));
 
   await popup.screenshot({
     path: test.info().outputPath('home-folded.png'),

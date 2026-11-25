@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { useCurrencyContext } from '../contexts/CurrencyContext';
 import { useTokenListPreference } from '../contexts/DeveloperModeContext';
 import type { Token } from '../types/ui';
+import { roundToCurrency } from '../utils/currencyFormatting';
 import {
   foldTokenList,
   TOKEN_LIST_COUNT_PRESETS,
@@ -37,10 +38,13 @@ export function useTokenListFold({
   toggle: () => void;
 } {
   const { tokenListPreference } = useTokenListPreference();
-  const [, { convert }] = useCurrencyContext();
+  const [{ currency }, { convert }] = useCurrencyContext();
+  // The minimum is compared with the value the row prints, so a token that
+  // reads $5.00 is never folded by a $5 minimum.
   const { visible, folded } = useMemo(
-    () => foldTokenList(tokens, tokenListPreference, convert),
-    [tokens, tokenListPreference, convert]
+    () =>
+      foldTokenList(tokens, tokenListPreference, (usd) => roundToCurrency(convert(usd), currency)),
+    [tokens, tokenListPreference, convert, currency]
   );
 
   // A key that comes back (another network, then this one again) must not find

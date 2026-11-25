@@ -18,11 +18,11 @@ This feature gives the user two dials, both in Settings → Preferences, both of
 
 ### User Story 1 - Show only the largest tokens (Priority: P1)
 
-A user holds ten tokens on Solana. In Settings → Preferences they open "Token list", the second entry under Display Language, and pick 3 under "Tokens shown". Back on Home, the list shows three tokens, the largest ones, and under them a "Show 7 more" row. Tapping it unfolds the other seven in place; a "Show less" row folds them again.
+A user holds ten tokens on Solana. In Settings → Preferences they open "Token list", the second entry under Display Language, and pick 3 under "Tokens shown". Back on Home, the list shows three tokens, the largest ones, and under them a "Show 7 more tokens" row. Tapping it unfolds the other seven in place; a "Show less" row folds them again.
 
 **Why this priority**: it is the first half of the owner's request and the one that shortens every long list regardless of prices.
 
-**Independent Test**: on a wallet with ten priced tokens, set the count to 3; Home shows three token rows plus "Show 7 more"; tapping it shows all ten in the same order as before; the total balance is unchanged throughout.
+**Independent Test**: on a wallet with ten priced tokens, set the count to 3; Home shows three token rows plus "Show 7 more tokens"; tapping it shows all ten in the same order as before; the total balance is unchanged throughout.
 
 **Acceptance Scenarios**:
 
@@ -51,7 +51,7 @@ The same user picks 5 under "Hide tokens worth less than". Home now folds every 
 3. **Given** a threshold X is set and SOL is worth less than X, **When** Home shows the list, **Then** SOL stays visible, first.
 4. **Given** both a count N and a threshold X are set, **When** Home shows the list, **Then** a token stays visible only if it is among the first N and worth at least X; every other token is folded.
 5. **Given** prices refresh and a token crosses the threshold, **When** the list updates, **Then** the token moves between the visible part and the folded part on that update.
-6. **Given** the display currency is euros and the threshold is 5, **When** Home compares a token with it, **Then** it compares the euro value the token's row shows with 5 euros.
+6. **Given** the display currency is euros and the threshold is 5, **When** Home compares a token with it, **Then** it compares the euro value the token's row shows with 5 euros, rounded as the row prints it: a token that reads 5.00 stays visible.
 
 ---
 

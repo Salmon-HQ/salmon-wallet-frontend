@@ -33,14 +33,15 @@ Files: the row is made once in `packages/shared/src/kit/createTokenListFoldRow.t
 
 Anatomy (the `ConfirmationDetailsCard` disclosure, drawn by the kit's `ListRow`):
 
-| Part      | Value                                                                                      |
-| --------- | ------------------------------------------------------------------------------------------ |
-| Component | `ListRow`, `tone="clear"`, `padding="lg"` (the token rows' padding, so the label lines up) |
-| Leading   | none (`null`)                                                                              |
-| Title     | `wallet.show_more_tokens` with `{ count: foldedCount }`, or `wallet.show_less_tokens`      |
-| Trailing  | `CaretDownIcon`, small icon size, `text.secondary`; turned 180° when `expanded`            |
-| Press     | `onToggle`; role `button`; `accessibilityExpanded={expanded}`                              |
-| testID    | `token-list-fold-row`                                                                      |
+| Part                            | Value                                                                                      |
+| ------------------------------- | ------------------------------------------------------------------------------------------ |
+| Component                       | `ListRow`, `tone="clear"`, `padding="lg"` (the token rows' padding, so the label lines up) |
+| Leading                         | none (`null`)                                                                              |
+| Title                           | `wallet.show_more_tokens_one`                                                              | Show {{count}} more token | Ver {{count}} token más |
+| `wallet.show_more_tokens_other` | Show {{count}} more tokens                                                                 | Ver {{count}} tokens más  |
+| Trailing                        | `CaretDownIcon`, small icon size, `text.secondary`; turned 180° when `expanded`            |
+| Press                           | `onToggle`; role `button`; `accessibilityExpanded={expanded}`                              |
+| testID                          | `token-list-fold-row`                                                                      |
 
 Tests: one render test per twin (`TokenListFoldRow.test.tsx`): label with the count, the other label when expanded, press calls `onToggle`, expanded state announced (`aria-expanded` / `accessibilityState`).
 

@@ -92,3 +92,5 @@ export function useTokenListLabels(): {
 
 - First commit (the bug, research R4): a module-level `persistPatch(patch: Partial<UserConfig>): Promise<UserConfig>` serialised on one promise chain; every setter writes only its own field through it; the mount-time defaults write happens only when a default was missing. Public result type unchanged.
 - Feature commit: `tokenListPreference` (normalised) and `setTokenListPreference(next)` in `UseUserConfigResult`, written through `persistPatch({ tokenList: next })`.
+
+The function compares the number `convert` returns. `useTokenListFold` passes a `convert` that rounds to the decimals the display currency prints, so the comparison is with the value the row shows (owner, 2026-11-25): 4.996 reads 5.00 and stays visible under a minimum of 5.

@@ -19,9 +19,9 @@ jest.mock('react-i18next', () => {
   return {
     useTranslation: () => ({
       t: (key: string, values: Record<string, unknown> = {}) =>
-        String(resolve(key) ?? key).replace(/\{\{(\w+)\}\}/g, (_m, name) =>
-          String(values[name] ?? '')
-        ),
+        String(
+          resolve(key) ?? resolve(`${key}_${values.count === 1 ? 'one' : 'other'}`) ?? key
+        ).replace(/\{\{(\w+)\}\}/g, (_m, name) => String(values[name] ?? '')),
     }),
   };
 });
@@ -32,7 +32,7 @@ describe('TokenListFoldRow', () => {
   it('says how many tokens are folded and announces itself collapsed', () => {
     render(<TokenListFoldRow foldedCount={7} expanded={false} onToggle={jest.fn()} />);
 
-    expect(screen.getByText('Show 7 more')).toBeTruthy();
+    expect(screen.getByText('Show 7 more tokens')).toBeTruthy();
     expect(screen.getByTestId('token-list-fold-row').props.accessibilityState.expanded).toBe(false);
   });
 

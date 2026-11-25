@@ -485,7 +485,8 @@
     "password_label": "Password"
   },
   "wallet": {
-    "show_more_tokens": "Show {{count}} more",
+    "show_more_tokens_one": "Show {{count}} more token",
+    "show_more_tokens_other": "Show {{count}} more tokens",
     "show_less_tokens": "Show less",
     "partial_load_error": "Some balances couldn't be loaded. Shown data may be incomplete.",
     "init_failed_title": "Couldn't load your wallet",

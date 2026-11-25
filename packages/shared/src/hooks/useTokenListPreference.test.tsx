@@ -210,12 +210,40 @@ describe('useTokenListLabels', () => {
   });
 });
 
+describe('useTokenListFold — the value the row shows', () => {
+  const mountWith = (list: Token[]) =>
+    renderHook(() =>
+      useTokenListFold({ tokens: list, address: 'wallet', networkId: 'solana-mainnet' })
+    );
+
+  it('keeps a token whose row rounds up to the minimum', () => {
+    preference = { maxCount: null, minValue: 5 };
+
+    // 4.996 prints as $5.00; 4.994 prints as $4.99.
+    const { result } = mountWith([token('A', 4.996), token('B', 4.994)]);
+
+    expect(addresses(result.current.tokens)).toEqual(['A']);
+    expect(result.current.foldedCount).toBe(1);
+  });
+
+  it('rounds to the decimals the display currency prints', () => {
+    preference = { maxCount: null, minValue: 5 };
+    currency = { code: 'clp', rate: 1 };
+
+    // The Chilean peso prints no decimals: 4.6 reads 5, 4.4 reads 4.
+    const { result } = mountWith([token('A', 4.6), token('B', 4.4)]);
+
+    expect(addresses(result.current.tokens)).toEqual(['A']);
+  });
+});
+
 describe('useTokenListFoldLabel', () => {
   it('says how many tokens are folded, and "Show less" once open', () => {
     const label = (foldedCount: number, expanded: boolean) =>
       renderHook(() => useTokenListFoldLabel(foldedCount, expanded)).result.current;
 
-    expect(label(7, false)).toBe('Show 7 more');
+    expect(label(7, false)).toBe('Show 7 more tokens');
+    expect(label(1, false)).toBe('Show 1 more token');
     expect(label(7, true)).toBe('Show less');
   });
 });
