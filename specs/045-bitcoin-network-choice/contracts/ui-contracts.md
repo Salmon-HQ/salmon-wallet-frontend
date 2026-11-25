@@ -1,6 +1,6 @@
 # Contract: screens, test ids and copy (spec 045)
 
-Nothing here is built before the owner signs off the mocks in plan.md §Owner sign-off.
+The owner approved the mocks in plan.md §Owner sign-off on 2026-11-25, as drawn: on the onboarding step a tap on an option saves it and goes to the password screen, nothing is preselected, and there is no Continue button.
 
 ## Onboarding step "Choose your networks"
 

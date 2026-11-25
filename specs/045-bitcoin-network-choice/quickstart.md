@@ -39,7 +39,7 @@ Unaffected: `flows/smoke/auth/create-account.yaml` (stops at the phrase), `flows
 
 ## 4. Owner sign-offs
 
-- The mocks in plan.md §Owner sign-off, **before any UI task starts**.
-- The cross-platform clone ceiling raise, if the measurement at the UI commits needs one (plan.md §Parity).
+- The mocks in plan.md §Owner sign-off: approved on 2026-11-25, as drawn (one tap on the onboarding step).
+- The cross-platform clone ceiling: owner decision of 2026-11-25, raised to the measured number only for the new twins' data lines, with a dated comment; copied logic is hoisted instead (plan.md §Parity).
 - The Spanish copy and the proposed confirmation copy (contracts/ui-contracts.md §Copy), in the pull request.
 - The listener added to `useUserConfig`'s write path (research R2): outside the constitution's gated paths, but it changes how every setting reaches the screens.

@@ -44,6 +44,12 @@ The owner accepted the recommended default of every open question.
 - Q: Are Bitcoin contacts listed in the address book while Bitcoin is off? → A: Hidden, never deleted; they return when Bitcoin is turned on.
 - Q: Is the onboarding answer reported to analytics? → A: No; preferences report nothing and the consent copy lists what is sent.
 
+### Session 2026-11-25 (plan sign-off)
+
+- Q: Are the three mocks (onboarding step, Settings row, confirmation) approved? → A: Yes, as drawn in plan.md §Owner sign-off.
+- Q: One tap or pick-and-continue on the onboarding step? → A: One tap: tapping an option saves it and goes to the password screen; nothing is preselected and there is no Continue button.
+- Q: When the session moves from Bitcoin to Solana on its own (switch turned off, or the app opens with Bitcoin off), may it send the existing `network_switched` event when analytics consent is on? → A: Yes. The choice itself is never reported.
+
 ## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Choose the networks when setting up (Priority: P1)
@@ -198,7 +204,7 @@ The onboarding question and the Settings switch look and behave the same on the 
 - **FR-021**: Both apps MUST read the choice from one shared definition and apply one shared rule for which networks are offered, so the two apps can never disagree on whether Bitcoin is shown.
 - **FR-022**: Every new user-facing string MUST exist in English and Spanish; the Spanish copy is written by the implementer and reviewed by the owner in the pull request, as in specs 043 and 044.
 - **FR-023**: The onboarding screen and the Settings switch MUST be built from components both apps already have (the onboarding layout and buttons, the Settings switch row used by Developer Networks); any new piece of UI is signed off by the owner before it is built.
-- **FR-024**: Neither the onboarding answer nor changing the switch in Settings MUST report anything to analytics, like every other preference.
+- **FR-024**: Neither the onboarding answer nor changing the switch in Settings MUST report anything to analytics, like every other preference. The automatic move of the session from Bitcoin to Solana (FR-016) sends the existing `network_switched` event when analytics consent is on, like any other network switch; it names the destination chain only, never the choice.
 
 ### Key Entities
 
