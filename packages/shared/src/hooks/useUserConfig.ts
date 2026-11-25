@@ -332,15 +332,15 @@ export function useUserConfig({
     async (walletId: string, included: boolean): Promise<void> => {
       if (!userConfig) return;
 
-      const next = included
-        ? excludedFromTotal.filter((id) => id !== walletId)
-        : excludedFromTotal.includes(walletId)
-          ? excludedFromTotal
-          : [...excludedFromTotal, walletId];
-      if (next === excludedFromTotal) return;
+      if (!included && excludedFromTotal.includes(walletId)) return;
 
       try {
-        applyConfig(await persistPatch({ excludedFromTotal: next }));
+        applyConfig(
+          await persistPatch((stored) => {
+            const rest = (stored.excludedFromTotal ?? []).filter((id) => id !== walletId);
+            return { excludedFromTotal: included ? rest : [...rest, walletId] };
+          })
+        );
       } catch (error) {
         console.error('Failed to save wallet total preference:', error);
       }
@@ -360,10 +360,15 @@ export function useUserConfig({
       if (!userConfig) return;
       if (derivedScannedAccountIds.includes(walletId)) return;
 
-      const next = [...derivedScannedAccountIds, walletId];
-
       try {
-        applyConfig(await persistPatch({ derivedScannedAccountIds: next }));
+        applyConfig(
+          await persistPatch((stored) => ({
+            derivedScannedAccountIds: [
+              ...(stored.derivedScannedAccountIds ?? []).filter((id) => id !== walletId),
+              walletId,
+            ],
+          }))
+        );
       } catch (error) {
         console.error('Failed to save derived-scan state:', error);
       }

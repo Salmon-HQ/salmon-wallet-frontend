@@ -98,6 +98,36 @@ describe('useUserConfig — two live instances', () => {
   });
 });
 
+describe('useUserConfig — lists written by two instances', () => {
+  it('keeps both wallets when each instance takes a different one out of the total', async () => {
+    const wallets = await mount();
+    const other = await mount();
+
+    await act(async () => {
+      await wallets.current.setIncludedInTotal('w1', false);
+    });
+    await act(async () => {
+      await other.current.setIncludedInTotal('w2', false);
+    });
+
+    expect(stored().excludedFromTotal).toEqual(['w1', 'w2']);
+  });
+
+  it('keeps both wallets when each instance records a different finished scan', async () => {
+    const scan = await mount();
+    const other = await mount();
+
+    await act(async () => {
+      await Promise.all([
+        scan.current.markDerivedScanned('w1'),
+        other.current.markDerivedScanned('w2'),
+      ]);
+    });
+
+    expect(stored().derivedScannedAccountIds).toEqual(['w1', 'w2']);
+  });
+});
+
 describe('useUserConfig — the token list preference', () => {
   it('reads the default and writes nothing when the record has no token list', async () => {
     store.set('settings', { explorers: { SOLANA: 'SOLSCAN' }, developerNetworks: false });
