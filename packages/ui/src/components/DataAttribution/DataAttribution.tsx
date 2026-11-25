@@ -2,8 +2,8 @@
  * DataAttribution — the data provider's credit, on the DOM: one small link,
  * text and target verbatim from the backend's network entry, once per
  * screen that shows its prices or token list. The provider's terms fix the
- * floor at 10pt, and `fontSize.sm` sits above it. Nothing is drawn for a
- * network that owes no credit.
+ * floor at 10pt, and the text is `fontSize.micro`, exactly that. Nothing is
+ * drawn for a network that owes no credit.
  *
  * The mobile twin is `apps/mobile/src/components/DataAttribution`.
  */
@@ -41,7 +41,7 @@ export function DataAttribution({
         display: 'inline-block',
         padding: `${spacing.sm}px ${spacing.md}px`,
         fontFamily: fontFamily.sans,
-        fontSize: fontSize.sm,
+        fontSize: fontSize.micro,
         fontWeight: fontWeight.medium,
         color: semantic.text.tertiary,
         opacity: opacity.soft,
