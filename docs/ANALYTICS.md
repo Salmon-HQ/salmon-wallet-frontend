@@ -164,7 +164,7 @@ Shared hooks and Powerups run on both apps, so one call covers mobile and extens
 ### Untracked on purpose
 
 - The consent answer itself: a decline sends nothing, by design.
-- Settings preferences (language, currency, theme, explorer, developer networks, unverified tokens), renaming a wallet, profile pictures, hiding balances, editing or removing contacts, password and biometric changes, revealing the recovery phrase or a private key, removing wallets, and revoking a trusted dApp: none of them answers a reported metric.
+- Settings preferences (language, currency, theme, explorer, token list, developer networks, unverified tokens), renaming a wallet, profile pictures, hiding balances, editing or removing contacts, password and biometric changes, revealing the recovery phrase or a private key, removing wallets, and revoking a trusted dApp: none of them answers a reported metric.
 - Receiving (opening the Receive sheet, copying the address): a weak signal of use.
 - Burning an NFT, viewing activity, token detail and staked SOL.
 - A Solana Pay payment made from the payer's side is a send: it counts as `send_completed`, with nothing linking it to the request.
