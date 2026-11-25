@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain
+- [x] No [NEEDS CLARIFICATION] markers remain
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -31,5 +31,5 @@
 
 ## Notes
 
-- Three [NEEDS CLARIFICATION] markers remain, for the owner: how a value is picked (FR-004: a fixed set of choices or a typed number), the currency of the threshold (FR-009: US dollars or the display currency), and how a token with no price behaves under the threshold (Edge Cases). Resolve with `/speckit-clarify` before `/speckit-plan`.
+- Every open choice is decided (2026-11-25): fixed presets picked from the single-choice list, the threshold in the display currency through the row's own conversion, unpriced tokens fold under a threshold, both rules must pass, SOL is never folded by value and counts as one of N, staked positions are never folded and never count, the unfolded state is not stored, unverified tokens are ordinary rows, both dials off by default, global per device, Home's Solana list only, the row states its choice. Ready for `/speckit-plan`.
 - The section "Existing components this feature reuses" names files and component contracts on purpose: the owner made reuse of existing components a hard requirement of this feature, so the spec states the reuse map. Everything else stays free of implementation detail.
