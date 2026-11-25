@@ -35,6 +35,7 @@ export function Card({
   onPress,
   accessibilityRole = 'button',
   accessibilityLabel,
+  accessibilityExpanded,
   style,
   className,
   children,
@@ -85,6 +86,7 @@ export function Card({
       data-testid={testID}
       role={accessibilityRole === 'link' ? 'link' : undefined}
       aria-label={accessibilityLabel}
+      aria-expanded={accessibilityExpanded}
       onClick={onPress}
       className={className}
       {...handlers}
