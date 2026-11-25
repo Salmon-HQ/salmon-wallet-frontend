@@ -92,6 +92,37 @@ export interface UseUserConfigResult {
  */
 const USER_CONFIG_KEY = STORAGE_KEYS.SETTINGS;
 
+const hasDefaults = (config: UserConfig | null): config is UserConfig =>
+  !!config?.explorers && config.developerNetworks !== undefined;
+
+const withDefaults = (config: UserConfig | null): UserConfig => ({
+  ...config,
+  explorers: config?.explorers ?? { ...DEFAULT_EXPLORERS },
+  developerNetworks: config?.developerNetworks ?? false,
+});
+
+let writeQueue: Promise<unknown> = Promise.resolve();
+
+/**
+ * Several instances of this hook are live at once, each with its own copy of
+ * the record. Writing that copy back whole would erase whatever another
+ * instance stored since it loaded, so every write re-reads the stored record
+ * and merges only its own fields, one write at a time.
+ */
+function persistPatch(
+  patch: Partial<UserConfig> | ((stored: UserConfig) => Partial<UserConfig>)
+): Promise<UserConfig> {
+  const write = writeQueue.then(async () => {
+    const storage = getStorage();
+    const stored = withDefaults(await storage.getItem<UserConfig>(USER_CONFIG_KEY));
+    const merged = { ...stored, ...(typeof patch === 'function' ? patch(stored) : patch) };
+    await storage.setItem(USER_CONFIG_KEY, merged);
+    return merged;
+  });
+  writeQueue = write.catch(() => undefined);
+  return write;
+}
+
 // ============================================================================
 // Hook Implementation
 // ============================================================================
@@ -171,54 +202,34 @@ export function useUserConfig({
     }));
   }, []);
 
+  const applyConfig = useCallback(
+    (config: UserConfig) => {
+      setUserConfig(config);
+      const networkExplorers = EXPLORERS[blockchain]?.[environment];
+      setExplorer(
+        networkExplorers?.[config.explorers[blockchain] || DEFAULT_EXPLORERS[blockchain]]
+      );
+      setDeveloperNetworks(config.developerNetworks);
+      setShowUnverifiedTokensState(config.showUnverifiedTokens ?? false);
+      setExcludedFromTotal(config.excludedFromTotal ?? []);
+      setDerivedScannedAccountIds(config.derivedScannedAccountIds ?? []);
+    },
+    [blockchain, environment]
+  );
+
   // Load configuration on mount and when blockchain/environment changes
   useEffect(() => {
     const loadConfig = async () => {
       setIsLoading(true);
 
       try {
-        const storage = getStorage();
-        let config = await storage.getItem<UserConfig>(USER_CONFIG_KEY);
+        const stored = await getStorage().getItem<UserConfig>(USER_CONFIG_KEY);
+        const config = hasDefaults(stored) ? stored : await persistPatch({});
 
-        // Initialize with defaults if not present
-        if (!config) {
-          config = {
-            explorers: { ...DEFAULT_EXPLORERS },
-            developerNetworks: false,
-          };
-        }
+        applyConfig(config);
 
-        // Ensure explorers object exists with defaults
-        if (!config.explorers) {
-          config.explorers = { ...DEFAULT_EXPLORERS };
-        }
-
-        // Ensure developerNetworks has a value
-        if (config.developerNetworks === undefined) {
-          config.developerNetworks = false;
-        }
-
-        // Persist any defaults that were added
-        await storage.setItem(USER_CONFIG_KEY, config);
-
-        // Update state
-        setUserConfig(config);
-
-        // Get explorers for current blockchain/network
         const networkExplorers = EXPLORERS[blockchain]?.[environment];
-        if (networkExplorers) {
-          const selectedExplorerKey = config.explorers[blockchain] || DEFAULT_EXPLORERS[blockchain];
-          setExplorer(networkExplorers[selectedExplorerKey]);
-          setAvailableExplorers(toArray(networkExplorers));
-        } else {
-          setExplorer(undefined);
-          setAvailableExplorers([]);
-        }
-
-        setDeveloperNetworks(config.developerNetworks);
-        setShowUnverifiedTokensState(config.showUnverifiedTokens ?? false);
-        setExcludedFromTotal(config.excludedFromTotal ?? []);
-        setDerivedScannedAccountIds(config.derivedScannedAccountIds ?? []);
+        setAvailableExplorers(networkExplorers ? toArray(networkExplorers) : []);
       } catch (error) {
         console.error('Failed to load user config:', error);
         // Set defaults on error
@@ -233,7 +244,7 @@ export function useUserConfig({
     };
 
     loadConfig();
-  }, [blockchain, environment, toArray]);
+  }, [blockchain, environment, toArray, applyConfig]);
 
   /**
    * Changes the selected explorer for the current blockchain.
@@ -242,32 +253,17 @@ export function useUserConfig({
     async (explorerKey: string): Promise<void> => {
       if (!userConfig) return;
 
-      const updatedConfig: UserConfig = {
-        ...userConfig,
-        explorers: {
-          ...userConfig.explorers,
-          [blockchain]: explorerKey,
-        },
-      };
-
-      // Update local state
-      setUserConfig(updatedConfig);
-
-      // Update explorer display
-      const networkExplorers = EXPLORERS[blockchain]?.[environment];
-      if (networkExplorers) {
-        setExplorer(networkExplorers[explorerKey]);
-      }
-
-      // Persist to storage
       try {
-        const storage = getStorage();
-        await storage.setItem(USER_CONFIG_KEY, updatedConfig);
+        applyConfig(
+          await persistPatch((stored) => ({
+            explorers: { ...stored.explorers, [blockchain]: explorerKey },
+          }))
+        );
       } catch (error) {
         console.error('Failed to save explorer preference:', error);
       }
     },
-    [userConfig, blockchain, environment]
+    [userConfig, blockchain, applyConfig]
   );
 
   /**
@@ -291,24 +287,13 @@ export function useUserConfig({
         }
       }
 
-      const updatedConfig: UserConfig = {
-        ...userConfig,
-        developerNetworks: newValue,
-      };
-
-      // Update local state
-      setUserConfig(updatedConfig);
-      setDeveloperNetworks(newValue);
-
-      // Persist to storage
       try {
-        const storage = getStorage();
-        await storage.setItem(USER_CONFIG_KEY, updatedConfig);
+        applyConfig(await persistPatch({ developerNetworks: newValue }));
       } catch (error) {
         console.error('Failed to save developer networks preference:', error);
       }
     },
-    [userConfig, developerNetworks]
+    [userConfig, developerNetworks, applyConfig]
   );
 
   /**
@@ -323,18 +308,13 @@ export function useUserConfig({
       if (!userConfig) return;
       if (show === showUnverifiedTokens) return;
 
-      const updatedConfig: UserConfig = { ...userConfig, showUnverifiedTokens: show };
-      setUserConfig(updatedConfig);
-      setShowUnverifiedTokensState(show);
-
       try {
-        const storage = getStorage();
-        await storage.setItem(USER_CONFIG_KEY, updatedConfig);
+        applyConfig(await persistPatch({ showUnverifiedTokens: show }));
       } catch (error) {
         console.error('Failed to save unverified tokens preference:', error);
       }
     },
-    [userConfig, showUnverifiedTokens]
+    [userConfig, showUnverifiedTokens, applyConfig]
   );
 
   /**
@@ -354,18 +334,13 @@ export function useUserConfig({
           : [...excludedFromTotal, walletId];
       if (next === excludedFromTotal) return;
 
-      const updatedConfig: UserConfig = { ...userConfig, excludedFromTotal: next };
-      setUserConfig(updatedConfig);
-      setExcludedFromTotal(next);
-
       try {
-        const storage = getStorage();
-        await storage.setItem(USER_CONFIG_KEY, updatedConfig);
+        applyConfig(await persistPatch({ excludedFromTotal: next }));
       } catch (error) {
         console.error('Failed to save wallet total preference:', error);
       }
     },
-    [userConfig, excludedFromTotal]
+    [userConfig, excludedFromTotal, applyConfig]
   );
 
   /**
@@ -381,18 +356,14 @@ export function useUserConfig({
       if (derivedScannedAccountIds.includes(walletId)) return;
 
       const next = [...derivedScannedAccountIds, walletId];
-      const updatedConfig: UserConfig = { ...userConfig, derivedScannedAccountIds: next };
-      setUserConfig(updatedConfig);
-      setDerivedScannedAccountIds(next);
 
       try {
-        const storage = getStorage();
-        await storage.setItem(USER_CONFIG_KEY, updatedConfig);
+        applyConfig(await persistPatch({ derivedScannedAccountIds: next }));
       } catch (error) {
         console.error('Failed to save derived-scan state:', error);
       }
     },
-    [userConfig, derivedScannedAccountIds]
+    [userConfig, derivedScannedAccountIds, applyConfig]
   );
 
   return {
