@@ -4,13 +4,15 @@
 import React from 'react';
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { createSemantic } from '@salmon/shared';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { asRenderedColor, renderInMode } from '../../test/renderInMode';
 
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  mockBitcoin.real = false;
+  mockBitcoin.enabled = true;
 });
 
 vi.mock('react-i18next', () => ({
@@ -28,13 +30,46 @@ vi.mock('../LoadingScreen', () => ({
 // provider tree, so its slice is faked.
 const mockHandleToggleDeveloperNetworks = vi.fn();
 const mockHandleToggleUnverifiedTokens = vi.fn();
-vi.mock('@salmon/shared', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@salmon/shared')>()),
-  useDeveloperModeToggles: () => ({
+// The Bitcoin cases run the real hook over a faked provider slice, so the
+// confirmation they draw is the hook's own.
+const mockBitcoin = vi.hoisted(() => ({ real: false, enabled: true, setBitcoinEnabled: vi.fn() }));
+vi.mock('@salmon/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@salmon/shared')>();
+  return {
+    ...actual,
+    useDeveloperModeToggles: () =>
+      mockBitcoin.real
+        ? actual.useDeveloperModeToggles()
+        : {
+            developerNetworks: false,
+            showUnverifiedTokens: false,
+            handleToggleDeveloperNetworks: mockHandleToggleDeveloperNetworks,
+            handleToggleUnverifiedTokens: mockHandleToggleUnverifiedTokens,
+            bitcoinEnabled: true,
+            handleToggleBitcoin: vi.fn(),
+            bitcoinConfirm: {
+              visible: false,
+              onClose: vi.fn(),
+              onConfirm: vi.fn(),
+              title: '',
+              message: '',
+            },
+          },
+  };
+});
+vi.mock('@salmon/shared/src/contexts/AccountsContext', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@salmon/shared/src/contexts/AccountsContext')>()),
+  useAccountsContext: () => [{ networkId: 'solana-mainnet' }, { changeNetwork: vi.fn() }],
+}));
+vi.mock('@salmon/shared/src/contexts/DeveloperModeContext', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@salmon/shared/src/contexts/DeveloperModeContext')>()),
+  useDeveloperModeSettings: () => ({
     developerNetworks: false,
     showUnverifiedTokens: false,
-    handleToggleDeveloperNetworks: mockHandleToggleDeveloperNetworks,
-    handleToggleUnverifiedTokens: mockHandleToggleUnverifiedTokens,
+    toggleDeveloperNetworks: vi.fn(),
+    setShowUnverifiedTokens: vi.fn(),
+    bitcoinEnabled: mockBitcoin.enabled,
+    setBitcoinEnabled: mockBitcoin.setBitcoinEnabled,
   }),
 }));
 
@@ -271,5 +306,75 @@ describe('SettingsPanelStack — a panel raises the wait on the stack', () => {
   it('opens straight onto a seeded panel, without flashing the root first', () => {
     renderStack({ initialPanels: [{ screen: 'backup' }] });
     expect(screen.getByTestId('panel-backup')).toBeTruthy();
+  });
+});
+
+describe('SettingsPanelStack — the Bitcoin switch', () => {
+  const bitcoinSwitch = () => screen.getByTestId('settings-bitcoin-toggle');
+
+  beforeEach(() => {
+    mockBitcoin.real = true;
+  });
+
+  it('is the last row of Preferences, with its label and description', () => {
+    renderStack();
+
+    const preferences = screen.getByTestId('settings-section-settings.sections.preferences');
+    const row = screen.getByTestId('settings-item-bitcoin');
+    expect(preferences.lastElementChild).toBe(row);
+    expect(row.textContent).toContain('settings.bitcoin');
+    expect(row.textContent).toContain('settings.bitcoin_description');
+  });
+
+  it('reads on by default and off with the choice off', () => {
+    renderStack();
+    expect(bitcoinSwitch().getAttribute('aria-checked')).toBe('true');
+    cleanup();
+
+    mockBitcoin.enabled = false;
+    renderStack();
+    expect(bitcoinSwitch().getAttribute('aria-checked')).toBe('false');
+  });
+
+  it('turns Bitcoin on at once, without asking', () => {
+    mockBitcoin.enabled = false;
+    renderStack();
+
+    fireEvent.click(bitcoinSwitch());
+
+    expect(mockBitcoin.setBitcoinEnabled).toHaveBeenCalledWith(true);
+    expect(screen.queryByText('settings.bitcoin_off_title')).toBeNull();
+  });
+
+  it('asks before hiding Bitcoin, with the switch still on', () => {
+    renderStack();
+
+    fireEvent.click(bitcoinSwitch());
+
+    expect(screen.getByText('settings.bitcoin_off_title')).toBeTruthy();
+    expect(bitcoinSwitch().getAttribute('aria-checked')).toBe('true');
+    expect(mockBitcoin.setBitcoinEnabled).not.toHaveBeenCalled();
+  });
+
+  it('cancelling closes the question and leaves the switch on', async () => {
+    renderStack();
+    fireEvent.click(bitcoinSwitch());
+
+    fireEvent.click(screen.getByTestId('confirm-dialog-cancel'));
+
+    await waitFor(() => expect(screen.queryByText('settings.bitcoin_off_title')).toBeNull());
+    expect(bitcoinSwitch().getAttribute('aria-checked')).toBe('true');
+    expect(mockBitcoin.setBitcoinEnabled).not.toHaveBeenCalled();
+  });
+
+  it('confirming hides Bitcoin', async () => {
+    renderStack();
+    fireEvent.click(bitcoinSwitch());
+
+    fireEvent.click(screen.getByTestId('confirm-dialog-confirm'));
+
+    await waitFor(() =>
+      expect(mockBitcoin.setBitcoinEnabled).toHaveBeenCalledWith(false, expect.any(Object))
+    );
   });
 });

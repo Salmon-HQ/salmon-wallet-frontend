@@ -124,7 +124,10 @@ import { fileURLToPath } from 'node:url';
 // whose row and the Token list screen are made once in shared
 // (`createTokenListFoldRow`, `createTokenListPanel`); the one line is the
 // `stack` glyph in both settings icon tables, data with no logic.
-export const CROSS_PLATFORM_CLONE_LINES_MAX = 2264;
+// 2026-11-25, later: 2264 → 2265. Spec 045: the Bitcoin switch's
+// `currencyBtc` glyph in both settings icon tables, data with no logic; the
+// switch, its confirmation and its copy live in `useDeveloperModeToggles`.
+export const CROSS_PLATFORM_CLONE_LINES_MAX = 2265;
 
 /**
  * The ceiling for every clone that is not cross-platform, in lines (same

@@ -18,6 +18,7 @@ import {
   readNetworkId,
   spacing,
   useAccountsContext,
+  useDeveloperModeSettings,
   usePrivateKeyPanelLogic,
   type AccountKeyInfo,
   type IconGlyphProps,
@@ -76,7 +77,11 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
   const [state, actions] = useAccountsContext();
   const { activeAccount } = state;
 
-  const networks = useMemo(() => buildNetworkListFromAccount(activeAccount), [activeAccount]);
+  const { bitcoinEnabled } = useDeveloperModeSettings();
+  const networks = useMemo(
+    () => buildNetworkListFromAccount(activeAccount, bitcoinEnabled),
+    [activeAccount, bitcoinEnabled]
+  );
 
   // The password is asked again before a private key, full spending control
   // of the account, comes into view. Reveal/copy/reauth state lives in

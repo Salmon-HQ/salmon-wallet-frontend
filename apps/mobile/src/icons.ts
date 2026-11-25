@@ -67,6 +67,7 @@ export { CodeIcon } from 'phosphor-react-native/src/icons/Code';
 export { CopyIcon } from 'phosphor-react-native/src/icons/Copy';
 export { CreditCardIcon } from 'phosphor-react-native/src/icons/CreditCard';
 export { CubeIcon } from 'phosphor-react-native/src/icons/Cube';
+export { CurrencyBtcIcon } from 'phosphor-react-native/src/icons/CurrencyBtc';
 export { CurrencyCircleDollarIcon } from 'phosphor-react-native/src/icons/CurrencyCircleDollar';
 export { CurrencyDollarIcon } from 'phosphor-react-native/src/icons/CurrencyDollar';
 export { DiamondIcon } from 'phosphor-react-native/src/icons/Diamond';

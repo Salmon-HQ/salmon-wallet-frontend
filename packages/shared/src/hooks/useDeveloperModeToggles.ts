@@ -1,21 +1,28 @@
 /**
- * The Settings screen's two "show me more" toggle handlers — identical on
- * both platforms. Flipping Developer Networks off while the session stands
- * on devnet moves it to the mainnet sibling first; unverified tokens writes
- * straight through. Wraps `useDeveloperModeSettings` + the session's
+ * The Settings screen's toggle handlers — identical on both platforms.
+ * Flipping Developer Networks off while the session stands on devnet moves it
+ * to the mainnet sibling first; unverified tokens writes straight through;
+ * Bitcoin asks before it hides (spec 045 FR-012). Wraps `useDeveloperModeSettings` + the session's
  * `networkId`/`changeNetwork` (`useAccountsContext`) so both Settings twins
  * call one hook instead of re-deriving the same two callbacks.
  */
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { useAccountsContext } from '../contexts/AccountsContext';
 import { useDeveloperModeSettings } from '../contexts/DeveloperModeContext';
+import type { ConfirmSheetPropsBase } from '../types/ui/settings-panels';
 
 export interface UseDeveloperModeTogglesResult {
   developerNetworks: boolean;
   showUnverifiedTokens: boolean;
   handleToggleDeveloperNetworks: () => void;
   handleToggleUnverifiedTokens: (show: boolean) => void;
+  bitcoinEnabled: boolean;
+  /** On writes at once; off opens `bitcoinConfirm` and writes only on confirm. */
+  handleToggleBitcoin: (next: boolean) => void;
+  /** Ready to spread into `ConfirmSheet` / `ConfirmDialog`. */
+  bitcoinConfirm: ConfirmSheetPropsBase;
 }
 
 export function useDeveloperModeToggles(): UseDeveloperModeTogglesResult {
@@ -25,7 +32,11 @@ export function useDeveloperModeToggles(): UseDeveloperModeTogglesResult {
     showUnverifiedTokens,
     toggleDeveloperNetworks,
     setShowUnverifiedTokens,
+    bitcoinEnabled,
+    setBitcoinEnabled,
   } = useDeveloperModeSettings();
+  const { t } = useTranslation();
+  const [confirmingBitcoinOff, setConfirmingBitcoinOff] = useState(false);
 
   const handleToggleDeveloperNetworks = useCallback(() => {
     void toggleDeveloperNetworks({
@@ -41,10 +52,36 @@ export function useDeveloperModeToggles(): UseDeveloperModeTogglesResult {
     [setShowUnverifiedTokens]
   );
 
+  const handleToggleBitcoin = useCallback(
+    (next: boolean) => {
+      if (next) void setBitcoinEnabled(true);
+      else setConfirmingBitcoinOff(true);
+    },
+    [setBitcoinEnabled]
+  );
+
+  const bitcoinConfirm: ConfirmSheetPropsBase = {
+    visible: confirmingBitcoinOff,
+    onClose: () => setConfirmingBitcoinOff(false),
+    onConfirm: async () => {
+      await setBitcoinEnabled(false, {
+        activeNetworkId: networkId,
+        changeNetwork: accountActions.changeNetwork,
+      });
+      setConfirmingBitcoinOff(false);
+    },
+    title: t('settings.bitcoin_off_title'),
+    message: t('settings.bitcoin_off_message'),
+    confirmText: t('settings.bitcoin_off_confirm'),
+  };
+
   return {
     developerNetworks,
     showUnverifiedTokens,
     handleToggleDeveloperNetworks,
     handleToggleUnverifiedTokens,
+    bitcoinEnabled,
+    handleToggleBitcoin,
+    bitcoinConfirm,
   };
 }

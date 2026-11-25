@@ -8,7 +8,7 @@
  * tokens writes straight through.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 
 import { useDeveloperModeToggles } from './useDeveloperModeToggles';
 import { useAccountsContext } from '../contexts/AccountsContext';
@@ -17,6 +17,16 @@ import { DEFAULT_TOKEN_LIST_PREFERENCE } from '../utils/tokenListFold';
 
 vi.mock('../contexts/AccountsContext', () => ({ useAccountsContext: vi.fn() }));
 vi.mock('../contexts/DeveloperModeContext', () => ({ useDeveloperModeSettings: vi.fn() }));
+vi.mock('react-i18next', async () => {
+  const i18next = (await import('i18next')).default.createInstance();
+  const en = (await import('../locales/en/translation.json')).default;
+  await i18next.init({
+    lng: 'en',
+    resources: { en: { translation: en } },
+    interpolation: { escapeValue: false },
+  });
+  return { useTranslation: () => ({ t: i18next.t.bind(i18next) }) };
+});
 
 const accountsMock = vi.mocked(useAccountsContext);
 const developerModeMock = vi.mocked(useDeveloperModeSettings);
@@ -24,6 +34,7 @@ const developerModeMock = vi.mocked(useDeveloperModeSettings);
 const changeNetwork = vi.fn();
 const toggleDeveloperNetworks = vi.fn();
 const setShowUnverifiedTokens = vi.fn();
+const setBitcoinEnabled = vi.fn(async () => {});
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -39,7 +50,7 @@ beforeEach(() => {
     tokenListPreference: DEFAULT_TOKEN_LIST_PREFERENCE,
     setTokenListPreference: vi.fn(),
     bitcoinEnabled: true,
-    setBitcoinEnabled: vi.fn(),
+    setBitcoinEnabled,
   });
 });
 
@@ -68,5 +79,67 @@ describe('useDeveloperModeToggles', () => {
 
     expect(result.current.developerNetworks).toBe(true);
     expect(result.current.showUnverifiedTokens).toBe(false);
+  });
+});
+
+describe('useDeveloperModeToggles — the Bitcoin switch', () => {
+  it('writes on at once and opens nothing', () => {
+    const { result } = renderHook(() => useDeveloperModeToggles());
+
+    act(() => result.current.handleToggleBitcoin(true));
+
+    expect(setBitcoinEnabled).toHaveBeenCalledWith(true);
+    expect(result.current.bitcoinConfirm.visible).toBe(false);
+  });
+
+  it('asks before turning it off, and writes nothing yet', () => {
+    const { result } = renderHook(() => useDeveloperModeToggles());
+
+    act(() => result.current.handleToggleBitcoin(false));
+
+    expect(result.current.bitcoinConfirm.visible).toBe(true);
+    expect(setBitcoinEnabled).not.toHaveBeenCalled();
+  });
+
+  it('cancelling closes the question, writes nothing and leaves Bitcoin on', () => {
+    const { result } = renderHook(() => useDeveloperModeToggles());
+
+    act(() => result.current.handleToggleBitcoin(false));
+    act(() => result.current.bitcoinConfirm.onClose());
+
+    expect(result.current.bitcoinConfirm.visible).toBe(false);
+    expect(setBitcoinEnabled).not.toHaveBeenCalled();
+    expect(result.current.bitcoinEnabled).toBe(true);
+  });
+
+  // The setter moves the session before it writes (useUserConfig.bitcoin.test.tsx).
+  it('confirming hands the setter the session to move off Bitcoin, then closes', async () => {
+    accountsMock.mockReturnValue([
+      { networkId: 'bitcoin-mainnet' },
+      { changeNetwork },
+    ] as unknown as ReturnType<typeof useAccountsContext>);
+    const { result } = renderHook(() => useDeveloperModeToggles());
+
+    act(() => result.current.handleToggleBitcoin(false));
+    await act(async () => {
+      await result.current.bitcoinConfirm.onConfirm();
+    });
+
+    expect(setBitcoinEnabled).toHaveBeenCalledWith(false, {
+      activeNetworkId: 'bitcoin-mainnet',
+      changeNetwork,
+    });
+    expect(result.current.bitcoinConfirm.visible).toBe(false);
+  });
+
+  it('says what hiding Bitcoin does, in the translated copy', () => {
+    const { result } = renderHook(() => useDeveloperModeToggles());
+
+    expect(result.current.bitcoinConfirm).toMatchObject({
+      title: 'Hide Bitcoin?',
+      message:
+        'Your Bitcoin stays in your wallet. It shows again when you turn Bitcoin back on in Settings.',
+      confirmText: 'Hide Bitcoin',
+    });
   });
 });

@@ -22,6 +22,7 @@ export type SettingsIconName =
   | 'money'
   | 'arrowSquareOut'
   | 'circleHalf'
+  | 'currencyBtc'
   | 'addressBook'
   | 'squaresFour'
   | 'chartBar'
@@ -32,8 +33,8 @@ export type SettingsIconName =
   | 'trash'
   | 'signOut';
 
-/** The three switches on the root list; each platform wires checked/onChange. */
-export type SettingsToggleKey = 'analytics' | 'developerNetworks' | 'unverifiedTokens';
+/** The switches on the root list; each platform wires checked/onChange. */
+export type SettingsToggleKey = 'bitcoin' | 'analytics' | 'developerNetworks' | 'unverifiedTokens';
 
 export type SettingsRowId = SettingsScreen | SettingsToggleKey;
 
@@ -99,6 +100,14 @@ export const SETTINGS_GROUPS: readonly SettingsGroupDef[] = [
         labelKey: 'settings.select_explorer',
       },
       { id: 'appearance', kind: 'panel', icon: 'circleHalf', labelKey: 'settings.appearance' },
+      {
+        id: 'bitcoin',
+        kind: 'toggle',
+        icon: 'currencyBtc',
+        labelKey: 'settings.bitcoin',
+        descriptionKey: 'settings.bitcoin_description',
+        testId: 'settings-bitcoin-toggle',
+      },
     ],
   },
   {
