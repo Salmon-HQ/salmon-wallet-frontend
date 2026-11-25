@@ -45,6 +45,12 @@ home for mobile integration tests.
 - **Destructive reset**: `actions/reset/remove-all-wallets.yaml` wipes
   the device. Always last in `suites/actions.yaml`.
 
+- **Conditional steps**: `runFlow: when: visible:` is for dismissing
+  something that may or may not be there (a consent screen, a biometric
+  prompt). The step a flow exists to prove is never inside one: set the app
+  up so the element must appear and assert it, or the flow passes on a
+  wallet that never shows it.
+
 ## Pre-flight
 
 Before authorizing `actions/*` flows, check the test wallets' actual
