@@ -42,6 +42,8 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 [Gates determined based on constitution file]
 
+_Twin components: when the design adds or changes a DOM/native pair, run `pnpm check:parity:report` now and write here how many cross-platform lines the design adds and whether `CROSS_PLATFORM_CLONE_LINES_MAX` has to move (`docs/DOM-PARITY.md` says when it may), so the owner decides it with the plan and not at the last commit._
+
 ## Project Structure
 
 ### Documentation (this feature)

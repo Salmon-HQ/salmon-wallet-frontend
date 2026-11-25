@@ -322,6 +322,17 @@ keep, and `scripts/check-dom-parity.mjs` enforces:
   prototypes, storage, `Platform.OS`, queued `mock…Once` answers). A failure
   prints its seed: replay it with `--seed=<n>` (Jest) or
   `--sequence.seed=<n>` (Vitest).
+- An end-to-end flow reaches its main assertion on the test wallet it runs
+  with. A flow whose core sits inside "when this element is visible" passes
+  on a wallet that never shows the element, having tested nothing: arrange
+  the state so the element must appear, and assert it. Wallet A holds three
+  tokens on mainnet (SOL, USDC and a dust position), so a list feature needs
+  a setting that bites on three rows.
+- A setting that is saved shows its new value at once and keeps a second tap
+  that lands before the first write does. Test both with slow storage:
+  `tapWhileSaving` in
+  `packages/shared/src/hooks/useUserConfig.instances.test.tsx` holds the
+  write open while the taps run.
 - Backend-dependent E2E tests may target `../salmon-wallet-backend` running in Docker.
   Before adding one, check whether `../salmon-wallet-backend` already covers the
   behavior to avoid redundant tests.
