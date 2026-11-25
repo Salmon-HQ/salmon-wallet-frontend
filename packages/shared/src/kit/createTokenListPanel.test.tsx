@@ -96,14 +96,14 @@ describe('createTokenListPanel', () => {
     );
   });
 
-  it('writes the picked half and keeps the other', () => {
+  it('writes only the half that was picked', () => {
     preference = { maxCount: null, minValue: 5 };
     render(<TokenListPanel onBack={() => {}} />);
 
     fireEvent.click(screen.getByTestId('token-list-count-3'));
-    expect(setTokenListPreference).toHaveBeenLastCalledWith({ maxCount: 3, minValue: 5 });
+    expect(setTokenListPreference).toHaveBeenLastCalledWith({ maxCount: 3 });
 
     fireEvent.click(screen.getByTestId('token-list-min-value-off'));
-    expect(setTokenListPreference).toHaveBeenLastCalledWith({ maxCount: null, minValue: null });
+    expect(setTokenListPreference).toHaveBeenLastCalledWith({ minValue: null });
   });
 });

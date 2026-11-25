@@ -9,7 +9,7 @@
  * @module hooks/useUserConfig
  */
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { getStorage, STORAGE_KEYS } from '../storage';
 import {
   EXPLORERS,
@@ -81,8 +81,8 @@ export interface UseUserConfigResult {
   markDerivedScanned: (walletId: string) => Promise<void>;
   /** How many tokens Home shows and from what value; every token when never chosen */
   tokenListPreference: TokenListPreference;
-  /** Stores the token list preference */
-  setTokenListPreference: (next: TokenListPreference) => Promise<void>;
+  /** Stores the half of the token list preference that changed */
+  setTokenListPreference: (next: Partial<TokenListPreference>) => Promise<void>;
   /** Whether the configuration is still loading */
   isLoading: boolean;
 }
@@ -207,8 +207,12 @@ export function useUserConfig({
     }));
   }, []);
 
+  // The latest record, for a tap that lands before the render it caused.
+  const configRef = useRef<UserConfig | null>(null);
+
   const applyConfig = useCallback(
     (config: UserConfig) => {
+      configRef.current = config;
       setUserConfig(config);
       const networkExplorers = EXPLORERS[blockchain]?.[environment];
       setExplorer(
@@ -252,23 +256,42 @@ export function useUserConfig({
   }, [blockchain, environment, toArray, applyConfig]);
 
   /**
+   * Shows a change at once and stores it. The change is a function of a
+   * record so it runs twice: on this instance's copy, for the screen, and on
+   * the stored record inside the write queue, so a second tap that lands
+   * before the first write does is merged rather than computed from a stale
+   * copy. A failed write puts the screen back on what is stored.
+   */
+  const commit = useCallback(
+    async (change: (config: UserConfig) => Partial<UserConfig>, what: string): Promise<void> => {
+      const current = configRef.current;
+      if (!current) return;
+      applyConfig({ ...current, ...change(current) });
+
+      try {
+        await persistPatch(change);
+      } catch (error) {
+        console.error(`Failed to save ${what}:`, error);
+        try {
+          applyConfig(withDefaults(await getStorage().getItem<UserConfig>(USER_CONFIG_KEY)));
+        } catch {
+          // Storage is unreadable too: the screen keeps what the user chose.
+        }
+      }
+    },
+    [applyConfig]
+  );
+
+  /**
    * Changes the selected explorer for the current blockchain.
    */
   const changeExplorer = useCallback(
-    async (explorerKey: string): Promise<void> => {
-      if (!userConfig) return;
-
-      try {
-        applyConfig(
-          await persistPatch((stored) => ({
-            explorers: { ...stored.explorers, [blockchain]: explorerKey },
-          }))
-        );
-      } catch (error) {
-        console.error('Failed to save explorer preference:', error);
-      }
-    },
-    [userConfig, blockchain, applyConfig]
+    (explorerKey: string): Promise<void> =>
+      commit(
+        (config) => ({ explorers: { ...config.explorers, [blockchain]: explorerKey } }),
+        'explorer preference'
+      ),
+    [commit, blockchain]
   );
 
   /**
@@ -281,9 +304,9 @@ export function useUserConfig({
    */
   const toggleDeveloperNetworks = useCallback(
     async (options?: ToggleDeveloperNetworksOptions): Promise<void> => {
-      if (!userConfig) return;
+      if (!configRef.current) return;
 
-      const newValue = !developerNetworks;
+      const newValue = !configRef.current.developerNetworks;
 
       if (!newValue && options?.activeNetworkId && options.changeNetwork) {
         const mainnetId = getMainnetSibling(options.activeNetworkId);
@@ -292,13 +315,9 @@ export function useUserConfig({
         }
       }
 
-      try {
-        applyConfig(await persistPatch({ developerNetworks: newValue }));
-      } catch (error) {
-        console.error('Failed to save developer networks preference:', error);
-      }
+      await commit(() => ({ developerNetworks: newValue }), 'developer networks preference');
     },
-    [userConfig, developerNetworks, applyConfig]
+    [commit]
   );
 
   /**
@@ -309,17 +328,9 @@ export function useUserConfig({
    * devnet in the carousel.
    */
   const setShowUnverifiedTokens = useCallback(
-    async (show: boolean): Promise<void> => {
-      if (!userConfig) return;
-      if (show === showUnverifiedTokens) return;
-
-      try {
-        applyConfig(await persistPatch({ showUnverifiedTokens: show }));
-      } catch (error) {
-        console.error('Failed to save unverified tokens preference:', error);
-      }
-    },
-    [userConfig, showUnverifiedTokens, applyConfig]
+    (show: boolean): Promise<void> =>
+      commit(() => ({ showUnverifiedTokens: show }), 'unverified tokens preference'),
+    [commit]
   );
 
   /**
@@ -329,23 +340,12 @@ export function useUserConfig({
    * every wallet created after this shipped — counts by default.
    */
   const setIncludedInTotal = useCallback(
-    async (walletId: string, included: boolean): Promise<void> => {
-      if (!userConfig) return;
-
-      if (!included && excludedFromTotal.includes(walletId)) return;
-
-      try {
-        applyConfig(
-          await persistPatch((stored) => {
-            const rest = (stored.excludedFromTotal ?? []).filter((id) => id !== walletId);
-            return { excludedFromTotal: included ? rest : [...rest, walletId] };
-          })
-        );
-      } catch (error) {
-        console.error('Failed to save wallet total preference:', error);
-      }
-    },
-    [userConfig, excludedFromTotal, applyConfig]
+    (walletId: string, included: boolean): Promise<void> =>
+      commit((config) => {
+        const rest = (config.excludedFromTotal ?? []).filter((id) => id !== walletId);
+        return { excludedFromTotal: included ? rest : [...rest, walletId] };
+      }, 'wallet total preference'),
+    [commit]
   );
 
   /**
@@ -356,42 +356,33 @@ export function useUserConfig({
    * what a cancelled or failed scan must leave behind.
    */
   const markDerivedScanned = useCallback(
-    async (walletId: string): Promise<void> => {
-      if (!userConfig) return;
-      if (derivedScannedAccountIds.includes(walletId)) return;
-
-      try {
-        applyConfig(
-          await persistPatch((stored) => ({
-            derivedScannedAccountIds: [
-              ...(stored.derivedScannedAccountIds ?? []).filter((id) => id !== walletId),
-              walletId,
-            ],
-          }))
-        );
-      } catch (error) {
-        console.error('Failed to save derived-scan state:', error);
-      }
-    },
-    [userConfig, derivedScannedAccountIds, applyConfig]
+    (walletId: string): Promise<void> =>
+      commit(
+        (config) => ({
+          derivedScannedAccountIds: [
+            ...(config.derivedScannedAccountIds ?? []).filter((id) => id !== walletId),
+            walletId,
+          ],
+        }),
+        'derived-scan state'
+      ),
+    [commit]
   );
 
+  const storedMaxCount = userConfig?.tokenList?.maxCount;
+  const storedMinValue = userConfig?.tokenList?.minValue;
   const tokenListPreference = useMemo(
-    () => normalizeTokenListPreference(userConfig?.tokenList),
-    [userConfig]
+    () => normalizeTokenListPreference({ maxCount: storedMaxCount, minValue: storedMinValue }),
+    [storedMaxCount, storedMinValue]
   );
 
   const setTokenListPreference = useCallback(
-    async (next: TokenListPreference): Promise<void> => {
-      if (!userConfig) return;
-
-      try {
-        applyConfig(await persistPatch({ tokenList: next }));
-      } catch (error) {
-        console.error('Failed to save token list preference:', error);
-      }
-    },
-    [userConfig, applyConfig]
+    (next: Partial<TokenListPreference>): Promise<void> =>
+      commit(
+        (config) => ({ tokenList: { ...normalizeTokenListPreference(config.tokenList), ...next } }),
+        'token list preference'
+      ),
+    [commit]
   );
 
   return {

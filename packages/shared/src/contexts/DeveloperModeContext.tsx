@@ -28,7 +28,7 @@ export interface DeveloperModeContextValue {
   toggleDeveloperNetworks: (options?: ToggleDeveloperNetworksOptions) => Promise<void>;
   setShowUnverifiedTokens: (show: boolean) => Promise<void>;
   tokenListPreference: TokenListPreference;
-  setTokenListPreference: (next: TokenListPreference) => Promise<void>;
+  setTokenListPreference: (next: Partial<TokenListPreference>) => Promise<void>;
 }
 
 const noop = async () => {};

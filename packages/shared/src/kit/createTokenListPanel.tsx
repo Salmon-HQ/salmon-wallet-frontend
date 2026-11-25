@@ -45,9 +45,7 @@ export function createTokenListPanel(
           items={countOptions}
           getKey={(option) => option.key}
           isSelected={(option) => option.value === tokenListPreference.maxCount}
-          onSelect={(option) =>
-            void setTokenListPreference({ ...tokenListPreference, maxCount: option.value })
-          }
+          onSelect={(option) => void setTokenListPreference({ maxCount: option.value })}
           getPrimaryText={(option) => option.label}
           renderLeadingElement={noWell}
           testIdPrefix="token-list-count"
@@ -59,9 +57,7 @@ export function createTokenListPanel(
           items={minValueOptions}
           getKey={(option) => option.key}
           isSelected={(option) => option.value === tokenListPreference.minValue}
-          onSelect={(option) =>
-            void setTokenListPreference({ ...tokenListPreference, minValue: option.value })
-          }
+          onSelect={(option) => void setTokenListPreference({ minValue: option.value })}
           getPrimaryText={(option) => option.label}
           renderLeadingElement={noWell}
           testIdPrefix="token-list-min-value"
