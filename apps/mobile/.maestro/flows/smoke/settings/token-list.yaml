@@ -27,17 +27,14 @@ appId: io.salmonwallet.app
 - assertVisible:
     id: 'home-screen'
 - takeScreenshot: screenshots/smoke/settings/token-list-home-folded
-# The row exists only when the wallet holds a token under the floor or more than three.
-- runFlow:
-    when:
-      visible:
-        id: 'token-list-fold-row'
-    commands:
-      - tapOn:
-          id: 'token-list-fold-row'
-      - waitForAnimationToEnd:
-          timeout: 2000
-      - takeScreenshot: screenshots/smoke/settings/token-list-home-unfolded
+# Wallet A's dust token is under the floor, so the row must be there.
+- assertVisible:
+    id: 'token-list-fold-row'
+- tapOn:
+    id: 'token-list-fold-row'
+- waitForAnimationToEnd:
+    timeout: 2000
+- takeScreenshot: screenshots/smoke/settings/token-list-home-unfolded
 # Back to All.
 - runFlow: ../../../subflows/open-settings.yaml
 - tapOn:

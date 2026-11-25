@@ -60,6 +60,8 @@ another. Specs that change state on chain are opt-in with `SALMON_E2E_ONCHAIN=1`
 | Leaving the page (reload, close) clears the session key and locks                                              | A reload is a new unlock — see `lock.spec.ts`.                                                                                                    |
 | A toggle or flag persists in the profile                                                                       | Give the spec its own `profileName` with `freshProfile: true`.                                                                                    |
 | The devnet NFT index can list an NFT the wallet no longer owns                                                 | Use the fixture card, never "the first card".                                                                                                     |
+| An `if (count > n)` around the assertions a spec exists for passes on a wallet below `n`                       | Arrange the state so the branch is certain (Wallet A holds three tokens, one of them dust) and assert without the `if`.                           |
+| `dist/chrome-mv3` as a real folder is a production build, and the runner loads it                              | For the local backend it is a link to `chrome-mv3-dev` (README, Setup).                                                                           |
 | `npx playwright install chromium` times out while curl downloads fine                                          | Download the zip from the URL it prints and unpack it into `~/Library/Caches/ms-playwright/chromium-<rev>/` with an `INSTALLATION_COMPLETE` file. |
 
 ## Sensitive workflows

@@ -11,35 +11,7 @@ jest.mock('@salmon/shared', () =>
   })
 );
 
-// IconBubble pulls a native module jest cannot load (same stand-in as `IconBubble.test.tsx`).
-jest.mock('react-native-reanimated', () => {
-  const ReactActual = require('react');
-  const { View: RNView } = require('react-native');
-  return {
-    __esModule: true,
-    default: {
-      View: RNView,
-      createAnimatedComponent: (Component: React.ComponentType<Record<string, unknown>>) =>
-        ReactActual.forwardRef((props: Record<string, unknown>, ref: unknown) =>
-          ReactActual.createElement(Component, { ...props, ref })
-        ),
-    },
-    useSharedValue: (value: unknown) => ({ value }),
-    useAnimatedStyle: (fn: () => unknown) => fn(),
-    useReducedMotion: () => false,
-    withTiming: (target: unknown) => target,
-    Easing: { bezier: () => (value: number) => value },
-  };
-});
-
-jest.mock('../../../hooks/usePressMotion', () => ({
-  usePressMotion: () => ({
-    pressStyle: {},
-    scale: { value: 1 },
-    pressHandlers: { onPressIn: () => {}, onPressOut: () => {} },
-    specular: { x: { value: 0 }, y: { value: 0 }, opacity: { value: 0 } },
-  }),
-}));
+jest.mock('react-native-reanimated', () => require('../../../test-utils/reanimatedStub'));
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
