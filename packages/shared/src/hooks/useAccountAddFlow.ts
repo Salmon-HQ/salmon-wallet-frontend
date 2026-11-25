@@ -19,6 +19,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 
 import { useAccountsContext } from '../contexts/AccountsContext';
+import { useDeveloperModeSettings } from '../contexts/DeveloperModeContext';
 import { isVaultKeyCached, EncryptionMaterialMissingError } from '../crypto/encrypt-mnemonics';
 import { normalizeMnemonic, validateMnemonic } from '../crypto/mnemonic';
 import { distributePhrase } from '../utils/seed-phrase';
@@ -44,6 +45,7 @@ import type {
   SeedVaultListedAccount,
 } from '../types/ui/account-add';
 import { getBlockchainFromNetworkId } from '../config/blockchains';
+import { isNetworkChosen } from '../utils/network';
 import { isSeedVaultError, type SeedVaultFailure } from '../blockchain/solana/seed-vault-signer';
 import { useImportPrivateKey, type UseImportPrivateKeyResult } from './useImportPrivateKey';
 import { useImportWatchOnly, type UseImportWatchOnlyResult } from './useImportWatchOnly';
@@ -253,6 +255,7 @@ export function useAccountAddFlow({
   const busyRef = useRef(false);
 
   const canDerive = !!getAccountMnemonic(activeAccount);
+  const { bitcoinEnabled } = useDeveloperModeSettings();
 
   const selectDerive = useCallback(async () => {
     const mnemonic = getAccountMnemonic(activeAccount);
@@ -261,7 +264,9 @@ export function useAccountAddFlow({
     setScanning(true);
     setFailedNetworks([]);
     try {
-      const networkIds = await getScanNetworks();
+      const networkIds = (await getScanNetworks()).filter((id) =>
+        isNetworkChosen(id, bitcoinEnabled)
+      );
       const { accounts: scanned, failedNetworks: failed } = await scanDerivedAccounts(
         mnemonic,
         networkIds
@@ -276,7 +281,7 @@ export function useAccountAddFlow({
     } finally {
       setScanning(false);
     }
-  }, [activeAccount]);
+  }, [activeAccount, bitcoinEnabled]);
 
   const selectImport = useCallback(() => setStep('import-seed'), []);
 

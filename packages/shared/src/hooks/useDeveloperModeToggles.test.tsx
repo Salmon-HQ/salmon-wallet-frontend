@@ -38,6 +38,8 @@ beforeEach(() => {
     setShowUnverifiedTokens,
     tokenListPreference: DEFAULT_TOKEN_LIST_PREFERENCE,
     setTokenListPreference: vi.fn(),
+    bitcoinEnabled: true,
+    setBitcoinEnabled: vi.fn(),
   });
 });
 

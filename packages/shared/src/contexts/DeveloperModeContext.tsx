@@ -15,10 +15,11 @@
  * time the flag asks for them (`useEnsureMirrorNetworks`) — on both platforms,
  * so a devnet page is never offered to a wallet that has no devnet account.
  */
-import React, { createContext, useContext, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useMemo } from 'react';
 
 import { useEnsureMirrorNetworks } from '../hooks/useEnsureMirrorNetworks';
 import { useUserConfig, type ToggleDeveloperNetworksOptions } from '../hooks/useUserConfig';
+import { isNetworkChosen } from '../utils/network';
 import { DEFAULT_TOKEN_LIST_PREFERENCE, type TokenListPreference } from '../utils/tokenListFold';
 import { useAccountsContext } from './AccountsContext';
 
@@ -29,6 +30,8 @@ export interface DeveloperModeContextValue {
   setShowUnverifiedTokens: (show: boolean) => Promise<void>;
   tokenListPreference: TokenListPreference;
   setTokenListPreference: (next: Partial<TokenListPreference>) => Promise<void>;
+  bitcoinEnabled: boolean;
+  setBitcoinEnabled: (enabled: boolean, options?: ToggleDeveloperNetworksOptions) => Promise<void>;
 }
 
 const noop = async () => {};
@@ -40,10 +43,12 @@ const DeveloperModeContext = createContext<DeveloperModeContextValue>({
   setShowUnverifiedTokens: noop,
   tokenListPreference: DEFAULT_TOKEN_LIST_PREFERENCE,
   setTokenListPreference: noop,
+  bitcoinEnabled: true,
+  setBitcoinEnabled: noop,
 });
 
 export function DeveloperModeProvider({ children }: { children: React.ReactNode }) {
-  const [accountState] = useAccountsContext();
+  const [accountState, { changeNetwork }] = useAccountsContext();
   const { activeBlockchainAccount, networkId } = accountState;
 
   // `useUserConfig` keys the explorer choice off this shape; the network half
@@ -67,9 +72,19 @@ export function DeveloperModeProvider({ children }: { children: React.ReactNode 
     setShowUnverifiedTokens,
     tokenListPreference,
     setTokenListPreference,
+    bitcoinEnabled,
+    setBitcoinEnabled,
+    isLoading,
   } = useUserConfig({ activeBlockchainAccount: userConfigAccount });
 
   useEnsureMirrorNetworks(developerNetworks);
+
+  // A session left on Bitcoin with Bitcoin hidden (the app opened that way, or
+  // another extension window turned it off) would keep reading Bitcoin.
+  useEffect(() => {
+    if (isLoading || bitcoinEnabled || !networkId) return;
+    if (!isNetworkChosen(networkId, false)) void changeNetwork('solana-mainnet');
+  }, [isLoading, bitcoinEnabled, networkId, changeNetwork]);
 
   const value = useMemo<DeveloperModeContextValue>(
     () => ({
@@ -79,6 +94,8 @@ export function DeveloperModeProvider({ children }: { children: React.ReactNode 
       setShowUnverifiedTokens,
       tokenListPreference,
       setTokenListPreference,
+      bitcoinEnabled,
+      setBitcoinEnabled,
     }),
     [
       developerNetworks,
@@ -87,6 +104,8 @@ export function DeveloperModeProvider({ children }: { children: React.ReactNode 
       setShowUnverifiedTokens,
       tokenListPreference,
       setTokenListPreference,
+      bitcoinEnabled,
+      setBitcoinEnabled,
     ]
   );
 

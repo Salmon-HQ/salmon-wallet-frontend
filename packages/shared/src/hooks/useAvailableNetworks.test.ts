@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { fetchAndMergeNetworkConfigs, useAvailableNetworks } from './useAvailableNetworks';
 import { SOLANA_NETWORKS } from '../blockchain/solana/networks';
 import * as useUserConfigModule from './useUserConfig';
@@ -23,6 +23,18 @@ vi.mock('./useUserConfig', () => ({
 
 vi.mock('../api/services/network', () => ({
   getNetworks: vi.fn(),
+}));
+
+// Only the cases that run the real `useUserConfig` read it.
+const settingsStore = new Map<string, unknown>();
+vi.mock('../storage', () => ({
+  getStorage: () => ({
+    getItem: async (key: string) => (settingsStore.has(key) ? settingsStore.get(key) : null),
+    setItem: async (key: string, value: unknown) => {
+      settingsStore.set(key, value);
+    },
+  }),
+  STORAGE_KEYS: { SETTINGS: 'settings' },
 }));
 
 vi.mock('../blockchain/solana/networks', () => ({
@@ -207,6 +219,8 @@ describe('useAvailableNetworks Hook', () => {
         markDerivedScanned: vi.fn(),
         tokenListPreference: DEFAULT_TOKEN_LIST_PREFERENCE,
         setTokenListPreference: vi.fn(),
+        bitcoinEnabled: true,
+        setBitcoinEnabled: vi.fn(),
       });
     });
 
@@ -356,6 +370,8 @@ describe('useAvailableNetworks Hook', () => {
         markDerivedScanned: vi.fn(),
         tokenListPreference: DEFAULT_TOKEN_LIST_PREFERENCE,
         setTokenListPreference: vi.fn(),
+        bitcoinEnabled: true,
+        setBitcoinEnabled: vi.fn(),
       });
     });
 
@@ -424,6 +440,8 @@ describe('useAvailableNetworks Hook', () => {
         markDerivedScanned: vi.fn(),
         tokenListPreference: DEFAULT_TOKEN_LIST_PREFERENCE,
         setTokenListPreference: vi.fn(),
+        bitcoinEnabled: true,
+        setBitcoinEnabled: vi.fn(),
       });
 
       const { result } = renderHook(() =>
@@ -465,6 +483,8 @@ describe('useAvailableNetworks Hook', () => {
         markDerivedScanned: vi.fn(),
         tokenListPreference: DEFAULT_TOKEN_LIST_PREFERENCE,
         setTokenListPreference: vi.fn(),
+        bitcoinEnabled: true,
+        setBitcoinEnabled: vi.fn(),
       });
 
       const { result } = renderHook(() =>
@@ -501,6 +521,8 @@ describe('useAvailableNetworks Hook', () => {
         markDerivedScanned: vi.fn(),
         tokenListPreference: DEFAULT_TOKEN_LIST_PREFERENCE,
         setTokenListPreference: vi.fn(),
+        bitcoinEnabled: true,
+        setBitcoinEnabled: vi.fn(),
       });
 
       const { result } = renderHook(() =>
@@ -534,6 +556,8 @@ describe('useAvailableNetworks Hook', () => {
         markDerivedScanned: vi.fn(),
         tokenListPreference: DEFAULT_TOKEN_LIST_PREFERENCE,
         setTokenListPreference: vi.fn(),
+        bitcoinEnabled: true,
+        setBitcoinEnabled: vi.fn(),
       });
 
       const { result } = renderHook(() =>
@@ -569,6 +593,8 @@ describe('useAvailableNetworks Hook', () => {
         markDerivedScanned: vi.fn(),
         tokenListPreference: DEFAULT_TOKEN_LIST_PREFERENCE,
         setTokenListPreference: vi.fn(),
+        bitcoinEnabled: true,
+        setBitcoinEnabled: vi.fn(),
       });
 
       const { result } = renderHook(() =>
@@ -602,6 +628,8 @@ describe('useAvailableNetworks Hook', () => {
         markDerivedScanned: vi.fn(),
         tokenListPreference: DEFAULT_TOKEN_LIST_PREFERENCE,
         setTokenListPreference: vi.fn(),
+        bitcoinEnabled: true,
+        setBitcoinEnabled: vi.fn(),
       });
 
       const { result } = renderHook(() =>
@@ -609,6 +637,78 @@ describe('useAvailableNetworks Hook', () => {
       );
 
       expect(result.current.developerNetworks).toBe(true);
+    });
+  });
+
+  describe('the Bitcoin choice', () => {
+    const realUserConfig = async () => {
+      const actual = await vi.importActual<typeof useUserConfigModule>('./useUserConfig');
+      vi.mocked(useUserConfigModule.useUserConfig).mockImplementation(actual.useUserConfig);
+      return actual.useUserConfig;
+    };
+
+    beforeEach(() => {
+      settingsStore.clear();
+    });
+
+    it.each([false, true])(
+      'offers no Bitcoin network when it is off (developer networks %s)',
+      async (developerNetworks) => {
+        settingsStore.set('settings', {
+          explorers: {},
+          developerNetworks,
+          bitcoinEnabled: false,
+        });
+        await realUserConfig();
+
+        const { result } = renderHook(() =>
+          useAvailableNetworks({ activeBlockchainAccount: mockActiveAccount })
+        );
+
+        await waitFor(() => expect(result.current.allNetworks.length).toBeGreaterThan(0));
+        expect(result.current.networks.bitcoin).toEqual([]);
+        const ids = result.current.allNetworks.map((n) => n.id);
+        expect(ids).not.toContain('bitcoin-mainnet');
+        expect(ids).not.toContain('bitcoin-testnet');
+      }
+    );
+
+    it('offers Bitcoin as before when the record has never seen the choice', async () => {
+      settingsStore.set('settings', { explorers: {}, developerNetworks: false });
+      await realUserConfig();
+
+      const { result } = renderHook(() =>
+        useAvailableNetworks({ activeBlockchainAccount: mockActiveAccount })
+      );
+
+      await waitFor(() =>
+        expect(result.current.allNetworks.map((n) => n.id)).toEqual([
+          'solana-mainnet',
+          'bitcoin-mainnet',
+          'ethereum-mainnet',
+        ])
+      );
+    });
+
+    it('drops Bitcoin when another instance turns it off, without remounting', async () => {
+      settingsStore.set('settings', { explorers: {}, developerNetworks: false });
+      const useRealUserConfig = await realUserConfig();
+      const { result } = renderHook(() =>
+        useAvailableNetworks({ activeBlockchainAccount: mockActiveAccount })
+      );
+      const settings = renderHook(() =>
+        useRealUserConfig({ activeBlockchainAccount: mockActiveAccount })
+      );
+      await waitFor(() =>
+        expect(result.current.allNetworks.map((n) => n.id)).toContain('bitcoin-mainnet')
+      );
+      await waitFor(() => expect(settings.result.current.isLoading).toBe(false));
+
+      await act(async () => {
+        await settings.result.current.setBitcoinEnabled(false);
+      });
+
+      expect(result.current.allNetworks.map((n) => n.id)).not.toContain('bitcoin-mainnet');
     });
   });
 });

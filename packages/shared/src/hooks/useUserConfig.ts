@@ -19,7 +19,7 @@ import {
   type ExplorerWithKey,
 } from '../config/explorers';
 import type { UserConfig, ActiveBlockchainAccount } from '../types/account';
-import { getMainnetSibling } from '../utils/network';
+import { getMainnetSibling, isNetworkChosen } from '../utils/network';
 import { normalizeTokenListPreference, type TokenListPreference } from '../utils/tokenListFold';
 
 // ============================================================================
@@ -83,6 +83,10 @@ export interface UseUserConfigResult {
   tokenListPreference: TokenListPreference;
   /** Stores the half of the token list preference that changed */
   setTokenListPreference: (next: Partial<TokenListPreference>) => Promise<void>;
+  /** Whether Bitcoin is shown; on unless the user chose "Solana only" */
+  bitcoinEnabled: boolean;
+  /** Shows or hides Bitcoin, moving a session standing on it to Solana first */
+  setBitcoinEnabled: (enabled: boolean, options?: ToggleDeveloperNetworksOptions) => Promise<void>;
   /** Whether the configuration is still loading */
   isLoading: boolean;
 }
@@ -108,20 +112,33 @@ const withDefaults = (config: UserConfig | null): UserConfig => ({
 
 let writeQueue: Promise<unknown> = Promise.resolve();
 
+type ConfigListener = (config: UserConfig) => void;
+
+/** Every mounted instance, so a write one makes reaches the others. */
+const listeners = new Set<ConfigListener>();
+
 /**
  * Several instances of this hook are live at once, each with its own copy of
  * the record. Writing that copy back whole would erase whatever another
  * instance stored since it loaded, so every write re-reads the stored record
  * and merges only its own fields, one write at a time.
+ *
+ * The merged record then goes to every instance except `from`, the writer: it
+ * already shows its change, and a second tap that landed meanwhile is not in
+ * this record yet, so applying it there would undo that tap on screen.
  */
 function persistPatch(
-  patch: Partial<UserConfig> | ((stored: UserConfig) => Partial<UserConfig>)
+  patch: Partial<UserConfig> | ((stored: UserConfig) => Partial<UserConfig>),
+  from?: ConfigListener
 ): Promise<UserConfig> {
   const write = writeQueue.then(async () => {
     const storage = getStorage();
     const stored = withDefaults(await storage.getItem<UserConfig>(USER_CONFIG_KEY));
     const merged = { ...stored, ...(typeof patch === 'function' ? patch(stored) : patch) };
     await storage.setItem(USER_CONFIG_KEY, merged);
+    listeners.forEach((listener) => {
+      if (listener !== from) listener(merged);
+    });
     return merged;
   });
   writeQueue = write.catch(() => undefined);
@@ -226,6 +243,13 @@ export function useUserConfig({
     [blockchain, environment]
   );
 
+  useEffect(() => {
+    listeners.add(applyConfig);
+    return () => {
+      listeners.delete(applyConfig);
+    };
+  }, [applyConfig]);
+
   // Load configuration on mount and when blockchain/environment changes
   useEffect(() => {
     const loadConfig = async () => {
@@ -269,7 +293,7 @@ export function useUserConfig({
       applyConfig({ ...current, ...change(current) });
 
       try {
-        await persistPatch(change);
+        await persistPatch(change, applyConfig);
       } catch (error) {
         console.error(`Failed to save ${what}:`, error);
         try {
@@ -385,6 +409,26 @@ export function useUserConfig({
     [commit]
   );
 
+  /**
+   * Shows or hides Bitcoin. Turning it off while the session stands on a
+   * Bitcoin network moves the session to Solana mainnet first, for the same
+   * reason `toggleDeveloperNetworks` does.
+   */
+  const setBitcoinEnabled = useCallback(
+    async (enabled: boolean, options?: ToggleDeveloperNetworksOptions): Promise<void> => {
+      if (
+        !enabled &&
+        options?.activeNetworkId &&
+        options.changeNetwork &&
+        !isNetworkChosen(options.activeNetworkId, false)
+      ) {
+        await options.changeNetwork('solana-mainnet');
+      }
+      await commit(() => ({ bitcoinEnabled: enabled }), 'Bitcoin preference');
+    },
+    [commit]
+  );
+
   return {
     userConfig,
     explorer,
@@ -400,6 +444,8 @@ export function useUserConfig({
     markDerivedScanned,
     tokenListPreference,
     setTokenListPreference,
+    bitcoinEnabled: userConfig?.bitcoinEnabled !== false,
+    setBitcoinEnabled,
     isLoading,
   };
 }

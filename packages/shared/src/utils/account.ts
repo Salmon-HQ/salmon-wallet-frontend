@@ -23,7 +23,7 @@ import type { Account, AccountSecret } from '../types/account';
 import type { AccountKeyInfo } from '../types/settings';
 import { getBlockchainFromNetworkId } from '../config/blockchains';
 import { isSeedVaultAccount } from './account-secret';
-import { isMainnetNetworkId } from './network';
+import { isMainnetNetworkId, isNetworkChosen } from './network';
 import { isBackendNetworkEnabled } from '../api/services/network';
 import { fetchAndMergeNetworkConfigs } from '../hooks/useAvailableNetworks';
 
@@ -372,14 +372,15 @@ export function getPathIndex(path: string): number | undefined {
  * Shared between mobile and extension private key reveal screens.
  */
 export function buildNetworkListFromAccount(
-  activeAccount: Account | null | undefined
+  activeAccount: Account | null | undefined,
+  bitcoinEnabled = true
 ): Array<{ id: string; name: string; blockchain: string }> {
   if (!activeAccount?.networksAccounts) return [];
 
   return Object.keys(activeAccount.networksAccounts)
     .filter((id) => {
       const accounts = activeAccount.networksAccounts[id];
-      return accounts && accounts.some((a) => a !== null);
+      return accounts && accounts.some((a) => a !== null) && isNetworkChosen(id, bitcoinEnabled);
     })
     .map((id) => {
       const blockchain = getBlockchainFromNetworkId(id);

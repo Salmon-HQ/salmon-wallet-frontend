@@ -31,6 +31,7 @@ import {
   getScanNetworksWithMirrors,
   scanDerivedAccounts,
 } from '../utils/derived-accounts';
+import { isNetworkChosen } from '../utils/network';
 import type { Account } from '../types/account';
 
 // ============================================================================
@@ -132,7 +133,8 @@ function heldAddresses(accounts: Account[]): Set<string> {
 export async function findDerivedAccounts(
   account: Account,
   accounts: Account[],
-  isCancelled: () => boolean
+  isCancelled: () => boolean,
+  bitcoinEnabled = true
 ): Promise<DerivedAccountFind[] | null> {
   const mnemonic = getAccountMnemonic(account);
   // A watch-only or private-key wallet has no derivation tree. There is
@@ -140,8 +142,8 @@ export async function findDerivedAccounts(
   if (!mnemonic) return [];
 
   const scanNetworks = await getScanNetworks();
-  const networkIds = Object.keys(account.networksAccounts).filter((id) =>
-    scanNetworks.includes(id)
+  const networkIds = Object.keys(account.networksAccounts).filter(
+    (id) => scanNetworks.includes(id) && isNetworkChosen(id, bitcoinEnabled)
   );
 
   const { accounts: found, failedNetworks } = await scanDerivedAccounts(
@@ -203,9 +205,11 @@ export function useDerivedAccountsScan({
   automatic = false,
 }: UseDerivedAccountsScanOptions = {}): UseDerivedAccountsScanResult {
   const [{ accounts, activeAccount, locked, ready }, accountActions] = useAccountsContext();
-  const { derivedScannedAccountIds, markDerivedScanned, isLoading } = useUserConfig({
-    activeBlockchainAccount: CONFIG_ACCOUNT,
-  });
+  const { derivedScannedAccountIds, markDerivedScanned, bitcoinEnabled, isLoading } = useUserConfig(
+    {
+      activeBlockchainAccount: CONFIG_ACCOUNT,
+    }
+  );
 
   const [scanningAccountId, setScanningAccountId] = useState<string | null>(null);
   const [rescanningAccountId, setRescanningAccountId] = useState<string | null>(null);
@@ -253,7 +257,12 @@ export function useDerivedAccountsScan({
       if (askWhenEmpty) setRescanningAccountId(account.id);
 
       try {
-        const finds = await findDerivedAccounts(account, accounts, () => cancelledRef.current);
+        const finds = await findDerivedAccounts(
+          account,
+          accounts,
+          () => cancelledRef.current,
+          bitcoinEnabled
+        );
         if (finds === null) return;
         if (finds.length === 0 && !askWhenEmpty) {
           await markDerivedScanned(account.id);
@@ -270,7 +279,7 @@ export function useDerivedAccountsScan({
         setRescanningAccountId(null);
       }
     },
-    [accounts, markDerivedScanned]
+    [accounts, markDerivedScanned, bitcoinEnabled]
   );
 
   useEffect(() => {

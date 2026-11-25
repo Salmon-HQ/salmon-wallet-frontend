@@ -10,6 +10,7 @@ import {
   getMainnetSibling,
   getNetworkName,
   isMainnetNetworkId,
+  isNetworkChosen,
   visibleNetworkIds,
 } from './network';
 
@@ -52,12 +53,12 @@ describe('isMainnetNetworkId / getMainnetSibling', () => {
   });
 });
 
-describe('visibleNetworkIds', () => {
+describe.each([undefined, true])('visibleNetworkIds (bitcoinEnabled %s)', (bitcoinEnabled) => {
   const enabled = ['solana-mainnet', 'solana-devnet', 'bitcoin-mainnet', 'bitcoin-testnet'];
   const held = enabled;
 
   it('offers mainnets only when the developer flag is off', () => {
-    expect(visibleNetworkIds({ enabled, held, developerNetworks: false })).toEqual([
+    expect(visibleNetworkIds({ enabled, held, developerNetworks: false, bitcoinEnabled })).toEqual([
       'solana-mainnet',
       'bitcoin-mainnet',
     ]);
@@ -70,12 +71,15 @@ describe('visibleNetworkIds', () => {
         held,
         developerNetworks: false,
         activeNetworkId: 'solana-devnet',
+        bitcoinEnabled,
       })
     ).toEqual(['solana-mainnet', 'solana-devnet', 'bitcoin-mainnet']);
   });
 
   it('offers every held network with the flag on', () => {
-    expect(visibleNetworkIds({ enabled, held, developerNetworks: true })).toEqual(enabled);
+    expect(visibleNetworkIds({ enabled, held, developerNetworks: true, bitcoinEnabled })).toEqual(
+      enabled
+    );
   });
 
   it('never offers a network the wallet does not hold', () => {
@@ -85,11 +89,83 @@ describe('visibleNetworkIds', () => {
         held: ['solana-mainnet'],
         developerNetworks: true,
         activeNetworkId: 'solana-devnet',
+        bitcoinEnabled,
       })
     ).toEqual(['solana-mainnet']);
   });
 
   it('filters nothing on holdings when the caller cannot say what is held', () => {
-    expect(visibleNetworkIds({ enabled, developerNetworks: true })).toEqual(enabled);
+    expect(visibleNetworkIds({ enabled, developerNetworks: true, bitcoinEnabled })).toEqual(
+      enabled
+    );
+  });
+});
+
+describe('isNetworkChosen', () => {
+  it('rejects both Bitcoin networks while the user chose Solana only', () => {
+    expect(isNetworkChosen('bitcoin-mainnet', false)).toBe(false);
+    expect(isNetworkChosen('bitcoin-testnet', false)).toBe(false);
+  });
+
+  it('keeps every other network while the user chose Solana only', () => {
+    expect(isNetworkChosen('solana-mainnet', false)).toBe(true);
+    expect(isNetworkChosen('ethereum-mainnet', false)).toBe(true);
+  });
+
+  it('keeps every network while Bitcoin is on', () => {
+    for (const id of ['bitcoin-mainnet', 'bitcoin-testnet', 'solana-devnet', 'ethereum-sepolia']) {
+      expect(isNetworkChosen(id, true)).toBe(true);
+    }
+  });
+});
+
+describe('visibleNetworkIds with Bitcoin off', () => {
+  const all = [
+    'solana-mainnet',
+    'solana-devnet',
+    'bitcoin-mainnet',
+    'bitcoin-testnet',
+    'ethereum-mainnet',
+    'ethereum-sepolia',
+  ];
+
+  it('offers the mainnets without Bitcoin', () => {
+    expect(
+      visibleNetworkIds({
+        enabled: all,
+        held: all,
+        developerNetworks: false,
+        bitcoinEnabled: false,
+      })
+    ).toEqual(['solana-mainnet', 'ethereum-mainnet']);
+  });
+
+  it('does not bring Bitcoin back with developer networks on', () => {
+    expect(
+      visibleNetworkIds({ enabled: all, held: all, developerNetworks: true, bitcoinEnabled: false })
+    ).toEqual(['solana-mainnet', 'solana-devnet', 'ethereum-mainnet', 'ethereum-sepolia']);
+  });
+
+  it('does not keep Bitcoin for a session standing on it', () => {
+    const ids = visibleNetworkIds({
+      enabled: all,
+      held: all,
+      developerNetworks: false,
+      activeNetworkId: 'bitcoin-mainnet',
+      bitcoinEnabled: false,
+    });
+    expect(ids).not.toContain('bitcoin-mainnet');
+    expect(ids).not.toContain('bitcoin-testnet');
+  });
+
+  it('never adds Bitcoin the backend did not enable when the choice is on', () => {
+    expect(
+      visibleNetworkIds({
+        enabled: ['solana-mainnet'],
+        held: all,
+        developerNetworks: false,
+        bitcoinEnabled: true,
+      })
+    ).toEqual(['solana-mainnet']);
   });
 });
