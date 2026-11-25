@@ -22,6 +22,9 @@ export interface TokenListPanelKit {
   SettingsSelectorList: ComponentType<SettingsSelectorListPropsBase<TokenListOption>>;
 }
 
+// The options are their own label: a well would only repeat it.
+const noWell = () => null;
+
 export function createTokenListPanel(
   kit: TokenListPanelKit
 ): ComponentType<{ onBack: () => void }> {
@@ -46,6 +49,7 @@ export function createTokenListPanel(
             void setTokenListPreference({ ...tokenListPreference, maxCount: option.value })
           }
           getPrimaryText={(option) => option.label}
+          renderLeadingElement={noWell}
           testIdPrefix="token-list-count"
         />
         <kit.SectionLabel variant="group">
@@ -59,6 +63,7 @@ export function createTokenListPanel(
             void setTokenListPreference({ ...tokenListPreference, minValue: option.value })
           }
           getPrimaryText={(option) => option.label}
+          renderLeadingElement={noWell}
           testIdPrefix="token-list-min-value"
         />
       </kit.Frame>
