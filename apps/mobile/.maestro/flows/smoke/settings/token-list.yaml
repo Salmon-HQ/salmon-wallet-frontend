@@ -1,6 +1,6 @@
 appId: io.salmonwallet.app
 ---
-# Token list (spec 044): pick 3, read the row's value, see Home fold behind
+# Token list (spec 044): pick 3 and a $1 floor, read the row's value, see Home fold behind
 # "Show more", then set All again so the device is left as found.
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - runFlow: ../../../subflows/open-settings.yaml
@@ -13,6 +13,10 @@ appId: io.salmonwallet.app
 - takeScreenshot: screenshots/smoke/settings/token-list
 - tapOn:
     id: 'token-list-count-3'
+# Wallet A holds three tokens, one of them dust: the value floor is what folds
+# a row there.
+- tapOn:
+    id: 'token-list-min-value-1'
 - runFlow: ../../../subflows/settings-back.yaml
 # The value reads "3 tokens"; the selector gate accepts only literal copy, so
 # the screenshot carries it.
@@ -23,7 +27,7 @@ appId: io.salmonwallet.app
 - assertVisible:
     id: 'home-screen'
 - takeScreenshot: screenshots/smoke/settings/token-list-home-folded
-# The row exists only when the wallet holds more than three tokens.
+# The row exists only when the wallet holds a token under the floor or more than three.
 - runFlow:
     when:
       visible:
@@ -42,6 +46,8 @@ appId: io.salmonwallet.app
     timeout: 3000
 - tapOn:
     id: 'token-list-count-all'
+- tapOn:
+    id: 'token-list-min-value-off'
 - runFlow: ../../../subflows/settings-back.yaml
 - assertVisible:
     id: 'settings-item-token-list-value'
