@@ -28,6 +28,7 @@ appId: io.salmonwallet.app
 - runFlow: ../flows/smoke/settings/profile-picture.yaml
 - runFlow: ../flows/smoke/settings/security.yaml
 - runFlow: ../flows/smoke/settings/language.yaml
+- runFlow: ../flows/smoke/settings/token-list.yaml
 - runFlow: ../flows/smoke/settings/currency.yaml
 - runFlow: ../flows/smoke/settings/explorer.yaml
 - runFlow: ../flows/smoke/settings/address-book.yaml
