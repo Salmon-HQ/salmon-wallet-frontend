@@ -113,7 +113,7 @@ A user removes a wallet or renames it, and the write fails or the app dies. The 
 
 **Acceptance Scenarios**:
 
-1. **Given** wallets A and B, **When** removing B fails at any write, **Then** the window still shows B, and so does the next launch.
+1. **Given** wallets A and B, **When** removing B fails at or before the write that decides it, **Then** the window still shows B, and so does the next launch; a failure after that write leaves B removed, now and at the next launch.
 2. **Given** a removal interrupted at any point, **When** the app opens again, **Then** every listed wallet has its secret and unlocks, and the active wallet is a listed one on a network and slot it holds.
 3. **Given** a rename that fails, **When** the user looks at the wallet, **Then** it shows the old name, now and after the next launch.
 4. **Given** "Remove all wallets", **When** clearing storage fails, **Then** the decrypted keys are still gone from memory first, and the user is told the reset failed (the existing message).
@@ -158,7 +158,7 @@ On the mobile setup password screen, the user goes back after a failed save; the
 - **FR-003**: Correctness MUST NOT depend on several records being written together. On every platform, a write of several records is treated as separate writes that can stop between any two.
 - **FR-004**: After a failed or interrupted save, the active wallet, its network, its account slot and the name counter MUST be what they were before the attempt.
 - **FR-005**: After a failed or interrupted save, the password that opened the wallet before the attempt MUST still open it.
-- **FR-006**: When the wallet list is empty at launch, a vault left on the device MUST be discarded and the app MUST open to the welcome screen as a fresh install, where a new setup with any password succeeds. This covers a first save that failed or was interrupted, and a vault left behind after the last listed wallet was removed. A vault MUST NOT be discarded while any wallet is listed. (Owner decision, 2026-11-26.)
+- **FR-006**: When the wallet list is empty at launch, a vault left on the device MUST be discarded and the app MUST open to the welcome screen as a fresh install, where a new setup with any password succeeds. This covers a first save that failed or was interrupted, and a vault left behind after the last listed wallet was removed. The same rule applies when a save starts on a device whose wallet list is empty, so a first save that failed can be retried in the same session with any password. A vault MUST NOT be discarded while any wallet is listed. (Owner decision, 2026-11-26.)
 - **FR-006a**: The discard in FR-006 MUST NOT apply to a vault kept in the clear for a wallet that was migrated without a password (it is that owner's only copy, and it opens through "protect wallet"), MUST NOT run while data from an older version of the wallet is still waiting to be migrated, and MUST NOT run when the wallet list could not be read: a failed read is not an empty list. It runs inside the exclusive write turn, so a save in another window is never discarded mid-way.
 
 **What the window shows follows storage**
@@ -184,7 +184,7 @@ On the mobile setup password screen, the user goes back after a failed save; the
 **Backup pending**
 
 - **FR-018**: A wallet created without the phrase check MUST be marked "backup pending" whenever it ends up saved, including when the app dies right after the deciding write.
-- **FR-019**: A save that fails MUST remove the mark it added; after an interrupted save, marks naming no listed wallet MUST be removed at the next completed save or launch, inside the exclusive write turn, so a save running in another window never loses its mark.
+- **FR-019**: A save that fails MUST take back the mark it added; if that write fails too, or the save was interrupted, the mark MUST be removed at the next completed save or launch. A mark is stale when no listed wallet carries its identifier, either as its own or as the wallet it was derived from (a derived wallet asks under its parent's mark). Pruning runs inside the exclusive write turn, so a save running in another window never loses its mark.
 
 **Mobile password screen**
 
