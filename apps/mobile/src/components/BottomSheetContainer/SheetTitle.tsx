@@ -27,10 +27,14 @@ export const SheetTitle: React.FC<SheetTitleProps> = ({ leading, children, subti
   const title = leading ? (
     <View style={styles.row}>
       {leading}
-      <Text style={styles.title}>{children}</Text>
+      <Text style={styles.title} accessibilityRole="header">
+        {children}
+      </Text>
     </View>
   ) : (
-    <Text style={styles.title}>{children}</Text>
+    <Text style={styles.title} accessibilityRole="header">
+      {children}
+    </Text>
   );
   if (!subtitle) return title;
 

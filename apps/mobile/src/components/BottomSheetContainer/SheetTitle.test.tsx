@@ -33,4 +33,15 @@ describe('SheetTitle', () => {
     const texts = screen.getAllByText(/Arrange tabs|Drag to change/).map((n) => n.props.children);
     expect(texts).toEqual(['Arrange tabs', 'Drag to change the order.']);
   });
+
+  // A screen reader lands on the sheet's name first, with or without a glyph.
+  it('is a header', () => {
+    render(<SheetTitle>Hide Bitcoin?</SheetTitle>);
+    expect(screen.getByRole('header', { name: 'Hide Bitcoin?' })).toBeTruthy();
+  });
+
+  it('is a header beside a leading glyph too', () => {
+    render(<SheetTitle leading={<Text>!</Text>}>Remove wallet?</SheetTitle>);
+    expect(screen.getByRole('header', { name: 'Remove wallet?' })).toBeTruthy();
+  });
 });
