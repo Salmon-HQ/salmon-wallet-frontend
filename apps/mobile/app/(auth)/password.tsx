@@ -118,8 +118,12 @@ export default function PasswordScreen() {
   const [state, actions] = useAccountsContext();
   const { markUnconfirmed } = usePhraseBackup();
   const [mnemonic, setMnemonic] = useState<string | null>(null);
+  // Only create and recover (the default) come here with a phrase in the
+  // stash; protect and Seed Vault never take or put one back.
+  const usesPhrase = !params.type || params.type === 'create' || params.type === 'recover';
 
   useEffect(() => {
+    if (!usesPhrase) return;
     const loadMnemonic = async () => {
       const stored = await getStashItem<string>(STASH_KEYS.PENDING_MNEMONIC);
       if (stored) {
@@ -128,7 +132,7 @@ export default function PasswordScreen() {
       }
     };
     void loadMnemonic();
-  }, []);
+  }, [usesPhrase]);
 
   // Back from here lands on the network question, whose choice opens a new
   // password screen that reads the phrase from the stash again. Leaving
@@ -137,7 +141,10 @@ export default function PasswordScreen() {
   useEffect(() => {
     if (!mnemonic) return;
     return () => {
-      if (!walletAddedRef.current) void setStashItem(STASH_KEYS.PENDING_MNEMONIC, mnemonic);
+      if (walletAddedRef.current) return;
+      setStashItem(STASH_KEYS.PENDING_MNEMONIC, mnemonic).catch((error) => {
+        console.error('Failed to put the recovery phrase back:', error);
+      });
     };
   }, [mnemonic]);
 

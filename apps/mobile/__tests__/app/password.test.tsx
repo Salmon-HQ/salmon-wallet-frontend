@@ -257,6 +257,7 @@ describe('PasswordScreen', () => {
     (Linking.openURL as unknown as jest.Mock | undefined) = mockOpenURL as never;
     mockGetStashItem.mockResolvedValue('seed words seed words seed words');
     mockRemoveStashItem.mockResolvedValue(undefined);
+    mockSetStashItem.mockResolvedValue(undefined);
     mockCreateAccount.mockResolvedValue({ account: { id: 'account-1' } });
     mockAddAccount.mockResolvedValue(undefined);
     mockUnlockAccounts.mockResolvedValue(undefined);
@@ -349,6 +350,45 @@ describe('PasswordScreen', () => {
           expect.objectContaining({ mnemonic: PHRASE })
         )
       );
+    });
+
+    // A phrase another flow left there is not this screen's to take or keep.
+    it.each(['protect', 'seed-vault'])('never touches the phrase on the %s flow', async (type) => {
+      useLocalSearchParams.mockReturnValue({ type });
+      mockSeedVaultSelection.mockReturnValue(null);
+      const view = render(<PasswordScreen />);
+      await act(async () => {});
+
+      view.unmount();
+      await act(async () => {});
+
+      expect(mockGetStashItem).not.toHaveBeenCalled();
+      expect(mockRemoveStashItem).not.toHaveBeenCalled();
+      expect(mockSetStashItem).not.toHaveBeenCalled();
+      expect(stash.get('pending-mnemonic')).toBe(PHRASE);
+    });
+
+    it('reads the phrase when no flow is named, as recover', async () => {
+      useLocalSearchParams.mockReturnValue({});
+      render(<PasswordScreen />);
+
+      await waitFor(() => expect(stash.has('pending-mnemonic')).toBe(false));
+    });
+
+    it('logs, and does not throw, when the phrase cannot be put back', async () => {
+      mockSetStashItem.mockRejectedValue(new Error('stash gone'));
+      const quiet = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const view = render(<PasswordScreen />);
+      await waitFor(() => expect(stash.has('pending-mnemonic')).toBe(false));
+
+      view.unmount();
+      await act(async () => {});
+
+      expect(quiet).toHaveBeenCalledWith(
+        'Failed to put the recovery phrase back:',
+        expect.any(Error)
+      );
+      quiet.mockRestore();
     });
 
     it('leaves the stash empty once the wallet is written', async () => {
