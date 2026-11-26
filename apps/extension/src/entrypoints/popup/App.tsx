@@ -243,13 +243,17 @@ function App() {
   // cached key; without one this window cannot re-read, and is locked instead.
   // Every wallet removed elsewhere is forgotten here too.
   const accountIds = useMemo(() => accounts.map(({ id }) => id), [accounts]);
-  const reloadWallets = useCallback(async () => {
-    // A save running in this window holds the write lock; reading before it
-    // ends would load the list without the wallet it is saving.
-    await withVaultWriteLock(async () => undefined);
-    const keyCache = await getStashItem<DerivedKeyCache>(STASH_KEYS.DERIVED_KEY);
-    return isKeyCacheValid(keyCache) ? actions.unlockWithCachedKey(keyCache) : false;
-  }, [actions]);
+  // Read inside a write turn of its own: a save holds the lock, and one landing
+  // between the vault read and the list read would fail the reload and lock
+  // the window. Nothing on this path takes the lock again.
+  const reloadWallets = useCallback(
+    () =>
+      withVaultWriteLock(async () => {
+        const keyCache = await getStashItem<DerivedKeyCache>(STASH_KEYS.DERIVED_KEY);
+        return isKeyCacheValid(keyCache) ? actions.unlockWithCachedKey(keyCache) : false;
+      }),
+    [actions]
+  );
   useLockAcrossWindows({
     ready,
     locked,

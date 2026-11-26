@@ -169,7 +169,7 @@ async function attempt(change: () => Promise<unknown>): Promise<unknown> {
 
 async function restart(): Promise<void> {
   cleanup();
-  crash = await startCrashStorage();
+  crash = await startCrashStorage({ platform: 'extension' });
   await crash.relaunch();
 }
 
@@ -196,7 +196,8 @@ const silence = () => vi.spyOn(console, 'warn').mockImplementation(() => undefin
 
 beforeEach(async () => {
   // The extension's windows take a Web Locks lock that admits one holder and
-  // is not reentrant; jsdom has no `navigator.locks` of its own.
+  // is not reentrant; jsdom has no `navigator.locks` of its own. The list
+  // read-back after a failed write is the extension's too.
   let tail: Promise<unknown> = Promise.resolve();
   vi.stubGlobal('navigator', {
     locks: {
@@ -207,7 +208,7 @@ beforeEach(async () => {
       },
     },
   });
-  crash = await startCrashStorage();
+  crash = await startCrashStorage({ platform: 'extension' });
   await crash.relaunch();
 });
 

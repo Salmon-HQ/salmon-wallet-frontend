@@ -10,7 +10,8 @@ The shared API the screens call after this change (`packages/shared/src/hooks`, 
 
   Empty secrets (`{}`) only when there is no vault key, or the vault is unparseable and no wallet is listed (the save then overwrites it, as today).
 
-- **Rule 2, read-back.** When the list write (`ACCOUNTS`) of add, remove or edit throws, read that key again and compare `JSON.stringify(written)` with `JSON.stringify(readBack)`. Equal → continue as success with memory and the later rows. Different, absent, or the read throws → clear the own-write mark, release the lock, refresh memory from storage (`refreshFromStorage`: cached-key open plus `loadAccounts(…, { persist: false })`; never `setError`, `setLocked` or a storage write; a failure logged), and reject with the write's error.
+- **Rule 2, refusal on mobile.** On mobile (`getCurrentPlatform() === 'mobile'`), when the list write (`ACCOUNTS`) of add, remove or edit throws, the write is a failed write: no read-back, clear the own-write mark, no memory refresh, reject with the write's error. AsyncStorage on iOS answers a read with a value whose write failed (research R4); memory changes only after the list write, so it is already right.
+- **Rule 2, read-back on the extension.** When the list write (`ACCOUNTS`) of add, remove or edit throws, read that key again and compare `JSON.stringify(written)` with `JSON.stringify(readBack)`. Equal → continue as success with memory and the later rows. Different, absent, or the read throws → clear the own-write mark, release the lock, refresh memory from storage (`refreshFromStorage`: cached-key open plus `loadAccounts(…, { persist: false })`; never `setError`, `setLocked` or a storage write; a failure logged), and reject with the write's error.
 
 ## `addAccount(account, password?, options?)`
 
@@ -31,11 +32,11 @@ The caller passes the name, as today. Order inside the lock: P1 reads + Rule 1 �
   - `IncorrectPasswordError` / `UnlockThrottledError`: a vault exists and the supplied password does not open it (counted as today);
   - `DuplicateAccountError` (§Duplicate rules);
   - `EncryptionMaterialMissingError` (vault, no password, no cached key);
-  - a storage or stash error before the list write; a thrown list write that Rule 2 does not confirm (memory refreshed).
+  - a storage or stash error before the list write; a thrown list write that Rule 2 does not confirm (memory refreshed on the extension, unchanged on mobile).
 - **After any reject**: `requiredLock` is set to true only when `getEncryptedStoredMnemonics()` returns a vault (one the single-field form can check), so the setup form asks for the existing password in the same session; that read is wrapped so its failure never hides the original error.
 - **No network** inside the lock.
 - **Vault entries**: the save adds the new entry and removes none before the list; the only removal is the replaced Seed Vault entries, after the list.
-- **Memory**: held − replaced Seed Vault ids − `account.id` + the new wallet; new wallet active; counter = the stored value. Own-write mark only when memory's ids equal the stored ids.
+- **Memory**: held − replaced Seed Vault ids − `account.id` + the new wallet, applied to the latest memory (a functional update), not the render's copy; new wallet active; counter = the stored value. Own-write mark only when the latest memory with the change applied holds exactly the stored ids.
 - **Seed Vault replace**: every listed Seed Vault wallet with the new wallet's address is replaced; their entries stay in the vault until the list is stored, then leave; each token is released only when no stored wallet uses it.
 
 ## Duplicate rules
@@ -49,11 +50,11 @@ The caller passes the name, as today. Order inside the lock: P1 reads + Rule 1 �
 
 ## `removeAccount(targetId, password?)`
 
-Rule 1. A supplied password is proven against the vault. The list decides (Rule 2 on throw); memory follows; selection after the list, failures logged; a failed vault write after the list rejects with the wallet already gone from memory and list, its entry unlisted. Both list and vault empty → `clearAll`.
+Rule 1. A supplied password is proven against the vault. The list decides (Rule 2 on throw); memory follows; selection after the list, failures logged; a failed vault write after the list rejects with the wallet already gone from memory and list, its entry unlisted. Own-write mark only when the latest memory without the wallet holds exactly the stored ids. Removing the active wallet makes active the first stored wallet memory holds, else the first wallet left in memory. Both list and vault empty → `clearAll`.
 
 ## `editAccount(targetId, params)`
 
-Rule 1 list conditions only; a list lacking only that id returns as today. One list write (Rule 2 on throw), memory after.
+Rule 1 list conditions only; a list lacking only that id returns as today. One list write (Rule 2 on throw), memory after. Own-write mark only when the latest memory with the edit applied holds exactly the stored ids.
 
 ## `removeAllAccounts()`
 
@@ -61,15 +62,15 @@ Memory, then the stash key, then `clearAccountsStorage()` (now `COUNTER`, `WALLE
 
 ## Errors
 
-`DuplicateAccountError`: exported from `hooks/index.ts`; no secret, address or id in its message. The Rule 1 and own-id errors are plain `Error`s with the same restriction. The barrel also exports `withVaultWriteLock`.
+`DuplicateAccountError`: defined in `utils/stored-clash.ts`, re-exported from `hooks/useAccountsMutationHelpers.ts` and `hooks/index.ts`; no secret, address or id in its message. The Rule 1 and own-id errors are plain `Error`s with the same restriction. The barrel also exports `withVaultWriteLock`.
 
 ## Helpers (caller holds the lock)
 
 - `readStoredList(memoryHoldsWallets)`: reads the list; applies Rule 1's list conditions.
 - `readStoredWallets(memoryHoldsWallets, password?)`: `readStoredList` plus raw vault and `WALLETS`; applies the vault conditions; returns the list, whether a vault key exists, and the secrets (opened with a supplied password, whose key becomes the stash key; else the cached key; `{}` after dropping the stash key when there is no vault key or the vault is unparseable with nothing listed, without running the password proof).
-- `findStoredClash(account, list, secrets)` (`utils/stored-clash.ts`): pure; derives Solana addresses only for private-key and watch-only saves; per-index skips; own id excluded; returns `{ replace: ids }` (possibly empty) or throws `DuplicateAccountError`.
+- `findStoredClash(account, list, secrets)` (`utils/stored-clash.ts`): pure; derives Solana addresses only for private-key and watch-only saves; per-index skips; a phrase wallet with no position stored compares at position 0; own id excluded; returns `{ replace: ids }` (possibly empty) or throws `DuplicateAccountError`.
 - `pruneMarks(list)`: best effort; writes only when a mark is removed.
-- `writeStoredAccounts(list, { own })`: Rule 2 on a throw; own-write mark only when `own`, cleared on a reject.
+- `writeStoredAccounts(list, { own })`: Rule 2 on a throw (read-back on the extension, refusal on mobile); own-write mark only when `own`, cleared on a reject.
 
 ## `initAccounts()`
 
@@ -85,7 +86,7 @@ The wallet id and avatar are kept while a value key stays the same: trimmed phra
 
 ## Screens
 
-Mobile setup: after `addAccount` resolves, the follow-ups run outside the error path. `unlockAccounts` returns a boolean and never throws: true → biometric setup; false → enrolment skipped, straight to the app, which is unlocked in that session on a fresh install. Analytics or the enrolment hand-off throwing is logged and does not change the route. The derived-account scan keeps today's handling of a `DuplicateAccountError`: logged, the queue moves on, no message.
+Mobile setup: after `addAccount` resolves, the follow-ups run outside the error path. `unlockAccounts` returns a boolean and never throws: true → biometric setup; false → enrolment skipped, then success, analytics consent and the app, which is unlocked in that session on a fresh install. Analytics or the enrolment hand-off throwing is logged and does not change the route. The derived-account scan keeps today's handling of a `DuplicateAccountError`: logged, the queue moves on, no message.
 
 Both setup twins fix the wallet id and avatar once per screen and rebuild with them. Setup twins: `DuplicateAccountError` → `wallet.import.errors.duplicate`; `IncorrectPasswordError` / `UnlockThrottledError` → `passwordCheckErrorKey(err, 'wallet.create.invalid_password')`; others keep today's message. Add wallet sheet: `DuplicateAccountError` → `wallet.import.errors.duplicate`, or `wallet.watchOnly.errors.duplicate` for a watched address. Mobile clears the phrase from state when `addAccount` resolves; the extension host clears `authData` on success and its listener `reloadWallets` first awaits `withVaultWriteLock(async () => undefined)`.
 
@@ -107,8 +108,9 @@ Both setup twins fix the wallet id and avatar once per screen and rebuild with t
 | another secret under id X                  | add C with id X                         | plain `Error`, nothing written, entry intact                                                     |
 | W listed (another window), memory lacks it | add W with a new id                     | `DuplicateAccountError`                                                                          |
 | two Seed Vault wallets for Y               | add Seed Vault for Y                    | both replaced, entries dropped after the list                                                    |
-| list write applied then thrown             | add / remove / edit                     | read-back equal → resolves, later rows run                                                       |
-| list write thrown, read-back fails         | add / remove / edit                     | memory refreshed from storage (unchanged when the refresh's list read is null or fails), rejects |
+| list write applied then thrown, extension  | add / remove / edit                     | read-back equal → resolves, later rows run                                                       |
+| list write applied then thrown, mobile     | add / remove / edit                     | rejects, no read-back, no refresh, nothing written after the list, memory unchanged              |
+| list write thrown, read-back fails (ext.)  | add / remove / edit                     | memory refreshed from storage (unchanged when the refresh's list read is null or fails), rejects |
 | vault under P1, cached key valid           | add or remove with password P2          | `IncorrectPasswordError`, no wallet record written, one failed unlock                            |
 | no vault, cached key for P1                | add with password P2                    | vault under P2                                                                                   |
 | vault raw unparseable, A listed            | add / remove; edit                      | Rule 1 error, nothing written; the edit proceeds                                                 |

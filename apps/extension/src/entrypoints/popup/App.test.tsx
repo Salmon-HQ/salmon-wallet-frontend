@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { withVaultWriteLock } from '@salmon/shared';
@@ -18,27 +18,16 @@ const mockClearSessionKey = vi.fn();
 const mockUseSecretClipboardResume = vi.fn();
 const mockGetStashItem = vi.fn();
 const eventListeners = new Map<string, EventListener>();
-const { accountsState, mockUseLockAcrossWindows, renderedStates } = vi.hoisted(() => ({
+const { accountsState, mockUseLockAcrossWindows, passwordPage } = vi.hoisted(() => ({
   accountsState: {
     unprotectedAddresses: null as string[] | null,
     locked: false,
     accounts: [{ id: 'account-1' }] as { id: string }[],
   },
   mockUseLockAcrossWindows: vi.fn(),
-  // Every value a `useState` hands back while rendering, so a test can see
-  // what the popup still holds in its state.
-  renderedStates: [] as unknown[],
+  // The props the password screen last rendered with.
+  passwordPage: { onBack: undefined as (() => void) | undefined },
 }));
-
-vi.mock('react', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('react')>();
-  const useState = ((initial: unknown) => {
-    const pair = actual.useState(initial);
-    renderedStates.push(pair[0]);
-    return pair;
-  }) as typeof actual.useState;
-  return { ...actual, default: { ...actual, useState }, useState };
-});
 
 vi.mock('./useLockAcrossWindows', () => ({
   useLockAcrossWindows: (params: unknown) => mockUseLockAcrossWindows(params),
@@ -170,16 +159,19 @@ vi.mock('../../pages/auth/PasswordPage', () => ({
     onRemoveWallet?: () => Promise<void>;
     onBack?: () => void;
     onSuccess?: () => void;
-  }) => (
-    <div data-testid="password-page" data-flow={props.flowType}>
-      {props.addresses?.join(',')}
-      {props.onRemoveWallet && (
-        <button data-testid="password-remove" onClick={() => void props.onRemoveWallet?.()} />
-      )}
-      {props.onBack && <button data-testid="password-back" onClick={props.onBack} />}
-      {props.onSuccess && <button data-testid="password-success" onClick={props.onSuccess} />}
-    </div>
-  ),
+  }) => {
+    passwordPage.onBack = props.onBack;
+    return (
+      <div data-testid="password-page" data-flow={props.flowType}>
+        {props.addresses?.join(',')}
+        {props.onRemoveWallet && (
+          <button data-testid="password-remove" onClick={() => void props.onRemoveWallet?.()} />
+        )}
+        {props.onBack && <button data-testid="password-back" onClick={props.onBack} />}
+        {props.onSuccess && <button data-testid="password-success" onClick={props.onSuccess} />}
+      </div>
+    );
+  },
 }));
 
 vi.mock('../../pages/auth/SuccessPage', () => ({
@@ -398,21 +390,31 @@ describe('Extension popup onboarding: choosing networks', () => {
     expect(screen.queryByTestId('select-page')).toBeNull();
   });
 
-  it('drops the phrase once the wallet is saved, and still shows success and consent', () => {
+  it('shows success and consent once the wallet is saved', () => {
     render(<App />);
     fireEvent.click(screen.getByTestId('select-create'));
     fireEvent.click(screen.getByTestId('create-done'));
     fireEvent.click(screen.getByTestId('networks-choose'));
     fireEvent.click(screen.getByTestId('password-success'));
 
-    renderedStates.length = 0;
     fireEvent.click(screen.getByTestId('success-go'));
 
     expect(screen.getByTestId('consent-page')).toBeTruthy();
-    expect(renderedStates.length).toBeGreaterThan(0);
-    expect(renderedStates.filter((value) => JSON.stringify(value)?.includes('"phrase"'))).toEqual(
-      []
-    );
+  });
+
+  // Without the phrase the steps that need it fall back to the welcome screen.
+  it('drops the phrase once the wallet is saved', () => {
+    render(<App />);
+    fireEvent.click(screen.getByTestId('select-create'));
+    fireEvent.click(screen.getByTestId('create-done'));
+    fireEvent.click(screen.getByTestId('networks-choose'));
+    const back = passwordPage.onBack;
+    fireEvent.click(screen.getByTestId('password-success'));
+
+    act(() => back?.());
+
+    expect(screen.queryByTestId('onboarding-networks-screen')).toBeNull();
+    expect(screen.getByTestId('select-page')).toBeTruthy();
   });
 });
 
@@ -423,6 +425,7 @@ describe('Extension popup reload after a wallet list change elsewhere', () => {
   afterEach(() => {
     heldTurns.splice(0).forEach((release) => release());
     cleanup();
+    vi.unstubAllGlobals();
   });
 
   beforeEach(() => {
@@ -490,5 +493,43 @@ describe('Extension popup reload after a wallet list change elsewhere', () => {
     await reloaded;
 
     expect(shown).toEqual({ ids: ['A', 'D', 'C'], active: 'C' });
+  });
+
+  /**
+   * The extension's windows take a Web Locks lock: this one admits one holder
+   * at a time and is not reentrant. jsdom has no `navigator.locks` of its own.
+   */
+  function exclusiveLocks() {
+    let tail: Promise<unknown> = Promise.resolve();
+    return {
+      request<T>(_name: string, write: () => Promise<T>): Promise<T> {
+        const run = tail.then(write);
+        tail = run.catch(() => undefined);
+        return run;
+      },
+    };
+  }
+
+  it('re-reads the wallets inside one write turn, so no save lands between its reads', async () => {
+    vi.stubGlobal('navigator', { locks: exclusiveLocks() });
+    let finishUnlock: () => void = () => {};
+    mockUnlockWithCachedKey.mockImplementation(
+      () => new Promise<boolean>((resolve) => (finishUnlock = () => resolve(true)))
+    );
+    render(<App />);
+
+    const reloaded = reloadFromHost()();
+    await vi.waitFor(() => expect(mockUnlockWithCachedKey).toHaveBeenCalledTimes(1));
+    let saved = false;
+    const save = withVaultWriteLock(async () => {
+      saved = true;
+    });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(saved).toBe(false);
+
+    finishUnlock();
+    await expect(reloaded).resolves.toBe(true);
+    await save;
+    expect(saved).toBe(true);
   });
 });

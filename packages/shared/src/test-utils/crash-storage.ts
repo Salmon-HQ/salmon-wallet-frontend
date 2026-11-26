@@ -16,7 +16,7 @@ import type {
   LockedVault,
   LockOptions,
 } from '../crypto/encryption';
-import type { Stash, StorageAdapter } from '../storage/types';
+import type { Platform, Stash, StorageAdapter } from '../storage/types';
 
 type Snapshot = Record<string, unknown>;
 
@@ -46,6 +46,8 @@ export interface CrashStorage {
   snapshot(): Snapshot;
   /** Every write that landed, with storage as it stood right after it. */
   writes: { key: string; after: Snapshot }[];
+  /** Every read, with the number of writes that had landed before it. */
+  reads: { key: string; afterWrites: number }[];
   /** A fresh runtime over the same storage; the stash survives only with `keepStash`. */
   relaunch(options?: { keepStash?: boolean }): Promise<void>;
 }
@@ -55,6 +57,8 @@ const GARBLED = '{"garbled';
 let stored = new Map<string, string>();
 let stashed = new Map<string, unknown>();
 let writes: CrashStorage['writes'] = [];
+let reads: CrashStorage['reads'] = [];
+let platform: Platform = 'mobile';
 let failWrite: { remaining: number; applied: boolean } | null = null;
 let failStashRemaining = 0;
 let readFaults = new Map<string, ReadFault>();
@@ -101,6 +105,7 @@ function readFault(key: string): ReadFault['kind'] | null {
 
 const adapter: StorageAdapter = {
   getItem: async (key) => {
+    reads.push({ key, afterWrites: writes.length });
     const fault = readFault(key);
     if (fault === 'fail') throw new Error(`Read of "${key}" failed`);
     if (fault === 'drop') return null;
@@ -127,14 +132,19 @@ const stash: Stash = {
 
 async function install(): Promise<void> {
   const storage = await import('../storage');
-  storage.initStorage({ platform: 'mobile', adapter });
+  storage.initStorage({ platform, adapter });
   storage.initStashWithCustom(stash);
 }
 
-export async function startCrashStorage(): Promise<CrashStorage> {
+/** Starts empty storage; `platform` is the one storage reports, kept across relaunches. */
+export async function startCrashStorage(
+  options: { platform?: Platform } = {}
+): Promise<CrashStorage> {
+  platform = options.platform ?? 'mobile';
   stored = new Map();
   stashed = new Map();
   writes = [];
+  reads = [];
   failWrite = null;
   failStashRemaining = 0;
   readFaults = new Map();
@@ -157,6 +167,9 @@ export async function startCrashStorage(): Promise<CrashStorage> {
     snapshot,
     get writes() {
       return writes;
+    },
+    get reads() {
+      return reads;
     },
     relaunch: async ({ keepStash = false } = {}) => {
       vi.resetModules();

@@ -7,7 +7,7 @@
  * storage and one stash holding a cached key.
  */
 import { act, renderHook } from '@testing-library/react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const storageMap = new Map<string, unknown>();
@@ -98,9 +98,11 @@ function openWindow(loaded: Account[]) {
   return renderHook(() => {
     const [counter, setCounter] = useState(loaded.length);
     const [accounts, setAccountsState] = useState(loaded);
+    const heldAccounts = useRef(loaded);
     const setAccounts: typeof setAccountsState = (next) => {
       events.push('memory:accounts');
-      setAccountsState(next);
+      heldAccounts.current = typeof next === 'function' ? next(heldAccounts.current) : next;
+      setAccountsState(heldAccounts.current);
     };
     const [accountId, setAccountId] = useState<string | null>(loaded[0]?.id ?? null);
     const [networkId, setNetworkId] = useState<string | null>(null);
@@ -110,10 +112,11 @@ function openWindow(loaded: Account[]) {
     const [, setTrustedApps] = useState<TrustedApps>({});
     const [, setTokens] = useState<CustomTokens>({});
     const [, setUnprotectedAddresses] = useState<string[] | null>(null);
-    return useAccountsMutations({
+    const mutations = useAccountsMutations({
       counter,
       setCounter,
       accounts,
+      heldAccounts,
       setAccounts,
       accountId,
       setAccountId,
@@ -128,6 +131,7 @@ function openWindow(loaded: Account[]) {
       formatAccountForStorage,
       refreshFromStorage: async () => undefined,
     });
+    return { ...mutations, accounts };
   });
 }
 
@@ -208,6 +212,7 @@ describe('useAccountsMutations writing one change at a time', () => {
 
     expect(storedIds().sort()).toEqual(['W', 'X', 'Y']);
     expect(storedSecrets().sort()).toEqual(['W', 'X', 'Y']);
+    expect(sidePanel.result.current.accounts.map(({ id }) => id).sort()).toEqual(['W', 'X', 'Y']);
   });
 
   it('takes the Web Locks lock where the runtime has one', async () => {

@@ -505,6 +505,9 @@ export function useAccountAddFlow({
     async (password?: string) => {
       const { account } = await buildAccount();
       await accountActions.addAccount(account, password);
+      // Saved: the same input again is a second wallet, which the save refuses
+      // as a duplicate rather than overwrite under the remembered id.
+      identityRef.current = null;
     },
     [buildAccount, accountActions]
   );

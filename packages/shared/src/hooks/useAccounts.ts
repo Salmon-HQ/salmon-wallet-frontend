@@ -10,7 +10,14 @@
  * @module hooks/useAccounts
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from 'react';
 import mapValues from 'lodash-es/mapValues';
 
 import { isKeyCacheValid, type DerivedKeyCache } from '../crypto/encryption';
@@ -348,7 +355,14 @@ export function useAccounts(): [UseAccountsState, UseAccountsActions] {
   const [locked, setLocked] = useState(false);
   const [requiredLock, setRequiredLock] = useState(false);
   const [counter, setCounter] = useState(0);
-  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [accounts, setAccountsState] = useState<Account[]>([]);
+  // Memory as the last update left it, ahead of the render: a change reads it
+  // under the write lock, where the render's copy can miss another change.
+  const heldAccounts = useRef(accounts);
+  const setAccounts = useCallback<Dispatch<SetStateAction<Account[]>>>((next) => {
+    heldAccounts.current = typeof next === 'function' ? next(heldAccounts.current) : next;
+    setAccountsState(heldAccounts.current);
+  }, []);
   const [accountId, setAccountId] = useState<string | null>(null);
   const [networkId, setNetworkId] = useState<string | null>(null);
   const [pathIndex, setPathIndex] = useState(0);
@@ -459,6 +473,7 @@ export function useAccounts(): [UseAccountsState, UseAccountsActions] {
       counter,
       setCounter,
       accounts,
+      heldAccounts,
       setAccounts,
       accountId,
       setAccountId,

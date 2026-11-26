@@ -505,7 +505,8 @@ describe('PasswordScreen', () => {
       );
     });
 
-    it('goes straight to the app, without enrolment, when the unlock after the save fails', async () => {
+    // Success leads to the consent question the deferred creation event waits on.
+    it('goes to success, without enrolment, when the unlock after the save fails', async () => {
       mockUnlockAccounts.mockResolvedValue(false);
       render(<PasswordScreen />);
       await waitFor(() => expect(stash.has('pending-mnemonic')).toBe(false));
@@ -516,7 +517,7 @@ describe('PasswordScreen', () => {
         mockWaitOnExited.current?.();
       });
 
-      expect(mockReplace).toHaveBeenCalledWith('/(app)/(tabs)');
+      expect(mockReplace).toHaveBeenCalledWith('/(auth)/success');
       expect(mockRemember).not.toHaveBeenCalled();
       expect(screen.queryByText('wallet.create.recovery_error')).toBeNull();
     });

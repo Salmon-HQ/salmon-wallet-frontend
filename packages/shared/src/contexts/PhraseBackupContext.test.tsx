@@ -32,10 +32,24 @@ const gate = vi.hoisted(() => ({
   reached: null as ((release: () => void) => void) | null,
 }));
 
+/** The next read of `key` reads storage, then waits here before it answers. */
+const readGate = vi.hoisted(() => ({
+  key: null as string | null,
+  reached: null as ((release: () => void) => void) | null,
+}));
+
 vi.mock('../storage', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../storage')>();
   return {
     ...actual,
+    getStorageItem: (async (key) => {
+      const value = await actual.getStorageItem(key);
+      if (key === readGate.key) {
+        readGate.key = null;
+        await new Promise<void>((release) => readGate.reached?.(release));
+      }
+      return value;
+    }) as typeof actual.getStorageItem,
     setStorageItem: (async (key, value) => {
       if (key === gate.key) {
         gate.key = null;
@@ -137,6 +151,36 @@ describe('PhraseBackupProvider', () => {
 
     await expect(signed).resolves.toBe(false);
     expect(result.current.needsBackup).toBe(true);
+  });
+
+  it('stays confirmed when a read started before the confirmation answers after it', async () => {
+    await setStorageItem(STORAGE_KEYS.UNCONFIRMED_PHRASES, ['new']);
+    const active = wallet('new');
+    let listed: Account[] = [active];
+    const Wrapper = ({ children }: { children: React.ReactNode }) => (
+      <AccountsContext.Provider
+        value={[{ activeAccount: active, accounts: listed }, {}] as unknown as AccountsContextValue}
+      >
+        <PhraseBackupProvider>{children}</PhraseBackupProvider>
+      </AccountsContext.Provider>
+    );
+    const { result, rerender } = renderHook(() => usePhraseBackup(), { wrapper: Wrapper });
+    await waitFor(() => expect(result.current.needsBackup).toBe(true));
+
+    const held = new Promise<() => void>((reached) => {
+      readGate.key = STORAGE_KEYS.UNCONFIRMED_PHRASES;
+      readGate.reached = reached;
+    });
+    listed = [active, wallet('other')];
+    rerender();
+    const release = await held;
+    await act(() => result.current.confirmBackup());
+    await act(async () => {
+      release();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(result.current.needsBackup).toBe(false);
   });
 
   it('asks for a wallet derived from an unconfirmed one, which shares its phrase', async () => {

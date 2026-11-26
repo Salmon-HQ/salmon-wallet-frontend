@@ -1,6 +1,7 @@
 import { isKeyCacheValid, type DerivedKeyCache } from '../crypto/encryption';
 import { EncryptionMaterialMissingError } from '../crypto/encrypt-mnemonics';
 import {
+  getCurrentPlatform,
   getStashItem,
   getStorageItem,
   removeStashItem,
@@ -24,13 +25,7 @@ import {
   type StoredMnemonics,
 } from './useAccountsSecurityHelpers';
 
-/** A save refused because a stored wallet already holds the same secret. */
-export class DuplicateAccountError extends Error {
-  constructor() {
-    super('This wallet is already stored');
-    this.name = 'DuplicateAccountError';
-  }
-}
+export { DuplicateAccountError } from '../utils/stored-clash';
 
 /** The Web Locks name every read-modify-write of the stored wallets holds. */
 const VAULT_WRITE_LOCK = 'salmon-vault-write';
@@ -108,8 +103,9 @@ export async function readStoredWallets(
   const list = await readStoredList(memoryHoldsWallets);
   const vault = await getStorageItem<unknown>(STORAGE_KEYS.MNEMONICS);
   const hasVault = vault != null;
+  const readable = typeof vault === 'object' && !Array.isArray(vault);
 
-  if (hasVault && typeof vault !== 'object' && list.length > 0) {
+  if (hasVault && !readable && list.length > 0) {
     throw new Error('The stored wallet secrets are unreadable');
   }
   if (
@@ -120,7 +116,7 @@ export async function readStoredWallets(
   ) {
     throw new Error('The stored wallet secrets read absent while wallets are stored');
   }
-  if (!hasVault || typeof vault !== 'object') {
+  if (!hasVault || !readable) {
     await removeStashItem(STASH_KEYS.DERIVED_KEY);
     return { list, hasVault, secrets: {} };
   }
@@ -154,9 +150,12 @@ const idsKey = (ids: readonly string[]) => [...ids].sort().join('\n');
  * Writes the stored wallet list; with `own`, remembers it as this window's
  * own write.
  *
- * A write can land and still report failure, so a write that throws is
- * settled by reading the list back: holding what was written, it counts as
- * done. Compared as JSON, because storage drops `undefined` fields.
+ * A write can land and still report failure, so on the extension a write
+ * that throws is settled by reading the list back: holding what was written,
+ * it counts as done. Compared as JSON, because storage drops `undefined`
+ * fields. On mobile a write that throws is a failed write: AsyncStorage on
+ * iOS keeps a value whose write failed in its memory cache and answers reads
+ * from it, so a read-back there can hold a list the disk does not.
  */
 export async function writeStoredAccounts(
   stored: StoredAccount[],
@@ -166,11 +165,18 @@ export async function writeStoredAccounts(
   try {
     await setStorageItem(STORAGE_KEYS.ACCOUNTS, stored);
   } catch (err) {
+    if (!readBackIsFaithful()) {
+      ownAccountsWrite = null;
+      throw err;
+    }
     if (await holdsList(stored)) return;
     ownAccountsWrite = null;
     throw err;
   }
 }
+
+/** Whether a read after a failed write shows what the disk holds: not on mobile (see `writeStoredAccounts`). */
+export const readBackIsFaithful = (): boolean => getCurrentPlatform() !== 'mobile';
 
 async function holdsList(stored: StoredAccount[]): Promise<boolean> {
   try {

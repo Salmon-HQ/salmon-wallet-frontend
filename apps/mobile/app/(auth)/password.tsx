@@ -249,7 +249,9 @@ export default function PasswordScreen() {
    * unmounted wait is a wave cut mid-crossing. Consumed exactly once by
    * `handleWaitExited`.
    */
-  const pendingRouteRef = useRef<'/(auth)/biometric-setup' | '/(app)/(tabs)' | null>(null);
+  const pendingRouteRef = useRef<
+    '/(auth)/biometric-setup' | '/(auth)/success' | '/(app)/(tabs)' | null
+  >(null);
   const handleWaitExited = useCallback(() => {
     const route = pendingRouteRef.current;
     if (!route) return;
@@ -367,7 +369,7 @@ export default function PasswordScreen() {
     // Unlock the wallet so no lock screen appears when navigating to the app.
     // The derived key is already cached in stash from addAccount, so this is
     // fast. It reports failure by returning false; enrolment is then skipped,
-    // and the app opens on the wallet just saved.
+    // and the flow goes on to success and the consent question.
     const unlocked = await actions.unlockAccounts(password);
     console.log(`[perf] recovery: TOTAL ${Date.now() - t0}ms`);
 
@@ -381,7 +383,7 @@ export default function PasswordScreen() {
     // floats in through the auth layout's FloatRegion, one beat later.
     // LoadingScreen's own watchdog guarantees `onExited` fires even if the
     // animation callback is dropped, so the route cannot be stranded.
-    pendingRouteRef.current = unlocked ? '/(auth)/biometric-setup' : '/(app)/(tabs)';
+    pendingRouteRef.current = unlocked ? '/(auth)/biometric-setup' : '/(auth)/success';
 
     try {
       // Parked for the enrolment step: arming biometrics seals this password,

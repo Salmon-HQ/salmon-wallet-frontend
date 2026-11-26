@@ -71,13 +71,16 @@ export function PhraseBackupProvider({ children }: { children: ReactNode }) {
   const waiting = useRef<((confirmed: boolean) => void) | null>(null);
   // A save marks a new wallet in storage; read again whenever the wallets change.
   const listedIds = accounts?.accounts?.map(({ id }) => id).join('\n');
+  // Bumped by every update: a read started before one answers with what it replaced.
+  const generation = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
+    const started = generation.current;
     (async () => {
       try {
         const ids = await getStorageItem<string[]>(STORAGE_KEYS.UNCONFIRMED_PHRASES);
-        if (cancelled) return;
+        if (cancelled || generation.current !== started) return;
         if (Array.isArray(ids)) setUnconfirmed(ids);
       } catch (error) {
         console.error('[PhraseBackup] Failed to read backup state:', error);
@@ -97,6 +100,7 @@ export function PhraseBackupProvider({ children }: { children: ReactNode }) {
   const update = useCallback(async (change: (ids: string[]) => string[]) => {
     const stored = await getStorageItem<string[]>(STORAGE_KEYS.UNCONFIRMED_PHRASES);
     const ids = change(Array.isArray(stored) ? stored : []);
+    generation.current += 1;
     setUnconfirmed(ids);
     await setStorageItem(STORAGE_KEYS.UNCONFIRMED_PHRASES, ids);
   }, []);
@@ -112,9 +116,10 @@ export function PhraseBackupProvider({ children }: { children: ReactNode }) {
     if (!wallet || !getAccountMnemonic(activeAccount)) return true;
     // Read again rather than trust state: Android's dApp sheet is a second
     // React root with its own provider, and the check may have passed there.
+    const started = generation.current;
     const stored = await getStorageItem<string[]>(STORAGE_KEYS.UNCONFIRMED_PHRASES);
     const ids = Array.isArray(stored) ? stored : [];
-    setUnconfirmed(ids);
+    if (generation.current === started) setUnconfirmed(ids);
     if (!ids.includes(wallet)) return true;
     // One sheet at a time: a second request answers the first as not confirmed.
     waiting.current?.(false);

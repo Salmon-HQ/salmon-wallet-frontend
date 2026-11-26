@@ -565,6 +565,17 @@ describe('useAccountAddFlow — one wallet id per input', () => {
     expect(second!.id).not.toBe(first!.id);
   };
 
+  // With a new id the same phrase meets the stored wallet and gets the duplicate message.
+  it('renews them after a save that resolved, for the same input in a panel left open', async () => {
+    const { result } = renderHook(() => useAccountAddFlow(options()));
+    await reachSetName(result);
+
+    await act(() => result.current.confirm());
+    await act(() => result.current.confirm());
+
+    expectRenewed(createMock);
+  });
+
   it('renews them when the phrase changes', async () => {
     const { result } = renderHook(() => useAccountAddFlow(options()));
     await reachSetName(result);

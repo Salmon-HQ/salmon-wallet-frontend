@@ -22,6 +22,7 @@ import {
   pruneMarks,
   readStoredList,
   readStoredWallets,
+  readBackIsFaithful,
   withVaultWriteLock,
   writeStoredAccounts,
 } from './useAccountsMutationHelpers';
@@ -31,6 +32,8 @@ interface UseAccountsMutationsParams {
   counter: number;
   setCounter: Dispatch<SetStateAction<number>>;
   accounts: Account[];
+  /** Memory as the last `setAccounts` left it, which the render's `accounts` can lag. */
+  heldAccounts: { readonly current: Account[] };
   setAccounts: Dispatch<SetStateAction<Account[]>>;
   accountId: string | null;
   setAccountId: Dispatch<SetStateAction<string | null>>;
@@ -83,6 +86,7 @@ interface UseAccountsMutationsResult {
 export function useAccountsMutations({
   setCounter,
   accounts,
+  heldAccounts,
   setAccounts,
   accountId,
   setAccountId,
@@ -100,7 +104,9 @@ export function useAccountsMutations({
   /**
    * Runs a change under the write lock. When its list write threw and the
    * read-back could not confirm it, memory may no longer match storage either
-   * way, so it is reloaded from storage once the lock is released.
+   * way, so it is reloaded from storage once the lock is released. On mobile
+   * no reload follows: it would read the same cache the read-back cannot
+   * trust, and memory changes only after the list, so it is still right.
    */
   const withListWrite = useCallback(
     async (change: (writeList: WriteList) => Promise<void>): Promise<void> => {
@@ -116,7 +122,7 @@ export function useAccountsMutations({
       try {
         await withVaultWriteLock(() => change(writeList));
       } catch (err) {
-        if (unsettled) await refreshFromStorage();
+        if (unsettled && readBackIsFaithful()) await refreshFromStorage();
         throw err;
       }
     },
@@ -208,7 +214,7 @@ export function useAccountsMutations({
           // secret fails every unlock. A leftover copy is ciphertext nothing reads.
           const newVault = { ...secrets, [account.id]: secret };
           const newStored = [...stored.filter(kept), formatAccountForStorage(account)];
-          const newAccounts = [...accounts.filter(kept), account];
+          const withAccount = (held: Account[]) => [...held.filter(kept), account];
 
           const encryptResult = await encryptMnemonics(newVault, password, {
             cacheNewKey: !!password,
@@ -243,10 +249,10 @@ export function useAccountsMutations({
           // The deciding write. Marked as this window's own only when the window
           // then holds exactly the stored wallets; otherwise the window missed
           // another one's wallet, and the list listener must reload it.
-          await writeList(newStored, sameIds(newAccounts, newStored));
+          await writeList(newStored, sameIds(withAccount(heldAccounts.current), newStored));
 
           if (newCounter !== null) setCounter(newCounter);
-          setAccounts(newAccounts);
+          setAccounts(withAccount);
           setAccountId(account.id);
           if (newSlot) {
             setNetworkId(newSlot.networkId);
@@ -292,6 +298,7 @@ export function useAccountsMutations({
     [
       accounts,
       formatAccountForStorage,
+      heldAccounts,
       networkId,
       withListWrite,
       setAccountId,
@@ -341,12 +348,12 @@ export function useAccountsMutations({
         const newStored = [...stored];
         newStored[index] = formatAccountForStorage(newAccount);
 
-        await writeList(newStored);
-        setAccounts((held) =>
-          held.map((account) => (account.id === targetId ? newAccount : account))
-        );
+        const withEdit = (held: Account[]) =>
+          held.map((account) => (account.id === targetId ? newAccount : account));
+        await writeList(newStored, sameIds(withEdit(heldAccounts.current), newStored));
+        setAccounts(withEdit);
       }),
-    [accounts, formatAccountForStorage, setAccounts, withListWrite]
+    [accounts, formatAccountForStorage, heldAccounts, setAccounts, withListWrite]
   );
 
   const removeAccount = useCallback(
@@ -373,14 +380,17 @@ export function useAccountsMutations({
         // stopped in between, it keeps one secret too many, which nothing
         // reads. The other order would leave a listed wallet without its
         // secret, and unlock fails for every wallet.
-        await writeList(newStored);
-        const newAccounts = accounts.filter(({ id }) => id !== targetId);
-        setAccounts(newAccounts);
+        const newAccounts = heldAccounts.current.filter(({ id }) => id !== targetId);
+        await writeList(newStored, sameIds(newAccounts, newStored));
+        setAccounts((held) => held.filter(({ id }) => id !== targetId));
 
         if (accountId === targetId) {
-          const account = newStored
-            .map(({ id }) => newAccounts.find((held) => held.id === id))
-            .find((held) => held !== undefined);
+          // With no stored wallet in memory, any held one: the list listener
+          // reloads the window, and the session must not stay on a removed wallet.
+          const account =
+            newStored
+              .map(({ id }) => newAccounts.find((held) => held.id === id))
+              .find((held) => held !== undefined) ?? newAccounts[0];
           if (account) {
             // Removing the active wallet hands the session to another one, which
             // holds its own networks: the pair moves with it, exactly as it does
@@ -419,6 +429,7 @@ export function useAccountsMutations({
       accountId,
       accounts,
       clearAll,
+      heldAccounts,
       networkId,
       setAccountId,
       setAccounts,

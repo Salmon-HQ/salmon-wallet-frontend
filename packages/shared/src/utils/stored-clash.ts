@@ -11,9 +11,16 @@ import { createKeyPairSignerFromBytes } from '@solana/kit';
 import { generateKeyPair, getSolanaDerivationPath } from '../blockchain/solana/factory';
 import { getBlockchainFromNetworkId } from '../config/blockchains';
 import { clearSeedCache, normalizeMnemonic } from '../crypto/mnemonic';
-import { DuplicateAccountError } from '../hooks/useAccountsMutationHelpers';
 import type { Account, AccountSecret, NetworkPathIndexes, StoredAccount } from '../types/account';
 import { toAccountSecret, type SecretVault } from './account-secret';
+
+/** A save refused because a stored wallet already holds the same secret. */
+export class DuplicateAccountError extends Error {
+  constructor() {
+    super('This wallet is already stored');
+    this.name = 'DuplicateAccountError';
+  }
+}
 
 interface StoredWallet {
   entry: StoredAccount;
@@ -79,13 +86,18 @@ export async function findStoredClash(
   }
 
   if (secret.kind === 'mnemonic') {
-    const start = Math.min(...heldPositions(account.pathIndexes));
+    // A phrase wallet with no position stored loads at position 0.
+    const positions = (pathIndexes: NetworkPathIndexes) => {
+      const held = heldPositions(pathIndexes);
+      return held.size > 0 ? held : new Set([0]);
+    };
+    const start = Math.min(...positions(account.pathIndexes));
     const phrase = normalizeMnemonic(secret.mnemonic);
     const clash = stored.some(
       (wallet) =>
         wallet.secret.kind === 'mnemonic' &&
         normalizeMnemonic(wallet.secret.mnemonic) === phrase &&
-        heldPositions(wallet.entry.pathIndexes).has(start)
+        positions(wallet.entry.pathIndexes).has(start)
     );
     if (clash) throw new DuplicateAccountError();
     return { replace: [] };

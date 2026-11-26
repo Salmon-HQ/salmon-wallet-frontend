@@ -4,12 +4,14 @@
  * The rules every wallet change follows before and at its deciding write: it
  * refuses to write on a read that contradicts the rest of storage (Rule 1), a
  * supplied password must open the stored vault, and a list write that throws
- * is settled by reading it back (Rule 2). Each test runs the real `useAccounts`
- * in a fresh runtime over the crash double.
+ * is settled by reading it back on the extension and is a failed write on
+ * mobile (Rule 2). Each test runs the real `useAccounts` in a fresh runtime
+ * over the crash double.
  */
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { startCrashStorage, type CrashStorage } from '../test-utils/crash-storage';
+import type { Platform } from '../storage/types';
 import type { Account, StoredAccount } from '../types/account';
 
 /**
@@ -160,10 +162,13 @@ function expectRuleOne(error: Error): void {
   for (const word of LEAKS) expect(error.message).not.toContain(word);
 }
 
-beforeEach(async () => {
-  crash = await startCrashStorage();
+/** The platform storage reports: the extension where Web Locks run, mobile where they do not. */
+let platform: Platform = 'mobile';
+
+async function start(): Promise<void> {
+  crash = await startCrashStorage({ platform });
   await crash.relaunch();
-});
+}
 
 afterEach(() => {
   sealing.hook = null;
@@ -172,8 +177,8 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-/** Every case below, run once per kind of write lock. */
-function ruleCases(): void {
+/** Every case below, run once per platform and its kind of write lock. */
+function ruleCases(kind: Platform): void {
   describe('Rule 1: a change refuses to write on a read that contradicts the rest', () => {
     it.each(['dropRead', 'garbleRead'] as const)(
       'refuses an add when the vault read is %s while the list names wallets',
@@ -198,6 +203,27 @@ function ruleCases(): void {
         expect(heldIds(view)).toEqual([A.id, B.id]);
       }
     );
+
+    it('refuses an add and a removal when the vault reads as an array while the list names wallets', async () => {
+      await seed([A, B]);
+      const view = await mount();
+      const { storage } = await runtime();
+      await storage.setStorageItem(MNEMONICS, ['not', 'a', 'vault']);
+
+      expectRuleOne(await refused(() => actions(view).addAccount(C)));
+      expectRuleOne(await refused(() => actions(view).removeAccount(B.id)));
+    });
+
+    it('overwrites a vault stored as an array beside an empty list with a first save', async () => {
+      const { storage, encryption } = await runtime();
+      await storage.setStorageItem(MNEMONICS, ['not', 'a', 'vault']);
+      const view = await mount();
+
+      await act(() => actions(view).addAccount(C, 'P-new'));
+
+      const vault = crash.snapshot()[MNEMONICS] as Parameters<typeof encryption.unlock>[0];
+      expect(await encryption.unlock(vault, 'P-new')).toEqual(secretsOf([C]));
+    });
 
     it('refuses an add and a removal when vault and list read absent while the counter is stored', async () => {
       await seed([A, B]);
@@ -429,8 +455,7 @@ function ruleCases(): void {
     });
     const position = crash.writes.slice(mark).findIndex(({ key }) => key === ACCOUNTS) + 1;
     cleanup();
-    crash = await startCrashStorage();
-    await crash.relaunch();
+    await start();
     expect(position).toBeGreaterThan(0);
     return position;
   }
@@ -445,6 +470,37 @@ function ruleCases(): void {
       }
     });
     return error;
+  }
+
+  // AsyncStorage on iOS can answer a read with a value whose write failed, so
+  // there a read-back proves nothing.
+  if (kind === 'mobile') {
+    describe('Rule 2 on mobile: a list write that throws is a failed write', () => {
+      it.each([ADD, REMOVE, EDIT])(
+        'rejects $label when the list write lands and then throws, writing and reading nothing after it',
+        async (scenario) => {
+          const position = await listWritePosition(scenario);
+          const view = await scenario.prepare();
+          const before = heldNames(view);
+          const { helpers } = await runtime();
+          const mark = crash.writes.length;
+          crash.failAt(position, { applied: true });
+
+          expect(await attempt(() => scenario.change(view))).toBeInstanceOf(Error);
+
+          // A removal leaves the vault alone: no write follows the list.
+          expect(crash.writes.length - mark).toBe(position);
+          expect(heldNames(view)).toEqual(before);
+          const listReadsAfter = crash.reads.filter(
+            ({ key, afterWrites }) => key === ACCOUNTS && afterWrites >= mark + position
+          );
+          expect(listReadsAfter).toEqual([]);
+          const landed = (crash.snapshot()[ACCOUNTS] as StoredAccount[]).map(({ id }) => id);
+          expect(helpers.isOwnStoredAccountsWrite(landed)).toBe(false);
+        }
+      );
+    });
+    return;
   }
 
   describe('Rule 2: a list write that throws is settled by reading it back', () => {
@@ -556,12 +612,14 @@ function exclusiveLocks() {
   };
 }
 
-describe('with the Web Locks API', () => {
-  beforeEach(() => {
+describe('on the extension, with the Web Locks API', () => {
+  beforeEach(async () => {
     vi.stubGlobal('navigator', { locks: exclusiveLocks() });
+    platform = 'extension';
+    await start();
   });
 
-  ruleCases();
+  ruleCases('extension');
 
   it('saves a first wallet without asking for the lock again from inside', async () => {
     const view = await mount();
@@ -573,10 +631,12 @@ describe('with the Web Locks API', () => {
 });
 
 // Mobile has no Web Locks API: the changes queue in its one runtime.
-describe('without navigator.locks', () => {
-  beforeEach(() => {
+describe('on mobile, without navigator.locks', () => {
+  beforeEach(async () => {
     vi.stubGlobal('navigator', {});
+    platform = 'mobile';
+    await start();
   });
 
-  ruleCases();
+  ruleCases('mobile');
 });

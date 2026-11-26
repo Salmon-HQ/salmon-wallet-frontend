@@ -260,6 +260,38 @@ describe('editing a wallet', () => {
   });
 });
 
+// Another window swapped B for C in storage; this one still holds A and B.
+describe('changing a wallet from a window that missed another one', () => {
+  async function stale(): Promise<View> {
+    await seed();
+    const view = await mount();
+    const { storage } = await runtime();
+    await storage.setStorageItem(ACCOUNTS, [A, C].map(stored));
+    return view;
+  }
+
+  it('hands the session to a wallet the window holds and leaves the list unmarked when removing the active wallet', async () => {
+    const view = await stale();
+    const helpers = await import('./useAccountsMutationHelpers');
+
+    await act(() => actions(view).removeAccount(A.id));
+
+    expect(storedIds()).toEqual([C.id]);
+    expect(heldIds(view)).toContain(view.result.current[0].accountId);
+    expect(helpers.isOwnStoredAccountsWrite([C.id])).toBe(false);
+  });
+
+  it('leaves the list unmarked after an edit', async () => {
+    const view = await stale();
+    const helpers = await import('./useAccountsMutationHelpers');
+
+    await act(() => actions(view).editAccount(A.id, { name: 'renamed' }));
+
+    expect(storedList().map(({ name }) => name)).toEqual(['renamed', C.name]);
+    expect(helpers.isOwnStoredAccountsWrite([A.id, C.id])).toBe(false);
+  });
+});
+
 describe('removing every wallet', () => {
   const change: Change = (view) => actions(view).removeAllAccounts();
 

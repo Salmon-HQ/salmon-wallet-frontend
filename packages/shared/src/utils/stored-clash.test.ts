@@ -6,10 +6,9 @@ import bs58 from 'bs58';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { generateKeyPair, getSolanaDerivationPath } from '../blockchain/solana/factory';
 import { generateMnemonic } from '../crypto/mnemonic';
-import { DuplicateAccountError } from '../hooks/useAccountsMutationHelpers';
 import type { Account, AccountSecret, NetworkPathIndexes, StoredAccount } from '../types/account';
 import type { SecretVault, StoredSecret } from './account-secret';
-import { findStoredClash } from './stored-clash';
+import { DuplicateAccountError, findStoredClash } from './stored-clash';
 
 vi.mock('../api/services/network', () => {
   const offline = vi.fn(async () => {
@@ -99,6 +98,19 @@ describe('a recovery phrase', () => {
     await expect(
       findStoredClash(phrase(`  ${M.toUpperCase().replace(/ /g, '   ')} `), list, secrets)
     ).rejects.toBeInstanceOf(DuplicateAccountError);
+  });
+
+  // A phrase wallet loads with no positions stored at position 0.
+  it.each<[string, NetworkPathIndexes, NetworkPathIndexes]>([
+    ['the new one', {}, { [SOL]: [0] }],
+    ['the listed one', { [SOL]: [0] }, {}],
+  ])('is refused when %s holds no position, as at position 0', async (_side, own, listed) => {
+    const [list, secrets] = storage([{ id: 'listed-p', secret: M, pathIndexes: listed }]);
+    const account = newWallet('new-id', { kind: 'mnemonic', mnemonic: M }, own);
+
+    await expect(findStoredClash(account, list, secrets)).rejects.toBeInstanceOf(
+      DuplicateAccountError
+    );
   });
 
   it('is saved at another start, as a derived wallet is', async () => {
