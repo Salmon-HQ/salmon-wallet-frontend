@@ -12,6 +12,7 @@ import {
   getStashItem,
   isKeyCacheValid,
   STASH_KEYS,
+  withVaultWriteLock,
   type NetworkId,
   type TrustedApp,
 } from '@salmon/shared';
@@ -243,6 +244,9 @@ function App() {
   // Every wallet removed elsewhere is forgotten here too.
   const accountIds = useMemo(() => accounts.map(({ id }) => id), [accounts]);
   const reloadWallets = useCallback(async () => {
+    // A save running in this window holds the write lock; reading before it
+    // ends would load the list without the wallet it is saving.
+    await withVaultWriteLock(async () => undefined);
     const keyCache = await getStashItem<DerivedKeyCache>(STASH_KEYS.DERIVED_KEY);
     return isKeyCacheValid(keyCache) ? actions.unlockWithCachedKey(keyCache) : false;
   }, [actions]);
@@ -374,6 +378,7 @@ function App() {
 
   const handlePasswordSuccess = useCallback(() => {
     setAuthStep('success');
+    setAuthData(null);
   }, []);
 
   // Consent is the final step, after success — success's one exit funnels

@@ -75,7 +75,6 @@ jest.mock('@salmon/shared', () =>
       needsBackup: false,
       requireBackup: async () => true,
       openBackup: () => {},
-      markUnconfirmed: async () => {},
     }),
     // The focus-mode clock is real: the screen reads Home in its resting phases.
     ...jest.requireActual('../../../packages/shared/src/motion/useFocusModePhase'),

@@ -17,7 +17,6 @@ jest.mock('@salmon/shared', () => {
       needsBackup: false,
       requireBackup: async () => true,
       openBackup: () => {},
-      markUnconfirmed: async () => {},
     }),
     // The detail cards are the kit's, drawn for real: what they say about who
     // is asking is what these tests pin.

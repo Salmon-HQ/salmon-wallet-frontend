@@ -31,7 +31,6 @@ jest.mock('@salmon/shared', () =>
       needsBackup: false,
       requireBackup: async () => true,
       openBackup: () => {},
-      markUnconfirmed: async () => {},
     }),
     ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
     ...jest.requireActual('@salmon/shared/src/hooks/useBackupPanelLogic'),

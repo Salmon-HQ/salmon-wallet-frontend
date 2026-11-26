@@ -6,6 +6,11 @@ import React from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import {
+  DuplicateAccountError,
+  IncorrectPasswordError,
+  UnlockThrottledError,
+} from '@salmon/shared';
 import { PasswordPage } from './PasswordPage';
 
 // Hoisted so the vi.mock factory below can reference it — vi.mock is lifted
@@ -37,6 +42,7 @@ const mockCreateAccount = vi.fn();
 const mockCheckPassword = vi.fn();
 const mockAddAccount = vi.fn();
 const mockProtectWallet = vi.fn();
+const mockMarkUnconfirmed = vi.fn();
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -44,7 +50,8 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-vi.mock('@salmon/shared/utils/account', () => ({
+vi.mock('@salmon/shared/utils/account', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@salmon/shared/utils/account')>()),
   generateAccountName: () => 'Account #1',
 }));
 
@@ -66,6 +73,7 @@ vi.mock('@salmon/shared', async (importOriginal) => ({
     },
   ],
   getPasswordStrengthLabel: (strength: string) => `strength-${strength}`,
+  usePhraseBackup: () => ({ markUnconfirmed: mockMarkUnconfirmed }),
 }));
 
 function renderPage() {
@@ -296,5 +304,109 @@ describe('PasswordPage protecting a wallet that has no password', () => {
     fireEvent.click(screen.getByTestId('confirm-dialog-cancel'));
 
     expect(mockRemoveWallet).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * The save's own result decides what the page says: a retry is the same
+ * wallet, a refused save says why with copy that exists, and a wallet created
+ * without the phrase check is marked by the save itself.
+ */
+describe('PasswordPage saving the wallet', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    accountsState.requiredLock = true;
+    mockCheckPassword.mockResolvedValue(true);
+    mockAddAccount.mockResolvedValue(undefined);
+    mockCreateAccount.mockImplementation(
+      async ({ id, avatar }: { id: string; avatar: string }) => ({
+        account: { id, avatar },
+      })
+    );
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  });
+
+  afterEach(cleanup);
+
+  function renderFlow(flowType: 'create' | 'recover') {
+    return render(
+      <PasswordPage
+        mnemonic="test mnemonic"
+        flowType={flowType}
+        onSuccess={vi.fn()}
+        onBack={vi.fn()}
+      />
+    );
+  }
+
+  it('retries with the same wallet id and avatar after a failed save', async () => {
+    mockAddAccount.mockRejectedValueOnce(new Error('disk full'));
+    renderPage();
+
+    await submitPassword();
+    await waitFor(() => expect(screen.getByText(SEED_KEY)).toBeTruthy());
+    fireEvent.click(screen.getByTestId('password-submit-button'));
+    await waitFor(() => expect(mockAddAccount).toHaveBeenCalledTimes(2));
+
+    const [first, second] = mockAddAccount.mock.calls.map(([account]) => account);
+    expect(first).toEqual({ id: expect.any(String), avatar: expect.any(String) });
+    expect(second).toEqual(first);
+  });
+
+  it('marks a created wallet through the save and a recovered one not at all', async () => {
+    accountsState.requiredLock = false;
+    const create = renderFlow('create');
+    fireEvent.change(screen.getByTestId('password-input'), {
+      target: { value: 'correct horse battery' },
+    });
+    fireEvent.change(screen.getByTestId('password-confirm-input'), {
+      target: { value: 'correct horse battery' },
+    });
+    fireEvent.click(screen.getByTestId('password-submit-button'));
+    await waitFor(() => expect(mockAddAccount).toHaveBeenCalledTimes(1));
+    create.unmount();
+
+    accountsState.requiredLock = true;
+    renderPage();
+    await submitPassword();
+    await waitFor(() => expect(mockAddAccount).toHaveBeenCalledTimes(2));
+
+    expect(mockAddAccount.mock.calls[0]![1]).toBe('correct horse battery');
+    expect(mockAddAccount.mock.calls[0]![2]).toEqual({ unconfirmed: true });
+    expect(mockAddAccount.mock.calls[1]![2]?.unconfirmed).toBeFalsy();
+    expect(mockMarkUnconfirmed).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['a wallet already in the list', new DuplicateAccountError(), 'wallet.import.errors.duplicate'],
+    [
+      'a password that does not open the vault',
+      new IncorrectPasswordError(),
+      'wallet.create.invalid_password',
+    ],
+    [
+      'a password check still waiting out a penalty',
+      new UnlockThrottledError(5000),
+      'errors.password_throttled',
+    ],
+  ])('says so for %s', async (_, refusal, key) => {
+    mockAddAccount.mockRejectedValueOnce(refusal);
+    renderPage();
+
+    await submitPassword();
+
+    await waitFor(() => expect(screen.getByText(key)).toBeTruthy());
+    expect(screen.queryByText(SEED_KEY)).toBeNull();
+  });
+
+  it('shows no error once the save resolved', async () => {
+    renderPage();
+
+    await submitPassword();
+    await waitFor(() => expect(mockAddAccount).toHaveBeenCalledTimes(1));
+
+    expect(screen.queryByText(SEED_KEY)).toBeNull();
+    expect(screen.queryByText(NETWORK_KEY)).toBeNull();
+    expect(console.error).not.toHaveBeenCalled();
   });
 });

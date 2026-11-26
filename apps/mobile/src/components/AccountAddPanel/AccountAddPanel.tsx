@@ -116,11 +116,11 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     setLoading(false);
   }, []);
   const onFailure = useCallback(
-    (err: unknown) => {
+    (err: unknown, duplicateKey?: string) => {
       console.error('Failed to add account:', err);
       setCreationError({
         title: t('general.error'),
-        message: t('settings.account_add.creation_error'),
+        message: t(duplicateKey ?? 'settings.account_add.creation_error'),
       });
     },
     [t]

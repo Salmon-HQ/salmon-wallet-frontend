@@ -13,6 +13,7 @@ import { findDerivedAccounts, useDerivedAccountsScan } from './useDerivedAccount
 import { useAccountsContext } from '../contexts/AccountsContext';
 import { useUserConfig } from './useUserConfig';
 import { createAccount } from '../factories/account-factory';
+import { DuplicateAccountError } from './useAccountsMutationHelpers';
 import {
   getScanNetworks,
   getScanNetworksWithMirrors,
@@ -185,6 +186,39 @@ describe('useDerivedAccountsScan', () => {
     }
     expect(markDerivedScanned).toHaveBeenCalledWith('wallet-1');
     expect(result.current.sheetVisible).toBe(false);
+  });
+
+  it('logs a path the save refuses as already stored, shows nothing, and moves on', async () => {
+    scanMock.mockResolvedValue({
+      accounts: [find(2, 'sol-2', 0.5), find(4, 'sol-4', 2)],
+      failedNetworks: [],
+    });
+    arrange();
+    const duplicate = new DuplicateAccountError();
+    addAccount.mockRejectedValueOnce(duplicate);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const { result } = renderHook(() => useDerivedAccountsScan({ automatic: true }));
+    await waitFor(() => expect(result.current.sheetVisible).toBe(true));
+    await act(async () => {
+      await result.current.importFinds([2, 4]);
+    });
+
+    await waitFor(() => expect(addAccount).toHaveBeenCalledTimes(2));
+    expect(createMock.mock.calls.map(([options]) => options.startIndex)).toEqual([2, 4]);
+    expect(warn).toHaveBeenCalledWith('Derived-account import failed:', duplicate);
+    expect(result.current.sheetVisible).toBe(false);
+    expect(Object.keys(result.current).sort()).toEqual([
+      'dismiss',
+      'finds',
+      'importFinds',
+      'rescan',
+      'rescanningAccountId',
+      'scanningAccountId',
+      'sheetRequested',
+      'sheetVisible',
+    ]);
+    warn.mockRestore();
   });
 
   it('"Not now" records the answer and creates nothing', async () => {

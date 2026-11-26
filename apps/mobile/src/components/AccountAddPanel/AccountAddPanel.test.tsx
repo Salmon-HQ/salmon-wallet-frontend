@@ -409,12 +409,14 @@ describe('AccountAddPanel', () => {
         name: 'Account 3',
         privateKey: 'base58-secret-key',
         networkId: 'solana-mainnet',
+        id: expect.any(String),
+        avatar: expect.any(String),
       });
     });
 
     // A private key derives nothing, so the mnemonic fan-out must stay out of it.
     expect(mockCreateAccount).not.toHaveBeenCalled();
-    expect(mockAddAccount).toHaveBeenCalledWith({ id: 'imported-1' }, undefined, undefined);
+    expect(mockAddAccount).toHaveBeenCalledWith({ id: 'imported-1' }, undefined);
     // The key does not linger in component state after the account is stored.
     expect(mockPrivateKeyImport.reset).toHaveBeenCalled();
   });
@@ -474,7 +476,7 @@ describe('AccountAddPanel', () => {
       );
     });
 
-    expect(mockAddAccount).toHaveBeenCalledWith({ id: 'account-1' }, undefined, undefined);
+    expect(mockAddAccount).toHaveBeenCalledWith({ id: 'account-1' }, undefined);
 
     // The completion is parked behind the wait's exit: dropping `loading`
     // starts the wave's exit, and only its report hands the panel back.
@@ -591,7 +593,7 @@ describe('AccountAddPanel expired vault key', () => {
         expect.objectContaining({ privateKey: 'base58-secret-key' })
       );
     });
-    expect(mockAddAccount).toHaveBeenCalledWith({ id: 'imported-1' }, SHEET_PASSWORD, undefined);
+    expect(mockAddAccount).toHaveBeenCalledWith({ id: 'imported-1' }, SHEET_PASSWORD);
   });
 
   it('never writes the vault under a password it has not verified', async () => {
@@ -629,6 +631,58 @@ describe('AccountAddPanel failure notice', () => {
       expect(screen.getByText('general.error')).toBeTruthy();
     });
     expect(screen.getByText('settings.account_add.creation_error')).toBeTruthy();
+  });
+
+  it('says the wallet is already in the list when the save refuses an imported key as a duplicate', async () => {
+    const { DuplicateAccountError } = jest.requireActual(
+      '@salmon/shared/src/hooks/useAccountsMutationHelpers'
+    );
+    mockPrivateKeyImport.hasInput = true;
+    mockPrivateKeyImport.privateKey = 'base58-secret-key';
+    mockAddAccount.mockRejectedValueOnce(new DuplicateAccountError());
+
+    render(<AccountAddPanel onComplete={jest.fn()} onBack={jest.fn()} />);
+
+    fireEvent.press(screen.getByText('settings.account_add.import_private_key'));
+    fireEvent.press(screen.getByText('actions.continue'));
+    await waitFor(() => expect(screen.getByDisplayValue('Account 3')).toBeTruthy());
+    fireEvent.press(screen.getByText('settings.account_add.confirm'));
+
+    await waitFor(() => {
+      expect(screen.getByText('wallet.import.errors.duplicate')).toBeTruthy();
+    });
+    expect(screen.getByTestId('confirm-sheet-acknowledge')).toBeTruthy();
+    expect(screen.getByText('general.error')).toBeTruthy();
+    expect(screen.queryByText('settings.account_add.creation_error')).toBeNull();
+  });
+
+  it('says the address is already watched when the save refuses a watched address as a duplicate', async () => {
+    const { DuplicateAccountError } = jest.requireActual(
+      '@salmon/shared/src/hooks/useAccountsMutationHelpers'
+    );
+    mockWatchOnlyImport.hasInput = true;
+    mockWatchOnlyImport.address = 'Watched1111111111111111111111111111';
+    mockValidateWatchOnly.mockReturnValue(true);
+    mockImportWatchOnlyAccount.mockResolvedValue({ account: { id: 'watched-1' } });
+    mockAddAccount.mockRejectedValueOnce(new DuplicateAccountError());
+
+    try {
+      render(<AccountAddPanel onComplete={jest.fn()} onBack={jest.fn()} />);
+
+      fireEvent.press(screen.getByText('settings.account_add.import_watch_only'));
+      fireEvent.press(screen.getByTestId('account-add-watch-only-continue-button'));
+      await waitFor(() => expect(screen.getByDisplayValue('Account 3')).toBeTruthy());
+      fireEvent.press(screen.getByText('settings.account_add.confirm'));
+
+      await waitFor(() => {
+        expect(screen.getByText('wallet.watchOnly.errors.duplicate')).toBeTruthy();
+      });
+      expect(screen.getByTestId('confirm-sheet-acknowledge')).toBeTruthy();
+      expect(screen.queryByText('settings.account_add.creation_error')).toBeNull();
+    } finally {
+      mockWatchOnlyImport.hasInput = false;
+      mockWatchOnlyImport.address = null;
+    }
   });
 });
 

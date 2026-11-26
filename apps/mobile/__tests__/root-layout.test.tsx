@@ -134,7 +134,6 @@ jest.mock('@salmon/shared', () => {
       needsBackup: false,
       requireBackup: async () => true,
       openBackup: () => {},
-      markUnconfirmed: async () => {},
     }),
     focusManager: { setEventListener: jest.fn() },
     setApiPlatform: jest.fn(),
