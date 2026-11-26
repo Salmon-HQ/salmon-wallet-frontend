@@ -12,6 +12,11 @@ appId: io.salmonwallet.app
       NETWORK_CHOICE: solana-only
 - assertVisible:
     id: 'home-screen'
+# The balance block has drawn, so an absent Bitcoin option is absent, not late.
+- extendedWaitUntil:
+    visible:
+      id: 'balance-eye-toggle'
+    timeout: 10000
 - assertNotVisible:
     id: 'balance-chain-selector-option-bitcoin.*'
 - takeScreenshot: screenshots/smoke/settings/bitcoin-home-solana-only
@@ -66,11 +71,13 @@ appId: io.salmonwallet.app
     visible:
       id: 'home-screen'
     timeout: 10000
+# One main network left, so no chain selector: the balance block is Solana's.
+- extendedWaitUntil:
+    visible:
+      id: 'balance-eye-toggle'
+    timeout: 10000
 - assertNotVisible:
     id: 'balance-chain-selector-option-bitcoin.*'
-# One main network left, so no chain selector: the balance block is Solana's.
-- assertVisible:
-    id: 'balance-eye-toggle'
 - takeScreenshot: screenshots/smoke/settings/bitcoin-home-back-on-solana
 
 # Leave the device as found: Bitcoin on.
