@@ -100,12 +100,6 @@ if [[ $IS_ANDROID -eq 1 ]] && command -v adb >/dev/null 2>&1; then
   "${ADB[@]}" shell settings put secure stylus_handwriting_enabled 0 >/dev/null 2>&1 || true
 fi
 
-# The iOS simulator keyboard drops characters when the recover grid re-focuses
-# mid-phrase, so recover-walletA.yaml pastes on iOS: put the seed on the
-# simulator's pasteboard (never printed, never left in a file).
-if [[ $IS_ANDROID -eq 0 ]]; then
-  printf %s "$SALMON_TEST_SEED_A" | xcrun simctl pbcopy "${DEVICE:-booted}" && ok "seed on the simulator pasteboard"
-fi
 
 # ---------------------------------------------------------------- backend ----
 # Account creation and recovery call the API, so every flow needs it — including
@@ -258,5 +252,19 @@ CMD=(maestro)
 [[ -n "$DEVICE" ]] && CMD+=(--device "$DEVICE")
 CMD+=(test "${PASSTHROUGH[@]}")
 
+# A hung driver call once held a run for seven minutes before failing. The
+# limit turns a hang into a named failure; raise it for a whole suite.
+RUN_LIMIT="${SALMON_MAESTRO_TIMEOUT:-900}"
+TIMEOUT_BIN="$(command -v timeout || command -v gtimeout || true)"
+[[ -n "$TIMEOUT_BIN" ]] || warn "no timeout command (brew install coreutils): a hung run will not be stopped"
+
 printf '%s→ maestro test %s%s\n' "$DIM" "${PASSTHROUGH[*]}" "$OFF"
-"${CMD[@]}"
+if [[ -n "$TIMEOUT_BIN" ]]; then
+  "$TIMEOUT_BIN" "$RUN_LIMIT" "${CMD[@]}" || {
+    code=$?
+    [[ $code -eq 124 ]] && die "the run passed ${RUN_LIMIT}s and was stopped (SALMON_MAESTRO_TIMEOUT raises the limit)"
+    exit $code
+  }
+else
+  "${CMD[@]}"
+fi

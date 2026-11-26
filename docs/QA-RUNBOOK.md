@@ -138,7 +138,7 @@ sheet and the settings drawer). If a run hangs,
 
 ```bash
 cd apps/mobile/.maestro
-maestro test flows/smoke/...           # or flows/actions/...
+./run.sh flows/smoke/...               # or flows/actions/...; never bare `maestro test`
 ```
 
 Flows select by `id:` (React Native `testID`) — immune to copy/i18n. Secret /
