@@ -15,9 +15,12 @@ jest.mock('react-i18next', () => ({
 }));
 
 const mockPush = jest.fn();
+const mockRemoveStashItem = jest.fn();
 
 jest.mock('expo-router', () => ({
   router: { back: jest.fn(), push: (...args: unknown[]) => mockPush(...args) },
+  // Focus happens once here, on mount.
+  useFocusEffect: (effect: () => void) => require('react').useEffect(effect, [effect]),
 }));
 
 jest.mock('../../hooks/useSecretClipboard', () => ({
@@ -31,6 +34,7 @@ jest.mock('@salmon/shared', () =>
     generateValidationPositions: () => [1, 2, 3],
     validateMnemonicWords: () => ({ isValid: false, results: [] }),
     setStashItem: jest.fn(),
+    removeStashItem: (key: string) => mockRemoveStashItem(key),
     useSecretCopied: jest.requireActual('@salmon/shared/src/hooks/useSecretCopied').useSecretCopied,
     STASH_KEYS: { PENDING_MNEMONIC: 'pending-mnemonic' },
   })
@@ -104,6 +108,13 @@ describe('the create flow seed-phrase copy', () => {
 });
 
 describe('the create flow hand-off', () => {
+  it('takes the phrase out of the stash whenever the screen gains focus', () => {
+    mockRemoveStashItem.mockClear();
+    render(<CreateWalletScreen />);
+
+    expect(mockRemoveStashItem).toHaveBeenCalledWith('pending-mnemonic');
+  });
+
   it('asks for the networks next, carrying the create flow', async () => {
     render(<CreateWalletScreen />);
 

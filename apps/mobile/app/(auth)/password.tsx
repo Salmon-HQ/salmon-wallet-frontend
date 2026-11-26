@@ -70,7 +70,15 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Keyboard, Linking, StyleSheet, Text, View, type TextInputInstance } from 'react-native';
+import {
+  BackHandler,
+  Keyboard,
+  Linking,
+  StyleSheet,
+  Text,
+  View,
+  type TextInputInstance,
+} from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useWaitPassage } from '../../src/utils/useWaitPassage';
 import { useEnrolmentPassword } from '../../src/contexts/EnrolmentPasswordContext';
@@ -206,6 +214,14 @@ export default function PasswordScreen() {
   // The auth layout owns the ground, so the whole layout may travel; the wait
   // itself owns the beat on its way in.
   const { exiting: waitExiting } = useWaitPassage(isLoading);
+
+  // Android's back during the wait would leave this screen while the wallet
+  // is still being written, and put the phrase back for a second run.
+  useEffect(() => {
+    if (!isLoading) return;
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => true);
+    return () => subscription.remove();
+  }, [isLoading]);
 
   // Refs
   const confirmPasswordRef = useRef<TextInputInstance>(null);

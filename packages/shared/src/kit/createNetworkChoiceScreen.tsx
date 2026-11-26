@@ -80,8 +80,11 @@ export function createNetworkChoiceScreen(
       } catch (error) {
         // The screen stays, so the tap can be repeated.
         console.error('Failed to save the network choice:', error);
-        saving.current = false;
         return;
+      } finally {
+        // Mobile keeps this screen mounted under the password screen: coming
+        // back must find the rows alive.
+        saving.current = false;
       }
       onContinue();
     };

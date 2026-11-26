@@ -192,6 +192,20 @@ describe('createNetworkChoiceScreen', () => {
     quiet.mockRestore();
   });
 
+  it('takes a new choice when the user comes back to the same screen', async () => {
+    draw();
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId(ONLY));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId(BOTH));
+    });
+
+    expect(saveBitcoinChoice).toHaveBeenLastCalledWith(true);
+    expect(onContinue).toHaveBeenCalledTimes(2);
+  });
+
   it('goes back', () => {
     draw();
 

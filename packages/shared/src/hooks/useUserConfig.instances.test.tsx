@@ -354,6 +354,31 @@ describe('useUserConfig — a second tap before the first write lands', () => {
 });
 
 describe('useUserConfig — a write reaches every mounted instance', () => {
+  it('keeps a tap on screen when another instance was already saving', async () => {
+    const writer = await mount();
+    const other = await mount();
+    hold = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const pending: Promise<void>[] = [];
+    act(() => {
+      pending.push(other.current.markDerivedScanned('w1'));
+    });
+    act(() => {
+      pending.push(writer.current.setBitcoinEnabled(false));
+    });
+    expect(writer.current.bitcoinEnabled).toBe(false);
+
+    release();
+    await act(async () => {
+      await Promise.all(pending);
+    });
+
+    expect(writer.current.bitcoinEnabled).toBe(false);
+    expect(other.current.bitcoinEnabled).toBe(false);
+    expect(writer.current.derivedScannedAccountIds).toEqual(['w1']);
+  });
+
   it('shows another instance the Bitcoin choice without remounting', async () => {
     const writer = await mount();
     const reader = await mount();
@@ -388,6 +413,32 @@ describe('useUserConfig — a write reaches every mounted instance', () => {
     });
   });
 
+  it('searches derived accounts again once Bitcoin is turned back on', async () => {
+    const config = await mount();
+    await act(async () => {
+      await config.current.setBitcoinEnabled(false);
+      await config.current.markDerivedScanned('w1');
+    });
+    expect(config.current.derivedScannedAccountIds).toEqual(['w1']);
+
+    await act(async () => {
+      await config.current.setBitcoinEnabled(true);
+    });
+
+    expect(config.current.derivedScannedAccountIds).toEqual([]);
+    expect(stored().derivedScannedAccountIds).toEqual([]);
+  });
+
+  it('keeps the searched wallets when Bitcoin was already on', async () => {
+    const config = await mount();
+    await act(async () => {
+      await config.current.markDerivedScanned('w1');
+      await config.current.setBitcoinEnabled(true);
+    });
+
+    expect(config.current.derivedScannedAccountIds).toEqual(['w1']);
+  });
+
   it('leaves an unmounted instance alone', async () => {
     const writer = await mount();
     const { result, unmount } = renderHook(() =>
@@ -397,11 +448,11 @@ describe('useUserConfig — a write reaches every mounted instance', () => {
     unmount();
     const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    let write: Promise<void> = Promise.resolve();
-    act(() => {
-      write = writer.current.setBitcoinEnabled(false);
+    // The writer draws the stored record when its write lands, so the wait
+    // sits inside act; an update on the unmounted instance would still log.
+    await act(async () => {
+      await writer.current.setBitcoinEnabled(false);
     });
-    await write;
 
     expect(errors).not.toHaveBeenCalled();
     expect(stored().bitcoinEnabled).toBe(false);

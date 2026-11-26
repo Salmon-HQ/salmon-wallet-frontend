@@ -123,22 +123,19 @@ const listeners = new Set<ConfigListener>();
  * instance stored since it loaded, so every write re-reads the stored record
  * and merges only its own fields, one write at a time.
  *
- * The merged record then goes to every instance except `from`, the writer: it
- * already shows its change, and a second tap that landed meanwhile is not in
- * this record yet, so applying it there would undo that tap on screen.
+ * The merged record then goes to every instance. One with a write of its own
+ * still waiting ignores it (see `commit`): that record does not hold its
+ * change yet, so applying it would undo the change on screen.
  */
 function persistPatch(
-  patch: Partial<UserConfig> | ((stored: UserConfig) => Partial<UserConfig>),
-  from?: ConfigListener
+  patch: Partial<UserConfig> | ((stored: UserConfig) => Partial<UserConfig>)
 ): Promise<UserConfig> {
   const write = writeQueue.then(async () => {
     const storage = getStorage();
     const stored = withDefaults(await storage.getItem<UserConfig>(USER_CONFIG_KEY));
     const merged = { ...stored, ...(typeof patch === 'function' ? patch(stored) : patch) };
     await storage.setItem(USER_CONFIG_KEY, merged);
-    listeners.forEach((listener) => {
-      if (listener !== from) listener(merged);
-    });
+    listeners.forEach((listener) => listener(merged));
     return merged;
   });
   writeQueue = write.catch(() => undefined);
@@ -252,12 +249,22 @@ export function useUserConfig({
     [blockchain, environment]
   );
 
+  const applyConfigRef = useRef(applyConfig);
+  applyConfigRef.current = applyConfig;
+
+  // This instance's writes still in the queue. While there is one, records
+  // broadcast by other writes are older than what this screen shows.
+  const pendingWrites = useRef(0);
+
   useEffect(() => {
-    listeners.add(applyConfig);
-    return () => {
-      listeners.delete(applyConfig);
+    const listener: ConfigListener = (config) => {
+      if (pendingWrites.current === 0) applyConfigRef.current(config);
     };
-  }, [applyConfig]);
+    listeners.add(listener);
+    return () => {
+      listeners.delete(listener);
+    };
+  }, []);
 
   // Load configuration on mount and when blockchain/environment changes
   useEffect(() => {
@@ -301,12 +308,20 @@ export function useUserConfig({
       if (!current) return;
       applyConfig({ ...current, ...change(current) });
 
+      pendingWrites.current += 1;
       try {
-        await persistPatch(change, applyConfig);
+        const merged = await persistPatch(change);
+        pendingWrites.current -= 1;
+        // The last write of this instance holds every earlier one, its own
+        // and the other instances'.
+        if (pendingWrites.current === 0) applyConfigRef.current(merged);
       } catch (error) {
+        pendingWrites.current -= 1;
         console.error(`Failed to save ${what}:`, error);
         try {
-          applyConfig(withDefaults(await getStorage().getItem<UserConfig>(USER_CONFIG_KEY)));
+          applyConfigRef.current(
+            withDefaults(await getStorage().getItem<UserConfig>(USER_CONFIG_KEY))
+          );
         } catch {
           // Storage is unreadable too: the screen keeps what the user chose.
         }
@@ -433,7 +448,15 @@ export function useUserConfig({
       ) {
         await options.changeNetwork('solana-mainnet');
       }
-      await commit(() => ({ bitcoinEnabled: enabled }), 'Bitcoin preference');
+      // The derived-account search skipped Bitcoin while it was hidden, so the
+      // wallets it marked as searched are searched again.
+      await commit(
+        (config) =>
+          enabled && config.bitcoinEnabled === false
+            ? { bitcoinEnabled: true, derivedScannedAccountIds: [] }
+            : { bitcoinEnabled: enabled },
+        'Bitcoin preference'
+      );
     },
     [commit]
   );

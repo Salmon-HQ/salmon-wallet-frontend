@@ -269,6 +269,7 @@ export function SettingsPanelStack({
               <Toggle
                 testID={row.testId}
                 accessibilityLabel={label}
+                accessibilityHint={description}
                 value={toggle.checked}
                 onValueChange={(next) => toggle.onChange?.(next)}
               />
