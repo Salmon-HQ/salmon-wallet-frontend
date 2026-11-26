@@ -867,7 +867,8 @@
     "invalid_password": "Invalid password",
     "password_check_failed": "Failed to verify password",
     "password_required": "Password is required",
-    "password_throttled": "Too many wrong passwords. Wait a moment and try again — your wallet is untouched."
+    "password_throttled": "Too many wrong passwords. Wait a moment and try again — your wallet is untouched.",
+    "save_failed": "Couldn't save your choice. Try again."
   },
   "activity": {
     "emptyFiltered": "No transactions match this filter",

@@ -5,7 +5,7 @@
  * recover-from-phrase, so the two cannot drift: the same options, copy, test
  * ids and write.
  */
-import React, { useMemo, useRef, type ComponentType, type ReactNode } from 'react';
+import React, { useMemo, useRef, useState, type ComponentType, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { saveBitcoinChoice } from '../hooks/useUserConfig';
@@ -26,6 +26,8 @@ export interface NetworkChoiceScreenKit {
   Title: ComponentType<{ children: ReactNode }>;
   Header: ComponentType<ScreenHeaderPropsBase>;
   SettingsSelectorList: ComponentType<SettingsSelectorListPropsBase<NetworkChoiceOption>>;
+  /** An error line that screen readers announce as it appears. */
+  Alert: ComponentType<{ testID: string; children: ReactNode }>;
   /** `GlobeIcon` at the grid's mark size, in the primary ink. */
   mark: ReactNode;
 }
@@ -53,6 +55,7 @@ export function createNetworkChoiceScreen(
   return function NetworkChoiceScreen({ flowType, onBack, onContinue }) {
     const { t } = useTranslation();
     const saving = useRef(false);
+    const [failed, setFailed] = useState(false);
 
     const options = useMemo<NetworkChoiceOption[]>(
       () => [
@@ -75,11 +78,13 @@ export function createNetworkChoiceScreen(
     const choose = async (option: NetworkChoiceOption) => {
       if (saving.current) return;
       saving.current = true;
+      setFailed(false);
       try {
         await saveBitcoinChoice(option.bitcoinEnabled);
       } catch (error) {
-        // The screen stays, so the tap can be repeated.
+        // The screen stays and says so, so the tap can be repeated.
         console.error('Failed to save the network choice:', error);
+        setFailed(true);
         return;
       } finally {
         // Mobile keeps this screen mounted under the password screen: coming
@@ -113,6 +118,11 @@ export function createNetworkChoiceScreen(
             renderLeadingElement={noWell}
             testIdPrefix="onboarding-networks-option"
           />
+        }
+        assist={
+          failed ? (
+            <kit.Alert testID="onboarding-networks-error">{t('errors.save_failed')}</kit.Alert>
+          ) : undefined
         }
       />
     );

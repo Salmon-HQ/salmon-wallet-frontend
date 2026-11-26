@@ -9,6 +9,11 @@
 import {
   componentSizes,
   createNetworkChoiceScreen,
+  fontFamilyNative,
+  fontScaleCap,
+  fontSize,
+  lineHeight,
+  s,
   spacing,
   vs,
   type NetworkChoiceOption,
@@ -16,7 +21,8 @@ import {
   type SettingsSelectorListPropsBase,
 } from '@salmon/shared';
 import { router, useLocalSearchParams } from 'expo-router';
-import { View } from 'react-native';
+import { useEffect, type ReactNode } from 'react';
+import { AccessibilityInfo, Text, View } from 'react-native';
 
 import {
   OnboardingLayout,
@@ -32,6 +38,29 @@ function Mark() {
   return <GlobeIcon size={componentSizes.logoSizeSmall} color={semantic.text.primary} />;
 }
 
+// iOS reads no live region, so the line is announced as it mounts on both.
+function Alert({ testID, children }: { testID: string; children: ReactNode }) {
+  const semantic = useSemantic();
+  useEffect(() => {
+    if (typeof children === 'string') AccessibilityInfo.announceForAccessibility(children);
+  }, [children]);
+  return (
+    <Text
+      testID={testID}
+      maxFontSizeMultiplier={fontScaleCap.chrome}
+      style={{
+        color: semantic.status.danger,
+        fontFamily: fontFamilyNative.regular,
+        fontSize: s(fontSize.body),
+        lineHeight: fontSize.body * lineHeight.snug,
+        textAlign: 'center',
+      }}
+    >
+      {children}
+    </Text>
+  );
+}
+
 const NetworkChoiceScreen = createNetworkChoiceScreen({
   Layout: (props: OnboardingLayoutPropsBase) => <OnboardingLayout {...props} float scrollBody />,
   Title: OnboardingTitle,
@@ -42,6 +71,7 @@ const NetworkChoiceScreen = createNetworkChoiceScreen({
       <SettingsSelectorList {...props} />
     </View>
   ),
+  Alert,
   mark: <Mark />,
 });
 

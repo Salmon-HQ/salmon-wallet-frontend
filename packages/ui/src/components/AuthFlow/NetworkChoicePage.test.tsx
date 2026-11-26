@@ -69,4 +69,18 @@ describe('NetworkChoicePage', () => {
     fireEvent.click(screen.getByTestId('screen-header-back-button'));
     expect(onBack).toHaveBeenCalledTimes(1);
   });
+
+  it('announces a choice that could not be saved', async () => {
+    mockSave.mockRejectedValueOnce(new Error('disk full'));
+    const quiet = vi.spyOn(console, 'error').mockImplementation(() => {});
+    render(<NetworkChoicePage flowType="create" onBack={onBack} onContinue={onContinue} />);
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('onboarding-networks-option-solana-only'));
+    });
+
+    expect(screen.getByRole('alert').textContent).toBe('errors.save_failed');
+    expect(onContinue).not.toHaveBeenCalled();
+    quiet.mockRestore();
+  });
 });

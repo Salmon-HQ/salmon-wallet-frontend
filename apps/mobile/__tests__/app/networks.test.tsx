@@ -5,6 +5,7 @@
  */
 import React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { AccessibilityInfo } from 'react-native';
 
 const mockPush = jest.fn();
 const mockBack = jest.fn();
@@ -31,7 +32,7 @@ jest.mock('../../../../packages/shared/src/hooks/useUserConfig', () => ({
 jest.mock('../../src/icons', () => ({ GlobeIcon: () => null }));
 
 jest.mock('../../src/theme/useThemedStyles', () => ({
-  useSemantic: () => ({ text: { primary: '#fff' } }),
+  useSemantic: () => ({ text: { primary: '#fff' }, status: { danger: '#f00' } }),
 }));
 
 jest.mock('../../src/components', () => {
@@ -47,7 +48,8 @@ jest.mock('../../src/components', () => {
         props.float ? React.createElement(Text, null, 'float') : null,
         props.chrome,
         props.title,
-        props.body
+        props.body,
+        props.assist
       ),
     ScreenHeader: ({
       testID,
@@ -142,5 +144,22 @@ describe('the networks step', () => {
     fireEvent.press(screen.getByTestId('onboarding-networks-back'));
 
     expect(mockBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows and announces a choice that could not be saved', async () => {
+    mockSave.mockRejectedValueOnce(new Error('disk full'));
+    const announce = jest.spyOn(AccessibilityInfo, 'announceForAccessibility');
+    const quiet = jest.spyOn(console, 'error').mockImplementation(() => {});
+    render(<NetworksScreen />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByTestId('onboarding-networks-option-solana-only'));
+    });
+
+    expect(screen.getByTestId('onboarding-networks-error')).toHaveTextContent('errors.save_failed');
+    expect(announce).toHaveBeenCalledWith('errors.save_failed');
+    expect(mockPush).not.toHaveBeenCalled();
+    announce.mockRestore();
+    quiet.mockRestore();
   });
 });

@@ -33,12 +33,13 @@ import {
 // Plain stand-ins for the platform parts: the step's decisions are what is
 // under test, not how each platform draws a row.
 const kit: NetworkChoiceScreenKit = {
-  Layout: ({ testID, chrome, mark, title, body, secondary, action }) => (
+  Layout: ({ testID, chrome, mark, title, body, assist, secondary, action }) => (
     <main data-testid={testID}>
       {chrome}
       {mark}
       {title}
       {body}
+      {assist}
       {secondary !== undefined && <div data-testid="slot-secondary" />}
       {action !== undefined && <div data-testid="slot-action" />}
     </main>
@@ -79,6 +80,11 @@ const kit: NetworkChoiceScreenKit = {
         </button>
       ))}
     </div>
+  ),
+  Alert: ({ testID, children }) => (
+    <p role="alert" data-testid={testID}>
+      {children}
+    </p>
   ),
   mark: <i data-testid="mark" />,
 };
@@ -174,19 +180,29 @@ describe('createNetworkChoiceScreen', () => {
     expect(onContinue).toHaveBeenCalledTimes(1);
   });
 
-  it('stays when the choice could not be saved, and a second tap saves again', async () => {
+  it('stays and says so when the choice could not be saved, and a second tap saves again', async () => {
     saveBitcoinChoice.mockRejectedValueOnce(new Error('disk full'));
     const quiet = vi.spyOn(console, 'error').mockImplementation(() => {});
     draw();
+    expect(screen.queryByRole('alert')).toBeNull();
 
     await act(async () => {
       fireEvent.click(screen.getByTestId(ONLY));
     });
     expect(onContinue).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert').textContent).toBe("Couldn't save your choice. Try again.");
+    expect(screen.getByTestId('onboarding-networks-error')).toBeTruthy();
 
-    await act(async () => {
-      fireEvent.click(screen.getByTestId(ONLY));
-    });
+    let finish = () => {};
+    saveBitcoinChoice.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        finish = resolve;
+      })
+    );
+    fireEvent.click(screen.getByTestId(ONLY));
+    // The next tap clears the message before the new write answers.
+    expect(screen.queryByRole('alert')).toBeNull();
+    await act(async () => finish());
     expect(saveBitcoinChoice).toHaveBeenCalledTimes(2);
     expect(onContinue).toHaveBeenCalledTimes(1);
     quiet.mockRestore();

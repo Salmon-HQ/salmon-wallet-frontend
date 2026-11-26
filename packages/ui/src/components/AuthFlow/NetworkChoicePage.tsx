@@ -8,11 +8,15 @@
 import {
   componentSizes,
   createNetworkChoiceScreen,
+  fontFamily,
+  fontSize,
+  lineHeight,
   spacing,
   type NetworkChoiceOption,
   type OnboardingLayoutPropsBase,
   type SettingsSelectorListPropsBase,
 } from '@salmon/shared';
+import type { ReactNode } from 'react';
 
 import { GlobeIcon } from '../../icons';
 import { useSemantic } from '../../theme/ThemeProvider';
@@ -27,6 +31,26 @@ function Mark() {
   return <GlobeIcon size={componentSizes.logoSizeSmall} color={text.primary} />;
 }
 
+function Alert({ testID, children }: { testID: string; children: ReactNode }) {
+  const { status } = useSemantic();
+  return (
+    <p
+      role="alert"
+      data-testid={testID}
+      style={{
+        color: status.danger,
+        fontFamily: fontFamily.sans,
+        fontSize: fontSize.body,
+        lineHeight: lineHeight.snug,
+        textAlign: 'center',
+        margin: 0,
+      }}
+    >
+      {children}
+    </p>
+  );
+}
+
 const NetworkChoiceScreen = createNetworkChoiceScreen({
   Layout: (props: OnboardingLayoutPropsBase) => (
     <OnboardingLayout {...props} background={<WaterColumn />} />
@@ -39,6 +63,7 @@ const NetworkChoiceScreen = createNetworkChoiceScreen({
       <SettingsSelectorList {...props} />
     </div>
   ),
+  Alert,
   mark: <Mark />,
 });
 
