@@ -13,7 +13,7 @@
  */
 import { fontFamily, fontSize, fontWeight, lineHeight } from '@salmon/shared';
 import type { Testable } from '@salmon/shared';
-import type { CSSProperties, ReactNode } from 'react';
+import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react';
 
 import { useSemantic } from '../../theme/ThemeProvider';
 
@@ -23,6 +23,15 @@ export interface OnboardingTextProps extends Testable {
 
 export function OnboardingTitle({ children, testID }: OnboardingTextProps): React.ReactElement {
   const { text } = useSemantic();
+  const ref = useRef<HTMLHeadingElement>(null);
+
+  // The extension swaps pages by unmounting them, which drops focus to the
+  // body: the new title takes it, so a screen reader reads where the user is.
+  // A field the page focused itself (autoFocus runs first) keeps it.
+  useEffect(() => {
+    const active = document.activeElement;
+    if (!active || active === document.body) ref.current?.focus({ preventScroll: true });
+  }, []);
   const style: CSSProperties = {
     color: text.primary,
     fontFamily: fontFamily.sans,
@@ -31,10 +40,12 @@ export function OnboardingTitle({ children, testID }: OnboardingTextProps): Reac
     lineHeight: `${Math.round(fontSize.headline * lineHeight.tight)}px`,
     textAlign: 'center',
     margin: 0,
+    // Focus lands here only from code, never from Tab: no ring.
+    outline: 'none',
   };
 
   return (
-    <h1 style={style} data-testid={testID}>
+    <h1 ref={ref} tabIndex={-1} style={style} data-testid={testID}>
       {children}
     </h1>
   );
