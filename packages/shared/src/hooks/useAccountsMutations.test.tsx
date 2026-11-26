@@ -47,35 +47,19 @@ vi.mock('../blockchain/solana/seed-vault-signer', () => ({
   releaseSeedVaultAccess: vi.fn(),
 }));
 
-// A see-through cipher: tweetnacl refuses jsdom's typed arrays, and what is
-// under test is which secrets each window writes, not the encryption.
-vi.mock('../crypto/encryption', () => {
-  const seal = (data: unknown) => ({
-    encrypted: JSON.stringify(data),
-    nonce: 'n',
-    salt: 's',
-    iterations: 1,
-  });
-  return {
-    lock: vi.fn(async (data: unknown) => seal(data)),
-    lockAndGetKey: vi.fn(async (data: unknown) => ({
-      vault: seal(data),
-      keyCache: { key: [1], salt: 's' },
-    })),
-    lockWithKey: vi.fn(seal),
-    unlockWithKey: vi.fn((vault: { encrypted: string }) => JSON.parse(vault.encrypted)),
-    // The password that opens the see-through vault is `right-password`.
-    unlockAndGetKey: vi.fn(async (vault: { encrypted: string }, password: string) => {
-      if (password !== 'right-password') throw new Error('Decryption failed');
-      return { data: JSON.parse(vault.encrypted), keyCache: { key: [1], salt: 's' } };
-    }),
-    isKeyCacheValid: vi.fn((key: unknown) => !!key),
-    refreshCachedKey: vi.fn((key: unknown) => key),
-    DEFAULT_ITERATIONS: 1,
-    DEFAULT_DIGEST: 'sha512',
-  };
-});
+vi.mock('../crypto/encryption', async (importOriginal) =>
+  (await import('../test-utils/crash-storage')).keySensitiveCipher(
+    await importOriginal<typeof import('../crypto/encryption')>()
+  )
+);
 
+import {
+  lockAndGetKey,
+  lockWithKey,
+  unlockWithKey,
+  type DerivedKeyCache,
+  type LockedVault,
+} from '../crypto/encryption';
 import { useAccountsMutations } from './useAccountsMutations';
 import { isOwnStoredAccountsWrite } from './useAccountsMutationHelpers';
 import { releaseSeedVaultAccess } from '../blockchain/solana/seed-vault-signer';
@@ -149,24 +133,30 @@ function openWindow(loaded: Account[]) {
 const storedIds = () =>
   ((storageMap.get('salmon_accounts') as StoredAccount[] | undefined) ?? []).map(({ id }) => id);
 
-const storedSecrets = () =>
-  Object.keys(JSON.parse((storageMap.get('salmon_mnemonics') as { encrypted: string }).encrypted));
+/** The key the vault is sealed under: the one `right-password` derives. */
+let vaultKey: DerivedKeyCache;
 
-beforeEach(() => {
+const storeVault = (secrets: Record<string, unknown>) =>
+  storageMap.set('salmon_mnemonics', { ...lockWithKey(secrets, vaultKey), isEncrypted: true });
+
+const storedSecrets = () =>
+  Object.keys(
+    unlockWithKey<Record<string, unknown>>(
+      storageMap.get('salmon_mnemonics') as LockedVault,
+      vaultKey
+    )
+  );
+
+beforeEach(async () => {
   events.length = 0;
   vi.mocked(storage.setStorageItem).mockClear();
   vi.mocked(storage.removeStorageItem).mockClear();
   storageMap.clear();
   stashMap.clear();
-  storageMap.set('salmon_mnemonics', {
-    isEncrypted: true,
-    encrypted: JSON.stringify({ W: 'secret-of-W' }),
-    nonce: 'n',
-    salt: 's',
-    iterations: 1,
-  });
+  ({ keyCache: vaultKey } = await lockAndGetKey({}, 'right-password'));
+  storeVault({ W: 'secret-of-W' });
   storageMap.set('salmon_accounts', [formatAccountForStorage(wallet('W'))]);
-  stashMap.set('derived_key_cache', { key: [1], salt: 's' });
+  stashMap.set('derived_key_cache', vaultKey);
 });
 
 describe('useAccountsMutations across two windows', () => {
@@ -203,15 +193,6 @@ const seedVaultWallet = (id: string, authToken: string): Account => ({
     networkId: 'solana-mainnet',
   } as Account['secret'],
 });
-
-const storeVault = (secrets: Record<string, unknown>) =>
-  storageMap.set('salmon_mnemonics', {
-    isEncrypted: true,
-    encrypted: JSON.stringify(secrets),
-    nonce: 'n',
-    salt: 's',
-    iterations: 1,
-  });
 
 describe('useAccountsMutations writing one change at a time', () => {
   it('lands two writes started together in one window', async () => {
