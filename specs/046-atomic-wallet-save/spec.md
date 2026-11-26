@@ -71,7 +71,7 @@ A user's save fails and they press the button again; or the save succeeded but a
 
 ### User Story 3 - Adding a wallet the device already holds is refused (Priority: P1)
 
-A user tries to add a wallet they already have: the same recovery phrase, the same derived account, a private key for an address the wallet already holds, or an address they already watch. Salmon tells them "This wallet is already in your list." and stores nothing. This holds in every way of adding a wallet, and it holds even when another extension window added that wallet a moment ago.
+A user tries to add a wallet they already have: the same recovery phrase, the same derived account, a private key for an address the wallet already holds, or an address they already watch. Salmon tells them "This wallet is already in your list." and stores nothing. This holds in every way of adding a wallet. When another extension window added that wallet a moment ago and this window does not show it yet, nothing is stored twice either: this window ends up showing the wallet that is already there.
 
 **Why this priority**: the duplicate guard has to decide on what the device stores, or a second window, a locked window, or a retry slips past it.
 
@@ -82,7 +82,7 @@ A user tries to add a wallet they already have: the same recovery phrase, the sa
 1. **Given** a listed wallet from recovery phrase P, **When** the user recovers or imports P again at the same starting position, **Then** the save is refused with "This wallet is already in your list." and nothing is stored.
 2. **Given** a listed derived wallet at position 3 of phrase P, **When** the user picks position 3 of P again from the derived-account list, **Then** it is refused with the same message.
 3. **Given** a listed wallet that holds address X, **When** the user imports a private key for X or watches X, **Then** it is refused with the existing duplicate message, judged on what storage holds, not only on the window's memory.
-4. **Given** another extension window added wallet W after this window loaded, **When** this window tries to add W, **Then** it is refused.
+4. **Given** another extension window added wallet W after this window loaded, **When** this window, which does not show W yet, tries to add W, **Then** nothing is stored a second time and this window ends up showing W once, with the name and picture it already has.
 5. **Given** a listed Seed Vault wallet for address S, **When** the user adds address S again from Seed Vault (for example after re-granting access), **Then** the listed wallet is replaced by the new one in the same save, never duplicated, judged on what storage holds; this applies to setup as well as "Add wallet".
 
 ---
@@ -138,7 +138,7 @@ On the mobile setup password screen, the user goes back after a failed save; the
 - **A secret already in the vault but in no wallet** (left by an earlier failed save or an interrupted removal). Saving a wallet with that exact secret takes it over: the vault ends with one copy, owned by the new wallet. Other unlisted secrets stay exactly as they are.
 - **Derived accounts share a phrase.** A derived wallet holds the same recovery phrase as the wallet it came from, at another position. That is not a duplicate; the same phrase at the same starting position is.
 - **A private key for an address a phrase wallet already derives** is refused, as today.
-- **Two extension windows add the same wallet at once.** The second save, waiting for the first, finds the wallet stored and is refused; exactly one wallet results.
+- **Two extension windows add the same wallet at once.** The second save, waiting for the first, finds the wallet stored; exactly one wallet results, and the second window shows it.
 - **A locked window** holds no addresses in memory; its duplicate decision still uses what storage holds.
 - **A follow-up write fails after the wallet is stored** (for example the active-wallet selection). The save reports success; the next launch opens on a listed wallet, on a network and slot that wallet holds.
 - **The name counter** advances only when a wallet is saved, and it advances from what storage holds, not from one window's copy, so two windows never hand out the same "Wallet N" from a stale count and a failed save never skips a number.
@@ -158,7 +158,7 @@ On the mobile setup password screen, the user goes back after a failed save; the
 - **FR-003**: Correctness MUST NOT depend on several records being written together. On every platform, a write of several records is treated as separate writes that can stop between any two.
 - **FR-004**: After a failed or interrupted save, the active wallet, its network, its account slot and the name counter MUST be what they were before the attempt.
 - **FR-005**: After a failed or interrupted save, the password that opened the wallet before the attempt MUST still open it.
-- **FR-006**: A first save (one that starts on a device with no vault, no listed wallet and no data from an older version) MUST leave a one-record note that it is in progress before it writes the vault, and remove the note once the wallet is listed. When that note is found beside an empty wallet list, at launch or when a save starts, the vault that unfinished save left MUST be discarded, together with the cached session key and any unlock penalty counted against it, and the app MUST behave as a fresh install: welcome screen, and a new setup with any password succeeds, in the same session too. (Owner decision, 2026-11-26: discard.)
+- **FR-006**: A first save (one that starts on a device with no vault, no listed wallet and no data from an older version) MUST leave a one-record note that it is in progress before it writes the vault, and remove the note once the wallet is listed. The note identifies the exact vault that save is about to write. When that note is found beside the vault it identifies and an empty wallet list, with no wallet held by the open window, at launch or when a save starts, the vault that unfinished save left MUST be discarded, together with the cached session key and any unlock penalty counted against it, and the app MUST behave as a fresh install: welcome screen, and a new setup with any password succeeds, in the same session too. (Owner decision, 2026-11-26: discard.)
 - **FR-006a**: A vault MUST NOT be discarded on the shape of storage alone. Without the note of FR-006 nothing is discarded: a vault beside an empty list can be the only copy of an older wallet's recovery phrases whose migration stopped halfway, or a vault kept in the clear for a wallet migrated without a password. The note is written only when the device holds no vault, so its presence proves the vault beside it came from the unfinished first save. A wallet list that could not be read is not an empty list. The discard runs inside the exclusive write turn. A note found beside a listed wallet is just removed.
 
 **What the window shows follows storage**
@@ -170,11 +170,17 @@ On the mobile setup password screen, the user goes back after a failed save; the
 **One wallet per secret**
 
 - **FR-010**: Two listed wallets MUST NOT hold the same secret at the same position: the same recovery phrase at the same starting position, the same private key, the same watched address, or the same Seed Vault address.
+- **FR-010a**: When storage already lists a wallet with exactly the same secret at the same position, the outcome depends on what the open window shows: if it already shows that wallet, the attempt is a duplicate and is refused (FR-012); if it does not (a retry after a save that landed but reported failure, a new screen, another window's save), the attempt counts as already saved: nothing is stored twice, the writes the earlier save left undone are completed, and the window loads what storage holds.
 - **FR-011**: The duplicate decision MUST be made inside the same exclusive write turn as the save (no other save can run in between), against what storage holds at that moment, never only against one window's memory.
 - **FR-012**: A new wallet whose recovery phrase and starting position, private key or watched address matches a listed wallet, or whose address is an address a listed wallet already holds, MUST be refused with the existing message "This wallet is already in your list." / "Esta billetera ya está en tu lista.", storing nothing. This applies to setup (create and recover), "Add wallet" (imported phrase, derived account, private key, watched address) and every other path that adds a wallet. Earlier checks against the window's memory may stay as an early hint.
 - **FR-013**: A Seed Vault account whose address matches a listed Seed Vault wallet MUST replace that wallet in the same save (today's behaviour), decided against storage, in setup as well as "Add wallet". (Assumption, owner question 4.)
 - **FR-014**: Retrying a save after any failure, or pressing the button again after a save that succeeded and a later step that failed, MUST end with exactly one wallet for that secret.
 - **FR-015**: Once a screen's save has succeeded, that screen MUST NOT save again; a failure in a later step continues as the wallet already saved. (Assumption, owner question 2: on the mobile setup screen, the user moves on to the app, which shows the lock screen if unlocking did not complete.)
+
+**Reads and writes that lie**
+
+- **FR-015a**: A change MUST NOT proceed on a read that contradicts the rest of what the device holds: a vault that reads as missing or unreadable while a wallet is listed or older-version data is present, or a wallet list that reads as empty while the open window holds wallets. The change is refused and nothing is written. An empty vault is assumed only for a first save.
+- **FR-015b**: When the deciding write reports a failure, the change MUST be settled by reading that record back: if it holds the change, the change is treated as done; if not, the change is refused with the window unchanged. A refused change is therefore safe to retry.
 
 **Key material**
 
