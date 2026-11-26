@@ -18,11 +18,13 @@ Red first (full list with guards in plan.md §Test plan):
 - First save whose vault write failed, retried with another password → the vault opens with the new one only.
 - Dropped or garbled vault read on an add and on a removal → rejects, other wallets' entries intact (today: rewritten without them).
 - Dropped list read while the window holds wallets, on add, remove and edit → rejects, nothing written.
-- List write applied then thrown, on setup create, setup recover, Add wallet, remove and edit → resolves through the read-back; with the read-back failing → rejects and memory is refreshed from storage with no write and no global error.
+- List write applied then thrown, on setup create, setup recover, Add wallet, remove and edit → resolves through the read-back; with the read-back failing → rejects and memory is refreshed from storage with no write and no global error (unchanged when the list read keeps failing).
 - Same id with a different stored secret → rejects, entry intact.
 - Vault and list both read absent while `COUNTER` is present → rejects; a reset stopped after any of its writes still lets setup run.
 - A save rejected after its vault landed → the setup form asks for the existing password in the same session.
-- Mobile setup: unlock, enrolment or analytics failing after the save → no error, the screen moves on.
+- Mobile setup after the save: `unlockAccounts` resolving false → enrolment skipped, straight to the app; enrolment or analytics throwing → no error, the screen moves on.
+- First save killed right after the list write → `COUNTER` present.
+- A failing save beside a garbled vault with nothing listed → `requiredLock` stays false.
 - With a list read that lied, a save removes no vault entry.
 - A stale second window adds a wallet the first already saved → "This wallet is already in your list.", nothing stored twice.
 - Seed Vault replace stopped after the vault write → every listed id has its entry.

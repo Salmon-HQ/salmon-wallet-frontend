@@ -22,7 +22,7 @@ interface AddAccountOptions {
 addAccount(account: Account, password?: string, options?: AddAccountOptions): Promise<void>;
 ```
 
-The caller passes the name, as today. Order inside the lock: P1 reads + Rule 1 → P2 secrets (no vault key: drop the stash key; vault + password: the password must open it; else the cached key) → P3 own id → P4 `findStoredClash` → P5 build and encrypt → rows. The pre-steps write no wallet record; P2 can write the stash key and the unlock penalty record.
+The caller passes the name, as today. Order inside the lock: P1 reads + Rule 1 → P2 secrets (no vault key, or an unparseable vault with nothing listed → `{}` after dropping the stash `DERIVED_KEY`, and the password proof does not run on it; vault + password: the password must open it; else the cached key) → P3 own id → P4 `findStoredClash` → P5 build and encrypt → rows (row 2a writes `COUNTER` between the vault and the list when it is absent, best effort). The pre-steps write no wallet record; P2 can write the stash key and the unlock penalty record.
 
 - **Own id**: when storage already holds an entry under `account.id`, the save proceeds only if that entry is exactly the secret being saved, and then overwrites its own list and vault entries without writing the counter. A different stored secret → reject (plain `Error`), nothing written.
 - **Resolves** when the list naming the wallet is stored (written, or confirmed by Rule 2). Later write failures are logged.
@@ -32,7 +32,7 @@ The caller passes the name, as today. Order inside the lock: P1 reads + Rule 1 �
   - `DuplicateAccountError` (§Duplicate rules);
   - `EncryptionMaterialMissingError` (vault, no password, no cached key);
   - a storage or stash error before the list write; a thrown list write that Rule 2 does not confirm (memory refreshed).
-- **After any reject**: when a vault key is now stored, `requiredLock` is set to true, so the setup form asks for the existing password in the same session.
+- **After any reject**: `requiredLock` is set to true only when `getEncryptedStoredMnemonics()` returns a vault (one the single-field form can check), so the setup form asks for the existing password in the same session; that read is wrapped so its failure never hides the original error.
 - **No network** inside the lock.
 - **Vault entries**: the save adds the new entry and removes none before the list; the only removal is the replaced Seed Vault entries, after the list.
 - **Memory**: held − replaced Seed Vault ids − `account.id` + the new wallet; new wallet active; counter = the stored value. Own-write mark only when memory's ids equal the stored ids.
@@ -57,7 +57,7 @@ Rule 1 list conditions only; a list lacking only that id returns as today. One l
 
 ## `removeAllAccounts()`
 
-Memory, then the stash key, then `clearAccountsStorage()` (now `COUNTER`, `ACCOUNT_ID`, `NETWORK_ID`, `PATH_INDEX` before `ACCOUNTS` and `MNEMONICS`), then Seed Vault releases.
+Memory, then the stash key, then `clearAccountsStorage()` (now `COUNTER`, `WALLETS`, `ACTIVE`, `ENDPOINTS`, `ACCOUNT_ID`, `NETWORK_ID`, `PATH_INDEX`, then `ACCOUNTS`, `MNEMONICS`, then `TRUSTED_APPS`, `CUSTOM_TOKENS`, `CONNECTION`), then Seed Vault releases.
 
 ## Errors
 
@@ -66,7 +66,7 @@ Memory, then the stash key, then `clearAccountsStorage()` (now `COUNTER`, `ACCOU
 ## Helpers (caller holds the lock)
 
 - `readStoredList(memoryHoldsWallets)`: reads the list; applies Rule 1's list conditions.
-- `readStoredWallets(memoryHoldsWallets, password?)`: `readStoredList` plus raw vault and `WALLETS`; applies the vault conditions; returns the list, whether a vault key exists, and the secrets (opened with a supplied password, whose key becomes the stash key; else the cached key; `{}` only with no vault key).
+- `readStoredWallets(memoryHoldsWallets, password?)`: `readStoredList` plus raw vault and `WALLETS`; applies the vault conditions; returns the list, whether a vault key exists, and the secrets (opened with a supplied password, whose key becomes the stash key; else the cached key; `{}` after dropping the stash key when there is no vault key or the vault is unparseable with nothing listed, without running the password proof).
 - `findStoredClash(account, list, secrets)` (`utils/stored-clash.ts`): pure; derives Solana addresses only for private-key and watch-only saves; per-index skips; own id excluded; returns `{ replace: ids }` (possibly empty) or throws `DuplicateAccountError`.
 - `pruneMarks(list)`: best effort; writes only when a mark is removed.
 - `writeStoredAccounts(list, { own })`: Rule 2 on a throw; own-write mark only when `own`, cleared on a reject.
@@ -85,36 +85,37 @@ The wallet id and avatar are kept while a value key stays the same: trimmed phra
 
 ## Screens
 
-Mobile setup: after `addAccount` resolves, the follow-ups (unlock, analytics, enrolment hand-off) are logged on failure and the screen always moves on (biometric setup when unlocked, else the app's lock screen). The derived-account scan keeps today's handling of a `DuplicateAccountError`: logged, the queue moves on, no message.
+Mobile setup: after `addAccount` resolves, the follow-ups run outside the error path. `unlockAccounts` returns a boolean and never throws: true → biometric setup; false → enrolment skipped, straight to the app, which is unlocked in that session on a fresh install. Analytics or the enrolment hand-off throwing is logged and does not change the route. The derived-account scan keeps today's handling of a `DuplicateAccountError`: logged, the queue moves on, no message.
 
 Both setup twins fix the wallet id and avatar once per screen and rebuild with them. Setup twins: `DuplicateAccountError` → `wallet.import.errors.duplicate`; `IncorrectPasswordError` / `UnlockThrottledError` → `passwordCheckErrorKey(err, 'wallet.create.invalid_password')`; others keep today's message. Add wallet sheet: `DuplicateAccountError` → `wallet.import.errors.duplicate`, or `wallet.watchOnly.errors.duplicate` for a watched address. Mobile clears the phrase from state when `addAccount` resolves; the extension host clears `authData` on success and its listener `reloadWallets` first awaits `withVaultWriteLock(async () => undefined)`.
 
 ## Vectors
 
-| Stored before                              | Call                                    | Result                                                                |
-| ------------------------------------------ | --------------------------------------- | --------------------------------------------------------------------- |
-| phrase P created at 0                      | add P at 0 with other spacing           | `DuplicateAccountError`                                               |
-| P created at 0                             | add P at 3 (derived)                    | saved                                                                 |
-| P holding Solana position 3                | add P at 3                              | `DuplicateAccountError`                                               |
-| watched X                                  | recover the phrase that derives X       | saved                                                                 |
-| private-key wallet K                       | recover the phrase whose address is K's | saved                                                                 |
-| phrase wallet holding address Y            | add a Seed Vault account for Y          | saved                                                                 |
-| phrase wallet holding address Y            | import the private key or watch Y       | `DuplicateAccountError`                                               |
-| P holding only Bitcoin index 4             | add the key for P's Solana index 4      | saved                                                                 |
-| P with Solana catalog disabled             | add the key for P's Solana index 0      | `DuplicateAccountError`, no network                                   |
-| listed entry missing; a null Solana index  | add any key                             | those skipped, other indexes compared, no throw                       |
-| C's secret under id X                      | add C with id X                         | overwrites its own entries, no counter write, resolves                |
-| another secret under id X                  | add C with id X                         | plain `Error`, nothing written, entry intact                          |
-| W listed (another window), memory lacks it | add W with a new id                     | `DuplicateAccountError`                                               |
-| two Seed Vault wallets for Y               | add Seed Vault for Y                    | both replaced, entries dropped after the list                         |
-| list write applied then thrown             | add / remove / edit                     | read-back equal → resolves, later rows run                            |
-| list write thrown, read-back fails         | add / remove / edit                     | memory refreshed from storage, rejects                                |
-| vault under P1, cached key valid           | add or remove with password P2          | `IncorrectPasswordError`, no wallet record written, one failed unlock |
-| no vault, cached key for P1                | add with password P2                    | vault under P2                                                        |
-| vault raw unparseable, A listed            | add / remove; edit                      | Rule 1 error, nothing written; the edit proceeds                      |
-| vault raw unparseable, nothing listed      | add C (first save)                      | the vault is overwritten with C, as today                             |
-| vault and list absent, `COUNTER` present   | add                                     | Rule 1 error, nothing written                                         |
-| a save rejects after its vault landed      | (same session)                          | `requiredLock` true                                                   |
-| list read dropped, memory holds A          | add / remove / edit                     | Rule 1 error, nothing written                                         |
-| unlisted Z = Q                             | add Q                                   | Z kept; Q stored under the new id                                     |
-| no stale mark                              | save                                    | no mark write                                                         |
+| Stored before                              | Call                                    | Result                                                                                           |
+| ------------------------------------------ | --------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| phrase P created at 0                      | add P at 0 with other spacing           | `DuplicateAccountError`                                                                          |
+| P created at 0                             | add P at 3 (derived)                    | saved                                                                                            |
+| P holding Solana position 3                | add P at 3                              | `DuplicateAccountError`                                                                          |
+| watched X                                  | recover the phrase that derives X       | saved                                                                                            |
+| private-key wallet K                       | recover the phrase whose address is K's | saved                                                                                            |
+| phrase wallet holding address Y            | add a Seed Vault account for Y          | saved                                                                                            |
+| phrase wallet holding address Y            | import the private key or watch Y       | `DuplicateAccountError`                                                                          |
+| P holding only Bitcoin index 4             | add the key for P's Solana index 4      | saved                                                                                            |
+| P with Solana catalog disabled             | add the key for P's Solana index 0      | `DuplicateAccountError`, no network                                                              |
+| listed entry missing; a null Solana index  | add any key                             | those skipped, other indexes compared, no throw                                                  |
+| C's secret under id X                      | add C with id X                         | overwrites its own entries, no counter write, resolves                                           |
+| another secret under id X                  | add C with id X                         | plain `Error`, nothing written, entry intact                                                     |
+| W listed (another window), memory lacks it | add W with a new id                     | `DuplicateAccountError`                                                                          |
+| two Seed Vault wallets for Y               | add Seed Vault for Y                    | both replaced, entries dropped after the list                                                    |
+| list write applied then thrown             | add / remove / edit                     | read-back equal → resolves, later rows run                                                       |
+| list write thrown, read-back fails         | add / remove / edit                     | memory refreshed from storage (unchanged when the refresh's list read is null or fails), rejects |
+| vault under P1, cached key valid           | add or remove with password P2          | `IncorrectPasswordError`, no wallet record written, one failed unlock                            |
+| no vault, cached key for P1                | add with password P2                    | vault under P2                                                                                   |
+| vault raw unparseable, A listed            | add / remove; edit                      | Rule 1 error, nothing written; the edit proceeds                                                 |
+| vault raw unparseable, nothing listed      | add C (first save)                      | the vault is overwritten with C, as today                                                        |
+| vault and list absent, `COUNTER` present   | add                                     | Rule 1 error, nothing written                                                                    |
+| a save rejects after its vault landed      | (same session)                          | `requiredLock` true                                                                              |
+| garbled vault, nothing listed, save fails  | (same session)                          | `requiredLock` stays false                                                                       |
+| list read dropped, memory holds A          | add / remove / edit                     | Rule 1 error, nothing written                                                                    |
+| unlisted Z = Q                             | add Q                                   | Z kept; Q stored under the new id                                                                |
+| no stale mark                              | save                                    | no mark write                                                                                    |
