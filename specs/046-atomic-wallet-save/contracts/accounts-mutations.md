@@ -1,6 +1,6 @@
 # Contract: wallet mutations (spec 046)
 
-The shared API the screens call, after this change. Everything here lives in `packages/shared/src/hooks` and `contexts`.
+The shared API the screens call after this change. Everything lives in `packages/shared/src/hooks`, `contexts` and one key in `storage/types.ts`.
 
 ## `addAccount(account, password?, options?)` — `useAccountsMutations.ts`
 
@@ -8,78 +8,82 @@ The shared API the screens call, after this change. Everything here lives in `pa
 interface AddAccountOptions {
   /** Created without the phrase check: marked backup-pending inside the same write turn, before the wallet is listed. */
   unconfirmed?: boolean;
-  /** Names the wallet from the stored counter, under the write lock; the account's own name is used when absent. */
+  /**
+   * Names the wallet under the write lock. Receives the counter BEFORE the increment
+   * (max(stored counter, stored list length)); `generateAccountName` adds 1 itself.
+   */
   nameFromCounter?: (counter: number) => string;
 }
 
 addAccount(account: Account, password?: string, options?: AddAccountOptions): Promise<void>;
 ```
 
-- **Resolves** once the wallet list naming the new wallet has been written. A later write (counter, active selection) that fails is logged, not thrown.
-- **Rejects**, with nothing the next launch shows changed and the window's state untouched:
-  - `DuplicateAccountError` — the device already holds this secret at this position, or a listed wallet holds one of its addresses (plan.md §One secret, one wallet). Nothing is written.
-  - `EncryptionMaterialMissingError` — no cached key and no password (unchanged).
-  - `UnlockThrottledError`, or the decryption error of a wrong password (unchanged, counted against the throttle).
-  - a storage error from any write up to and including the list write.
-- **Seed Vault**: a listed Seed Vault wallet with the same address is replaced in the same save (the `replaces` parameter is removed; the target is found in storage).
-- **First save** (stored list empty, no exclusion): any leftover vault and the cached session key are discarded first; the vault is encrypted under `password`.
-- After it resolves: `accounts`, `counter`, `accountId`, `networkId`, `pathIndex`, `requiredLock` hold the new wallet as active.
+Order inside the lock (plan.md §Add): read list, vault, `WALLETS`, note → settle the note (discard or remove) → on a first save remove the stash session key → idempotent check → read secrets → duplicate check → build and encrypt → writes.
+
+- **Resolves** once the list naming the new wallet has been written, or at once when storage already lists this account's id with an equal secret (idempotent retry: no second wallet write). A later write that fails (note removal, counter, selection, the replaced entry's removal) is logged.
+- **Rejects**, with nothing the next launch shows changed and the window untouched:
+  - `DuplicateAccountError` — the device already holds this secret at this position, or a listed wallet holds one of its addresses. Nothing is written.
+  - `EncryptionMaterialMissingError`, `UnlockThrottledError`, a wrong password (unchanged).
+  - a storage or stash error before or at the list write.
+- **No network** inside the lock: addresses for the duplicate check come from pure functions.
+- **Seed Vault**: a listed Seed Vault wallet with the same address is replaced; its vault entry stays until the list has landed, then is removed in a later write.
+- **First save** (no vault, no listed wallet, no `WALLETS`): writes the note before the vault and removes it after the list; the vault is encrypted under `password`, never under a key cached earlier.
+- **Memory** after it resolves: `accounts` is the stored list after the write (objects this window holds, plus the new wallet); the new wallet is active.
 
 ## `removeAccount(targetId, password?)`
 
-Unchanged signature. Resolves once the list without the wallet has been written; the vault and selection writes after it are logged on failure. Rejects with the list unchanged and the window untouched otherwise. When the removed wallet was active, the next active wallet is the first of the new stored list that the window holds.
+Unchanged signature. The list write decides; memory follows it. Selection write failures are logged. A failed vault write after the list **rejects** (memory already shows the wallet gone; its entry stays unlisted in the vault). Next active wallet when the removed one was active: the first of the new stored list this window holds.
 
 ## `editAccount(targetId, params)`
 
-Unchanged signature. One write (the list). The window shows the edit only after it lands.
+One write (the list); memory after it.
 
 ## `removeAllAccounts()`
 
-Unchanged: memory first, then storage (FR-009).
+Memory first, then the stash session key, then `clearAccountsStorage()` (now ending with the note), then Seed Vault releases.
 
-## `DuplicateAccountError` — exported from `hooks/index.ts`
+## `DuplicateAccountError` — `hooks/index.ts`
 
-```ts
-class DuplicateAccountError extends Error {}
-```
+`class DuplicateAccountError extends Error {}`. No secret, address or id in its message. Screens show `t('wallet.import.errors.duplicate')`.
 
-Carries no secret, no address and no id in its message. Screens map it to `t('wallet.import.errors.duplicate')`.
+## Helpers — `useAccountsMutationHelpers.ts` (caller holds `withVaultWriteLock`)
 
-## `discardVaultWithoutWallets(): Promise<void>` — `useAccountsMutationHelpers.ts` (module-internal export for the two callers and tests)
-
-Caller holds `withVaultWriteLock`. Throws if the list cannot be read. Does nothing unless the list is `null` or `[]`, no `salmon_wallets` record exists and the vault is not a cleartext record. Then removes the stash session key, and, if a vault exists, every wallet key (`clearAccountsStorage`) and the backup-pending marks.
+- `settleFirstSave(list)`: note + list `null`/`[]` → remove stash `DERIVED_KEY`, `clearUnlockPenalty()`, `clearAccountsStorage()` (note removed last); note + listed wallet → remove the note; otherwise nothing. Throws on any failure.
+- `findStoredClash(account, list, secrets)`: `null`, `{ replace: id }`, or throws `DuplicateAccountError`.
+- `pruneMarks(list)`: rewrites `UNCONFIRMED_PHRASES` to the marks named by a listed `id` or `derivedFrom`, only if it changes; does nothing when the list is not an array.
+- `writeStoredAccounts(list, { own })`: records the own-write mark only when `own` (memory will hold every stored id); clears it if the write throws.
 
 ## `initAccounts()` — `useAccountsSecurity.ts`
 
-First step, inside one `withVaultWriteLock` turn: `discardVaultWithoutWallets()`, then the backup-pending marks pruned to those named by a listed wallet's `id` or `derivedFrom`. Then today's steps.
+First step, one lock turn: read list (throw → init error) → `settleFirstSave` (throw → init error) → `pruneMarks` (caught and logged). Then today's steps.
 
 ## `PhraseBackupValue` — `contexts/PhraseBackupContext.tsx`
 
-- `markUnconfirmed` is removed (marks are written by `addAccount`).
-- The provider re-reads `salmon_unconfirmed_phrases` when the set of listed wallet ids changes, so Home's reminder shows for a wallet just saved.
-- `confirmBackup` writes under `withVaultWriteLock`.
+`markUnconfirmed` removed. The provider re-reads `salmon_unconfirmed_phrases` when the listed ids change. `confirmBackup` writes under the lock.
 
-## `useAccountAddFlow(options)` — `hooks/useAccountAddFlow.ts`
+## `useAccountAddFlow(options)`
 
-- `defaultName: string` becomes `nameFor: (counter: number) => string`; the hook derives the default shown in the name field from the window's counter and passes `nameFromCounter` to `addAccount` when the field still holds that default.
-- No memory lookup for the Seed Vault wallet to replace.
-- `onFailure(err)` receives `DuplicateAccountError` for a duplicate; steps after a resolved `addAccount` never reach `onFailure`.
+`defaultName: string` → `nameFor: (counter: number) => string`, called with the counter before the increment. `addAccount` gets `nameFromCounter` when the name field still holds the default. No memory Seed Vault lookup. `onFailure` receives `DuplicateAccountError`; steps after a resolved `addAccount` never reach it.
+
+## Setup screens
+
+Both twins build the account once per screen and send the same object on every retry. Mobile clears the phrase from React state and the account ref right after `addAccount` resolves; the extension host clears `authData` on password success.
 
 ## Vectors
 
-| Stored before                                    | Call                                        | Result                                   |
-| ------------------------------------------------ | ------------------------------------------- | ---------------------------------------- |
-| P at start 0                                     | add P at start 0                            | `DuplicateAccountError`, nothing written |
-| P at start 0                                     | add " P " (other spacing/case) at start 0   | `DuplicateAccountError`                  |
-| P at start 0                                     | add P at start 3 (`derivedFrom` P's wallet) | saved                                    |
-| P at start 0 holding slot 3 on Solana            | add P at start 3                            | `DuplicateAccountError`                  |
-| P at start 0, deriving Solana address X          | add private key for X                       | `DuplicateAccountError`                  |
-| private key wallet for X                         | watch X                                     | `DuplicateAccountError`                  |
-| Seed Vault wallet S for address Y                | add Seed Vault for Y                        | S replaced, one wallet                   |
-| P at start 0 deriving Y                          | add Seed Vault for Y                        | `DuplicateAccountError`                  |
-| list empty, unlisted vault entry Z = Q           | add Q (first save)                          | discard runs first; vault = { new: Q }   |
-| W listed, unlisted entries Z = Q and V = R       | add Q                                       | vault = { W, new: Q, V: R }              |
-| list `[]`, encrypted vault, no `salmon_wallets`  | launch                                      | vault and wallet keys removed, welcome   |
-| list `[]`, encrypted vault, `salmon_wallets` set | launch                                      | nothing removed                          |
-| list `[]`, cleartext vault                       | launch                                      | nothing removed, protect mode            |
-| list read throws                                 | launch                                      | init error, nothing removed              |
+| Stored before                                            | Call                                   | Result                                          |
+| -------------------------------------------------------- | -------------------------------------- | ----------------------------------------------- |
+| P at start 0                                             | add P at start 0                       | `DuplicateAccountError`, nothing written        |
+| P at start 0                                             | add P with other spacing/case, start 0 | `DuplicateAccountError`                         |
+| P at start 0                                             | add P at start 3                       | saved                                           |
+| P at start 0 holding slot 3                              | add P at start 3                       | `DuplicateAccountError`                         |
+| P deriving Solana address X, Solana catalog disabled     | add private key for X                  | `DuplicateAccountError`, no network call        |
+| private key wallet for X                                 | watch X                                | `DuplicateAccountError`                         |
+| Seed Vault S for Y                                       | add Seed Vault for Y                   | S replaced; S's entry kept until after the list |
+| P deriving Y                                             | add Seed Vault for Y                   | `DuplicateAccountError`                         |
+| C listed with secret Q                                   | add the same account C again           | resolves, nothing written                       |
+| W listed; unlisted Z = Q (exact), V = Q' (other spacing) | add Q                                  | Z dropped, V kept                               |
+| note, list `[]`, vault                                   | launch, or a save starts               | discard; note removed last                      |
+| note, list `[W]`                                         | launch                                 | note removed                                    |
+| no note, list `[]`, encrypted vault                      | launch                                 | nothing removed; lock screen as today           |
+| list read throws                                         | launch                                 | init error, nothing removed                     |
