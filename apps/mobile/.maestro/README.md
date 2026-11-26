@@ -46,7 +46,7 @@ installed.
    curl -Ls "https://get.maestro.mobile.dev" | bash
    ```
 2. Boot the iPhone simulator and install the Expo dev build of
-   `apps/mobile` (`pnpm --filter mobile ios` from the repo root).
+   `apps/mobile` (`pnpm --filter @salmon/mobile ios` from the repo root).
 3. Copy and fill secrets:
    ```bash
    cp .maestro/.env.test.example .maestro/.env.test
@@ -65,7 +65,7 @@ Before running `suites/actions.yaml` or any single action flow, check what
 Wallet A / Wallet B actually hold — a quick RPC query against
 `SALMON_TEST_WALLET_A_ADDR` / `SALMON_TEST_WALLET_B_ADDR`
 (`solana balance <addr>`, `getTokenAccountsByOwner`) or opening the app
-and checking Home/Collectibles. These are real mainnet wallets.
+and checking Home/Collectibles. The runner prints their devnet balances at the start of every run.
 
 Per-flow prerequisites:
 

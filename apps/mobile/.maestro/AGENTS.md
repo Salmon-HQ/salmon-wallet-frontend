@@ -22,7 +22,7 @@ home for mobile integration tests.
 ## Conventions
 
 - **Run through `./run.sh`**, never `maestro test` directly. It anchors the
-  cwd, forwards every secret with `-e`, re-applies the Android port mapping,
+  cwd, hands every secret to the flow as a `MAESTRO_` variable, re-applies the Android port mapping,
   and refuses to start when the backend is down. Each of those fails silently
   or misleadingly when done by hand; `README.md` explains how. Reach for bare
   `maestro` only to debug the runner itself.

@@ -7,6 +7,14 @@ const monorepoRoot = path.resolve(projectRoot, '../..');
 
 const config = getDefaultConfig(projectRoot);
 
+// Metro watches every workspace package, the extension's build output too.
+// A rebuild of the extension while Metro runs rewrites those folders and
+// stopped Metro with "TreeFS: Failed to make parent directory entry".
+const extensionBuildOutput = new RegExp(
+  `^${path.join(monorepoRoot, 'apps/extension').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/(dist|dev|coverage)/.*`
+);
+config.resolver.blockList = [].concat(config.resolver.blockList ?? [], extensionBuildOutput);
+
 // Helper to find a package in node_modules (supports both pnpm hoisted and non-hoisted)
 function findPackage(packageName, subPath = '') {
   // Try hoisted (flat) structure first (node-linker=hoisted)
