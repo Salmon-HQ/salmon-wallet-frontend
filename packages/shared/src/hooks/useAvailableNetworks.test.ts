@@ -673,6 +673,42 @@ describe('useAvailableNetworks Hook', () => {
       }
     );
 
+    // Loading settings read Bitcoin as on; the catalogue can land first.
+    const loadingSettings = () =>
+      vi.mocked(useUserConfigModule.useUserConfig).mockReturnValue({
+        developerNetworks: false,
+        bitcoinEnabled: true,
+        isLoading: true,
+      } as unknown as ReturnType<typeof useUserConfigModule.useUserConfig>);
+
+    it('offers no Bitcoin network until the settings have loaded', async () => {
+      loadingSettings();
+
+      const { result } = renderHook(() =>
+        useAvailableNetworks({ activeBlockchainAccount: mockActiveAccount })
+      );
+
+      await waitFor(() => expect(result.current.networksReady).toBe(true));
+      expect(result.current.allNetworks.map((n) => n.id)).toEqual([
+        'solana-mainnet',
+        'ethereum-mainnet',
+      ]);
+    });
+
+    it('keeps the Bitcoin network the session stands on while the settings load', async () => {
+      loadingSettings();
+
+      const { result } = renderHook(() =>
+        useAvailableNetworks({
+          activeBlockchainAccount: mockActiveAccount,
+          activeNetworkId: 'bitcoin-mainnet',
+        })
+      );
+
+      await waitFor(() => expect(result.current.networksReady).toBe(true));
+      expect(result.current.networks.bitcoin.map((n) => n.id)).toEqual(['bitcoin-mainnet']);
+    });
+
     it('offers Bitcoin as before when the record has never seen the choice', async () => {
       settingsStore.set('settings', { explorers: {}, developerNetworks: false });
       await realUserConfig();
