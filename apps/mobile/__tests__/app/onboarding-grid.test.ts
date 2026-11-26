@@ -29,12 +29,20 @@ describe('the (auth) screens', () => {
       'biometric-setup.tsx',
       'create.tsx',
       'index.tsx',
+      'networks.tsx',
       'password.tsx',
       'recover.tsx',
       'seed-vault.tsx',
       'seed-warning.tsx',
       'success.tsx',
     ]);
+  });
+
+  it('asks the network question on create and recover only, never on Seed Vault', () => {
+    expect(read('create.tsx')).toContain("pathname: '/(auth)/networks'");
+    expect(read('recover.tsx')).toContain("pathname: '/(auth)/networks'");
+    expect(read('seed-vault.tsx')).toContain("pathname: '/(auth)/password'");
+    expect(read('seed-vault.tsx')).not.toContain('/(auth)/networks');
   });
 
   it.each(screens)('%s composes on OnboardingLayout', (file) => {

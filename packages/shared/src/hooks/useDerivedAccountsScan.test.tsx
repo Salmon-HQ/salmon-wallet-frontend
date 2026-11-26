@@ -9,7 +9,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 
-import { useDerivedAccountsScan } from './useDerivedAccountsScan';
+import { findDerivedAccounts, useDerivedAccountsScan } from './useDerivedAccountsScan';
 import { useAccountsContext } from '../contexts/AccountsContext';
 import { useUserConfig } from './useUserConfig';
 import { createAccount } from '../factories/account-factory';
@@ -78,7 +78,8 @@ function arrange({
   accounts,
   scanned = [] as string[],
   locked = false,
-}: { accounts?: Account[]; scanned?: string[]; locked?: boolean } = {}) {
+  bitcoinEnabled = true,
+}: { accounts?: Account[]; scanned?: string[]; locked?: boolean; bitcoinEnabled?: boolean } = {}) {
   const list = accounts ?? [wallet()];
   accountsMock.mockReturnValue([
     { accounts: list, activeAccount: list[0], locked, ready: true },
@@ -88,6 +89,7 @@ function arrange({
     derivedScannedAccountIds: scanned,
     markDerivedScanned,
     isLoading: false,
+    bitcoinEnabled,
   } as unknown as ReturnType<typeof useUserConfig>);
   return list[0];
 }
@@ -399,5 +401,50 @@ describe('useDerivedAccountsScan', () => {
       release();
     });
     expect(result.current.rescanningAccountId).toBeNull();
+  });
+});
+
+describe('the derived search with the Bitcoin choice', () => {
+  const phraseWallet = () =>
+    wallet({
+      networksAccounts: {
+        'solana-mainnet': [blockchainAccount('sol-0')],
+        'bitcoin-mainnet': [blockchainAccount('btc-0')],
+      } as Account['networksAccounts'],
+    });
+  const scannedNetworks = () => scanMock.mock.calls.flatMap(([, networkIds]) => networkIds);
+
+  beforeEach(() => {
+    networksMock.mockResolvedValue(['solana-mainnet', 'bitcoin-mainnet']);
+  });
+
+  it('never looks on Bitcoin while the user chose Solana only', async () => {
+    const account = phraseWallet();
+
+    await findDerivedAccounts(account, [account], () => false, false);
+
+    expect(scannedNetworks()).toEqual(['solana-mainnet']);
+  });
+
+  it('looks on Bitcoin as before when the choice is not given', async () => {
+    const account = phraseWallet();
+
+    await findDerivedAccounts(account, [account], () => false);
+
+    expect(scannedNetworks()).toEqual(['solana-mainnet', 'bitcoin-mainnet']);
+  });
+
+  it.each([
+    [false, ['solana-mainnet']],
+    [true, ['solana-mainnet', 'bitcoin-mainnet']],
+  ])('a rescan with Bitcoin %s looks on %j', async (bitcoinEnabled, expected) => {
+    arrange({ accounts: [phraseWallet()], scanned: ['wallet-1'], bitcoinEnabled });
+    const { result } = renderHook(() => useDerivedAccountsScan());
+
+    await act(async () => {
+      await result.current.rescan('wallet-1');
+    });
+
+    expect(scannedNetworks()).toEqual(expected);
   });
 });

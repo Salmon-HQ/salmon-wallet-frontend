@@ -275,4 +275,9 @@ export interface UserConfig {
    * value that is not a preset shows more tokens, never fewer.
    */
   tokenList?: { maxCount: number | null; minValue: number | null };
+  /**
+   * Whether Bitcoin is shown (spec 045). Absent means on, so every install set
+   * up before the choice existed keeps Bitcoin and loading writes nothing.
+   */
+  bitcoinEnabled?: boolean;
 }

@@ -258,6 +258,11 @@
     "developer_networks_description": "Mostrar redes testnet y devnet",
     "unverified_tokens": "Mostrar tokens no verificados",
     "unverified_tokens_description": "Mostrá los tokens y coleccionables no verificados o de baja capitalización, spam incluido. Desactivado por defecto.",
+    "bitcoin": "Bitcoin",
+    "bitcoin_description": "Mostrar Bitcoin en tu wallet",
+    "bitcoin_off_title": "¿Ocultar Bitcoin?",
+    "bitcoin_off_message": "Tus bitcoins siguen en tu wallet. Vuelven a verse cuando activás Bitcoin otra vez en Configuración.",
+    "bitcoin_off_confirm": "Ocultar Bitcoin",
     "analytics": "Datos de Uso",
     "analytics_description": "Compartí estadísticas de uso pseudónimas, como cada cuánto abrís la app y qué funciones usás, para ayudar a mejorar Salmon. Nunca incluye direcciones, balances ni montos. Desactivado por defecto.",
     "analytics_prompt_title": "Ayudá a mejorar Salmon",
@@ -538,6 +543,14 @@
       "saved_it": "Ya la guardé",
       "clipboard_hint": "Otras apps pueden leer el portapapeles: anotala en papel.",
       "copied_clears": "Copiada · se borra en {{seconds}} s"
+    },
+    "networks": {
+      "title": "Elegí tus redes",
+      "solana_bitcoin": "Solana + Bitcoin",
+      "solana_bitcoin_spoken": "Solana y Bitcoin",
+      "solana_bitcoin_description": "Usá Solana y Bitcoin en una sola wallet.",
+      "solana_only": "Solo Solana",
+      "solana_only_description": "Podés sumar Bitcoin después en Configuración."
     },
     "recover": {
       "messageTitle": "Recuperar Cuenta existente",
@@ -855,7 +868,8 @@
     "invalid_password": "Contraseña incorrecta",
     "password_check_failed": "No se pudo verificar la contraseña",
     "password_required": "La contraseña es obligatoria",
-    "password_throttled": "Demasiadas contraseñas incorrectas. Esperá un momento y volvé a intentar; tu billetera no se toca."
+    "password_throttled": "Demasiadas contraseñas incorrectas. Esperá un momento y volvé a intentar; tu billetera no se toca.",
+    "save_failed": "No se pudo guardar tu elección. Intentá de nuevo."
   },
   "activity": {
     "emptyFiltered": "Ninguna transacción coincide con este filtro",

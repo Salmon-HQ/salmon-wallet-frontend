@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildNetworkListFromAccount,
   getAccountBlockchainType,
   isBitcoinAccount,
   isEthereumAccount,
@@ -7,6 +8,7 @@ import {
 } from './account';
 import { SolanaAccount } from '../blockchain/solana';
 import type { BlockchainAccount } from '../types/blockchain';
+import type { Account } from '../types/account';
 
 /**
  * The duck-typing markers each account class actually carries: `getRpc` is
@@ -42,5 +44,34 @@ describe('getAccountBlockchainType', () => {
 
     expect(isEthereumAccount(ethereumLike)).toBe(true);
     expect(isSolanaAccount(ethereumLike)).toBe(false);
+  });
+});
+
+describe('buildNetworkListFromAccount', () => {
+  const phraseWallet = {
+    networksAccounts: {
+      'solana-mainnet': [solanaLike],
+      'solana-devnet': [solanaLike],
+      'bitcoin-mainnet': [bitcoinLike],
+      'bitcoin-testnet': [bitcoinLike],
+    },
+  } as unknown as Account;
+
+  const ids = (list: Array<{ id: string }>) => list.map(({ id }) => id);
+
+  it('lists no Bitcoin network while the user chose Solana only', () => {
+    expect(ids(buildNetworkListFromAccount(phraseWallet, false))).toEqual([
+      'solana-mainnet',
+      'solana-devnet',
+    ]);
+  });
+
+  it('lists every held network when the choice is not given', () => {
+    expect(ids(buildNetworkListFromAccount(phraseWallet))).toEqual([
+      'solana-mainnet',
+      'solana-devnet',
+      'bitcoin-mainnet',
+      'bitcoin-testnet',
+    ]);
   });
 });

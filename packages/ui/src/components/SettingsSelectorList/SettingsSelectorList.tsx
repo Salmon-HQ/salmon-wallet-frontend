@@ -33,6 +33,7 @@ export function SettingsSelectorList<T>({
   onSelect,
   getPrimaryText,
   getSecondaryText,
+  getAccessibilityLabel,
   renderLeadingElement,
   loading,
   emptyMessage,
@@ -64,6 +65,7 @@ export function SettingsSelectorList<T>({
           key={key}
           testID={testIdPrefix ? `${testIdPrefix}-${key}` : undefined}
           onPress={() => onSelect(item)}
+          accessibilityLabel={getAccessibilityLabel?.(item)}
           leading={leading}
           title={primary}
           subtitle={secondary || undefined}
@@ -88,6 +90,7 @@ export function SettingsSelectorList<T>({
       onSelect,
       getPrimaryText,
       getSecondaryText,
+      getAccessibilityLabel,
       renderLeadingElement,
       testIdPrefix,
       accent,

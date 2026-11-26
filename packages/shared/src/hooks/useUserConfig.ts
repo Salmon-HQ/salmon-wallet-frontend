@@ -19,7 +19,7 @@ import {
   type ExplorerWithKey,
 } from '../config/explorers';
 import type { UserConfig, ActiveBlockchainAccount } from '../types/account';
-import { getMainnetSibling } from '../utils/network';
+import { getMainnetSibling, isNetworkChosen } from '../utils/network';
 import { normalizeTokenListPreference, type TokenListPreference } from '../utils/tokenListFold';
 
 // ============================================================================
@@ -83,6 +83,16 @@ export interface UseUserConfigResult {
   tokenListPreference: TokenListPreference;
   /** Stores the half of the token list preference that changed */
   setTokenListPreference: (next: Partial<TokenListPreference>) => Promise<void>;
+  /** Whether Bitcoin is shown; on unless the user chose "Solana only" */
+  bitcoinEnabled: boolean;
+  /**
+   * Shows or hides Bitcoin, moving a session standing on it to Solana first.
+   * Resolves to whether the choice was stored.
+   */
+  setBitcoinEnabled: (
+    enabled: boolean,
+    options?: ToggleDeveloperNetworksOptions
+  ) => Promise<boolean>;
   /** Whether the configuration is still loading */
   isLoading: boolean;
 }
@@ -108,11 +118,20 @@ const withDefaults = (config: UserConfig | null): UserConfig => ({
 
 let writeQueue: Promise<unknown> = Promise.resolve();
 
+type ConfigListener = (config: UserConfig) => void;
+
+/** Every mounted instance, so a write one makes reaches the others. */
+const listeners = new Set<ConfigListener>();
+
 /**
  * Several instances of this hook are live at once, each with its own copy of
  * the record. Writing that copy back whole would erase whatever another
  * instance stored since it loaded, so every write re-reads the stored record
  * and merges only its own fields, one write at a time.
+ *
+ * The merged record then goes to every instance. One with a write of its own
+ * still waiting ignores it (see `commit`): that record does not hold its
+ * change yet, so applying it would undo the change on screen.
  */
 function persistPatch(
   patch: Partial<UserConfig> | ((stored: UserConfig) => Partial<UserConfig>)
@@ -122,10 +141,20 @@ function persistPatch(
     const stored = withDefaults(await storage.getItem<UserConfig>(USER_CONFIG_KEY));
     const merged = { ...stored, ...(typeof patch === 'function' ? patch(stored) : patch) };
     await storage.setItem(USER_CONFIG_KEY, merged);
+    listeners.forEach((listener) => listener(merged));
     return merged;
   });
   writeQueue = write.catch(() => undefined);
   return write;
+}
+
+/**
+ * The onboarding step's write. Setup has no instance of this hook to commit
+ * through, so it goes straight into the queue and reaches every mounted
+ * instance — the extension's provider is already mounted under onboarding.
+ */
+export async function saveBitcoinChoice(enabled: boolean): Promise<void> {
+  await persistPatch({ bitcoinEnabled: enabled });
 }
 
 // ============================================================================
@@ -226,6 +255,23 @@ export function useUserConfig({
     [blockchain, environment]
   );
 
+  const applyConfigRef = useRef(applyConfig);
+  applyConfigRef.current = applyConfig;
+
+  // This instance's writes still in the queue. While there is one, records
+  // broadcast by other writes are older than what this screen shows.
+  const pendingWrites = useRef(0);
+
+  useEffect(() => {
+    const listener: ConfigListener = (config) => {
+      if (pendingWrites.current === 0) applyConfigRef.current(config);
+    };
+    listeners.add(listener);
+    return () => {
+      listeners.delete(listener);
+    };
+  }, []);
+
   // Load configuration on mount and when blockchain/environment changes
   useEffect(() => {
     const loadConfig = async () => {
@@ -260,26 +306,44 @@ export function useUserConfig({
    * record so it runs twice: on this instance's copy, for the screen, and on
    * the stored record inside the write queue, so a second tap that lands
    * before the first write does is merged rather than computed from a stale
-   * copy. A failed write puts the screen back on what is stored.
+   * copy. A failed write puts the screen back on what is stored. Resolves to
+   * whether the change was stored.
    */
-  const commit = useCallback(
-    async (change: (config: UserConfig) => Partial<UserConfig>, what: string): Promise<void> => {
+  const tryCommit = useCallback(
+    async (change: (config: UserConfig) => Partial<UserConfig>, what: string): Promise<boolean> => {
       const current = configRef.current;
-      if (!current) return;
+      if (!current) return false;
       applyConfig({ ...current, ...change(current) });
 
+      pendingWrites.current += 1;
       try {
-        await persistPatch(change);
+        const merged = await persistPatch(change);
+        pendingWrites.current -= 1;
+        // The last write of this instance holds every earlier one, its own
+        // and the other instances'.
+        if (pendingWrites.current === 0) applyConfigRef.current(merged);
+        return true;
       } catch (error) {
+        pendingWrites.current -= 1;
         console.error(`Failed to save ${what}:`, error);
         try {
-          applyConfig(withDefaults(await getStorage().getItem<UserConfig>(USER_CONFIG_KEY)));
+          applyConfigRef.current(
+            withDefaults(await getStorage().getItem<UserConfig>(USER_CONFIG_KEY))
+          );
         } catch {
           // Storage is unreadable too: the screen keeps what the user chose.
         }
+        return false;
       }
     },
     [applyConfig]
+  );
+
+  const commit = useCallback(
+    async (change: (config: UserConfig) => Partial<UserConfig>, what: string): Promise<void> => {
+      await tryCommit(change, what);
+    },
+    [tryCommit]
   );
 
   /**
@@ -385,6 +449,34 @@ export function useUserConfig({
     [commit]
   );
 
+  /**
+   * Shows or hides Bitcoin. Turning it off while the session stands on a
+   * Bitcoin network moves the session to Solana mainnet first, for the same
+   * reason `toggleDeveloperNetworks` does.
+   */
+  const setBitcoinEnabled = useCallback(
+    async (enabled: boolean, options?: ToggleDeveloperNetworksOptions): Promise<boolean> => {
+      if (
+        !enabled &&
+        options?.activeNetworkId &&
+        options.changeNetwork &&
+        !isNetworkChosen(options.activeNetworkId, false)
+      ) {
+        await options.changeNetwork('solana-mainnet');
+      }
+      // The derived-account search skipped Bitcoin while it was hidden, so the
+      // wallets it marked as searched are searched again.
+      return tryCommit(
+        (config) =>
+          enabled && config.bitcoinEnabled === false
+            ? { bitcoinEnabled: true, derivedScannedAccountIds: [] }
+            : { bitcoinEnabled: enabled },
+        'Bitcoin preference'
+      );
+    },
+    [tryCommit]
+  );
+
   return {
     userConfig,
     explorer,
@@ -400,6 +492,8 @@ export function useUserConfig({
     markDerivedScanned,
     tokenListPreference,
     setTokenListPreference,
+    bitcoinEnabled: userConfig?.bitcoinEnabled !== false,
+    setBitcoinEnabled,
     isLoading,
   };
 }

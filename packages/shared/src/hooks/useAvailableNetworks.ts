@@ -186,7 +186,8 @@ const filterVisibleNetworks = <T extends { id: string }>(
   developerNetworks: boolean,
   order: string[],
   heldNetworkIds: string[] | undefined,
-  activeNetworkId: string | null | undefined
+  activeNetworkId: string | null | undefined,
+  bitcoinEnabled: boolean
 ): T[] => {
   const offered = new Set(
     visibleNetworkIds({
@@ -194,6 +195,7 @@ const filterVisibleNetworks = <T extends { id: string }>(
       held: heldNetworkIds,
       developerNetworks,
       activeNetworkId,
+      bitcoinEnabled,
     })
   );
 
@@ -285,7 +287,11 @@ export interface UseAvailableNetworksParams extends UseUserConfigParams {
 export function useAvailableNetworks(
   params: UseAvailableNetworksParams
 ): UseAvailableNetworksResult {
-  const { developerNetworks: configDeveloperNetworks, isLoading } = useUserConfig(params);
+  const {
+    developerNetworks: configDeveloperNetworks,
+    bitcoinEnabled,
+    isLoading,
+  } = useUserConfig(params);
   const developerNetworks = params.developerNetworks ?? configDeveloperNetworks;
   const { heldNetworkIds, activeNetworkId } = params;
   const [apiMerged, setApiMerged] = useState(false);
@@ -322,8 +328,12 @@ export function useAvailableNetworks(
           developerNetworks,
           NETWORK_ORDER.solana,
           heldNetworkIds,
-          activeNetworkId
+          activeNetworkId,
+          bitcoinEnabled
         ),
+        // Loading settings read Bitcoin as on, so a "Solana only" user would
+        // see it flash when the catalogue lands first. Until they load, only
+        // the Bitcoin network the session already stands on stays.
         bitcoin: filterVisibleNetworks(
           enabledApiNetworks
             .filter((network) => network.blockchain === 'bitcoin')
@@ -332,8 +342,9 @@ export function useAvailableNetworks(
           developerNetworks,
           NETWORK_ORDER.bitcoin,
           heldNetworkIds,
-          activeNetworkId
-        ),
+          activeNetworkId,
+          bitcoinEnabled
+        ).filter(({ id }) => !isLoading || id === activeNetworkId),
         ethereum: filterVisibleNetworks(
           enabledApiNetworks
             .filter((network) => network.blockchain === 'ethereum')
@@ -342,7 +353,8 @@ export function useAvailableNetworks(
           developerNetworks,
           NETWORK_ORDER.ethereum,
           heldNetworkIds,
-          activeNetworkId
+          activeNetworkId,
+          bitcoinEnabled
         ),
       };
     }
@@ -353,7 +365,15 @@ export function useAvailableNetworks(
       ethereum: [],
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- apiMerged is an intentional cache-invalidation signal after fetchAndMergeNetworkConfigs completes
-  }, [developerNetworks, apiMerged, apiNetworks, heldNetworkIds, activeNetworkId]);
+  }, [
+    developerNetworks,
+    apiMerged,
+    apiNetworks,
+    heldNetworkIds,
+    activeNetworkId,
+    bitcoinEnabled,
+    isLoading,
+  ]);
 
   const allNetworks = useMemo<AnyNetwork[]>(() => {
     return [...networks.solana, ...networks.bitcoin, ...networks.ethereum];

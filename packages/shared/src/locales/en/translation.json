@@ -258,6 +258,11 @@
     "developer_networks_description": "Show testnet and devnet networks",
     "unverified_tokens": "Show unverified tokens",
     "unverified_tokens_description": "Show tokens and collectibles that are unverified or low-cap, spam included. Off by default.",
+    "bitcoin": "Bitcoin",
+    "bitcoin_description": "Show Bitcoin in your wallet",
+    "bitcoin_off_title": "Hide Bitcoin?",
+    "bitcoin_off_message": "Your Bitcoin stays in your wallet. It shows again when you turn Bitcoin back on in Settings.",
+    "bitcoin_off_confirm": "Hide Bitcoin",
     "analytics": "Usage Data",
     "analytics_description": "Share pseudonymous usage stats, like how often you open the app and which features you use, to help improve Salmon. Never includes addresses, balances, or amounts. Off by default.",
     "analytics_prompt_title": "Help improve Salmon",
@@ -538,6 +543,14 @@
       "saved_it": "I saved it",
       "clipboard_hint": "Other apps can read the clipboard: writing it on paper is safer.",
       "copied_clears": "Copied · clears in {{seconds}} s"
+    },
+    "networks": {
+      "title": "Choose your networks",
+      "solana_bitcoin": "Solana + Bitcoin",
+      "solana_bitcoin_spoken": "Solana and Bitcoin",
+      "solana_bitcoin_description": "Use Solana and Bitcoin in one wallet.",
+      "solana_only": "Solana only",
+      "solana_only_description": "You can add Bitcoin later in Settings."
     },
     "recover": {
       "messageTitle": "Recover Existing Account",
@@ -855,7 +868,8 @@
     "invalid_password": "Invalid password",
     "password_check_failed": "Failed to verify password",
     "password_required": "Password is required",
-    "password_throttled": "Too many wrong passwords. Wait a moment and try again — your wallet is untouched."
+    "password_throttled": "Too many wrong passwords. Wait a moment and try again — your wallet is untouched.",
+    "save_failed": "Couldn't save your choice. Try again."
   },
   "activity": {
     "emptyFiltered": "No transactions match this filter",

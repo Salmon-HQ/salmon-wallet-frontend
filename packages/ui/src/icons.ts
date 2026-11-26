@@ -83,6 +83,7 @@ export { ClockIcon } from '@phosphor-icons/react/dist/csr/Clock';
 export { CodeIcon } from '@phosphor-icons/react/dist/csr/Code';
 export { CopyIcon } from '@phosphor-icons/react/dist/csr/Copy';
 export { CubeIcon } from '@phosphor-icons/react/dist/csr/Cube';
+export { CurrencyBtcIcon } from '@phosphor-icons/react/dist/csr/CurrencyBtc';
 export { EnvelopeIcon } from '@phosphor-icons/react/dist/csr/Envelope';
 export { EyeIcon } from '@phosphor-icons/react/dist/csr/Eye';
 export { EyeSlashIcon } from '@phosphor-icons/react/dist/csr/EyeSlash';

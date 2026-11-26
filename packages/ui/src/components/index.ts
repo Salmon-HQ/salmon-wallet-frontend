@@ -268,6 +268,7 @@ export type { HoldToApproveButtonProps } from './HoldToApproveButton';
 export {
   AnalyticsConsentPage,
   CreateWalletPage,
+  NetworkChoicePage,
   PasswordPage,
   RecoverWalletPage,
   SelectOptionsPage,
@@ -276,6 +277,7 @@ export {
 export type {
   AnalyticsConsentPageProps,
   CreateWalletPageProps,
+  NetworkChoicePageProps,
   PasswordPageProps,
   RecoverWalletPageProps,
   SelectOptionsPageProps,

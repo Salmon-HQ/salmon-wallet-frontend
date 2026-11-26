@@ -26,6 +26,28 @@ vi.mock('@salmon/shared', async (importOriginal) => ({
 
 afterEach(cleanup);
 
+describe('CreateWalletPage steps', () => {
+  // Warning, phrase, networks, password.
+  it('draws the warning as step 1 of 4 and the phrase as step 2 of 4', () => {
+    renderInMode('dark', <CreateWalletPage onComplete={vi.fn()} onBack={vi.fn()} />);
+
+    let dots = screen.getByRole('progressbar');
+    expect([dots.getAttribute('aria-valuenow'), dots.getAttribute('aria-valuemax')]).toEqual([
+      '1',
+      '4',
+    ]);
+
+    fireEvent.scroll(screen.getByText('wallet.create.messageBody').parentElement!);
+    fireEvent.click(screen.getByTestId('seed-warning-continue-button'));
+
+    dots = screen.getByRole('progressbar');
+    expect([dots.getAttribute('aria-valuenow'), dots.getAttribute('aria-valuemax')]).toEqual([
+      '2',
+      '4',
+    ]);
+  });
+});
+
 describe('CreateWalletPage seed-phrase copy', () => {
   it('copies the phrase, counts down to the clear and holds the button until then', async () => {
     const writeText = vi.fn(() => Promise.resolve());

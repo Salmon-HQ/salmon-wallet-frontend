@@ -37,6 +37,7 @@ import {
 import { ScreenHeader } from '../ScreenHeader';
 import { SeedPhraseEntry } from '../SeedPhrase';
 import { WaterColumn } from '../WaterColumn';
+import { RECOVER_FLOW_STEPS } from './CreateWalletPage';
 import type { RecoverWalletPageProps } from './types';
 
 export function RecoverWalletPage({
@@ -87,7 +88,12 @@ export function RecoverWalletPage({
         each flow step wears one semantic glyph in the mark slot.
       */
       mark={<KeyIcon size={componentSizes.logoSizeSmall} color={text.primary} />}
-      chrome={<ScreenHeader onBack={onBack} stepIndicator={{ totalSteps: 2, currentStep: 1 }} />}
+      chrome={
+        <ScreenHeader
+          onBack={onBack}
+          stepIndicator={{ totalSteps: RECOVER_FLOW_STEPS, currentStep: 1 }}
+        />
+      }
       title={<OnboardingTitle>{t('wallet.recover.messageTitle')}</OnboardingTitle>}
       description={<OnboardingDescription>{t('wallet.recover.messageBody')}</OnboardingDescription>}
       body={

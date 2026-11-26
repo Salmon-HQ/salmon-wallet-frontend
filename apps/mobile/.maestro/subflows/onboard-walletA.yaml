@@ -5,7 +5,12 @@ appId: io.salmonwallet.app
 - clearState
 - launchApp
 - runFlow: ./dev-launcher-pass.yaml
-- runFlow: ./recover-walletA.yaml
+# NETWORK_CHOICE (solana-bitcoin | solana-only) reaches the network question;
+# unset, Bitcoin stays on.
+- runFlow:
+    file: ./recover-walletA.yaml
+    env:
+      NETWORK_CHOICE: ${NETWORK_CHOICE || 'solana-bitcoin'}
 # Key derivation (PBKDF2, 210k iterations) runs after the password screen and
 # takes over 30 s on a cold emulator. What follows it is either the biometric
 # offer or Success: wait for whichever comes, then skip biometrics if offered.

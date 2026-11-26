@@ -21,24 +21,28 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-// The real barrel, with only the accounts context overridden so the panel's
-// reveal/reauth flow is deterministic under test.
+const mockWallet = vi.hoisted(() => ({ withBitcoin: false, bitcoinEnabled: true }));
+
+const signer = {
+  path: "m/44'/501'/0'/0'",
+  getReceiveAddress: () => FAKE_ADDRESS,
+  retrieveSecurePrivateKey: () => FAKE_PRIVATE_KEY,
+  // getAccountKeysForNetwork skips accounts that cannot sign, so
+  // the mock has to declare it the way a real SolanaAccount does.
+  canSign: true as const,
+};
+
+// The real barrel, with only the accounts context and the Bitcoin choice
+// overridden so the panel's reveal/reauth flow is deterministic under test.
 vi.mock('@salmon/shared', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@salmon/shared')>()),
+  useDeveloperModeSettings: () => ({ bitcoinEnabled: mockWallet.bitcoinEnabled }),
   useAccountsContext: () => [
     {
       activeAccount: {
         networksAccounts: {
-          'solana-mainnet': [
-            {
-              path: "m/44'/501'/0'/0'",
-              getReceiveAddress: () => FAKE_ADDRESS,
-              retrieveSecurePrivateKey: () => FAKE_PRIVATE_KEY,
-              // getAccountKeysForNetwork skips accounts that cannot sign, so
-              // the mock has to declare it the way a real SolanaAccount does.
-              canSign: true as const,
-            },
-          ],
+          'solana-mainnet': [signer],
+          ...(mockWallet.withBitcoin ? { 'bitcoin-mainnet': [signer] } : {}),
         },
       },
     },
@@ -72,6 +76,8 @@ function reauthenticate(password: string = CORRECT_PASSWORD) {
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  mockWallet.withBitcoin = false;
+  mockWallet.bitcoinEnabled = true;
 });
 
 describe('PrivateKeyPanel reveal', () => {
@@ -158,5 +164,22 @@ describe('PrivateKeyPanel key exhibition surface', () => {
     const overlay = screen.getByTestId('private-key-reveal-overlay-0');
     expect(overlay.tagName).toBe('BUTTON');
     expect(overlay.getAttribute('aria-label')).toBe('settings.authenticate_to_reveal');
+  });
+});
+
+describe('PrivateKeyPanel — the Bitcoin choice', () => {
+  it('lists no Bitcoin network while Bitcoin is hidden', () => {
+    mockWallet.withBitcoin = true;
+    mockWallet.bitcoinEnabled = false;
+    renderPanel();
+
+    expect(screen.queryByTestId('private-key-network-option-bitcoin-mainnet')).toBeNull();
+  });
+
+  it('lists Bitcoin while it is shown', () => {
+    mockWallet.withBitcoin = true;
+    renderPanel();
+
+    expect(screen.getByTestId('private-key-network-option-bitcoin-mainnet')).toBeTruthy();
   });
 });

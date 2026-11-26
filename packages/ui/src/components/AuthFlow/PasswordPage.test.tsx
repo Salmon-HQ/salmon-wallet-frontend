@@ -146,6 +146,35 @@ describe('PasswordPage account setup errors', () => {
  * hidden via `inert` + `visibility: hidden`), so typing the first character
  * or a submit failure reveals content instead of shoving the layout.
  */
+describe('PasswordPage step', () => {
+  beforeEach(() => {
+    accountsState.requiredLock = false;
+  });
+
+  afterEach(cleanup);
+
+  // Create: warning, phrase, networks, password. Recover: phrase, networks, password.
+  it.each([
+    ['create', '4', '4'],
+    ['recover', '3', '3'],
+  ] as const)('is the last step of the %s flow', (flowType, now, max) => {
+    render(
+      <PasswordPage
+        mnemonic="test mnemonic"
+        flowType={flowType}
+        onSuccess={vi.fn()}
+        onBack={vi.fn()}
+      />
+    );
+
+    const dots = screen.getByRole('progressbar');
+    expect([dots.getAttribute('aria-valuenow'), dots.getAttribute('aria-valuemax')]).toEqual([
+      now,
+      max,
+    ]);
+  });
+});
+
 describe('PasswordPage reserved slots', () => {
   beforeEach(() => {
     vi.clearAllMocks();

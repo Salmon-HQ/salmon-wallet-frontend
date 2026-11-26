@@ -45,4 +45,20 @@ describe('SettingsSelectorList', () => {
     expect(screen.getByText('English')).toBeTruthy();
     expect(screen.queryByText('EN')).toBeNull();
   });
+
+  it('speaks a row by the name the selector gives, keeping the visible text', () => {
+    render(
+      <SettingsSelectorList
+        items={OPTIONS}
+        getKey={(item) => item.id}
+        isSelected={() => false}
+        onSelect={jest.fn()}
+        getPrimaryText={(item) => item.label}
+        getAccessibilityLabel={() => 'Inglés'}
+      />
+    );
+
+    expect(screen.getByLabelText('Inglés')).toBeTruthy();
+    expect(screen.getByText('English')).toBeTruthy();
+  });
 });

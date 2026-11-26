@@ -47,6 +47,7 @@ import {
   fontSize,
   lineHeight,
   removeStashItem,
+  setStashItem,
   s,
   spacing,
   STASH_KEYS,
@@ -69,7 +70,15 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Keyboard, Linking, StyleSheet, Text, View, type TextInputInstance } from 'react-native';
+import {
+  BackHandler,
+  Keyboard,
+  Linking,
+  StyleSheet,
+  Text,
+  View,
+  type TextInputInstance,
+} from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useWaitPassage } from '../../src/utils/useWaitPassage';
 import { useEnrolmentPassword } from '../../src/contexts/EnrolmentPasswordContext';
@@ -89,10 +98,12 @@ import {
   SecondaryButton,
 } from '../../src/components';
 
-/** Warning, phrase, confirmation, password. */
-const CREATE_FLOW_STEPS = 3;
-/** Phrase, password. */
-const RECOVER_FLOW_STEPS = 2;
+/** Warning, phrase, networks, password. */
+const CREATE_FLOW_STEPS = 4;
+/** Phrase, networks, password. */
+const RECOVER_FLOW_STEPS = 3;
+/** Seed Vault account, password: Seed Vault asks no network question. */
+const SEED_VAULT_FLOW_STEPS = 2;
 
 // ============================================================================
 // Component
@@ -107,8 +118,12 @@ export default function PasswordScreen() {
   const [state, actions] = useAccountsContext();
   const { markUnconfirmed } = usePhraseBackup();
   const [mnemonic, setMnemonic] = useState<string | null>(null);
+  // Only create and recover (the default) come here with a phrase in the
+  // stash; protect and Seed Vault never take or put one back.
+  const usesPhrase = !params.type || params.type === 'create' || params.type === 'recover';
 
   useEffect(() => {
+    if (!usesPhrase) return;
     const loadMnemonic = async () => {
       const stored = await getStashItem<string>(STASH_KEYS.PENDING_MNEMONIC);
       if (stored) {
@@ -117,7 +132,21 @@ export default function PasswordScreen() {
       }
     };
     void loadMnemonic();
-  }, []);
+  }, [usesPhrase]);
+
+  // Back from here lands on the network question, whose choice opens a new
+  // password screen that reads the phrase from the stash again. Leaving
+  // without a wallet written puts it back where this screen found it.
+  const walletAddedRef = useRef(false);
+  useEffect(() => {
+    if (!mnemonic) return;
+    return () => {
+      if (walletAddedRef.current) return;
+      setStashItem(STASH_KEYS.PENDING_MNEMONIC, mnemonic).catch((error) => {
+        console.error('Failed to put the recovery phrase back:', error);
+      });
+    };
+  }, [mnemonic]);
 
   // A Seed Vault wallet (spec 037) arrives instead of a phrase: which seed,
   // which path, which address. Nothing secret — the key stays in Seed Vault.
@@ -138,6 +167,12 @@ export default function PasswordScreen() {
   // In recover flow, user has proven ownership via seed phrase
   // They should always be able to set a new password, regardless of requiredLock
   const isRecoverFlow = flowType === 'recover';
+  const flowSteps =
+    flowType === 'create'
+      ? CREATE_FLOW_STEPS
+      : flowType === 'seed-vault'
+        ? SEED_VAULT_FLOW_STEPS
+        : RECOVER_FLOW_STEPS;
 
   // Only show single input when adding account to existing encrypted wallet
   // (not during recover, and never when protecting: that sets a new password)
@@ -186,6 +221,14 @@ export default function PasswordScreen() {
   // The auth layout owns the ground, so the whole layout may travel; the wait
   // itself owns the beat on its way in.
   const { exiting: waitExiting } = useWaitPassage(isLoading);
+
+  // Android's back during the wait would leave this screen while the wallet
+  // is still being written, and put the phrase back for a second run.
+  useEffect(() => {
+    if (!isLoading) return;
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => true);
+    return () => subscription.remove();
+  }, [isLoading]);
 
   // Refs
   const confirmPasswordRef = useRef<TextInputInstance>(null);
@@ -277,6 +320,7 @@ export default function PasswordScreen() {
       // Created here without the phrase check: the first send asks for it.
       if (flowType === 'create' && !seedVault) await markUnconfirmed(account.id);
       await actions.addAccount(account, password);
+      walletAddedRef.current = true;
       setPendingSeedVaultSelection(null);
       console.log(`[perf] recovery: addAccount (encrypt + storage) ${Date.now() - t1}ms`);
 
@@ -383,13 +427,14 @@ export default function PasswordScreen() {
               // Protecting has no way back: nothing else opens until the
               // wallet has a password.
               <ScreenHeader
+                testID="password-back"
                 onBack={protect ? undefined : handleBack}
                 stepIndicator={
                   protect
                     ? undefined
                     : {
-                        totalSteps: flowType === 'create' ? CREATE_FLOW_STEPS : RECOVER_FLOW_STEPS,
-                        currentStep: flowType === 'create' ? CREATE_FLOW_STEPS : RECOVER_FLOW_STEPS,
+                        totalSteps: flowSteps,
+                        currentStep: flowSteps,
                       }
                 }
                 backDisabled={isLoading || isChecking}

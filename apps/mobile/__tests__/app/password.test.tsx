@@ -9,11 +9,13 @@ const mockAddAccount = jest.fn();
 const mockUnlockAccounts = jest.fn();
 const mockGetStashItem = jest.fn();
 const mockRemoveStashItem = jest.fn();
+const mockSetStashItem = jest.fn();
 const mockCreateAccount = jest.fn();
 const mockUseAccountsContext = jest.fn();
 const mockProtectWallet = jest.fn();
 const mockRemoveAllAccounts = jest.fn();
 const mockDisarm = jest.fn();
+const mockSeedVaultSelection = jest.fn((): unknown => null);
 /**
  * The wait's exit handoff, captured instead of auto-fired: navigation now
  * waits for the LoadingScreen's `onExited` (the wave must leave the screen
@@ -77,8 +79,10 @@ jest.mock('@salmon/shared', () =>
     generateAccountName: () => 'Account 3',
     getMirrorNetworks: jest.fn().mockResolvedValue({ 'solana-mainnet': 'solana-devnet' }),
     getScanNetworks: jest.fn().mockResolvedValue(['solana-mainnet']),
+    getPendingSeedVaultSelection: () => mockSeedVaultSelection(),
     getStashItem: (...args: unknown[]) => mockGetStashItem(...args),
     removeStashItem: (...args: unknown[]) => mockRemoveStashItem(...args),
+    setStashItem: (...args: unknown[]) => mockSetStashItem(...args),
     STASH_KEYS: { PENDING_MNEMONIC: 'pending-mnemonic' },
     trackOnboardingEvent: jest.fn(async () => undefined),
     useAccountsContext: () => mockUseAccountsContext(),
@@ -205,11 +209,28 @@ jest.mock('../../src/components', () => {
             React.createElement(TouchableOpacity, { testID: 'sheet-cancel', onPress: onClose })
           )
         : null,
-    ScreenHeader: ({ onBack }: { onBack?: () => void }) =>
+    ScreenHeader: ({
+      onBack,
+      stepIndicator,
+    }: {
+      onBack?: () => void;
+      stepIndicator?: { currentStep: number; totalSteps: number };
+    }) =>
       React.createElement(
-        TouchableOpacity,
-        { onPress: onBack, accessibilityRole: 'button' },
-        React.createElement(Text, null, 'Back')
+        React.Fragment,
+        null,
+        React.createElement(
+          TouchableOpacity,
+          { onPress: onBack, accessibilityRole: 'button' },
+          React.createElement(Text, null, 'Back')
+        ),
+        stepIndicator
+          ? React.createElement(
+              Text,
+              { testID: 'step-dots' },
+              `${stepIndicator.currentStep} of ${stepIndicator.totalSteps}`
+            )
+          : null
       ),
   };
 });
@@ -236,6 +257,7 @@ describe('PasswordScreen', () => {
     (Linking.openURL as unknown as jest.Mock | undefined) = mockOpenURL as never;
     mockGetStashItem.mockResolvedValue('seed words seed words seed words');
     mockRemoveStashItem.mockResolvedValue(undefined);
+    mockSetStashItem.mockResolvedValue(undefined);
     mockCreateAccount.mockResolvedValue({ account: { id: 'account-1' } });
     mockAddAccount.mockResolvedValue(undefined);
     mockUnlockAccounts.mockResolvedValue(undefined);
@@ -256,6 +278,130 @@ describe('PasswordScreen', () => {
       jest.runOnlyPendingTimers();
     });
     jest.useRealTimers();
+  });
+
+  // Create: warning, phrase, networks, password. Recover: phrase, networks,
+  // password. Seed Vault asks no network question: account, password.
+  it.each([
+    ['create', '4 of 4'],
+    ['recover', '3 of 3'],
+    ['seed-vault', '2 of 2'],
+  ])('draws the password as the last step of the %s flow', (type, dots) => {
+    useLocalSearchParams.mockReturnValue({ type });
+    if (type === 'seed-vault') {
+      mockSeedVaultSelection.mockReturnValue({
+        authToken: 1,
+        derivationPath: 'bip32:/m/44',
+        address: 'SeedVaultAddress',
+      });
+    }
+
+    render(<PasswordScreen />);
+
+    expect(screen.getByTestId('step-dots').props.children).toBe(dots);
+  });
+
+  describe('the phrase in the stash', () => {
+    const PHRASE = 'seed words seed words seed words';
+    const stash = new Map<string, unknown>();
+
+    const submit = async () => {
+      fireEvent.changeText(
+        screen.getByPlaceholderText('wallet.create.passwordNew'),
+        'pw-fixture-valid'
+      );
+      fireEvent.changeText(
+        screen.getByPlaceholderText('wallet.create.passwordRepeat'),
+        'pw-fixture-valid'
+      );
+      fireEvent.press(screen.getByText('wallet.recover_wallet'));
+      await act(async () => {
+        jest.advanceTimersByTime(100);
+      });
+    };
+
+    beforeEach(() => {
+      stash.clear();
+      stash.set('pending-mnemonic', PHRASE);
+      mockGetStashItem.mockImplementation(async (key: string) => stash.get(key) ?? null);
+      mockRemoveStashItem.mockImplementation(async (key: string) => void stash.delete(key));
+      mockSetStashItem.mockImplementation(async (key: string, value: unknown) => {
+        stash.set(key, value);
+      });
+    });
+
+    // Back from the password lands on the network question, whose choice opens
+    // a new password screen: it must find the phrase where the last one did.
+    it('puts the phrase back when the screen is left backwards, so the next one finds it', async () => {
+      const first = render(<PasswordScreen />);
+      await waitFor(() => expect(stash.has('pending-mnemonic')).toBe(false));
+
+      fireEvent.press(screen.getByText('Back'));
+      first.unmount();
+      await act(async () => {});
+      expect(stash.get('pending-mnemonic')).toBe(PHRASE);
+
+      render(<PasswordScreen />);
+      await waitFor(() => expect(stash.has('pending-mnemonic')).toBe(false));
+      await submit();
+
+      await waitFor(() =>
+        expect(mockCreateAccount).toHaveBeenCalledWith(
+          expect.objectContaining({ mnemonic: PHRASE })
+        )
+      );
+    });
+
+    // A phrase another flow left there is not this screen's to take or keep.
+    it.each(['protect', 'seed-vault'])('never touches the phrase on the %s flow', async (type) => {
+      useLocalSearchParams.mockReturnValue({ type });
+      mockSeedVaultSelection.mockReturnValue(null);
+      const view = render(<PasswordScreen />);
+      await act(async () => {});
+
+      view.unmount();
+      await act(async () => {});
+
+      expect(mockGetStashItem).not.toHaveBeenCalled();
+      expect(mockRemoveStashItem).not.toHaveBeenCalled();
+      expect(mockSetStashItem).not.toHaveBeenCalled();
+      expect(stash.get('pending-mnemonic')).toBe(PHRASE);
+    });
+
+    it('reads the phrase when no flow is named, as recover', async () => {
+      useLocalSearchParams.mockReturnValue({});
+      render(<PasswordScreen />);
+
+      await waitFor(() => expect(stash.has('pending-mnemonic')).toBe(false));
+    });
+
+    it('logs, and does not throw, when the phrase cannot be put back', async () => {
+      mockSetStashItem.mockRejectedValue(new Error('stash gone'));
+      const quiet = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const view = render(<PasswordScreen />);
+      await waitFor(() => expect(stash.has('pending-mnemonic')).toBe(false));
+
+      view.unmount();
+      await act(async () => {});
+
+      expect(quiet).toHaveBeenCalledWith(
+        'Failed to put the recovery phrase back:',
+        expect.any(Error)
+      );
+      quiet.mockRestore();
+    });
+
+    it('leaves the stash empty once the wallet is written', async () => {
+      const view = render(<PasswordScreen />);
+      await waitFor(() => expect(stash.has('pending-mnemonic')).toBe(false));
+      await submit();
+      await waitFor(() => expect(mockUnlockAccounts).toHaveBeenCalled());
+
+      view.unmount();
+      await act(async () => {});
+
+      expect(stash.has('pending-mnemonic')).toBe(false);
+    });
   });
 
   it('submits recover flow and navigates to biometric setup', async () => {

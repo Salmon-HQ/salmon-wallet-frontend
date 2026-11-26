@@ -6,10 +6,11 @@
  * 2. recover - Recover wallet with seed phrase
  * 3. seed-warning - What losing or leaking the phrase costs (create path)
  * 4. create - Show and confirm the recovery phrase
- * 5. password - Set password for wallet encryption
- * 6. biometric-setup - Optional biometric unlock setup prompt
- * 7. success - Success confirmation after wallet creation
- * 8. analytics-consent - First-run anonymous-analytics consent (final step;
+ * 5. networks - Solana + Bitcoin or Solana only (create and recover)
+ * 6. password - Set password for wallet encryption
+ * 7. biometric-setup - Optional biometric unlock setup prompt
+ * 8. success - Success confirmation after wallet creation
+ * 9. analytics-consent - First-run anonymous-analytics consent (final step;
  *    both success exits funnel through it)
  */
 
@@ -113,6 +114,14 @@ export default function AuthLayout() {
 
           {/* Show and confirm the recovery phrase */}
           <Stack.Screen name="create" />
+
+          {/*
+          Solana + Bitcoin or Solana only (spec 045), between the phrase and
+          the password on create and recover. It keeps the gesture: nothing is
+          written before the password, and the phrase it came from is still
+          the one stashed.
+        */}
+          <Stack.Screen name="networks" />
 
           {/* Pick an account from Seed Vault instead of a phrase (spec 037) */}
           <Stack.Screen name="seed-vault" />

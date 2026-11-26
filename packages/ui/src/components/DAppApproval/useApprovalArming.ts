@@ -13,6 +13,17 @@ import type { KeyboardEvent } from 'react';
  */
 export const APPROVE_ARM_MS = 750;
 
+/**
+ * How long after a pointer press or release a focus change is taken to be
+ * that click's doing rather than the keyboard's.
+ *
+ * A mouse moves the focus during the press; a touch tap moves it after the
+ * release, on the mouse events the browser makes up (within ~300 ms). A span
+ * of time rather than "a button is down", so a release the window never sees
+ * (a right click's menu takes it) cannot leave the keyboard locked out.
+ */
+export const POINTER_FOCUS_MS = 500;
+
 /** The handlers `ApproveArea` puts on the element around Approve. */
 interface ApproveAreaHandlers {
   onPointerEnter: () => void;
@@ -38,7 +49,8 @@ const isActivationKey = (key: string) => key === 'Enter' || key === ' ' || key =
  * Whether the approval window's Approve button may take a click yet.
  *
  * False until the window has been visible for `delayMs`; then either focus
- * moves to one of its controls (Tab, a screen reader), or the pointer moves
+ * moves to one of its controls and no click put it there (Tab, a screen
+ * reader; a click or the title's own focus does not count), or the pointer moves
  * inside the window and afterwards comes onto Approve. False again the moment
  * the window loses focus or is hidden, and armed afresh the same way when it
  * comes back — the same trick works on a window brought forward as on one just
@@ -93,10 +105,12 @@ export function useApprovalArming(delayMs: number = APPROVE_ARM_MS): ApprovalArm
     // A window that opens under a still pointer gets a pointer event at that
     // spot; only a second position is a person moving it.
     let lastPoint: string | null = null;
+    let lastPointerAt: number | null = null;
     const disarm = () => {
       clearTimeout(timer);
       stage.current = 'waiting';
       lastPoint = null;
+      lastPointerAt = null;
       setArmed(false);
     };
     const arm = () => {
@@ -111,8 +125,17 @@ export function useApprovalArming(delayMs: number = APPROVE_ARM_MS): ApprovalArm
       if (lastPoint !== null && point !== lastPoint) stage.current = 'moved';
       lastPoint = point;
     };
-    const onFocusIn = () => {
-      if (stage.current !== 'waiting') setArmed(true);
+    // Only a control Tab can reach: the title takes focus from code when the
+    // window opens (`tabIndex` -1), and that is nobody's choice. And never
+    // on the heels of a pointer press or release: a click focuses the control
+    // it lands on, and a page can lure a click onto a spot it can compute.
+    const onPointer = () => {
+      lastPointerAt = Date.now();
+    };
+    const onFocusIn = (event: FocusEvent) => {
+      if (stage.current === 'waiting') return;
+      if (lastPointerAt !== null && Date.now() - lastPointerAt < POINTER_FOCUS_MS) return;
+      if (event.target instanceof HTMLElement && event.target.tabIndex >= 0) setArmed(true);
     };
     const onVisibility = () => (document.visibilityState === 'visible' ? arm() : disarm());
 
@@ -121,6 +144,8 @@ export function useApprovalArming(delayMs: number = APPROVE_ARM_MS): ApprovalArm
     window.addEventListener('blur', disarm);
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('focusin', onFocusIn);
+    window.addEventListener('pointerdown', onPointer, true);
+    window.addEventListener('pointerup', onPointer, true);
     document.addEventListener('visibilitychange', onVisibility);
     return () => {
       clearTimeout(timer);
@@ -128,6 +153,8 @@ export function useApprovalArming(delayMs: number = APPROVE_ARM_MS): ApprovalArm
       window.removeEventListener('blur', disarm);
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('focusin', onFocusIn);
+      window.removeEventListener('pointerdown', onPointer, true);
+      window.removeEventListener('pointerup', onPointer, true);
       document.removeEventListener('visibilitychange', onVisibility);
     };
   }, [delayMs]);

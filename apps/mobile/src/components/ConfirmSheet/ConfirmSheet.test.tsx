@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text } from 'react-native';
+import { AccessibilityInfo, ScrollView, StyleSheet, Text } from 'react-native';
 import { act, render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 import { semantic } from '@salmon/shared';
 
@@ -26,7 +26,7 @@ jest.mock('../../../hooks/useBottomSheetChrome', () => ({
 
 // The real container drags in Reanimated/expo-blur, which need native modules
 // Jest does not have. Its own behaviour is covered in its own suite.
-const mockContainerProps: { style?: unknown; onClosed?: () => void } = {};
+const mockContainerProps: { style?: unknown; onClosed?: () => void; dismissible?: boolean } = {};
 jest.mock('../BottomSheetContainer', () => ({
   BottomSheetContainer: ({
     visible,
@@ -35,6 +35,7 @@ jest.mock('../BottomSheetContainer', () => ({
     background,
     style,
     onClosed,
+    dismissible,
   }: {
     visible: boolean;
     children: React.ReactNode;
@@ -42,8 +43,10 @@ jest.mock('../BottomSheetContainer', () => ({
     background?: React.ReactNode;
     style?: unknown;
     onClosed?: () => void;
+    dismissible?: boolean;
   }) => {
     if (!visible) return null;
+    mockContainerProps.dismissible = dismissible;
     mockContainerProps.style = style;
     mockContainerProps.onClosed = onClosed;
     const RN = require('react-native');
@@ -284,5 +287,50 @@ describe('ConfirmSheet arrival', () => {
 
     mockContainerProps.onClosed?.();
     expect(onClosed).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('ConfirmSheet failed action', () => {
+  it('stays open and shows and announces its error text', async () => {
+    const announce = jest.spyOn(AccessibilityInfo, 'announceForAccessibility');
+    const quiet = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const { onClose } = renderSheet({
+      onConfirm: jest.fn().mockRejectedValue(new Error('not stored')),
+      errorText: 'Could not save',
+    });
+
+    await act(async () => {
+      fireEvent.press(screen.getByText('Confirm'));
+    });
+
+    expect(screen.getByTestId('confirm-dialog-error')).toHaveTextContent('Could not save');
+    expect(announce).toHaveBeenCalledWith('Could not save');
+    expect(onClose).not.toHaveBeenCalled();
+    announce.mockRestore();
+    quiet.mockRestore();
+  });
+});
+
+// A swipe while the action runs would close a sheet whose result is unknown.
+describe('ConfirmSheet while confirming', () => {
+  it('cannot be dismissed until the action settles', async () => {
+    let finish = () => {};
+    renderSheet({
+      onConfirm: jest.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            finish = resolve;
+          })
+      ),
+    });
+    expect(mockContainerProps.dismissible).toBe(true);
+
+    await act(async () => {
+      fireEvent.press(screen.getByText('Confirm'));
+    });
+    expect(mockContainerProps.dismissible).toBe(false);
+
+    await act(async () => finish());
+    expect(mockContainerProps.dismissible).toBe(true);
   });
 });

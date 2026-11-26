@@ -15,7 +15,7 @@
  * the detail and the message each in a card, 20 between blocks, and no
  * buttons at all on a sheet that only reports something.
  */
-import React from 'react';
+import React, { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { fontFamily, fontSize, lineHeight, spacing, usePasswordConfirm } from '@salmon/shared';
 
@@ -40,21 +40,32 @@ export function ConfirmDialog({
   requirePassword = false,
   validatePassword,
   onConfirm,
+  errorText,
   confirmTestID,
   children,
   bedrock = false,
 }: ConfirmDialogProps): React.ReactElement {
   const { t } = useTranslation();
   const { status, text, surface } = useSemantic();
+  const messageId = useId();
   // The gate's state lives once, in shared; this sheet only renders it.
   const {
     password,
     passwordError,
     loading,
+    actionError,
     canConfirm,
     setPassword: handlePasswordChange,
     confirm: handleConfirm,
-  } = usePasswordConfirm({ visible, requirePassword, validatePassword, onConfirm, onClose, t });
+  } = usePasswordConfirm({
+    visible,
+    requirePassword,
+    validatePassword,
+    onConfirm,
+    onClose,
+    errorText,
+    t,
+  });
 
   return (
     <BottomSheetContainer
@@ -62,6 +73,7 @@ export function ConfirmDialog({
       onClose={onClose}
       onClosed={onClosed}
       dismissible={!loading}
+      describedBy={messageId}
       testID="confirm-dialog"
       background={
         bedrock ? (
@@ -100,6 +112,7 @@ export function ConfirmDialog({
 
         <Card padding="lg" gap={spacing.md}>
           <p
+            id={messageId}
             data-testid="confirm-dialog-message"
             style={{
               margin: 0,
@@ -128,6 +141,23 @@ export function ConfirmDialog({
             testID="confirm-dialog-password"
           />
         )}
+
+        {actionError ? (
+          <p
+            role="alert"
+            data-testid="confirm-dialog-error"
+            style={{
+              margin: 0,
+              color: status.danger,
+              fontFamily: fontFamily.sans,
+              fontSize: fontSize.body,
+              lineHeight: lineHeight.snug,
+              textAlign: 'center',
+            }}
+          >
+            {actionError}
+          </p>
+        ) : null}
 
         {acknowledgeOnly ? null : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}>

@@ -23,6 +23,7 @@ import {
   s,
   setStashItem,
   spacing,
+  removeStashItem,
   STASH_KEYS,
   useRecoveryPhraseEntry,
   type Semantic,
@@ -41,7 +42,7 @@ import { KeyIcon } from '../../src/icons';
 import { useSecretScreen } from '../../hooks/useSecretScreen';
 import { useSemantic, useThemedStyles } from '../../src/theme/useThemedStyles';
 import * as Clipboard from 'expo-clipboard';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text } from 'react-native';
@@ -91,6 +92,15 @@ export default function RecoverWalletScreen() {
     }
   }, [paste]);
 
+  // Back from the network question (its button, a swipe or Android's back)
+  // lands here: the phrase leaves the stash until Continue puts it back, so
+  // an abandoned setup keeps none.
+  useFocusEffect(
+    useCallback(() => {
+      void removeStashItem(STASH_KEYS.PENDING_MNEMONIC);
+    }, [])
+  );
+
   /**
    * Handle next button press - navigate to password screen
    */
@@ -99,7 +109,7 @@ export default function RecoverWalletScreen() {
 
     await setStashItem(STASH_KEYS.PENDING_MNEMONIC, phrase);
     router.push({
-      pathname: '/(auth)/password',
+      pathname: '/(auth)/networks',
     });
   }, [isValidSeedPhrase, phrase]);
 
@@ -118,7 +128,7 @@ export default function RecoverWalletScreen() {
       scrollBody
       float
       chrome={
-        <ScreenHeader onBack={handleBack} stepIndicator={{ totalSteps: 2, currentStep: 1 }} />
+        <ScreenHeader onBack={handleBack} stepIndicator={{ totalSteps: 3, currentStep: 1 }} />
       }
       /*
         The key: what this screen asks for is the thing that reopens the

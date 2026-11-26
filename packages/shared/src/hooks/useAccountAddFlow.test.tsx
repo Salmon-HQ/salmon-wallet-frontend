@@ -17,9 +17,11 @@ import { SeedVaultError } from '../blockchain/solana/seed-vault-signer';
 import { isVaultKeyCached, EncryptionMaterialMissingError } from '../crypto/encrypt-mnemonics';
 import { validateMnemonic } from '../crypto/mnemonic';
 import { createAccount, importSeedVaultAccount } from '../factories/account-factory';
-import { getScanNetworks } from '../utils/derived-accounts';
+import { getScanNetworks, scanDerivedAccounts } from '../utils/derived-accounts';
+import { useDeveloperModeSettings } from '../contexts/DeveloperModeContext';
 
 vi.mock('../contexts/AccountsContext', () => ({ useAccountsContext: vi.fn() }));
+vi.mock('../contexts/DeveloperModeContext', () => ({ useDeveloperModeSettings: vi.fn() }));
 vi.mock('../crypto/encrypt-mnemonics', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../crypto/encrypt-mnemonics')>()),
   isVaultKeyCached: vi.fn(),
@@ -72,6 +74,8 @@ const vaultCachedMock = vi.mocked(isVaultKeyCached);
 const validateMnemonicMock = vi.mocked(validateMnemonic);
 const createMock = vi.mocked(createAccount);
 const networksMock = vi.mocked(getScanNetworks);
+const scanMock = vi.mocked(scanDerivedAccounts);
+const developerModeMock = vi.mocked(useDeveloperModeSettings);
 
 const addAccount = vi.fn();
 const removeAccount = vi.fn();
@@ -121,6 +125,9 @@ beforeEach(() => {
   checkPassword.mockResolvedValue(true);
   createMock.mockResolvedValue({ account: { id: 'new' } } as never);
   networksMock.mockResolvedValue(['solana-mainnet']);
+  developerModeMock.mockReturnValue({ bitcoinEnabled: true } as ReturnType<
+    typeof useDeveloperModeSettings
+  >);
 });
 
 describe('useAccountAddFlow', () => {
@@ -407,5 +414,26 @@ describe('useAccountAddFlow — Seed Vault', () => {
     expect(result.current.step).toBe('import-seed-vault');
     expect(result.current.seedVaultError).toBe('wallet.seedVault.errors.cancelled');
     expect(result.current.seedVaultAccounts).toEqual([]);
+  });
+});
+
+describe('useAccountAddFlow — derive with the Bitcoin choice', () => {
+  beforeEach(() => {
+    networksMock.mockResolvedValue(['solana-mainnet', 'bitcoin-mainnet']);
+    scanMock.mockResolvedValue({ accounts: [], failedNetworks: [] });
+  });
+
+  it.each([
+    [false, ['solana-mainnet']],
+    [true, ['solana-mainnet', 'bitcoin-mainnet']],
+  ])('with Bitcoin %s scans %j', async (bitcoinEnabled, expected) => {
+    developerModeMock.mockReturnValue({ bitcoinEnabled } as ReturnType<
+      typeof useDeveloperModeSettings
+    >);
+    const { result } = renderHook(() => useAccountAddFlow(options()));
+
+    await act(() => result.current.selectDerive());
+
+    expect(scanMock).toHaveBeenCalledWith('owner mnemonic', expected);
   });
 });

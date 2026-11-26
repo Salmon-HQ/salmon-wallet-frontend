@@ -19,6 +19,7 @@ import {
   ChartBarIcon,
   CircleHalfIcon,
   CodeIcon,
+  CurrencyBtcIcon,
   InfoIcon,
   KeyIcon,
   LockIcon,
@@ -88,6 +89,7 @@ const SETTINGS_ICONS: Record<
   money: MoneyIcon,
   arrowSquareOut: ArrowSquareOutIcon,
   circleHalf: CircleHalfIcon,
+  currencyBtc: CurrencyBtcIcon,
   addressBook: AddressBookIcon,
   squaresFour: SquaresFourIcon,
   chartBar: ChartBarIcon,
@@ -130,6 +132,9 @@ export default function SettingsScreenIndex() {
     showUnverifiedTokens,
     handleToggleDeveloperNetworks,
     handleToggleUnverifiedTokens,
+    bitcoinEnabled,
+    handleToggleBitcoin,
+    bitcoinConfirm,
   } = useDeveloperModeToggles();
   const toggles = useMemo<
     Record<SettingsToggleKey, { checked: boolean; onChange: (next: boolean) => void }>
@@ -138,6 +143,7 @@ export default function SettingsScreenIndex() {
       analytics: { checked: analyticsConsent, onChange: setAnalyticsConsent },
       developerNetworks: { checked: developerNetworks, onChange: handleToggleDeveloperNetworks },
       unverifiedTokens: { checked: showUnverifiedTokens, onChange: handleToggleUnverifiedTokens },
+      bitcoin: { checked: bitcoinEnabled, onChange: handleToggleBitcoin },
     }),
     [
       analyticsConsent,
@@ -146,6 +152,8 @@ export default function SettingsScreenIndex() {
       handleToggleDeveloperNetworks,
       showUnverifiedTokens,
       handleToggleUnverifiedTokens,
+      bitcoinEnabled,
+      handleToggleBitcoin,
     ]
   );
   const { currentLanguage } = useLanguage();
@@ -248,7 +256,7 @@ export default function SettingsScreenIndex() {
       const testID = getSettingsItemTestId(row.id);
       const icon = SETTINGS_ICONS[row.icon];
 
-      // Three toggles, one row shape; which setting each flips is this
+      // The toggles share one row shape; which setting each flips is this
       // platform's wiring, the row itself is the shared table's.
       if (row.kind === 'toggle') {
         const toggle = toggles[row.id];
@@ -380,6 +388,8 @@ export default function SettingsScreenIndex() {
         isDanger
         onConfirm={confirmRemoveAllWallets}
       />
+
+      <ConfirmSheet {...bitcoinConfirm} />
     </SafeAreaView>
   );
 }

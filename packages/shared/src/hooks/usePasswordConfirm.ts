@@ -18,6 +18,8 @@ export interface UsePasswordConfirmParams {
   validatePassword?: (password: string) => Promise<boolean>;
   onConfirm: (password?: string) => Promise<void> | void;
   onClose: () => void;
+  /** Shown as `actionError` when `onConfirm` rejects. */
+  errorText?: string;
   /** The platform's translator — the three error strings are its keys. */
   t: (key: string, fallback: string) => string;
 }
@@ -26,6 +28,8 @@ export interface PasswordConfirmState {
   password: string;
   passwordError: string | undefined;
   loading: boolean;
+  /** `errorText`, after the action rejected and until the next try. */
+  actionError: string | undefined;
   /** `true` when the gate has what it needs to try. */
   canConfirm: boolean;
   setPassword: (value: string) => void;
@@ -38,22 +42,26 @@ export function usePasswordConfirm({
   validatePassword,
   onConfirm,
   onClose,
+  errorText,
   t,
 }: UsePasswordConfirmParams): PasswordConfirmState {
   const [password, setPasswordValue] = useState('');
   const [passwordError, setPasswordError] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
+  const [actionError, setActionError] = useState<string | undefined>();
 
   useEffect(() => {
     if (visible) {
       setPasswordValue('');
       setPasswordError(undefined);
+      setActionError(undefined);
       setLoading(false);
     }
   }, [visible]);
 
   const confirm = useCallback(async () => {
     if (loading) return;
+    setActionError(undefined);
 
     if (requirePassword && validatePassword) {
       if (!password) {
@@ -88,10 +96,11 @@ export function usePasswordConfirm({
       onClose();
     } catch (err) {
       console.error('Confirm action failed:', err);
+      setActionError(errorText);
     } finally {
       setLoading(false);
     }
-  }, [loading, requirePassword, validatePassword, password, t, onConfirm, onClose]);
+  }, [loading, requirePassword, validatePassword, password, t, onConfirm, onClose, errorText]);
 
   const setPassword = useCallback(
     (value: string) => {
@@ -105,6 +114,7 @@ export function usePasswordConfirm({
     password,
     passwordError,
     loading,
+    actionError,
     canConfirm: !requirePassword || password.length > 0,
     setPassword,
     confirm,

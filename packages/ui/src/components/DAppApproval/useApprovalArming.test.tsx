@@ -3,7 +3,7 @@ import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { movePointer } from '../../test/armApproval';
-import { APPROVE_ARM_MS, useApprovalArming } from './useApprovalArming';
+import { APPROVE_ARM_MS, POINTER_FOCUS_MS, useApprovalArming } from './useApprovalArming';
 
 type Arming = { current: ReturnType<typeof useApprovalArming> };
 
@@ -83,6 +83,77 @@ describe('useApprovalArming', () => {
     const { result } = renderHook(() => useApprovalArming());
     wait();
 
+    act(() => button.focus());
+
+    expect(result.current.armed).toBe(true);
+    button.remove();
+  });
+
+  // The window's title takes focus from code so a screen reader says where
+  // the user is. Nobody chose that: only a control a person can Tab to counts.
+  it('stays unarmed when code puts the focus on something Tab cannot reach', () => {
+    const title = document.body.appendChild(document.createElement('h1'));
+    title.tabIndex = -1;
+    const { result } = renderHook(() => useApprovalArming());
+    wait();
+
+    act(() => title.focus());
+
+    expect(result.current.armed).toBe(false);
+    title.remove();
+  });
+
+  // A click puts the focus on the control it lands on, and a page can lure a
+  // click onto a spot it can compute. Only focus that moved with no pointer
+  // click put there is a person using the keyboard or a screen reader.
+  it('stays unarmed when a click moves the focus onto a control', () => {
+    const button = document.body.appendChild(document.createElement('button'));
+    const { result } = renderHook(() => useApprovalArming());
+    wait();
+
+    act(() => {
+      window.dispatchEvent(new MouseEvent('pointerdown'));
+      button.focus();
+      window.dispatchEvent(new MouseEvent('pointerup'));
+    });
+    expect(result.current.armed).toBe(false);
+
+    act(() => vi.advanceTimersByTime(POINTER_FOCUS_MS));
+    act(() => {
+      button.blur();
+      button.focus();
+    });
+    expect(result.current.armed).toBe(true);
+    button.remove();
+  });
+
+  // A touch tap sends its release before the browser moves the focus (on the
+  // mouse events it makes up afterwards), so "no button down" is not enough.
+  it('stays unarmed when a tap moves the focus after its release', () => {
+    const button = document.body.appendChild(document.createElement('button'));
+    const { result } = renderHook(() => useApprovalArming());
+    wait();
+
+    act(() => {
+      window.dispatchEvent(new MouseEvent('pointerdown'));
+      window.dispatchEvent(new MouseEvent('pointerup'));
+    });
+    act(() => vi.advanceTimersByTime(100));
+    act(() => button.focus());
+
+    expect(result.current.armed).toBe(false);
+    button.remove();
+  });
+
+  // A right click opens a menu that takes the release: the window never sees
+  // it, and never lost focus either. The keyboard must still work afterwards.
+  it('takes keyboard focus again after a press whose release it never saw', () => {
+    const button = document.body.appendChild(document.createElement('button'));
+    const { result } = renderHook(() => useApprovalArming());
+    wait();
+
+    act(() => void window.dispatchEvent(new MouseEvent('pointerdown')));
+    act(() => vi.advanceTimersByTime(POINTER_FOCUS_MS));
     act(() => button.focus());
 
     expect(result.current.armed).toBe(true);

@@ -27,7 +27,7 @@
  *   `dragAreaStyle` are RN-only (an `Animated.Value` and a pan gesture) and
  *   have no DOM consumer yet — not mirrored here; see the component report.
  */
-import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import {
   borderRadius,
   borderWidth,
@@ -49,6 +49,7 @@ import { useSemantic } from '../../theme/ThemeProvider';
 import { useReducedMotion } from '../../motion';
 import { injectKeyframes } from '../../utils/injectKeyframes';
 import { Thermocline } from '../Thermocline';
+import { SheetTitleIdContext } from './SheetTitle';
 import type { BottomSheetContainerProps } from './types';
 
 /** The drag handle, redrawn identically to mobile: 44×5, decorative on the DOM. */
@@ -95,8 +96,10 @@ export function BottomSheetContainer({
   style,
   className,
   testID,
+  describedBy,
 }: BottomSheetContainerProps) {
   const t = useSemantic();
+  const titleId = useId();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [isRendered, setIsRendered] = useState(visible);
 
@@ -344,6 +347,9 @@ export function BottomSheetContainer({
       style={overlay}
       onCancel={handleCancel}
       data-testid={testID}
+      // A `SheetTitle` in `title` takes this id, so the sheet is announced by name.
+      aria-labelledby={title ? titleId : undefined}
+      aria-describedby={describedBy}
     >
       <div
         style={backdrop}
@@ -382,7 +388,9 @@ export function BottomSheetContainer({
                 />
               </div>
 
-              {headerContent ?? title ?? null}
+              <SheetTitleIdContext.Provider value={titleId}>
+                {headerContent ?? title ?? null}
+              </SheetTitleIdContext.Provider>
             </div>
 
             {/* The gutter every sheet shares, held once here rather than

@@ -6,6 +6,7 @@
  * @module utils/network
  */
 
+import { getBlockchainFromNetworkId } from '../config/blockchains';
 import type { BlockchainType } from '../types/blockchain';
 import type { BlockchainBalance, BlockchainId } from '../types/ui/balance-card';
 import { NETWORK_DISPLAY } from './networkDisplay';
@@ -143,6 +144,13 @@ export interface VisibleNetworkIdsParams {
   developerNetworks: boolean;
   /** The persisted active network, if any. */
   activeNetworkId?: string | null;
+  /** The user's Bitcoin choice; omitted means on. */
+  bitcoinEnabled?: boolean;
+}
+
+/** False only for a Bitcoin network while the user chose "Solana only". */
+export function isNetworkChosen(networkId: string, bitcoinEnabled: boolean): boolean {
+  return bitcoinEnabled || getBlockchainFromNetworkId(networkId) !== 'bitcoin';
 }
 
 /**
@@ -254,11 +262,13 @@ export function visibleNetworkIds({
   held,
   developerNetworks,
   activeNetworkId,
+  bitcoinEnabled = true,
 }: VisibleNetworkIdsParams): string[] {
   const heldSet = held ? new Set(held) : null;
 
   return enabled.filter((networkId) => {
     if (heldSet && !heldSet.has(networkId)) return false;
+    if (!isNetworkChosen(networkId, bitcoinEnabled)) return false;
     if (isMainnetNetworkId(networkId)) return true;
     return developerNetworks || networkId === activeNetworkId;
   });

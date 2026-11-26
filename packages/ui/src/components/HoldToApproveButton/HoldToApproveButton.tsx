@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import { useSemantic } from '../../theme/ThemeProvider';
 import { PrimaryButton, SecondaryButton } from '../Button';
@@ -54,6 +54,13 @@ export function HoldToApproveButton({
   }, []);
 
   useEffect(() => stop, [stop]);
+
+  // Turned off mid-hold (the approval window went behind another): the hold
+  // ends there, it does not finish on a button the user can no longer see.
+  // A layout effect: it runs with the commit, before the hold's next frame.
+  useLayoutEffect(() => {
+    if (disabled || loading) stop();
+  }, [disabled, loading, stop]);
 
   const start = useCallback(() => {
     if (disabled || loading || startedAt.current !== null) return;

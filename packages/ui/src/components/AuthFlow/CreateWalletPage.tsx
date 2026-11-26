@@ -50,8 +50,10 @@ import type { CreateWalletPageProps } from './types';
 
 type Step = 'message' | 'seedPhrase';
 
-/** Warning, phrase, password — the password screen is the third. */
-export const CREATE_FLOW_STEPS = 3;
+/** Warning, phrase, networks, password — the password screen is the fourth. */
+export const CREATE_FLOW_STEPS = 4;
+/** Phrase, networks, password. */
+export const RECOVER_FLOW_STEPS = 3;
 
 /** Slop, in px, so a scroll that stops a hair short of the end still counts. */
 const END_SLOP = 8;

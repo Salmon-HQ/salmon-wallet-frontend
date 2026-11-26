@@ -39,6 +39,7 @@ function sheetAt(step: UsePhraseBackupSheetResult['step'], extra = {}): UsePhras
       password: '',
       passwordError: undefined,
       loading: false,
+      actionError: undefined,
       canConfirm: false,
       setPassword: vi.fn(),
       confirm: vi.fn(),

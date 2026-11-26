@@ -1,0 +1,98 @@
+appId: io.salmonwallet.app
+---
+# Bitcoin network choice (spec 045) on Wallet A, which holds Bitcoin: set up
+# "Solana only" and Home offers no Bitcoin; turn Bitcoin on in Settings and the
+# Bitcoin option appears (the proof that the "absent" checks bite); stand on
+# it, turn Bitcoin off through the confirmation, and Home is back on Solana
+# with no Bitcoin. Bitcoin is turned on again at the end so the device is left
+# as found.
+- runFlow:
+    file: ../../../subflows/onboard-walletA.yaml
+    env:
+      NETWORK_CHOICE: solana-only
+- assertVisible:
+    id: 'home-screen'
+# The balance block has drawn, so an absent Bitcoin option is absent, not late.
+- extendedWaitUntil:
+    visible:
+      id: 'balance-eye-toggle'
+    timeout: 10000
+- assertNotVisible:
+    id: 'balance-chain-selector-option-bitcoin.*'
+- takeScreenshot: screenshots/smoke/settings/bitcoin-home-solana-only
+
+# Turn Bitcoin on.
+- runFlow: ../../../subflows/open-settings.yaml
+- scrollUntilVisible:
+    element:
+      id: 'settings-bitcoin-toggle'
+    direction: DOWN
+    centerElement: true
+- takeScreenshot: screenshots/smoke/settings/bitcoin-off
+- tapOn:
+    id: 'settings-bitcoin-toggle'
+- waitForAnimationToEnd:
+    timeout: 2000
+- takeScreenshot: screenshots/smoke/settings/bitcoin-on
+- runFlow: ../../../subflows/settings-close.yaml
+- extendedWaitUntil:
+    visible:
+      id: 'balance-chain-selector-option-bitcoin.*'
+    timeout: 10000
+- tapOn:
+    id: 'balance-chain-selector-option-bitcoin.*'
+- extendedWaitUntil:
+    visible:
+      id: 'balance-chain-selector-option-bitcoin.*'
+      selected: true
+    timeout: 5000
+- takeScreenshot: screenshots/smoke/settings/bitcoin-home-on-bitcoin
+
+# Turn Bitcoin off while standing on it: the confirmation first.
+- runFlow: ../../../subflows/open-settings.yaml
+- scrollUntilVisible:
+    element:
+      id: 'settings-bitcoin-toggle'
+    direction: DOWN
+    centerElement: true
+- tapOn:
+    id: 'settings-bitcoin-toggle'
+- extendedWaitUntil:
+    visible:
+      text: 'Hide Bitcoin?'
+    timeout: 5000
+- takeScreenshot: screenshots/smoke/settings/bitcoin-confirm
+- tapOn:
+    id: 'confirm-dialog-confirm'
+- waitForAnimationToEnd:
+    timeout: 2000
+- runFlow: ../../../subflows/settings-close.yaml
+- extendedWaitUntil:
+    visible:
+      id: 'home-screen'
+    timeout: 10000
+# One main network left, so no chain selector: the balance block is Solana's.
+- extendedWaitUntil:
+    visible:
+      id: 'balance-eye-toggle'
+    timeout: 10000
+- assertNotVisible:
+    id: 'balance-chain-selector-option-bitcoin.*'
+- takeScreenshot: screenshots/smoke/settings/bitcoin-home-back-on-solana
+
+# Leave the device as found: Bitcoin on.
+- runFlow: ../../../subflows/open-settings.yaml
+- scrollUntilVisible:
+    element:
+      id: 'settings-bitcoin-toggle'
+    direction: DOWN
+    centerElement: true
+- tapOn:
+    id: 'settings-bitcoin-toggle'
+- waitForAnimationToEnd:
+    timeout: 2000
+- runFlow: ../../../subflows/settings-close.yaml
+- extendedWaitUntil:
+    visible:
+      id: 'balance-chain-selector-option-bitcoin.*'
+    timeout: 10000

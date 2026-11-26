@@ -6,6 +6,7 @@ appId: io.salmonwallet.app
 # Safe to re-run; idempotent. The recovery prelude is intentionally
 # repeated per leaf so individual flows can also run stand-alone.
 - runFlow: ../flows/smoke/auth/recover-account.yaml
+- runFlow: ../flows/smoke/auth/networks-back.yaml
 - runFlow: ../flows/smoke/auth/create-account.yaml
 - runFlow: ../flows/smoke/auth/unlock.yaml
 # Home + tabs + sheets
@@ -34,5 +35,6 @@ appId: io.salmonwallet.app
 - runFlow: ../flows/smoke/settings/address-book.yaml
 - runFlow: ../flows/smoke/settings/trusted-apps.yaml
 - runFlow: ../flows/smoke/settings/developer-networks.yaml
+- runFlow: ../flows/smoke/settings/bitcoin.yaml
 - runFlow: ../flows/smoke/settings/help.yaml
 - runFlow: ../flows/smoke/settings/about.yaml

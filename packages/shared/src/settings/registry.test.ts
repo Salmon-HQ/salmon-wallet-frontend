@@ -50,17 +50,19 @@ describe('SETTINGS_GROUPS', () => {
   it('every toggle names a setting that exists, with its own e2e handle', () => {
     const toggles = rows.filter((r) => r.kind === 'toggle');
     expect(toggles.map((r) => r.id)).toEqual([
+      'bitcoin',
       'analytics',
       'developerNetworks',
       'unverifiedTokens',
     ]);
-    // Two of the three live on UserConfig; analytics is its own consent store.
+    // Three of the four live on UserConfig; analytics is its own consent store.
     // Compile-time: the ids are the closed union both platforms switch on.
     const configFields: Record<Exclude<SettingsToggleKey, 'analytics'>, keyof UserConfig> = {
+      bitcoin: 'bitcoinEnabled',
       developerNetworks: 'developerNetworks',
       unverifiedTokens: 'showUnverifiedTokens',
     };
-    expect(Object.keys(configFields)).toHaveLength(2);
+    expect(Object.keys(configFields)).toHaveLength(3);
     expect(new Set(toggles.map((r) => r.testId)).size).toBe(toggles.length);
   });
 
@@ -72,6 +74,7 @@ describe('SETTINGS_GROUPS', () => {
       'currency',
       'explorer',
       'appearance',
+      'bitcoin',
     ]);
     expect(preferences?.rows[1]).toEqual({
       id: 'tokenList',
@@ -79,6 +82,19 @@ describe('SETTINGS_GROUPS', () => {
       icon: 'stack',
       labelKey: 'settings.token_list',
     });
+  });
+
+  it('ends Preferences with the Bitcoin switch', () => {
+    const preferences = SETTINGS_GROUPS.find((g) => g.titleKey === 'settings.sections.preferences');
+    expect(preferences?.rows.at(-1)).toEqual({
+      id: 'bitcoin',
+      kind: 'toggle',
+      icon: 'currencyBtc',
+      labelKey: 'settings.bitcoin',
+      descriptionKey: 'settings.bitcoin_description',
+      testId: 'settings-bitcoin-toggle',
+    });
+    expect(getSettingsItemTestId('bitcoin')).toBe('settings-item-bitcoin');
   });
 
   it('gives every row a distinct id', () => {

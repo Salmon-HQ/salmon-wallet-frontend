@@ -26,7 +26,7 @@ vi.mock('../storage', () => ({
   STORAGE_KEYS: { SETTINGS: 'settings' },
 }));
 
-import { useUserConfig } from './useUserConfig';
+import { saveBitcoinChoice, useUserConfig } from './useUserConfig';
 import type { UserConfig } from '../types/account';
 import { DEFAULT_TOKEN_LIST_PREFERENCE } from '../utils/tokenListFold';
 
@@ -202,11 +202,11 @@ describe('useUserConfig — the token list preference', () => {
 
 describe('useUserConfig — a second tap before the first write lands', () => {
   /** Runs `taps` one render apart while storage is slow, then lets the writes through. */
-  const tapWhileSaving = async (taps: Array<() => Promise<void>>) => {
+  const tapWhileSaving = async (taps: Array<() => Promise<unknown>>) => {
     hold = new Promise<void>((resolve) => {
       release = resolve;
     });
-    const pending: Promise<void>[] = [];
+    const pending: Promise<unknown>[] = [];
     for (const tap of taps) {
       act(() => {
         pending.push(tap());
@@ -288,6 +288,57 @@ describe('useUserConfig — a second tap before the first write lands', () => {
     expect(result.current.excludedFromTotal).toEqual(['w1']);
   });
 
+  it('keeps the second tap when Bitcoin is switched off and straight on again', async () => {
+    const result = await mount();
+
+    const finish = await tapWhileSaving([() => result.current.setBitcoinEnabled(false)]);
+    expect(result.current.bitcoinEnabled).toBe(false);
+    let second: Promise<unknown> = Promise.resolve();
+    act(() => {
+      second = result.current.setBitcoinEnabled(true);
+    });
+    expect(result.current.bitcoinEnabled).toBe(true);
+    await finish();
+    await act(async () => {
+      await second;
+    });
+
+    expect(stored().bitcoinEnabled).toBe(true);
+    expect(result.current.bitcoinEnabled).toBe(true);
+  });
+
+  it('keeps the second tap on the writer while another instance listens', async () => {
+    const result = await mount();
+    const other = await mount();
+    const writesBefore = setItem.mock.calls.length;
+
+    const finishFirst = await tapWhileSaving([() => result.current.setBitcoinEnabled(false)]);
+    await waitFor(() => expect(setItem).toHaveBeenCalledTimes(writesBefore + 1));
+    // The second write waits on its own hold, so the first one lands alone.
+    let releaseSecond = () => {};
+    hold = new Promise<void>((resolve) => {
+      releaseSecond = resolve;
+    });
+    let second: Promise<unknown> = Promise.resolve();
+    act(() => {
+      second = result.current.setBitcoinEnabled(true);
+    });
+    await finishFirst();
+    release = releaseSecond;
+
+    expect(result.current.bitcoinEnabled).toBe(true);
+    expect(other.current.bitcoinEnabled).toBe(false);
+
+    releaseSecond();
+    await act(async () => {
+      await second;
+    });
+
+    expect(result.current.bitcoinEnabled).toBe(true);
+    expect(other.current.bitcoinEnabled).toBe(true);
+    expect(stored().bitcoinEnabled).toBe(true);
+  });
+
   it('goes back to what is stored when the write fails', async () => {
     const result = await mount();
     setItem.mockRejectedValueOnce(new Error('disk full'));
@@ -299,5 +350,112 @@ describe('useUserConfig — a second tap before the first write lands', () => {
 
     expect(result.current.showUnverifiedTokens).toBe(false);
     quiet.mockRestore();
+  });
+});
+
+describe('useUserConfig — a write reaches every mounted instance', () => {
+  it('keeps a tap on screen when another instance was already saving', async () => {
+    const writer = await mount();
+    const other = await mount();
+    hold = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const pending: Promise<unknown>[] = [];
+    act(() => {
+      pending.push(other.current.markDerivedScanned('w1'));
+    });
+    act(() => {
+      pending.push(writer.current.setBitcoinEnabled(false));
+    });
+    expect(writer.current.bitcoinEnabled).toBe(false);
+
+    release();
+    await act(async () => {
+      await Promise.all(pending);
+    });
+
+    expect(writer.current.bitcoinEnabled).toBe(false);
+    expect(other.current.bitcoinEnabled).toBe(false);
+    expect(writer.current.derivedScannedAccountIds).toEqual(['w1']);
+  });
+
+  it('shows another instance the Bitcoin choice without remounting', async () => {
+    const writer = await mount();
+    const reader = await mount();
+
+    await act(async () => {
+      await writer.current.setBitcoinEnabled(false);
+    });
+
+    expect(reader.current.bitcoinEnabled).toBe(false);
+  });
+
+  it('shows every instance the choice onboarding saves, and keeps the other fields', async () => {
+    store.set('settings', {
+      explorers: { SOLANA: 'SOLANA_FM' },
+      developerNetworks: true,
+      showUnverifiedTokens: true,
+      tokenList: { maxCount: 5, minValue: 1 },
+    });
+    const reader = await mount();
+
+    await act(async () => {
+      await saveBitcoinChoice(false);
+    });
+
+    expect(reader.current.bitcoinEnabled).toBe(false);
+    expect(stored()).toEqual({
+      explorers: { SOLANA: 'SOLANA_FM' },
+      developerNetworks: true,
+      showUnverifiedTokens: true,
+      tokenList: { maxCount: 5, minValue: 1 },
+      bitcoinEnabled: false,
+    });
+  });
+
+  it('searches derived accounts again once Bitcoin is turned back on', async () => {
+    const config = await mount();
+    await act(async () => {
+      await config.current.setBitcoinEnabled(false);
+      await config.current.markDerivedScanned('w1');
+    });
+    expect(config.current.derivedScannedAccountIds).toEqual(['w1']);
+
+    await act(async () => {
+      await config.current.setBitcoinEnabled(true);
+    });
+
+    expect(config.current.derivedScannedAccountIds).toEqual([]);
+    expect(stored().derivedScannedAccountIds).toEqual([]);
+  });
+
+  it('keeps the searched wallets when Bitcoin was already on', async () => {
+    const config = await mount();
+    await act(async () => {
+      await config.current.markDerivedScanned('w1');
+      await config.current.setBitcoinEnabled(true);
+    });
+
+    expect(config.current.derivedScannedAccountIds).toEqual(['w1']);
+  });
+
+  it('leaves an unmounted instance alone', async () => {
+    const writer = await mount();
+    const { result, unmount } = renderHook(() =>
+      useUserConfig({ activeBlockchainAccount: account })
+    );
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    unmount();
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    // The writer draws the stored record when its write lands, so the wait
+    // sits inside act; an update on the unmounted instance would still log.
+    await act(async () => {
+      await writer.current.setBitcoinEnabled(false);
+    });
+
+    expect(errors).not.toHaveBeenCalled();
+    expect(stored().bitcoinEnabled).toBe(false);
+    errors.mockRestore();
   });
 });

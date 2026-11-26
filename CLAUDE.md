@@ -12,5 +12,5 @@ Claude-specific wiring only:
 
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at `specs/044-token-list-preferences/plan.md`.
+at `specs/045-bitcoin-network-choice/plan.md`.
 <!-- SPECKIT END -->

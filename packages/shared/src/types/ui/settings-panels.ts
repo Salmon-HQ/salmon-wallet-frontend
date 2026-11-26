@@ -77,6 +77,8 @@ export interface SettingsSelectorListPropsBase<T> {
   getPrimaryText: (item: T) => string;
   /** Return `undefined` to omit the row's subtitle. */
   getSecondaryText?: (item: T) => string | undefined;
+  /** Overrides the row's spoken "primary, secondary" name; `undefined` keeps it. */
+  getAccessibilityLabel?: (item: T) => string | undefined;
   /** Custom element before the text (a currency symbol, a glyph); `null` draws the text alone. */
   renderLeadingElement?: (item: T) => ReactNode;
   loading?: boolean;
@@ -142,6 +144,11 @@ export interface ConfirmSheetPropsBase {
    * has already checked it with `validatePassword` by then.
    */
   onConfirm: (password?: string) => void | Promise<void>;
+  /**
+   * What the sheet says, announced, when `onConfirm` rejects. The sheet stays
+   * open on a rejection either way; without this it says nothing.
+   */
+  errorText?: string;
 }
 
 /** DerivedAccountCard — a selectable account found by a derivation scan. */

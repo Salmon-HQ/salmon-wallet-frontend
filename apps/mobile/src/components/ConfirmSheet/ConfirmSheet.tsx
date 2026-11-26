@@ -14,11 +14,15 @@ import { useTranslation } from 'react-i18next';
 import { WarningIcon } from '../../icons';
 import {
   spacing,
+  fontFamilyNative,
   fontSize,
+  lineHeight,
+  s,
   type ConfirmSheetPropsBase,
   type Semantic,
   usePasswordConfirm,
 } from '@salmon/shared';
+import { useAnnounce } from '../../../hooks/useAnnounce';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { sheetBodyStyles } from '../BottomSheetContainer/sheetBodyStyles';
 import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
@@ -62,6 +66,7 @@ export function ConfirmSheet({
   requirePassword = false,
   validatePassword,
   onConfirm,
+  errorText,
   children,
   bedrock = false,
 }: ConfirmSheetProps) {
@@ -74,16 +79,28 @@ export function ConfirmSheet({
     password,
     passwordError,
     loading,
+    actionError,
     canConfirm,
     setPassword: handlePasswordChange,
     confirm: handleConfirm,
-  } = usePasswordConfirm({ visible, requirePassword, validatePassword, onConfirm, onClose, t });
+  } = usePasswordConfirm({
+    visible,
+    requirePassword,
+    validatePassword,
+    onConfirm,
+    onClose,
+    errorText,
+    t,
+  });
+  useAnnounce(actionError);
 
   return (
     <BottomSheetContainer
       visible={visible}
       onClose={onClose}
       onClosed={onClosed}
+      // A swipe while the action runs would close on a result nobody saw.
+      dismissible={!loading}
       title={
         <SheetTitle
           // Colour is never the only channel: glyph, fill and label all say it
@@ -133,6 +150,12 @@ export function ConfirmSheet({
             painted into it, so it stays plainly a button without inviting the
             thumb that is already travelling toward the primary.
           */}
+        {actionError ? (
+          <Text style={styles.error} testID="confirm-dialog-error">
+            {actionError}
+          </Text>
+        ) : null}
+
         {acknowledgeOnly ? null : (
           <View style={styles.actions}>
             {isDanger ? (
@@ -200,4 +223,14 @@ export function ConfirmSheet({
 // Styles
 // ============================================================================
 
-const stylesFor = (t: Semantic) => StyleSheet.create(sheetBodyStyles(t));
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    ...sheetBodyStyles(t),
+    error: {
+      color: t.status.danger,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.body),
+      lineHeight: fontSize.body * lineHeight.snug,
+      textAlign: 'center',
+    },
+  });

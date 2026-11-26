@@ -23,6 +23,7 @@ import {
   setStashItem,
   spacing,
   useSecretCopied,
+  removeStashItem,
   STASH_KEYS,
   type Semantic,
 } from '@salmon/shared';
@@ -38,7 +39,7 @@ import {
 } from '../../src/components';
 import { useSemantic, useThemedStyles } from '../../src/theme/useThemedStyles';
 import { secretClipboard } from '../../hooks/useSecretClipboard';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
@@ -47,8 +48,8 @@ import { StyleSheet, Text, View } from 'react-native';
 // Types
 // ============================================================================
 
-/** Warning, phrase, password. */
-const CREATE_FLOW_STEPS = 3;
+/** Warning, phrase, networks, password. */
+const CREATE_FLOW_STEPS = 4;
 
 // ============================================================================
 // Step 1: Seed Phrase Component
@@ -171,10 +172,19 @@ export default function CreateWalletScreen() {
   // keeps the phrase shown and the phrase stashed the same one.
   const [mnemonic] = useState<string>(() => generateMnemonic(128));
 
+  // Back from the network question (its button, a swipe or Android's back)
+  // lands here: the phrase leaves the stash until Continue puts it back, so
+  // an abandoned setup keeps none.
+  useFocusEffect(
+    useCallback(() => {
+      void removeStashItem(STASH_KEYS.PENDING_MNEMONIC);
+    }, [])
+  );
+
   const handleContinue = useCallback(async () => {
     await setStashItem(STASH_KEYS.PENDING_MNEMONIC, mnemonic);
     router.push({
-      pathname: '/(auth)/password',
+      pathname: '/(auth)/networks',
       params: { type: 'create' },
     });
   }, [mnemonic]);

@@ -39,7 +39,7 @@ import {
   ReservedSlot,
 } from '../OnboardingLayout';
 import { WaterColumn } from '../WaterColumn';
-import { CREATE_FLOW_STEPS } from './CreateWalletPage';
+import { CREATE_FLOW_STEPS, RECOVER_FLOW_STEPS } from './CreateWalletPage';
 import type { PasswordPageProps } from './types';
 
 const inputContainer: CSSProperties = {
@@ -258,8 +258,8 @@ export function PasswordPage(props: PasswordPageProps): React.ReactElement {
               protect
                 ? undefined
                 : {
-                    totalSteps: flowType === 'create' ? CREATE_FLOW_STEPS : 2,
-                    currentStep: flowType === 'create' ? CREATE_FLOW_STEPS : 2,
+                    totalSteps: flowType === 'create' ? CREATE_FLOW_STEPS : RECOVER_FLOW_STEPS,
+                    currentStep: flowType === 'create' ? CREATE_FLOW_STEPS : RECOVER_FLOW_STEPS,
                   }
             }
             backDisabled={isLoading || isChecking}

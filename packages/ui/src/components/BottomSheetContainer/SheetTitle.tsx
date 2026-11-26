@@ -6,11 +6,11 @@
  * The mobile twin is
  * `apps/mobile/src/components/BottomSheetContainer/SheetTitle.tsx`; same
  * size, weight and centring, read from the same `SheetTitlePropsBase`
- * contract. Mobile sets no `accessibilityRole` on this title, so it stays a
- * plain `<span>` here too — the sheet's own `aria-labelledby` is what
- * associates it with the dialog, not a heading role.
+ * contract. The title is the sheet's name: it carries the id the sheet's
+ * `<dialog>` points at with `aria-labelledby`, so a screen reader opening the
+ * sheet reads it (the subtitle stays out of the name).
  */
-import React from 'react';
+import React, { createContext, useContext } from 'react';
 import {
   fontFamily,
   fontSize,
@@ -23,8 +23,12 @@ import {
 import { useSemantic } from '../../theme/ThemeProvider';
 import type { SheetTitleProps } from './types';
 
+/** The id `BottomSheetContainer` names its dialog by. */
+export const SheetTitleIdContext = createContext<string | undefined>(undefined);
+
 export function SheetTitle({ leading, children, subtitle, style, className }: SheetTitleProps) {
   const t = useSemantic();
+  const id = useContext(SheetTitleIdContext);
 
   // A `<span>` is inline and centres nothing; mobile's `Text` is a block
   // that spans the sheet, so the title centres on it. The gutter keeps a
@@ -48,7 +52,7 @@ export function SheetTitle({ leading, children, subtitle, style, className }: Sh
   // caller's style lands on the whole header either way.
   const outer = subtitle ? undefined : { className, style };
   const heading = !leading ? (
-    <span className={outer?.className} style={{ ...title, ...outer?.style }}>
+    <span id={id} className={outer?.className} style={{ ...title, ...outer?.style }}>
       {children}
     </span>
   ) : (
@@ -63,7 +67,7 @@ export function SheetTitle({ leading, children, subtitle, style, className }: Sh
       }}
     >
       {leading}
-      <span style={{ ...title, paddingLeft: 0, paddingRight: 0, display: 'inline' }}>
+      <span id={id} style={{ ...title, paddingLeft: 0, paddingRight: 0, display: 'inline' }}>
         {children}
       </span>
     </div>

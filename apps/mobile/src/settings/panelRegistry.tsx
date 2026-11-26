@@ -17,6 +17,7 @@ import {
   useAccountRemoval,
   useAccountsContext,
   useCurrencyContext,
+  useDeveloperModeSettings,
   useSettingsPanelData,
   useTheme,
   createTokenListPanel,
@@ -86,6 +87,7 @@ export function useSettingsPanelRegistry(): MobilePanelRegistry {
   // The flag comes from the `(app)` provider — a second `useUserConfig`
   // instance here read its own copy and drifted from the carousel's.
   const developerNetworks = useDeveloperMode();
+  const { bitcoinEnabled } = useDeveloperModeSettings();
 
   const {
     explorer,
@@ -228,7 +230,7 @@ export function useSettingsPanelRegistry(): MobilePanelRegistry {
       ),
       privateKey: ({ onBack }) => {
         if (!activeAccount) return null;
-        const networks = buildNetworkListFromAccount(activeAccount);
+        const networks = buildNetworkListFromAccount(activeAccount, bitcoinEnabled);
         return (
           <PrivateKeyPanel
             networks={networks}
@@ -466,6 +468,7 @@ export function useSettingsPanelRegistry(): MobilePanelRegistry {
       accountId,
       networkId,
       allNetworks,
+      bitcoinEnabled,
       biometricAvailable,
       biometricArmed,
       biometricKind,

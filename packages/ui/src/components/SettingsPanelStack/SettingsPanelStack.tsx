@@ -44,6 +44,7 @@ import {
 import { useSemantic } from '../../theme/ThemeProvider';
 import { screenSlideAnimation, useReducedMotion } from '../../motion';
 import { Toggle } from '../Toggle';
+import { ConfirmDialog } from '../ConfirmDialog';
 import {
   AddressBookIcon,
   ArrowSquareOutIcon,
@@ -51,6 +52,7 @@ import {
   ChartBarIcon,
   CircleHalfIcon,
   CodeIcon,
+  CurrencyBtcIcon,
   EyeIcon,
   InfoIcon,
   KeyIcon,
@@ -95,6 +97,7 @@ const SETTINGS_ICONS: Record<SettingsIconName, React.ComponentType<IconGlyphProp
   money: MoneyIcon,
   arrowSquareOut: ArrowSquareOutIcon,
   circleHalf: CircleHalfIcon,
+  currencyBtc: CurrencyBtcIcon,
   addressBook: AddressBookIcon,
   squaresFour: SquaresFourIcon,
   chartBar: ChartBarIcon,
@@ -143,6 +146,9 @@ export function SettingsPanelStack({
     showUnverifiedTokens,
     handleToggleDeveloperNetworks,
     handleToggleUnverifiedTokens,
+    bitcoinEnabled,
+    handleToggleBitcoin,
+    bitcoinConfirm,
   } = useDeveloperModeToggles();
 
   // Track animation state for the top panel
@@ -223,7 +229,7 @@ export function SettingsPanelStack({
     [handlePush, onRemoveWallet, onRemoveAllWallets]
   );
 
-  // Three toggles, one row shape; which setting each flips is this platform's
+  // The toggles share one row shape; which setting each flips is this platform's
   // wiring, the row itself is the shared table's.
   const toggles: Record<
     SettingsToggleKey,
@@ -232,6 +238,7 @@ export function SettingsPanelStack({
     analytics: { checked: analyticsEnabled, onChange: onAnalyticsToggle },
     developerNetworks: { checked: developerNetworks, onChange: handleToggleDeveloperNetworks },
     unverifiedTokens: { checked: showUnverifiedTokens, onChange: handleToggleUnverifiedTokens },
+    bitcoin: { checked: bitcoinEnabled, onChange: handleToggleBitcoin },
   };
 
   const renderRow = useCallback(
@@ -262,6 +269,7 @@ export function SettingsPanelStack({
               <Toggle
                 testID={row.testId}
                 accessibilityLabel={label}
+                accessibilityHint={description}
                 value={toggle.checked}
                 onValueChange={(next) => toggle.onChange?.(next)}
               />
@@ -319,11 +327,13 @@ export function SettingsPanelStack({
         />
       );
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- `toggles` is rebuilt per render from these six
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `toggles` is rebuilt per render from these eight
     [
       analyticsEnabled,
       developerNetworks,
       showUnverifiedTokens,
+      bitcoinEnabled,
+      handleToggleBitcoin,
       handleRowPress,
       onAnalyticsToggle,
       handleToggleDeveloperNetworks,
@@ -392,6 +402,7 @@ export function SettingsPanelStack({
             </div>
           ))}
         </SettingsPanelContent>
+        <ConfirmDialog {...bitcoinConfirm} />
 
         {/* Stacked panels */}
         {stack.map((entry, idx) => {

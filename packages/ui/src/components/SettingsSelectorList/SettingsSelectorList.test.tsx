@@ -100,4 +100,21 @@ describe('SettingsSelectorList — a row per choice, the chosen one marked', () 
     expect(screen.getByText('English')).toBeTruthy();
     expect(screen.queryByText('EN')).toBeNull();
   });
+
+  it('speaks a row by the name the selector gives, keeping the visible text', () => {
+    renderInMode(
+      'dark',
+      <SettingsSelectorList<Option>
+        items={OPTIONS}
+        getKey={(item) => item.id}
+        isSelected={() => false}
+        onSelect={vi.fn()}
+        getPrimaryText={(item) => item.label}
+        getAccessibilityLabel={(item) => (item.id === 'en' ? 'Inglés' : undefined)}
+      />
+    );
+
+    expect(screen.getByRole('button', { name: 'Inglés' }).textContent).toContain('English');
+    expect(screen.getByRole('button', { name: 'Spanish' })).toBeTruthy();
+  });
 });
