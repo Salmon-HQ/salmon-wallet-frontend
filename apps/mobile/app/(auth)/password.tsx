@@ -420,6 +420,7 @@ export default function PasswordScreen() {
               // Protecting has no way back: nothing else opens until the
               // wallet has a password.
               <ScreenHeader
+                testID="password-back"
                 onBack={protect ? undefined : handleBack}
                 stepIndicator={
                   protect

@@ -9,9 +9,14 @@
 import {
   componentSizes,
   createNetworkChoiceScreen,
+  spacing,
+  vs,
+  type NetworkChoiceOption,
   type OnboardingLayoutPropsBase,
+  type SettingsSelectorListPropsBase,
 } from '@salmon/shared';
 import { router, useLocalSearchParams } from 'expo-router';
+import { View } from 'react-native';
 
 import {
   OnboardingLayout,
@@ -28,10 +33,15 @@ function Mark() {
 }
 
 const NetworkChoiceScreen = createNetworkChoiceScreen({
-  Layout: (props: OnboardingLayoutPropsBase) => <OnboardingLayout {...props} float />,
+  Layout: (props: OnboardingLayoutPropsBase) => <OnboardingLayout {...props} float scrollBody />,
   Title: OnboardingTitle,
   Header: ScreenHeader,
-  SettingsSelectorList,
+  // Settings spaces its rows from the screen; here the rows bring their own.
+  SettingsSelectorList: (props: SettingsSelectorListPropsBase<NetworkChoiceOption>) => (
+    <View style={{ gap: vs(spacing.screenGutter) }}>
+      <SettingsSelectorList {...props} />
+    </View>
+  ),
   mark: <Mark />,
 });
 

@@ -8,7 +8,10 @@
 import {
   componentSizes,
   createNetworkChoiceScreen,
+  spacing,
+  type NetworkChoiceOption,
   type OnboardingLayoutPropsBase,
+  type SettingsSelectorListPropsBase,
 } from '@salmon/shared';
 
 import { GlobeIcon } from '../../icons';
@@ -30,7 +33,12 @@ const NetworkChoiceScreen = createNetworkChoiceScreen({
   ),
   Title: OnboardingTitle,
   Header: ScreenHeader,
-  SettingsSelectorList,
+  // Settings spaces its rows from the panel; here the rows bring their own.
+  SettingsSelectorList: (props: SettingsSelectorListPropsBase<NetworkChoiceOption>) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.screenGutter }}>
+      <SettingsSelectorList {...props} />
+    </div>
+  ),
   mark: <Mark />,
 });
 
