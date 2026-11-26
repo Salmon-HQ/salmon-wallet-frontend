@@ -14,7 +14,11 @@ jest.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
-jest.mock('expo-router', () => ({ router: { back: jest.fn(), push: jest.fn() } }));
+const mockPush = jest.fn();
+
+jest.mock('expo-router', () => ({
+  router: { back: jest.fn(), push: (...args: unknown[]) => mockPush(...args) },
+}));
 
 jest.mock('../../hooks/useSecretClipboard', () => ({
   secretClipboard: { copy: (text: string) => mockSecretCopy(text) },
@@ -52,7 +56,20 @@ jest.mock('../../src/components', () => {
     SeedWordGrid: () => null,
     SeedWordInput: () => null,
     Toggle: () => null,
-    PrimaryButton: Passthrough,
+    PrimaryButton: ({
+      onPress,
+      testID,
+      children,
+    }: {
+      onPress: () => void;
+      testID?: string;
+      children: string;
+    }) =>
+      React.createElement(
+        TouchableOpacity,
+        { onPress, testID },
+        React.createElement(Text, null, children)
+      ),
     TextButton: Passthrough,
     HoldToCopyButton: ({
       onCopy,
@@ -83,5 +100,20 @@ describe('the create flow seed-phrase copy', () => {
 
     await waitFor(() => expect(screen.getByText('wallet.create.copied_clears')).toBeTruthy());
     expect(mockSecretCopy).toHaveBeenCalledWith(PHRASE);
+  });
+});
+
+describe('the create flow hand-off', () => {
+  it('asks for the networks next, carrying the create flow', async () => {
+    render(<CreateWalletScreen />);
+
+    fireEvent.press(screen.getByTestId('create-backed-up-button'));
+
+    await waitFor(() =>
+      expect(mockPush).toHaveBeenCalledWith({
+        pathname: '/(auth)/networks',
+        params: { type: 'create' },
+      })
+    );
   });
 });

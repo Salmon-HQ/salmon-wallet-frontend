@@ -41,6 +41,7 @@ import {
 import { SelectOptionsPage } from '../../pages/auth/SelectOptionsPage';
 import { CreateWalletPage } from '../../pages/auth/CreateWalletPage';
 import { RecoverWalletPage } from '../../pages/auth/RecoverWalletPage';
+import { NetworkChoicePage } from '../../pages/auth/NetworkChoicePage';
 import { PasswordPage } from '../../pages/auth/PasswordPage';
 import { SuccessPage } from '../../pages/auth/SuccessPage';
 import { AnalyticsConsentPage } from '../../pages/auth/AnalyticsConsentPage';
@@ -52,7 +53,8 @@ import { isDAppApprovalLaunch } from '../../analytics';
 // Types
 // ============================================================================
 
-type AuthStep = 'select' | 'create' | 'recover' | 'password' | 'success' | 'analytics-consent';
+type AuthStep =
+  'select' | 'create' | 'recover' | 'networks' | 'password' | 'success' | 'analytics-consent';
 
 const noop = () => {};
 
@@ -358,12 +360,12 @@ function App() {
 
   const handleCreateComplete = useCallback((mnemonic: string) => {
     setAuthData({ mnemonic, flowType: 'create' });
-    setAuthStep('password');
+    setAuthStep('networks');
   }, []);
 
   const handleRecoverComplete = useCallback((mnemonic: string) => {
     setAuthData({ mnemonic, flowType: 'recover' });
-    setAuthStep('password');
+    setAuthStep('networks');
   }, []);
 
   const handleCreating = useCallback(() => {
@@ -388,13 +390,21 @@ function App() {
     [resolveConsentPrompt]
   );
 
-  const handlePasswordBack = useCallback(() => {
+  const handleNetworksBack = useCallback(() => {
     if (authData?.flowType === 'create') {
       setAuthStep('create');
     } else {
       setAuthStep('recover');
     }
   }, [authData]);
+
+  const handleNetworksChosen = useCallback(() => {
+    setAuthStep('password');
+  }, []);
+
+  const handlePasswordBack = useCallback(() => {
+    setAuthStep('networks');
+  }, []);
 
   const handleGoToWallet = useCallback(() => {
     setAuthStep('analytics-consent');
@@ -501,6 +511,23 @@ function App() {
         return <CreateWalletPage onComplete={handleCreateComplete} onBack={handleAuthBack} />;
       case 'recover':
         return <RecoverWalletPage onComplete={handleRecoverComplete} onBack={handleAuthBack} />;
+      case 'networks':
+        if (!authData)
+          return (
+            <SelectOptionsPage
+              onCreateWallet={handleCreateWallet}
+              onRecoverWallet={handleRecoverWallet}
+              hasAccounts={accounts.length > 0}
+              onAccessExisting={handleAccessExisting}
+            />
+          );
+        return (
+          <NetworkChoicePage
+            flowType={authData.flowType}
+            onBack={handleNetworksBack}
+            onContinue={handleNetworksChosen}
+          />
+        );
       case 'password':
         if (!authData)
           return (

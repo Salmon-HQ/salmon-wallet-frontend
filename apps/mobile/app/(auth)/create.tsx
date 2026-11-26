@@ -47,8 +47,8 @@ import { StyleSheet, Text, View } from 'react-native';
 // Types
 // ============================================================================
 
-/** Warning, phrase, password. */
-const CREATE_FLOW_STEPS = 3;
+/** Warning, phrase, networks, password. */
+const CREATE_FLOW_STEPS = 4;
 
 // ============================================================================
 // Step 1: Seed Phrase Component
@@ -174,7 +174,7 @@ export default function CreateWalletScreen() {
   const handleContinue = useCallback(async () => {
     await setStashItem(STASH_KEYS.PENDING_MNEMONIC, mnemonic);
     router.push({
-      pathname: '/(auth)/password',
+      pathname: '/(auth)/networks',
       params: { type: 'create' },
     });
   }, [mnemonic]);

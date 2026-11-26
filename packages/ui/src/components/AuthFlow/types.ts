@@ -17,6 +17,13 @@ export interface RecoverWalletPageProps {
   onBack: () => void;
 }
 
+/** The network question between the phrase and the password. */
+export interface NetworkChoicePageProps {
+  flowType: 'create' | 'recover';
+  onBack: () => void;
+  onContinue: () => void;
+}
+
 export interface CreateWalletPageProps {
   onComplete: (mnemonic: string) => void;
   onBack: () => void;

@@ -544,6 +544,13 @@
       "clipboard_hint": "Otras apps pueden leer el portapapeles: anotala en papel.",
       "copied_clears": "Copiada · se borra en {{seconds}} s"
     },
+    "networks": {
+      "title": "Elegí tus redes",
+      "solana_bitcoin": "Solana + Bitcoin",
+      "solana_bitcoin_description": "Usá Solana y Bitcoin en una sola wallet.",
+      "solana_only": "Solo Solana",
+      "solana_only_description": "Solo Solana. Podés sumar Bitcoin después en Configuración."
+    },
     "recover": {
       "messageTitle": "Recuperar Cuenta existente",
       "messageBody": "Recuperar tu Cuenta usando tu seed-phrase de 12 o 24 palabras.",

@@ -4,6 +4,9 @@ export type { SelectOptionsPageProps } from './types';
 export { RecoverWalletPage } from './RecoverWalletPage';
 export type { RecoverWalletPageProps } from './types';
 
+export { NetworkChoicePage } from './NetworkChoicePage';
+export type { NetworkChoicePageProps } from './types';
+
 export { CreateWalletPage } from './CreateWalletPage';
 export type { CreateWalletPageProps } from './types';
 

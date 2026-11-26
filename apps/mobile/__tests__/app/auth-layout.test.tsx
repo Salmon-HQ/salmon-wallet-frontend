@@ -83,5 +83,8 @@ describe('AuthLayout', () => {
     expect(optionsFor('recover').gestureEnabled).not.toBe(false);
     expect(optionsFor('seed-warning').gestureEnabled).not.toBe(false);
     expect(optionsFor('create').gestureEnabled).not.toBe(false);
+    // Nothing is written before the password, so the network question can be
+    // left the way it came, like the phrase screens before it.
+    expect(optionsFor('networks').gestureEnabled).not.toBe(false);
   });
 });

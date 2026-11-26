@@ -145,6 +145,15 @@ function persistPatch(
   return write;
 }
 
+/**
+ * The onboarding step's write. Setup has no instance of this hook to commit
+ * through, so it goes straight into the queue and reaches every mounted
+ * instance — the extension's provider is already mounted under onboarding.
+ */
+export async function saveBitcoinChoice(enabled: boolean): Promise<void> {
+  await persistPatch({ bitcoinEnabled: enabled });
+}
+
 // ============================================================================
 // Hook Implementation
 // ============================================================================

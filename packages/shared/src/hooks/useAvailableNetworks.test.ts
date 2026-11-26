@@ -710,6 +710,26 @@ describe('useAvailableNetworks Hook', () => {
 
       expect(result.current.allNetworks.map((n) => n.id)).not.toContain('bitcoin-mainnet');
     });
+
+    // The extension's first Home: its provider was mounted before onboarding
+    // wrote the choice, and must not keep offering Bitcoin after "Solana only".
+    it('drops Bitcoin when onboarding saves "Solana only", without remounting', async () => {
+      settingsStore.set('settings', { explorers: {}, developerNetworks: false });
+      const actual = await vi.importActual<typeof useUserConfigModule>('./useUserConfig');
+      await realUserConfig();
+      const { result } = renderHook(() =>
+        useAvailableNetworks({ activeBlockchainAccount: mockActiveAccount })
+      );
+      await waitFor(() =>
+        expect(result.current.allNetworks.map((n) => n.id)).toContain('bitcoin-mainnet')
+      );
+
+      await act(async () => {
+        await actual.saveBitcoinChoice(false);
+      });
+
+      expect(result.current.allNetworks.map((n) => n.id)).not.toContain('bitcoin-mainnet');
+    });
   });
 });
 

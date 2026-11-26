@@ -99,7 +99,7 @@ export default function RecoverWalletScreen() {
 
     await setStashItem(STASH_KEYS.PENDING_MNEMONIC, phrase);
     router.push({
-      pathname: '/(auth)/password',
+      pathname: '/(auth)/networks',
     });
   }, [isValidSeedPhrase, phrase]);
 
@@ -118,7 +118,7 @@ export default function RecoverWalletScreen() {
       scrollBody
       float
       chrome={
-        <ScreenHeader onBack={handleBack} stepIndicator={{ totalSteps: 2, currentStep: 1 }} />
+        <ScreenHeader onBack={handleBack} stepIndicator={{ totalSteps: 3, currentStep: 1 }} />
       }
       /*
         The key: what this screen asks for is the thing that reopens the

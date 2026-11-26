@@ -14,7 +14,7 @@ export type { UseAccountsState, UseAccountsActions } from './useAccounts';
 export { isOwnStoredAccountsWrite } from './useAccountsMutationHelpers';
 
 // User configuration hook
-export { useUserConfig } from './useUserConfig';
+export { saveBitcoinChoice, useUserConfig } from './useUserConfig';
 export type {
   ToggleDeveloperNetworksOptions,
   UseUserConfigParams,

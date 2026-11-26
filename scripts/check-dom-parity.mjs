@@ -210,6 +210,7 @@ export const SCREENS = {
   '(auth)/create': 'packages/ui/src/components/AuthFlow/CreateWalletPage.tsx',
   '(auth)/seed-warning': 'packages/ui/src/components/AuthFlow/CreateWalletPage.tsx',
   '(auth)/recover': 'packages/ui/src/components/AuthFlow/RecoverWalletPage.tsx',
+  '(auth)/networks': 'packages/ui/src/components/AuthFlow/NetworkChoicePage.tsx',
   '(auth)/password': 'packages/ui/src/components/AuthFlow/PasswordPage.tsx',
   '(auth)/success': 'packages/ui/src/components/AuthFlow/SuccessPage.tsx',
   '(auth)/analytics-consent': 'packages/ui/src/components/AuthFlow/AnalyticsConsentPage.tsx',

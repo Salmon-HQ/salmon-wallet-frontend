@@ -47,6 +47,7 @@ import {
   fontSize,
   lineHeight,
   removeStashItem,
+  setStashItem,
   s,
   spacing,
   STASH_KEYS,
@@ -89,10 +90,12 @@ import {
   SecondaryButton,
 } from '../../src/components';
 
-/** Warning, phrase, confirmation, password. */
-const CREATE_FLOW_STEPS = 3;
-/** Phrase, password. */
-const RECOVER_FLOW_STEPS = 2;
+/** Warning, phrase, networks, password. */
+const CREATE_FLOW_STEPS = 4;
+/** Phrase, networks, password. */
+const RECOVER_FLOW_STEPS = 3;
+/** Seed Vault account, password: Seed Vault asks no network question. */
+const SEED_VAULT_FLOW_STEPS = 2;
 
 // ============================================================================
 // Component
@@ -119,6 +122,17 @@ export default function PasswordScreen() {
     void loadMnemonic();
   }, []);
 
+  // Back from here lands on the network question, whose choice opens a new
+  // password screen that reads the phrase from the stash again. Leaving
+  // without a wallet written puts it back where this screen found it.
+  const walletAddedRef = useRef(false);
+  useEffect(() => {
+    if (!mnemonic) return;
+    return () => {
+      if (!walletAddedRef.current) void setStashItem(STASH_KEYS.PENDING_MNEMONIC, mnemonic);
+    };
+  }, [mnemonic]);
+
   // A Seed Vault wallet (spec 037) arrives instead of a phrase: which seed,
   // which path, which address. Nothing secret — the key stays in Seed Vault.
   // It comes from memory, never from route params, which a deep link can set.
@@ -138,6 +152,12 @@ export default function PasswordScreen() {
   // In recover flow, user has proven ownership via seed phrase
   // They should always be able to set a new password, regardless of requiredLock
   const isRecoverFlow = flowType === 'recover';
+  const flowSteps =
+    flowType === 'create'
+      ? CREATE_FLOW_STEPS
+      : flowType === 'seed-vault'
+        ? SEED_VAULT_FLOW_STEPS
+        : RECOVER_FLOW_STEPS;
 
   // Only show single input when adding account to existing encrypted wallet
   // (not during recover, and never when protecting: that sets a new password)
@@ -277,6 +297,7 @@ export default function PasswordScreen() {
       // Created here without the phrase check: the first send asks for it.
       if (flowType === 'create' && !seedVault) await markUnconfirmed(account.id);
       await actions.addAccount(account, password);
+      walletAddedRef.current = true;
       setPendingSeedVaultSelection(null);
       console.log(`[perf] recovery: addAccount (encrypt + storage) ${Date.now() - t1}ms`);
 
@@ -388,8 +409,8 @@ export default function PasswordScreen() {
                   protect
                     ? undefined
                     : {
-                        totalSteps: flowType === 'create' ? CREATE_FLOW_STEPS : RECOVER_FLOW_STEPS,
-                        currentStep: flowType === 'create' ? CREATE_FLOW_STEPS : RECOVER_FLOW_STEPS,
+                        totalSteps: flowSteps,
+                        currentStep: flowSteps,
                       }
                 }
                 backDisabled={isLoading || isChecking}

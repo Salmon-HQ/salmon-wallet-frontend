@@ -544,6 +544,13 @@
       "clipboard_hint": "Other apps can read the clipboard: writing it on paper is safer.",
       "copied_clears": "Copied · clears in {{seconds}} s"
     },
+    "networks": {
+      "title": "Choose your networks",
+      "solana_bitcoin": "Solana + Bitcoin",
+      "solana_bitcoin_description": "Use Solana and Bitcoin in one wallet.",
+      "solana_only": "Solana only",
+      "solana_only_description": "Just Solana. You can add Bitcoin later in Settings."
+    },
     "recover": {
       "messageTitle": "Recover Existing Account",
       "messageBody": "Recover your account using your 12- or 24-word seed phrase.",

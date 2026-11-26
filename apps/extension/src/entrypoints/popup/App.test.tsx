@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { cleanup, render } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import App from './App';
@@ -16,7 +16,11 @@ const mockClearSessionKey = vi.fn();
 const mockUseSecretClipboardResume = vi.fn();
 const eventListeners = new Map<string, EventListener>();
 const { accountsState, mockUseLockAcrossWindows } = vi.hoisted(() => ({
-  accountsState: { unprotectedAddresses: null as string[] | null, locked: false },
+  accountsState: {
+    unprotectedAddresses: null as string[] | null,
+    locked: false,
+    accounts: [{ id: 'account-1' }] as { id: string }[],
+  },
   mockUseLockAcrossWindows: vi.fn(),
 }));
 
@@ -35,7 +39,7 @@ vi.mock('@salmon/shared', () => ({
     {
       ready: true,
       locked: accountsState.locked,
-      accounts: [{ id: 'account-1' }],
+      accounts: accountsState.accounts,
       activeAccount: null,
       activeBlockchainAccount: null,
       accountId: 'account-1',
@@ -102,16 +106,36 @@ vi.mock('../../pages/dapp', () => ({
   DAppSignMessageApprovalPage: () => null,
 }));
 
+// The onboarding pages as the host drives them: each hands back what its real
+// screen would, so the tests walk the steps the popup routes between.
 vi.mock('../../pages/auth/SelectOptionsPage', () => ({
-  SelectOptionsPage: () => null,
+  SelectOptionsPage: (props: { onCreateWallet: () => void; onRecoverWallet: () => void }) => (
+    <div data-testid="select-page">
+      <button data-testid="select-create" onClick={props.onCreateWallet} />
+      <button data-testid="select-recover" onClick={props.onRecoverWallet} />
+    </div>
+  ),
 }));
 
 vi.mock('../../pages/auth/CreateWalletPage', () => ({
-  CreateWalletPage: () => null,
+  CreateWalletPage: (props: { onComplete: (m: string) => void }) => (
+    <button data-testid="create-done" onClick={() => props.onComplete('phrase')} />
+  ),
 }));
 
 vi.mock('../../pages/auth/RecoverWalletPage', () => ({
-  RecoverWalletPage: () => null,
+  RecoverWalletPage: (props: { onComplete: (m: string) => void }) => (
+    <button data-testid="recover-done" onClick={() => props.onComplete('phrase')} />
+  ),
+}));
+
+vi.mock('../../pages/auth/NetworkChoicePage', () => ({
+  NetworkChoicePage: (props: { flowType: string; onBack: () => void; onContinue: () => void }) => (
+    <div data-testid="onboarding-networks-screen" data-flow={props.flowType}>
+      <button data-testid="networks-back" onClick={props.onBack} />
+      <button data-testid="networks-choose" onClick={props.onContinue} />
+    </div>
+  ),
 }));
 
 vi.mock('../../pages/auth/PasswordPage', () => ({
@@ -119,12 +143,14 @@ vi.mock('../../pages/auth/PasswordPage', () => ({
     flowType: string;
     addresses?: string[];
     onRemoveWallet?: () => Promise<void>;
+    onBack?: () => void;
   }) => (
     <div data-testid="password-page" data-flow={props.flowType}>
       {props.addresses?.join(',')}
       {props.onRemoveWallet && (
         <button data-testid="password-remove" onClick={() => void props.onRemoveWallet?.()} />
       )}
+      {props.onBack && <button data-testid="password-back" onClick={props.onBack} />}
     </div>
   ),
 }));
@@ -286,5 +312,60 @@ describe('Extension popup with a wallet stored without a password', () => {
     const { queryByTestId } = render(<App />);
 
     expect(queryByTestId('password-page')).toBeNull();
+  });
+});
+
+describe('Extension popup onboarding: choosing networks', () => {
+  afterEach(() => {
+    cleanup();
+    accountsState.accounts = [{ id: 'account-1' }];
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    accountsState.accounts = [];
+    vi.stubGlobal('chrome', {
+      storage: { onChanged: { addListener: vi.fn(), removeListener: vi.fn() } },
+    });
+  });
+
+  it.each([
+    ['create', 'select-create', 'create-done'],
+    ['recover', 'select-recover', 'recover-done'],
+  ])('asks after the phrase on %s, and a choice opens the password', (flow, start, done) => {
+    render(<App />);
+    fireEvent.click(screen.getByTestId(start));
+    fireEvent.click(screen.getByTestId(done));
+
+    expect(screen.getByTestId('onboarding-networks-screen').getAttribute('data-flow')).toBe(flow);
+    expect(screen.queryByTestId('password-page')).toBeNull();
+
+    fireEvent.click(screen.getByTestId('networks-choose'));
+    expect(screen.getByTestId('password-page').getAttribute('data-flow')).toBe(flow);
+
+    fireEvent.click(screen.getByTestId('password-back'));
+    expect(screen.getByTestId('onboarding-networks-screen')).toBeTruthy();
+  });
+
+  it.each([
+    ['create', 'select-create', 'create-done'],
+    ['recover', 'select-recover', 'recover-done'],
+  ])('goes back from the question to the %s phrase', (_flow, start, done) => {
+    render(<App />);
+    fireEvent.click(screen.getByTestId(start));
+    fireEvent.click(screen.getByTestId(done));
+
+    fireEvent.click(screen.getByTestId('networks-back'));
+
+    expect(screen.getByTestId(done)).toBeTruthy();
+  });
+
+  it('never asks an install that already has a wallet', () => {
+    accountsState.accounts = [{ id: 'account-1' }];
+
+    render(<App />);
+
+    expect(screen.queryByTestId('onboarding-networks-screen')).toBeNull();
+    expect(screen.queryByTestId('select-page')).toBeNull();
   });
 });

@@ -26,7 +26,7 @@ vi.mock('../storage', () => ({
   STORAGE_KEYS: { SETTINGS: 'settings' },
 }));
 
-import { useUserConfig } from './useUserConfig';
+import { saveBitcoinChoice, useUserConfig } from './useUserConfig';
 import type { UserConfig } from '../types/account';
 import { DEFAULT_TOKEN_LIST_PREFERENCE } from '../utils/tokenListFold';
 
@@ -363,6 +363,29 @@ describe('useUserConfig — a write reaches every mounted instance', () => {
     });
 
     expect(reader.current.bitcoinEnabled).toBe(false);
+  });
+
+  it('shows every instance the choice onboarding saves, and keeps the other fields', async () => {
+    store.set('settings', {
+      explorers: { SOLANA: 'SOLANA_FM' },
+      developerNetworks: true,
+      showUnverifiedTokens: true,
+      tokenList: { maxCount: 5, minValue: 1 },
+    });
+    const reader = await mount();
+
+    await act(async () => {
+      await saveBitcoinChoice(false);
+    });
+
+    expect(reader.current.bitcoinEnabled).toBe(false);
+    expect(stored()).toEqual({
+      explorers: { SOLANA: 'SOLANA_FM' },
+      developerNetworks: true,
+      showUnverifiedTokens: true,
+      tokenList: { maxCount: 5, minValue: 1 },
+      bitcoinEnabled: false,
+    });
   });
 
   it('leaves an unmounted instance alone', async () => {
