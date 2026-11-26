@@ -77,6 +77,8 @@ export interface SettingsSelectorListPropsBase<T> {
   getPrimaryText: (item: T) => string;
   /** Return `undefined` to omit the row's subtitle. */
   getSecondaryText?: (item: T) => string | undefined;
+  /** Overrides the row's spoken "primary, secondary" name; `undefined` keeps it. */
+  getAccessibilityLabel?: (item: T) => string | undefined;
   /** Custom element before the text (a currency symbol, a glyph); `null` draws the text alone. */
   renderLeadingElement?: (item: T) => ReactNode;
   loading?: boolean;

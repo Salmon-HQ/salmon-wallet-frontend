@@ -18,6 +18,8 @@ export interface NetworkChoiceOption {
   bitcoinEnabled: boolean;
   label: string;
   description: string;
+  /** Read in place of `label` where its symbol does not read aloud ("+"). */
+  spokenLabel?: string;
 }
 
 export interface NetworkChoiceScreenKit {
@@ -63,6 +65,7 @@ export function createNetworkChoiceScreen(
           key: 'solana-bitcoin',
           bitcoinEnabled: true,
           label: t('wallet.networks.solana_bitcoin'),
+          spokenLabel: t('wallet.networks.solana_bitcoin_spoken'),
           description: t('wallet.networks.solana_bitcoin_description'),
         },
         {
@@ -115,6 +118,9 @@ export function createNetworkChoiceScreen(
             onSelect={(option) => void choose(option)}
             getPrimaryText={(option) => option.label}
             getSecondaryText={(option) => option.description}
+            getAccessibilityLabel={(option) =>
+              option.spokenLabel && `${option.spokenLabel}, ${option.description}`
+            }
             renderLeadingElement={noWell}
             testIdPrefix="onboarding-networks-option"
           />

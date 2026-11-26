@@ -547,6 +547,7 @@
     "networks": {
       "title": "Elegí tus redes",
       "solana_bitcoin": "Solana + Bitcoin",
+      "solana_bitcoin_spoken": "Solana y Bitcoin",
       "solana_bitcoin_description": "Usá Solana y Bitcoin en una sola wallet.",
       "solana_only": "Solo Solana",
       "solana_only_description": "Podés sumar Bitcoin después en Configuración."

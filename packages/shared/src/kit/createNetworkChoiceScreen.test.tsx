@@ -62,6 +62,7 @@ const kit: NetworkChoiceScreenKit = {
     onSelect,
     getPrimaryText,
     getSecondaryText,
+    getAccessibilityLabel,
     renderLeadingElement,
     testIdPrefix,
   }) => (
@@ -73,6 +74,7 @@ const kit: NetworkChoiceScreenKit = {
           data-testid={`${testIdPrefix}-${getKey(item)}`}
           data-well={renderLeadingElement?.(item) === null ? 'none' : 'drawn'}
           aria-pressed={isSelected(item)}
+          aria-label={getAccessibilityLabel?.(item)}
           onClick={() => onSelect(item)}
         >
           <span>{getPrimaryText(item)}</span>
@@ -121,6 +123,17 @@ describe('createNetworkChoiceScreen', () => {
       expect(screen.getByTestId(id).getAttribute('aria-pressed')).toBe('false');
       expect(screen.getByTestId(id).getAttribute('data-well')).toBe('none');
     }
+  });
+
+  it('speaks the plus as "and", and leaves "Solana only" to its own text', () => {
+    draw();
+
+    expect(
+      screen.getByRole('button', {
+        name: 'Solana and Bitcoin, Use Solana and Bitcoin in one wallet.',
+      })
+    ).toBeTruthy();
+    expect(screen.getByTestId(ONLY).hasAttribute('aria-label')).toBe(false);
   });
 
   it('has no Continue button: a row is the action', () => {

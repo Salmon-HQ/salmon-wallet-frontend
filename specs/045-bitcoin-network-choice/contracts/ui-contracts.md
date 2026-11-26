@@ -14,6 +14,8 @@ The owner approved the mocks in plan.md §Owner sign-off on 2026-11-25, as drawn
 
 Layout: `OnboardingLayout` `variant="content"` (recover's and password's variant, so the hero holds still across the step); `chrome` = `ScreenHeader` with back and step dots (create 3 of 4, recover 2 of 3); `mark` = `GlobeIcon`; `title` = `OnboardingTitle`; `body` = one `SettingsSelectorList` with two rows, primary + secondary text, no leading well, nothing selected; no `secondary`, no `action` (a row is the action).
 
+The "Solana + Bitcoin" row is spoken as `wallet.networks.solana_bitcoin_spoken` and its description (`getAccessibilityLabel`); its visible text keeps the plus.
+
 Test ids: `onboarding-networks-screen` (layout), `onboarding-networks-back` (header), `onboarding-networks-option-solana-bitcoin`, `onboarding-networks-option-solana-only` (`testIdPrefix="onboarding-networks-option"`), `onboarding-networks-error`.
 
 A choice that could not be saved keeps the screen and puts `errors.save_failed` in `assist`, announced (DOM `role="alert"`, mobile `announceForAccessibility`); the next tap clears it.
@@ -36,7 +38,7 @@ A choice that could not be saved keeps the screen and puts `errors.save_failed` 
 
 `PrivateKeyPanel` (DOM) and mobile `panelRegistry.tsx` `privateKey` pass `bitcoinEnabled` from `useDeveloperModeSettings()` to `buildNetworkListFromAccount`. No visual change.
 
-## Copy (11 keys, English and Spanish)
+## Copy (12 keys, English and Spanish)
 
 English is the owner's (decisions 6 and 7) except the confirmation, which is proposed here. Spanish is written by the implementer in voseo and reviewed by the owner in the pull request (spec FR-022).
 
@@ -44,6 +46,7 @@ English is the owner's (decisions 6 and 7) except the confirmation, which is pro
 | -------------------------------------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
 | `wallet.networks.title`                      | Choose your networks                                                                         | Elegí tus redes                                                                                     |
 | `wallet.networks.solana_bitcoin`             | Solana + Bitcoin                                                                             | Solana + Bitcoin                                                                                    |
+| `wallet.networks.solana_bitcoin_spoken`      | Solana and Bitcoin                                                                           | Solana y Bitcoin                                                                                    |
 | `wallet.networks.solana_bitcoin_description` | Use Solana and Bitcoin in one wallet.                                                        | Usá Solana y Bitcoin en una sola wallet.                                                            |
 | `wallet.networks.solana_only`                | Solana only                                                                                  | Solo Solana                                                                                         |
 | `wallet.networks.solana_only_description`    | You can add Bitcoin later in Settings.                                                       | Podés sumar Bitcoin después en Configuración.                                                       |
