@@ -132,7 +132,16 @@ test.describe('dApp security', () => {
     await window.waitForTimeout(1_500);
     await expect(window.getByTestId('approval-title')).toBeFocused();
     await expect(window.getByTestId('dapp-approve-button')).toBeDisabled();
-    // Tab reaches Deny: a person is in the window, and Approve turns on.
+    // A click leaves the focus where it lands, and that is not the keyboard.
+    // The first one takes the focus off the title, so the second moves it.
+    await window.locator('p').first().click();
+    await expect(window.getByTestId('approval-title')).not.toBeFocused();
+    await window.getByTestId('approval-title').click();
+    await expect(window.getByTestId('approval-title')).toBeFocused();
+    await expect(window.getByTestId('dapp-approve-button')).toBeDisabled();
+    // Tab reaches Deny: a person is in the window, and Approve turns on. Not
+    // within half a second of the click, which could be that click's focus.
+    await window.waitForTimeout(600);
     await window.keyboard.press('Tab');
     await expect(window.getByTestId('dapp-reject-button')).toBeFocused();
     await expect(window.getByTestId('dapp-approve-button')).toBeEnabled();

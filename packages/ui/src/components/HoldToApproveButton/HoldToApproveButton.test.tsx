@@ -119,6 +119,14 @@ describe('HoldToApproveButton', () => {
 
     expect(onApprove).not.toHaveBeenCalled();
     expect(screen.queryByTestId('hold-progress')).not.toBeInTheDocument();
+
+    // Turned back on, a new hold counts from zero and goes through.
+    rerender(<HoldToApproveButton onApprove={onApprove}>Hold to approve</HoldToApproveButton>);
+    fireEvent.pointerDown(screen.getByRole('button'));
+    advance(300);
+    expect(onApprove).not.toHaveBeenCalled();
+    advance(300);
+    expect(onApprove).toHaveBeenCalledTimes(1);
   });
 
   it('cannot be held while disabled', () => {

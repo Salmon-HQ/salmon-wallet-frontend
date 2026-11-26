@@ -3,7 +3,7 @@ import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { movePointer } from '../../test/armApproval';
-import { APPROVE_ARM_MS, useApprovalArming } from './useApprovalArming';
+import { APPROVE_ARM_MS, POINTER_FOCUS_MS, useApprovalArming } from './useApprovalArming';
 
 type Arming = { current: ReturnType<typeof useApprovalArming> };
 
@@ -105,7 +105,7 @@ describe('useApprovalArming', () => {
 
   // A click puts the focus on the control it lands on, and a page can lure a
   // click onto a spot it can compute. Only focus that moved with no pointer
-  // button down is a person using the keyboard or a screen reader.
+  // click put there is a person using the keyboard or a screen reader.
   it('stays unarmed when a click moves the focus onto a control', () => {
     const button = document.body.appendChild(document.createElement('button'));
     const { result } = renderHook(() => useApprovalArming());
@@ -118,6 +118,7 @@ describe('useApprovalArming', () => {
     });
     expect(result.current.armed).toBe(false);
 
+    act(() => vi.advanceTimersByTime(POINTER_FOCUS_MS));
     act(() => {
       button.blur();
       button.focus();
@@ -126,19 +127,33 @@ describe('useApprovalArming', () => {
     button.remove();
   });
 
-  // A press that began in the window can end outside it, and that release
-  // never arrives here. The keyboard must still work when the window is back.
-  it('forgets a pointer press whose release it never saw', () => {
+  // A touch tap sends its release before the browser moves the focus (on the
+  // mouse events it makes up afterwards), so "no button down" is not enough.
+  it('stays unarmed when a tap moves the focus after its release', () => {
     const button = document.body.appendChild(document.createElement('button'));
     const { result } = renderHook(() => useApprovalArming());
     wait();
 
     act(() => {
       window.dispatchEvent(new MouseEvent('pointerdown'));
-      window.dispatchEvent(new Event('blur'));
-      window.dispatchEvent(new Event('focus'));
+      window.dispatchEvent(new MouseEvent('pointerup'));
     });
+    act(() => vi.advanceTimersByTime(100));
+    act(() => button.focus());
+
+    expect(result.current.armed).toBe(false);
+    button.remove();
+  });
+
+  // A right click opens a menu that takes the release: the window never sees
+  // it, and never lost focus either. The keyboard must still work afterwards.
+  it('takes keyboard focus again after a press whose release it never saw', () => {
+    const button = document.body.appendChild(document.createElement('button'));
+    const { result } = renderHook(() => useApprovalArming());
     wait();
+
+    act(() => void window.dispatchEvent(new MouseEvent('pointerdown')));
+    act(() => vi.advanceTimersByTime(POINTER_FOCUS_MS));
     act(() => button.focus());
 
     expect(result.current.armed).toBe(true);
