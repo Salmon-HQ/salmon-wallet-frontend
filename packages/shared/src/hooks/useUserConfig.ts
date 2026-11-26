@@ -85,8 +85,14 @@ export interface UseUserConfigResult {
   setTokenListPreference: (next: Partial<TokenListPreference>) => Promise<void>;
   /** Whether Bitcoin is shown; on unless the user chose "Solana only" */
   bitcoinEnabled: boolean;
-  /** Shows or hides Bitcoin, moving a session standing on it to Solana first */
-  setBitcoinEnabled: (enabled: boolean, options?: ToggleDeveloperNetworksOptions) => Promise<void>;
+  /**
+   * Shows or hides Bitcoin, moving a session standing on it to Solana first.
+   * Resolves to whether the choice was stored.
+   */
+  setBitcoinEnabled: (
+    enabled: boolean,
+    options?: ToggleDeveloperNetworksOptions
+  ) => Promise<boolean>;
   /** Whether the configuration is still loading */
   isLoading: boolean;
 }
@@ -300,12 +306,13 @@ export function useUserConfig({
    * record so it runs twice: on this instance's copy, for the screen, and on
    * the stored record inside the write queue, so a second tap that lands
    * before the first write does is merged rather than computed from a stale
-   * copy. A failed write puts the screen back on what is stored.
+   * copy. A failed write puts the screen back on what is stored. Resolves to
+   * whether the change was stored.
    */
-  const commit = useCallback(
-    async (change: (config: UserConfig) => Partial<UserConfig>, what: string): Promise<void> => {
+  const tryCommit = useCallback(
+    async (change: (config: UserConfig) => Partial<UserConfig>, what: string): Promise<boolean> => {
       const current = configRef.current;
-      if (!current) return;
+      if (!current) return false;
       applyConfig({ ...current, ...change(current) });
 
       pendingWrites.current += 1;
@@ -315,6 +322,7 @@ export function useUserConfig({
         // The last write of this instance holds every earlier one, its own
         // and the other instances'.
         if (pendingWrites.current === 0) applyConfigRef.current(merged);
+        return true;
       } catch (error) {
         pendingWrites.current -= 1;
         console.error(`Failed to save ${what}:`, error);
@@ -325,9 +333,17 @@ export function useUserConfig({
         } catch {
           // Storage is unreadable too: the screen keeps what the user chose.
         }
+        return false;
       }
     },
     [applyConfig]
+  );
+
+  const commit = useCallback(
+    async (change: (config: UserConfig) => Partial<UserConfig>, what: string): Promise<void> => {
+      await tryCommit(change, what);
+    },
+    [tryCommit]
   );
 
   /**
@@ -439,7 +455,7 @@ export function useUserConfig({
    * reason `toggleDeveloperNetworks` does.
    */
   const setBitcoinEnabled = useCallback(
-    async (enabled: boolean, options?: ToggleDeveloperNetworksOptions): Promise<void> => {
+    async (enabled: boolean, options?: ToggleDeveloperNetworksOptions): Promise<boolean> => {
       if (
         !enabled &&
         options?.activeNetworkId &&
@@ -450,7 +466,7 @@ export function useUserConfig({
       }
       // The derived-account search skipped Bitcoin while it was hidden, so the
       // wallets it marked as searched are searched again.
-      await commit(
+      return tryCommit(
         (config) =>
           enabled && config.bitcoinEnabled === false
             ? { bitcoinEnabled: true, derivedScannedAccountIds: [] }
@@ -458,7 +474,7 @@ export function useUserConfig({
         'Bitcoin preference'
       );
     },
-    [commit]
+    [tryCommit]
   );
 
   return {

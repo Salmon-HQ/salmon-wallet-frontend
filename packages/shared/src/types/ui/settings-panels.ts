@@ -142,6 +142,11 @@ export interface ConfirmSheetPropsBase {
    * has already checked it with `validatePassword` by then.
    */
   onConfirm: (password?: string) => void | Promise<void>;
+  /**
+   * What the sheet says, announced, when `onConfirm` rejects. The sheet stays
+   * open on a rejection either way; without this it says nothing.
+   */
+  errorText?: string;
 }
 
 /** DerivedAccountCard — a selectable account found by a derivation scan. */

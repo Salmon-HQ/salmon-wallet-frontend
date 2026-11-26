@@ -31,7 +31,11 @@ export interface DeveloperModeContextValue {
   tokenListPreference: TokenListPreference;
   setTokenListPreference: (next: Partial<TokenListPreference>) => Promise<void>;
   bitcoinEnabled: boolean;
-  setBitcoinEnabled: (enabled: boolean, options?: ToggleDeveloperNetworksOptions) => Promise<void>;
+  /** Resolves to whether the choice was stored. */
+  setBitcoinEnabled: (
+    enabled: boolean,
+    options?: ToggleDeveloperNetworksOptions
+  ) => Promise<boolean>;
 }
 
 const noop = async () => {};
@@ -44,7 +48,8 @@ const DeveloperModeContext = createContext<DeveloperModeContextValue>({
   tokenListPreference: DEFAULT_TOKEN_LIST_PREFERENCE,
   setTokenListPreference: noop,
   bitcoinEnabled: true,
-  setBitcoinEnabled: noop,
+  // Nothing is stored without the provider.
+  setBitcoinEnabled: async () => false,
 });
 
 export function DeveloperModeProvider({ children }: { children: React.ReactNode }) {

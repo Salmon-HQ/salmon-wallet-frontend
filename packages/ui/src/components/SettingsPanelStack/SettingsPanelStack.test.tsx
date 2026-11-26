@@ -32,7 +32,11 @@ const mockHandleToggleDeveloperNetworks = vi.fn();
 const mockHandleToggleUnverifiedTokens = vi.fn();
 // The Bitcoin cases run the real hook over a faked provider slice, so the
 // confirmation they draw is the hook's own.
-const mockBitcoin = vi.hoisted(() => ({ real: false, enabled: true, setBitcoinEnabled: vi.fn() }));
+const mockBitcoin = vi.hoisted(() => ({
+  real: false,
+  enabled: true,
+  setBitcoinEnabled: vi.fn(async (..._args: unknown[]) => true),
+}));
 vi.mock('@salmon/shared', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@salmon/shared')>();
   return {
@@ -376,5 +380,6 @@ describe('SettingsPanelStack — the Bitcoin switch', () => {
     await waitFor(() =>
       expect(mockBitcoin.setBitcoinEnabled).toHaveBeenCalledWith(false, expect.any(Object))
     );
+    await waitFor(() => expect(screen.queryByText('settings.bitcoin_off_title')).toBeNull());
   });
 });

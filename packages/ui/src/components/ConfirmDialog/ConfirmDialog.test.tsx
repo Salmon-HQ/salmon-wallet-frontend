@@ -140,4 +140,20 @@ describe('ConfirmDialog: the safe path is the default one', () => {
     renderConfirm(false);
     expect(screen.queryByTestId('confirm-dialog-bedrock')).toBeNull();
   });
+
+  it('stays open and announces its error text when the action fails', async () => {
+    const quiet = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const onClose = vi.fn();
+    renderConfirm(false, {
+      onClose,
+      onConfirm: vi.fn().mockRejectedValue(new Error('not stored')),
+      errorText: 'Could not save',
+    });
+
+    fireEvent.click(screen.getByTestId('confirm'));
+
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toBe('Could not save'));
+    expect(onClose).not.toHaveBeenCalled();
+    quiet.mockRestore();
+  });
 });

@@ -14,7 +14,9 @@ The owner approved the mocks in plan.md §Owner sign-off on 2026-11-25, as drawn
 
 Layout: `OnboardingLayout` `variant="content"` (recover's and password's variant, so the hero holds still across the step); `chrome` = `ScreenHeader` with back and step dots (create 3 of 4, recover 2 of 3); `mark` = `GlobeIcon`; `title` = `OnboardingTitle`; `body` = one `SettingsSelectorList` with two rows, primary + secondary text, no leading well, nothing selected; no `secondary`, no `action` (a row is the action).
 
-Test ids: `onboarding-networks-screen` (layout), `onboarding-networks-back` (header), `onboarding-networks-option-solana-bitcoin`, `onboarding-networks-option-solana-only` (`testIdPrefix="onboarding-networks-option"`).
+Test ids: `onboarding-networks-screen` (layout), `onboarding-networks-back` (header), `onboarding-networks-option-solana-bitcoin`, `onboarding-networks-option-solana-only` (`testIdPrefix="onboarding-networks-option"`), `onboarding-networks-error`.
+
+A choice that could not be saved keeps the screen and puts `errors.save_failed` in `assist`, announced (DOM `role="alert"`, mobile `announceForAccessibility`); the next tap clears it.
 
 ## Settings row "Bitcoin"
 
@@ -28,13 +30,13 @@ Test ids: `onboarding-networks-screen` (layout), `onboarding-networks-back` (hea
 
 ## Confirmation "Hide Bitcoin?"
 
-`<ConfirmDialog {...bitcoinConfirm} />` inside `SettingsPanelStack`; `<ConfirmSheet {...bitcoinConfirm} />` in mobile `settings/index.tsx`. Not a danger sheet: Cancel is the secondary shell, the confirm is the primary. Test ids are the sheet's own: `confirm-dialog-confirm`, `confirm-dialog-cancel`.
+`<ConfirmDialog {...bitcoinConfirm} />` inside `SettingsPanelStack`; `<ConfirmSheet {...bitcoinConfirm} />` in mobile `settings/index.tsx`. Not a danger sheet: Cancel is the secondary shell, the confirm is the primary. Test ids are the sheet's own: `confirm-dialog-confirm`, `confirm-dialog-cancel`, `confirm-dialog-error`. A choice that could not be stored keeps the sheet open on `errors.save_failed` (`errorText`), announced; the sheet cannot be dismissed while the confirm runs.
 
 ## Private key screen
 
 `PrivateKeyPanel` (DOM) and mobile `panelRegistry.tsx` `privateKey` pass `bitcoinEnabled` from `useDeveloperModeSettings()` to `buildNetworkListFromAccount`. No visual change.
 
-## Copy (10 keys, English and Spanish)
+## Copy (11 keys, English and Spanish)
 
 English is the owner's (decisions 6 and 7) except the confirmation, which is proposed here. Spanish is written by the implementer in voseo and reviewed by the owner in the pull request (spec FR-022).
 
@@ -50,5 +52,6 @@ English is the owner's (decisions 6 and 7) except the confirmation, which is pro
 | `settings.bitcoin_off_title`                 | Hide Bitcoin?                                                                                | ¿Ocultar Bitcoin?                                                                                   |
 | `settings.bitcoin_off_message`               | Your Bitcoin stays in your wallet. It shows again when you turn Bitcoin back on in Settings. | Tus bitcoins siguen en tu wallet. Vuelven a verse cuando activás Bitcoin otra vez en Configuración. |
 | `settings.bitcoin_off_confirm`               | Hide Bitcoin                                                                                 | Ocultar Bitcoin                                                                                     |
+| `errors.save_failed`                         | Couldn't save your choice. Try again.                                                        | No se pudo guardar tu elección. Intentá de nuevo.                                                   |
 
 The cancel button keeps `actions.cancel`.

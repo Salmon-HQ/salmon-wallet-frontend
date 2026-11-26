@@ -202,11 +202,11 @@ describe('useUserConfig — the token list preference', () => {
 
 describe('useUserConfig — a second tap before the first write lands', () => {
   /** Runs `taps` one render apart while storage is slow, then lets the writes through. */
-  const tapWhileSaving = async (taps: Array<() => Promise<void>>) => {
+  const tapWhileSaving = async (taps: Array<() => Promise<unknown>>) => {
     hold = new Promise<void>((resolve) => {
       release = resolve;
     });
-    const pending: Promise<void>[] = [];
+    const pending: Promise<unknown>[] = [];
     for (const tap of taps) {
       act(() => {
         pending.push(tap());
@@ -293,7 +293,7 @@ describe('useUserConfig — a second tap before the first write lands', () => {
 
     const finish = await tapWhileSaving([() => result.current.setBitcoinEnabled(false)]);
     expect(result.current.bitcoinEnabled).toBe(false);
-    let second: Promise<void> = Promise.resolve();
+    let second: Promise<unknown> = Promise.resolve();
     act(() => {
       second = result.current.setBitcoinEnabled(true);
     });
@@ -319,7 +319,7 @@ describe('useUserConfig — a second tap before the first write lands', () => {
     hold = new Promise<void>((resolve) => {
       releaseSecond = resolve;
     });
-    let second: Promise<void> = Promise.resolve();
+    let second: Promise<unknown> = Promise.resolve();
     act(() => {
       second = result.current.setBitcoinEnabled(true);
     });
@@ -360,7 +360,7 @@ describe('useUserConfig — a write reaches every mounted instance', () => {
     hold = new Promise<void>((resolve) => {
       release = resolve;
     });
-    const pending: Promise<void>[] = [];
+    const pending: Promise<unknown>[] = [];
     act(() => {
       pending.push(other.current.markDerivedScanned('w1'));
     });

@@ -31,7 +31,10 @@ jest.mock('react-native-safe-area-context', () => {
   };
 });
 
-const mockBitcoin = { enabled: true, setBitcoinEnabled: jest.fn(async () => {}) };
+const mockBitcoin = {
+  enabled: true,
+  setBitcoinEnabled: jest.fn(async (..._args: unknown[]) => true),
+};
 const mockChangeNetwork = jest.fn(async (_id: string) => {});
 
 jest.mock('../../../../packages/shared/src/contexts/DeveloperModeContext', () => ({

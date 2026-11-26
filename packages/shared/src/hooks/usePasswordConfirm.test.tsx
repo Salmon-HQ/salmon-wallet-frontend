@@ -80,4 +80,66 @@ describe('usePasswordConfirm', () => {
     expect(result.current.password).toBe('');
     expect(result.current.passwordError).toBeUndefined();
   });
+
+  it('stays open and shows the error text when the action fails, until the next try', async () => {
+    const onConfirm = vi.fn().mockRejectedValueOnce(new Error('not stored'));
+    const quiet = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { result, onClose } = setup({
+      requirePassword: false,
+      onConfirm,
+      errorText: 'Could not save',
+    });
+    await act(() => result.current.confirm());
+    quiet.mockRestore();
+
+    expect(result.current.actionError).toBe('Could not save');
+    expect(result.current.loading).toBe(false);
+    expect(onClose).not.toHaveBeenCalled();
+
+    let finish = () => {};
+    onConfirm.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        finish = resolve;
+      })
+    );
+    let pending: Promise<void> = Promise.resolve();
+    act(() => {
+      pending = result.current.confirm();
+    });
+    expect(result.current.actionError).toBeUndefined();
+    await act(async () => {
+      finish();
+      await pending;
+    });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('says nothing about a failed action when the sheet has no error text', async () => {
+    const quiet = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { result, onClose } = setup({
+      requirePassword: false,
+      onConfirm: vi.fn().mockRejectedValueOnce(new Error('boom')),
+    });
+    await act(() => result.current.confirm());
+    quiet.mockRestore();
+
+    expect(result.current.actionError).toBeUndefined();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('clears the action error when the sheet opens again', async () => {
+    const quiet = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { result, rerender, params } = setup({
+      requirePassword: false,
+      onConfirm: vi.fn().mockRejectedValueOnce(new Error('boom')),
+      errorText: 'Could not save',
+    });
+    await act(() => result.current.confirm());
+    quiet.mockRestore();
+    expect(result.current.actionError).toBe('Could not save');
+
+    rerender({ ...params, visible: false });
+    rerender({ ...params, visible: true });
+    expect(result.current.actionError).toBeUndefined();
+  });
 });

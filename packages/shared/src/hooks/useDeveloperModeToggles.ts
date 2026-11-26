@@ -64,12 +64,15 @@ export function useDeveloperModeToggles(): UseDeveloperModeTogglesResult {
     visible: confirmingBitcoinOff,
     onClose: () => setConfirmingBitcoinOff(false),
     onConfirm: async () => {
-      await setBitcoinEnabled(false, {
+      const stored = await setBitcoinEnabled(false, {
         activeNetworkId: networkId,
         changeNetwork: accountActions.changeNetwork,
       });
+      // Throwing keeps the sheet open on `errorText`.
+      if (!stored) throw new Error('The Bitcoin choice was not stored');
       setConfirmingBitcoinOff(false);
     },
+    errorText: t('errors.save_failed'),
     title: t('settings.bitcoin_off_title'),
     message: t('settings.bitcoin_off_message'),
     confirmText: t('settings.bitcoin_off_confirm'),

@@ -40,6 +40,7 @@ export function ConfirmDialog({
   requirePassword = false,
   validatePassword,
   onConfirm,
+  errorText,
   confirmTestID,
   children,
   bedrock = false,
@@ -51,10 +52,19 @@ export function ConfirmDialog({
     password,
     passwordError,
     loading,
+    actionError,
     canConfirm,
     setPassword: handlePasswordChange,
     confirm: handleConfirm,
-  } = usePasswordConfirm({ visible, requirePassword, validatePassword, onConfirm, onClose, t });
+  } = usePasswordConfirm({
+    visible,
+    requirePassword,
+    validatePassword,
+    onConfirm,
+    onClose,
+    errorText,
+    t,
+  });
 
   return (
     <BottomSheetContainer
@@ -128,6 +138,23 @@ export function ConfirmDialog({
             testID="confirm-dialog-password"
           />
         )}
+
+        {actionError ? (
+          <p
+            role="alert"
+            data-testid="confirm-dialog-error"
+            style={{
+              margin: 0,
+              color: status.danger,
+              fontFamily: fontFamily.sans,
+              fontSize: fontSize.body,
+              lineHeight: lineHeight.snug,
+              textAlign: 'center',
+            }}
+          >
+            {actionError}
+          </p>
+        ) : null}
 
         {acknowledgeOnly ? null : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}>

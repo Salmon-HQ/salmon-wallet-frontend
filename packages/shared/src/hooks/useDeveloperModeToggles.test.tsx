@@ -34,7 +34,7 @@ const developerModeMock = vi.mocked(useDeveloperModeSettings);
 const changeNetwork = vi.fn();
 const toggleDeveloperNetworks = vi.fn();
 const setShowUnverifiedTokens = vi.fn();
-const setBitcoinEnabled = vi.fn(async () => {});
+const setBitcoinEnabled = vi.fn(async (..._args: unknown[]) => true);
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -141,5 +141,16 @@ describe('useDeveloperModeToggles — the Bitcoin switch', () => {
         'Your Bitcoin stays in your wallet. It shows again when you turn Bitcoin back on in Settings.',
       confirmText: 'Hide Bitcoin',
     });
+  });
+
+  it('fails the confirm when the choice was not stored, so the sheet stays and says so', async () => {
+    setBitcoinEnabled.mockResolvedValueOnce(false);
+    const { result } = renderHook(() => useDeveloperModeToggles());
+
+    act(() => result.current.handleToggleBitcoin(false));
+    await expect(result.current.bitcoinConfirm.onConfirm()).rejects.toThrow();
+
+    expect(result.current.bitcoinConfirm.visible).toBe(true);
+    expect(result.current.bitcoinConfirm.errorText).toBe("Couldn't save your choice. Try again.");
   });
 });

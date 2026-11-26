@@ -130,4 +130,27 @@ describe('useUserConfig — the Bitcoin choice', () => {
     expect(result.current.bitcoinEnabled).toBe(true);
     expect(stored().bitcoinEnabled).toBe(true);
   });
+
+  it('resolves to whether the choice was stored, and shows what is stored when it was not', async () => {
+    store.set('settings', fullRecord);
+    const result = await mount();
+
+    setItem.mockRejectedValueOnce(new Error('disk full'));
+    const quiet = vi.spyOn(console, 'error').mockImplementation(() => {});
+    let stored1: boolean | undefined;
+    await act(async () => {
+      stored1 = await result.current.setBitcoinEnabled(false);
+    });
+    quiet.mockRestore();
+
+    expect(stored1).toBe(false);
+    expect(result.current.bitcoinEnabled).toBe(true);
+
+    let stored2: boolean | undefined;
+    await act(async () => {
+      stored2 = await result.current.setBitcoinEnabled(false);
+    });
+    expect(stored2).toBe(true);
+    expect(stored().bitcoinEnabled).toBe(false);
+  });
 });

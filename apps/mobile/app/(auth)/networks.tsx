@@ -21,8 +21,10 @@ import {
   type SettingsSelectorListPropsBase,
 } from '@salmon/shared';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, type ReactNode } from 'react';
-import { AccessibilityInfo, Text, View } from 'react-native';
+import type { ReactNode } from 'react';
+import { Text, View } from 'react-native';
+
+import { useAnnounce } from '../../hooks/useAnnounce';
 
 import {
   OnboardingLayout,
@@ -38,12 +40,9 @@ function Mark() {
   return <GlobeIcon size={componentSizes.logoSizeSmall} color={semantic.text.primary} />;
 }
 
-// iOS reads no live region, so the line is announced as it mounts on both.
 function Alert({ testID, children }: { testID: string; children: ReactNode }) {
   const semantic = useSemantic();
-  useEffect(() => {
-    if (typeof children === 'string') AccessibilityInfo.announceForAccessibility(children);
-  }, [children]);
+  useAnnounce(typeof children === 'string' ? children : undefined);
   return (
     <Text
       testID={testID}
