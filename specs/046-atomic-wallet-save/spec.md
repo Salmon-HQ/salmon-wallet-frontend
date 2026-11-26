@@ -159,6 +159,7 @@ On the mobile setup password screen, the user goes back after a failed save; the
 - **FR-004**: After a failed or interrupted save, the active wallet, its network, its account slot and the name counter MUST be what they were before the attempt.
 - **FR-005**: After a failed or interrupted save, the password that opened the wallet before the attempt MUST still open it.
 - **FR-006**: When the wallet list is empty at launch, a vault left on the device MUST be discarded and the app MUST open to the welcome screen as a fresh install, where a new setup with any password succeeds. This covers a first save that failed or was interrupted, and a vault left behind after the last listed wallet was removed. A vault MUST NOT be discarded while any wallet is listed. (Owner decision, 2026-11-26.)
+- **FR-006a**: The discard in FR-006 MUST NOT apply to a vault kept in the clear for a wallet that was migrated without a password (it is that owner's only copy, and it opens through "protect wallet"), MUST NOT run while data from an older version of the wallet is still waiting to be migrated, and MUST NOT run when the wallet list could not be read: a failed read is not an empty list. It runs inside the exclusive write turn, so a save in another window is never discarded mid-way.
 
 **What the window shows follows storage**
 
