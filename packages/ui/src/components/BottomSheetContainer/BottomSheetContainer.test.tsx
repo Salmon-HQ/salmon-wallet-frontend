@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { asRenderedColor, renderInMode } from '../../test/renderInMode';
 import { BottomSheetContainer } from './BottomSheetContainer';
+import { SheetTitle } from './SheetTitle';
 
 function stubMatchMedia(reduceMotion: boolean) {
   vi.stubGlobal(
@@ -54,6 +55,38 @@ describe('BottomSheetContainer', () => {
       </BottomSheetContainer>
     );
     expect(screen.getByTestId('probe').textContent).toBe('420');
+  });
+
+  it('is named by its title and described by what the caller points at', () => {
+    stubMatchMedia(false);
+    renderInMode(
+      'dark',
+      <BottomSheetContainer
+        visible
+        onClose={vi.fn()}
+        testID="sheet"
+        title={<SheetTitle subtitle="A hint">Hide Bitcoin?</SheetTitle>}
+        describedBy="message"
+      >
+        <p id="message">Your Bitcoin stays.</p>
+      </BottomSheetContainer>
+    );
+
+    const dialog = screen.getByRole('dialog', { name: 'Hide Bitcoin?' });
+    expect(dialog.getAttribute('aria-describedby')).toBe('message');
+  });
+
+  it('carries no dangling label when it has no title', () => {
+    stubMatchMedia(false);
+    renderInMode(
+      'dark',
+      <BottomSheetContainer visible onClose={vi.fn()} testID="sheet">
+        <div>sheet body</div>
+      </BottomSheetContainer>
+    );
+
+    expect(screen.getByTestId('sheet').hasAttribute('aria-labelledby')).toBe(false);
+    expect(screen.getByTestId('sheet').hasAttribute('aria-describedby')).toBe(false);
   });
 
   it('renders nothing when not visible', () => {

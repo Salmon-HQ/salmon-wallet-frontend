@@ -15,7 +15,7 @@
  * the detail and the message each in a card, 20 between blocks, and no
  * buttons at all on a sheet that only reports something.
  */
-import React from 'react';
+import React, { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { fontFamily, fontSize, lineHeight, spacing, usePasswordConfirm } from '@salmon/shared';
 
@@ -47,6 +47,7 @@ export function ConfirmDialog({
 }: ConfirmDialogProps): React.ReactElement {
   const { t } = useTranslation();
   const { status, text, surface } = useSemantic();
+  const messageId = useId();
   // The gate's state lives once, in shared; this sheet only renders it.
   const {
     password,
@@ -72,6 +73,7 @@ export function ConfirmDialog({
       onClose={onClose}
       onClosed={onClosed}
       dismissible={!loading}
+      describedBy={messageId}
       testID="confirm-dialog"
       background={
         bedrock ? (
@@ -110,6 +112,7 @@ export function ConfirmDialog({
 
         <Card padding="lg" gap={spacing.md}>
           <p
+            id={messageId}
             data-testid="confirm-dialog-message"
             style={{
               margin: 0,

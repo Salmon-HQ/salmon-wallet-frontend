@@ -156,4 +156,14 @@ describe('ConfirmDialog: the safe path is the default one', () => {
     expect(onClose).not.toHaveBeenCalled();
     quiet.mockRestore();
   });
+
+  it('is announced by its title and its message', () => {
+    renderConfirm(false);
+    const dialog = screen.getByRole('dialog', { name: 'Reset Wallet' });
+    const describedBy = dialog.getAttribute('aria-describedby');
+    expect(describedBy).toBeTruthy();
+    expect(document.getElementById(describedBy as string)?.textContent).toBe(
+      'This erases every wallet on this device.'
+    );
+  });
 });

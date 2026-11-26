@@ -24,4 +24,6 @@ export interface BottomSheetContainerProps extends BottomSheetContainerPropsBase
   /** Layout the parent owns. */
   style?: CSSProperties;
   className?: string;
+  /** The id of the element that describes the sheet (`aria-describedby`). */
+  describedBy?: string;
 }
