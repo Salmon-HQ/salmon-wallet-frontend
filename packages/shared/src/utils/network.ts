@@ -6,6 +6,7 @@
  * @module utils/network
  */
 
+import { getBlockchainFromNetworkId } from '../config/blockchains';
 import type { BlockchainType } from '../types/blockchain';
 import type { BlockchainBalance, BlockchainId } from '../types/ui/balance-card';
 import { NETWORK_DISPLAY } from './networkDisplay';
@@ -149,7 +150,7 @@ export interface VisibleNetworkIdsParams {
 
 /** False only for a Bitcoin network while the user chose "Solana only". */
 export function isNetworkChosen(networkId: string, bitcoinEnabled: boolean): boolean {
-  return bitcoinEnabled || networkId.split('-')[0] !== 'bitcoin';
+  return bitcoinEnabled || getBlockchainFromNetworkId(networkId) !== 'bitcoin';
 }
 
 /**
