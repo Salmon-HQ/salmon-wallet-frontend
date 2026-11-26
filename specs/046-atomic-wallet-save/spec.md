@@ -63,7 +63,7 @@ A user's save fails and they press the button again; or the save succeeded but a
 
 **Acceptance Scenarios**:
 
-1. **Given** a save that failed at any position, **When** the user retries, **Then** exactly one wallet holds that recovery phrase at that position, and the vault holds that secret once for it.
+1. **Given** a save that failed at any position, **When** the user retries, **Then** exactly one wallet holds that recovery phrase at that position.
 2. **Given** a save that succeeded and a later step on the same screen that failed, **When** the user presses the button again, **Then** no second wallet is stored.
 3. **Given** a save that succeeded but whose success never reached the screen (a follow-up write failed after the wallet was stored), **When** the user looks at the wallet, **Then** the save is reported as done, not as an error.
 
@@ -135,7 +135,7 @@ On the mobile setup password screen, the user goes back after a failed save; the
 
 ### Edge Cases
 
-- **A secret already in the vault but in no wallet** (left by an earlier failed save or an interrupted removal). Saving a wallet with that exact secret takes it over: the vault ends with one copy, owned by the new wallet. Other unlisted secrets stay exactly as they are.
+- **A secret already in the vault that no wallet lists** (left by an earlier failed save). Saving a wallet with that same secret lists it under the new wallet; the earlier copy stays in the vault, unlisted and invisible, and nothing is removed.
 - **Derived accounts share a phrase.** A derived wallet holds the same recovery phrase as the wallet it came from, at another position. That is not a duplicate; the same phrase at the same starting position is.
 - **A private key for an address a phrase wallet already derives** is refused, as today.
 - **Two extension windows add the same wallet at once.** The second save, waiting for the first, finds the wallet stored and is refused; exactly one wallet results.
@@ -158,7 +158,7 @@ On the mobile setup password screen, the user goes back after a failed save; the
 - **FR-003**: Correctness MUST NOT depend on several records being written together. On every platform, a write of several records is treated as separate writes that can stop between any two.
 - **FR-004**: After a failed or interrupted save, the active wallet, its network and its account slot MUST be what they were before the attempt, and a name counter left behind by an interrupted save MUST be brought back to at least the number of listed wallets by the next save.
 - **FR-005**: After a failed or interrupted save, the password that opened the wallet before the attempt MUST still open it.
-- **FR-006**: No vault is ever discarded automatically. A first save that fails or is interrupted after the vault was written leaves that vault in place: the password chosen in that attempt is the one that opens the device, a repeated setup with that password saves the wallet, and a repeated setup of the same recovery phrase takes over the copy already in the vault instead of adding a second one (FR-016). (Owner decision, 2026-11-26, after four review rounds each found a way an automatic discard could delete a real wallet's vault.)
+- **FR-006**: No vault is ever discarded automatically. A first save that fails or is interrupted after the vault was written leaves that vault in place: the password chosen in that attempt is the one that opens the device, a repeated setup with that password saves the wallet, and a repeated setup of the same recovery phrase ends with exactly one wallet (FR-014). (Owner decision, 2026-11-26, after four review rounds each found a way an automatic discard could delete a real wallet's vault.)
 
 **What the window shows follows storage**
 
@@ -177,12 +177,12 @@ On the mobile setup password screen, the user goes back after a failed save; the
 
 **Reads and writes that lie**
 
-- **FR-015a**: A change MUST NOT proceed on a read that contradicts the rest of what the device holds: a vault that reads as missing while a wallet is listed or older-version data is present, a vault that is present but unreadable, or a wallet list that reads as empty while the open window holds wallets. The change is refused and nothing is written. An empty vault is assumed only for a first save.
+- **FR-015a**: A change MUST NOT proceed on a read that contradicts the rest of what the device holds: a vault that reads as missing while a wallet is listed or older-version data is present, a vault that is present but unreadable while a wallet is listed, a vault that reads as missing while the device still holds the name counter every saved wallet leaves, or a wallet list that reads as empty while the open window holds wallets. The change is refused and nothing is written. An empty vault is assumed only for a first save.
 - **FR-015b**: When the deciding write reports a failure, the change MUST be settled by reading that record back: if it holds the change, the change is treated as done; if not, the change is refused. Either way the window is then brought in line with what storage holds. A refused change is therefore safe to retry.
 
 **Key material**
 
-- **FR-016**: No change MUST delete a secret as a side effect. The only secret a save may drop from the vault is an unlisted copy of the exact secret it is saving, which the new wallet takes over, so the vault ends with that secret exactly once. Every other unlisted secret MUST be kept unchanged. A Seed Vault replacement (FR-013) is not a side effect: it removes the replaced account's entry, which holds no key, once the new one is listed.
+- **FR-016**: No change MUST delete a secret as a side effect, and a save MUST NOT remove any entry from the vault: a copy of the same secret left unlisted by an earlier failed attempt stays where it is, harmless and invisible. The one removal a save makes is the entry of a Seed Vault account it replaces (FR-013), which holds no key, and only after the new one is listed.
 - **FR-017**: After any change, completed or interrupted, every listed wallet MUST have its secret in the vault.
 
 **Backup pending**
@@ -217,8 +217,8 @@ On the mobile setup password screen, the user goes back after a failed save; the
 - **SC-001**: For saving, removing and editing a wallet, every write position tested as a failure and every gap between two writes tested as a process death (100% of positions) ends in the before-state or the after-state, in memory and after a fresh load.
 - **SC-002**: Across every failure position followed by a retry, and every "success then later-step failure" followed by a second press, the number of wallets holding that secret is exactly one, shown by the shared tests and the screen tests of each setup screen; the end-to-end setup flows on the three platforms stay green (no device can be made to fail a write on demand).
 - **SC-003**: Every duplicate attempt, in every entry point, including one where only storage knows the wallet (added by another window), stores nothing and shows the existing duplicate message; a Seed Vault account already listed is replaced instead, with no message.
-- **SC-004**: After any tested failure or interruption, the vault holds no unlisted copy of the secret that was being saved once a retry succeeds, and every secret that was in the vault before is still there.
-- **SC-005**: After any tested failure or interruption of a first save, no vault is deleted, the password chosen in that attempt opens the device, and a repeated setup of the same recovery phrase ends with exactly one wallet and one copy of its secret.
+- **SC-004**: After any tested failure or interruption, every secret that was in the vault before is still there, and every listed wallet has its secret.
+- **SC-005**: After any tested failure or interruption of a first save, no vault is deleted, the password chosen in that attempt opens the device, and a repeated setup of the same recovery phrase ends with exactly one wallet.
 - **SC-006**: Zero new user-facing strings, or every new one approved by the owner in both languages.
 - **SC-007**: Every gate the repository already runs (typecheck, lint, unit tests, DOM parity, i18n, dead code) and the end-to-end setup flows on extension, iPhone simulator and Android emulator stay green.
 
@@ -229,7 +229,7 @@ On the mobile setup password screen, the user goes back after a failed save; the
 - **The exclusive write turn already exists**: every change to the stored wallets runs one at a time, across extension windows and within the mobile app.
 - **Owner question defaults** (see below) are in force until answered: no vault is discarded automatically (FR-006, owner decision); a later-step failure after a save moves on (FR-015); duplicates are refused, not switched to (FR-012); Seed Vault replaces (FR-013); on mobile recover with wallets stored, a save is refused unless the password typed opens the vault (FR-005).
 - **Sensitive area.** The change touches vault and storage writes; it gets human sign-off and an adversarial review before it merges, per the architecture guide.
-- **Out of scope**: changing the stored format or migrating existing data; changing the password, protecting a password-less wallet, and the legacy v2 migration; removing unlisted secrets other than the copy of the secret being saved; the storage library and what backs it; addresses added inside an existing wallet by the derived-account search ("Check derivables").
+- **Out of scope**: changing the stored format or migrating existing data; changing the password, protecting a password-less wallet, and the legacy v2 migration; removing unlisted secrets; the storage library and what backs it; how the derived-account search ("Check derivables") reports a wallet it could not add: it adds whole wallets through the same save, so the duplicate rule applies to it, and a refusal there stays silent as today (logged, the search moves on).
 
 ## Questions for the owner
 
