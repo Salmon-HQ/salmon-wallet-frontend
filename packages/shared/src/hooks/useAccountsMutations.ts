@@ -11,8 +11,8 @@ import { releaseSeedVaultAccess } from '../blockchain/solana/seed-vault-signer';
 import {
   clearAccountsStorage,
   persistActiveSelection,
-  readStoredAccounts,
-  readStoredSecrets,
+  readStoredList,
+  readStoredWallets,
   withVaultWriteLock,
   writeStoredAccounts,
 } from './useAccountsMutationHelpers';
@@ -34,7 +34,12 @@ interface UseAccountsMutationsParams {
   /** A wallet waiting for a password is one this window holds too. */
   setUnprotectedAddresses: Dispatch<SetStateAction<string[] | null>>;
   formatAccountForStorage: (account: Account) => StoredAccount;
+  /** Reloads memory from storage, writing nothing and never failing. */
+  refreshFromStorage: () => Promise<void>;
 }
+
+/** Writes the stored list; a write that threw unsettled is remembered by the caller. */
+type WriteList = (stored: StoredAccount[]) => Promise<void>;
 
 interface UseAccountsMutationsResult {
   /** `replaces`: the id of a wallet the new one takes the place of, in the same write. */
@@ -65,7 +70,34 @@ export function useAccountsMutations({
   setTokens,
   setUnprotectedAddresses,
   formatAccountForStorage,
+  refreshFromStorage,
 }: UseAccountsMutationsParams): UseAccountsMutationsResult {
+  /**
+   * Runs a change under the write lock. When its list write threw and the
+   * read-back could not confirm it, memory may no longer match storage either
+   * way, so it is reloaded from storage once the lock is released.
+   */
+  const withListWrite = useCallback(
+    async (change: (writeList: WriteList) => Promise<void>): Promise<void> => {
+      let unsettled = false;
+      const writeList: WriteList = async (stored) => {
+        try {
+          await writeStoredAccounts(stored, { own: true });
+        } catch (err) {
+          unsettled = true;
+          throw err;
+        }
+      };
+      try {
+        await withVaultWriteLock(() => change(writeList));
+      } catch (err) {
+        if (unsettled) await refreshFromStorage();
+        throw err;
+      }
+    },
+    [refreshFromStorage]
+  );
+
   const forgetAccounts = useCallback((): void => {
     setLocked(false);
     setRequiredLock(false);
@@ -112,7 +144,7 @@ export function useAccountsMutations({
 
   const addAccount = useCallback(
     (account: Account, password?: string, replaces?: string): Promise<void> =>
-      withVaultWriteLock(async () => {
+      withListWrite(async (writeList) => {
         const newCounter = counter + 1;
         const newAccounts = [...accounts.filter(({ id }) => id !== replaces), account];
         const newAccountId = account.id;
@@ -125,8 +157,7 @@ export function useAccountsMutations({
 
         // The change lands on what storage holds, not on this window's copy:
         // another window may have added a wallet this one has not loaded.
-        const secrets = await readStoredSecrets(password);
-        const stored = await readStoredAccounts();
+        const { list: stored, secrets } = await readStoredWallets(accounts.length > 0, password);
         const newVault = { ...secrets, [account.id]: toStoredSecret(account.secret) };
         if (replaces) delete newVault[replaces];
         const newStored = [
@@ -161,13 +192,14 @@ export function useAccountsMutations({
         // back on an empty slot after the next launch.
         await persistActiveSelection(newAccountId, newSlot);
         // The list goes last: a window that re-reads on it finds the rest written.
-        await writeStoredAccounts(newStored);
+        await writeList(newStored);
       }),
     [
       accounts,
       counter,
       formatAccountForStorage,
       networkId,
+      withListWrite,
       setAccountId,
       setAccounts,
       setCounter,
@@ -179,7 +211,7 @@ export function useAccountsMutations({
 
   const editAccount = useCallback(
     (targetId: string, { name, avatar, newDerivedAccounts }: EditAccountParams): Promise<void> =>
-      withVaultWriteLock(async () => {
+      withListWrite(async (writeList) => {
         const current = accounts.find(({ id }) => id === targetId);
         if (!current) return;
 
@@ -209,7 +241,7 @@ export function useAccountsMutations({
         // Only this wallet's entry changes, in the list storage holds: this
         // window's copy may still hold a wallet another window removed, and
         // writing that copy back would list a wallet whose seed is gone.
-        const stored = await readStoredAccounts();
+        const stored = await readStoredList(accounts.length > 0);
         const index = stored.findIndex(({ id }) => id === targetId);
         if (index < 0) return;
         const newStored = [...stored];
@@ -218,21 +250,21 @@ export function useAccountsMutations({
         setAccounts((held) =>
           held.map((account) => (account.id === targetId ? newAccount : account))
         );
-        await writeStoredAccounts(newStored);
+        await writeList(newStored);
       }),
-    [accounts, formatAccountForStorage, setAccounts]
+    [accounts, formatAccountForStorage, setAccounts, withListWrite]
   );
 
   const removeAccount = useCallback(
     (targetId: string, password?: string): Promise<void> =>
-      withVaultWriteLock(async () => {
+      withListWrite(async (writeList) => {
         const newAccounts = accounts.filter(({ id }) => id !== targetId);
 
         // Removed from what storage holds, not from this window's copy: the
         // last wallet here need not be the last one stored, and the vault can
         // hold a seed the list no longer names.
-        const newStored = (await readStoredAccounts()).filter(({ id }) => id !== targetId);
-        const secrets = await readStoredSecrets(password);
+        const { list, secrets } = await readStoredWallets(accounts.length > 0, password);
+        const newStored = list.filter(({ id }) => id !== targetId);
         const removedSecret = secrets[targetId];
         const newVault = { ...secrets };
         delete newVault[targetId];
@@ -269,7 +301,7 @@ export function useAccountsMutations({
         // secret too many, which nothing reads. The other order would leave a
         // listed wallet without its secret, and unlock fails for every wallet.
         // A window that re-reads on the list still finds every secret it lists.
-        await writeStoredAccounts(newStored);
+        await writeList(newStored);
         await setStorageItem(STORAGE_KEYS.MNEMONICS, encryptResult.vault);
         if (password) {
           setRequiredLock(true);
@@ -297,6 +329,7 @@ export function useAccountsMutations({
       setNetworkId,
       setPathIndex,
       setRequiredLock,
+      withListWrite,
     ]
   );
 

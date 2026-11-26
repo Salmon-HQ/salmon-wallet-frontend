@@ -13,13 +13,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import mapValues from 'lodash-es/mapValues';
 
-import { type DerivedKeyCache } from '../crypto/encryption';
+import { isKeyCacheValid, type DerivedKeyCache } from '../crypto/encryption';
+import { getStashItem, STASH_KEYS } from '../storage';
 import { useAccountsLoader } from './useAccountsLoader';
 import { useAccountsConnection } from './useAccountsConnection';
 import { useAccountsMutations } from './useAccountsMutations';
 import { useAccountsNetworkPreferences } from './useAccountsNetworkPreferences';
 import { useAccountsSelection } from './useAccountsSelection';
 import { useAccountsSecurity } from './useAccountsSecurity';
+import { getStoredMnemonics, resolveMnemonicsWithCachedKey } from './useAccountsSecurityHelpers';
 import {
   generateAccountId,
   createBlockchainAccountForNetwork,
@@ -435,6 +437,23 @@ export function useAccounts(): [UseAccountsState, UseAccountsActions] {
     networkId,
   });
 
+  // Memory catches up with storage after a list write that could not be
+  // settled. Unlike `unlockWithCachedKey` it sets no global error and no lock
+  // (a global error trips mobile's init-failed gate) and writes nothing back:
+  // the change already failed, and the caller reports that.
+  const refreshFromStorage = useCallback(async (): Promise<void> => {
+    try {
+      const keyCache = await getStashItem<DerivedKeyCache>(STASH_KEYS.DERIVED_KEY);
+      if (!isKeyCacheValid(keyCache)) return;
+      const storedMnemonics = await getStoredMnemonics();
+      if (!storedMnemonics) return;
+      const mnemonics = await resolveMnemonicsWithCachedKey(storedMnemonics, keyCache);
+      await loadAccounts(mnemonics, { persist: false });
+    } catch (err) {
+      console.warn('[accounts] could not reload the wallets from storage:', err);
+    }
+  }, [loadAccounts]);
+
   const { addAccount, editAccount, removeAccount, removeAllAccounts, forgetAccounts } =
     useAccountsMutations({
       counter,
@@ -452,6 +471,7 @@ export function useAccounts(): [UseAccountsState, UseAccountsActions] {
       setTokens,
       setUnprotectedAddresses,
       formatAccountForStorage,
+      refreshFromStorage,
     });
 
   const resetError = useCallback(() => setError(null), []);

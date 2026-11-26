@@ -126,6 +126,7 @@ function openWindow(loaded: Account[]) {
       setTokens,
       setUnprotectedAddresses,
       formatAccountForStorage,
+      refreshFromStorage: async () => undefined,
     });
   });
 }
@@ -281,6 +282,22 @@ describe('useAccountsMutations editing from a stale window', () => {
 
     expect(storage.setStorageItem).not.toHaveBeenCalled();
     expect(storedIds()).toEqual(['W']);
+  });
+
+  // An empty list while this window holds wallets contradicts what it loaded:
+  // the read may have lied, so the edit is refused rather than skipped.
+  it('refuses the edit when the stored list reads empty', async () => {
+    const sidePanel = openWindow([wallet('W'), wallet('X')]);
+    storageMap.set('salmon_accounts', []);
+    vi.mocked(storage.setStorageItem).mockClear();
+
+    await act(async () => {
+      await expect(
+        sidePanel.result.current.editAccount('W', { name: 'Renamed' })
+      ).rejects.toThrow();
+    });
+
+    expect(storage.setStorageItem).not.toHaveBeenCalled();
   });
 
   it('takes the wallet write lock', async () => {

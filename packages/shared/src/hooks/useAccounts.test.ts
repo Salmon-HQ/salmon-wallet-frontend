@@ -232,6 +232,23 @@ function createMockAccount(): Account {
   };
 }
 
+/**
+ * Storage that reads back the wallet list and vault it was given, as a device
+ * does: a change refuses to write over a list that reads empty while wallets
+ * are open. The mocked vault opens with the session key to nothing.
+ */
+function keepWalletListAndVault(): void {
+  const kept = new Map<string, unknown>();
+  vi.mocked(storage.setStorageItem).mockImplementation(async (key: string, value: unknown) => {
+    if (key === 'salmon_accounts' || key === 'salmon_mnemonics') kept.set(key, value);
+  });
+  vi.mocked(storage.getStorageItem).mockImplementation(
+    async (key: string) => kept.get(key) ?? null
+  );
+  vi.mocked(encryption.isKeyCacheValid).mockReturnValue(true);
+  vi.mocked(encryption.unlockWithKey).mockReturnValue({});
+}
+
 // ============================================================================
 // Tests
 // ============================================================================
@@ -945,6 +962,7 @@ describe('useAccounts Hook', () => {
       await waitFor(() => {
         expect(result.current[0].ready).toBe(true);
       });
+      keepWalletListAndVault();
       const stale = createMockAccount();
       await act(async () => {
         await result.current[1].addAccount(stale);
@@ -1608,6 +1626,8 @@ describe('useAccounts Hook', () => {
       // Verify initial state: no accounts, networkId is null
       expect(result.current[0].accounts).toHaveLength(0);
       expect(result.current[0].networkId).toBeNull();
+
+      keepWalletListAndVault();
 
       const account1 = createMockAccount();
       const account2 = { ...createMockAccount(), id: 'account_second_xyz', name: 'Account 2' };

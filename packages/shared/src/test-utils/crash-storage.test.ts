@@ -92,6 +92,62 @@ describe('startCrashStorage', () => {
     expect(crash.snapshot()).toEqual({ a: { W: 'secret' } });
   });
 
+  it('faults only the n-th read of a key counted from arming, once', async () => {
+    const crash = await startCrashStorage();
+    await setStorageItem('a', [1]);
+    await setStorageItem('b', [2]);
+    crash.failRead('a', { at: 2 });
+    crash.dropRead('b', { at: 1 });
+
+    expect(await getStorageItem('a')).toEqual([1]);
+    await expect(getStorageItem('a')).rejects.toThrow();
+    expect(await getStorageItem('a')).toEqual([1]);
+    expect(await getStorageItem('b')).toBeNull();
+    expect(await getStorageItem('b')).toEqual([2]);
+
+    crash.garbleRead('a', { at: 1 });
+    expect(typeof (await getStorageItem<unknown>('a'))).toBe('string');
+    expect(await getStorageItem('a')).toEqual([1]);
+  });
+
+  it('keeps a read fault without `at` on every read until the next start', async () => {
+    const crash = await startCrashStorage();
+    await setStorageItem('a', [1]);
+    crash.dropRead('a');
+
+    expect(await getStorageItem('a')).toBeNull();
+    expect(await getStorageItem('a')).toBeNull();
+
+    await startCrashStorage();
+    await setStorageItem('a', [1]);
+    expect(await getStorageItem('a')).toEqual([1]);
+  });
+
+  it('lands the next n writes after a kill, fails every later one, until a relaunch', async () => {
+    const crash = await startCrashStorage();
+    await setStorageItem('a', 1);
+    const start = crash.writes.length;
+    crash.killAfter(2);
+
+    await setStorageItem('b', 2);
+    await removeStorageItem('a');
+    await expect(setStorageItem('c', 3)).rejects.toThrow();
+    await expect(removeStorageItem('b')).rejects.toThrow();
+    await expect(setStashItem(DERIVED_KEY, { key: [1] })).rejects.toThrow();
+    expect(crash.writes).toHaveLength(start + 2);
+    expect(await getStashItem(DERIVED_KEY)).toBeUndefined();
+
+    await crash.relaunch({ keepStash: true });
+    const storage = await import('../storage');
+
+    expect(crash.snapshot()).toEqual(crash.writes[start + 1].after);
+    expect(crash.snapshot()).toEqual({ b: 2 });
+    expect(await storage.getStashItem(DERIVED_KEY)).toBeUndefined();
+    await storage.setStorageItem('d', 4);
+    await storage.setStashItem(DERIVED_KEY, { key: [2] });
+    expect(crash.snapshot()).toEqual({ b: 2, d: 4 });
+  });
+
   it('records a snapshot after each landed write', async () => {
     const crash = await startCrashStorage();
     crash.failAt(2);
@@ -122,7 +178,9 @@ describe('startCrashStorage', () => {
     vi.stubGlobal('navigator', {});
     const crash = await startCrashStorage();
     const before = await import('../hooks/useAccountsMutationHelpers');
-    await before.writeStoredAccounts([{ id: 'A', name: 'A', avatar: 'default', pathIndexes: {} }]);
+    await before.writeStoredAccounts([{ id: 'A', name: 'A', avatar: 'default', pathIndexes: {} }], {
+      own: true,
+    });
     void before.withVaultWriteLock(() => new Promise<never>(() => undefined));
 
     await crash.relaunch();

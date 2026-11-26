@@ -24,7 +24,8 @@ interface UseAccountsLoaderParams {
 
 interface UseAccountsLoaderResult {
   loadMetadata: () => Promise<void>;
-  loadAccounts: (mnemonics: SecretVault) => Promise<void>;
+  /** `persist: false` loads into memory only and writes nothing back. */
+  loadAccounts: (mnemonics: SecretVault, options?: { persist?: boolean }) => Promise<void>;
 }
 
 export function useAccountsLoader({
@@ -81,7 +82,7 @@ export function useAccountsLoader({
   ]);
 
   const loadAccounts = useCallback(
-    async (mnemonics: SecretVault): Promise<void> => {
+    async (mnemonics: SecretVault, { persist = true } = {}): Promise<void> => {
       const storedAccounts = await getStorageItem<StoredAccount[]>(STORAGE_KEYS.ACCOUNTS);
       if (!storedAccounts) {
         setLoaded(true);
@@ -130,11 +131,11 @@ export function useAccountsLoader({
       setTrustedApps((await getStorageItem<TrustedApps>(STORAGE_KEYS.TRUSTED_APPS)) ?? {});
       setTokens((await getStorageItem<CustomTokens>(STORAGE_KEYS.CUSTOM_TOKENS)) ?? {});
 
-      if (!storedNetworkId && defaultNetworkId) {
+      if (persist && !storedNetworkId && defaultNetworkId) {
         await setStorageItem(STORAGE_KEYS.NETWORK_ID, defaultNetworkId);
       }
 
-      if (activeId && activeId !== storedAccountId) {
+      if (persist && activeId && activeId !== storedAccountId) {
         await setStorageItem(STORAGE_KEYS.ACCOUNT_ID, activeId);
       }
 

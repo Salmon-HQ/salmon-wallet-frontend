@@ -20,16 +20,29 @@ import type { Stash, StorageAdapter } from '../storage/types';
 
 type Snapshot = Record<string, unknown>;
 
+interface ReadFaultOptions {
+  at?: number;
+}
+
+type ReadFault = { kind: 'fail' | 'drop' | 'garble'; remaining?: number };
+
 export interface CrashStorage {
   /** The n-th write from now throws; with `applied` it lands first. */
   failAt(n: number, options?: { applied?: boolean }): void;
   /** The n-th stash write from now throws without landing. */
   failStashAt(n: number): void;
-  failRead(key: string): void;
+  /**
+   * Reads of the key throw. Each read fault lasts until the next
+   * `startCrashStorage`; with `at` it hits only the n-th read of that key from
+   * now, once.
+   */
+  failRead(key: string, options?: ReadFaultOptions): void;
   /** Reads of the key come back absent while it stays stored. */
-  dropRead(key: string): void;
+  dropRead(key: string, options?: ReadFaultOptions): void;
   /** Reads of the key come back as a string storage cannot parse. */
-  garbleRead(key: string): void;
+  garbleRead(key: string, options?: ReadFaultOptions): void;
+  /** The next n writes land; every later storage or stash write fails without landing until `relaunch`. */
+  killAfter(n: number): void;
   snapshot(): Snapshot;
   /** Every write that landed, with storage as it stood right after it. */
   writes: { key: string; after: Snapshot }[];
@@ -44,7 +57,8 @@ let stashed = new Map<string, unknown>();
 let writes: CrashStorage['writes'] = [];
 let failWrite: { remaining: number; applied: boolean } | null = null;
 let failStashRemaining = 0;
-let readFaults = new Map<string, 'fail' | 'drop' | 'garble'>();
+let readFaults = new Map<string, ReadFault>();
+let killRemaining: number | null = null;
 
 const parse = (raw: string): unknown => {
   try {
@@ -57,7 +71,15 @@ const parse = (raw: string): unknown => {
 const snapshot = (): Snapshot =>
   Object.fromEntries([...stored].map(([key, raw]) => [key, parse(raw)]));
 
+const killed = (): boolean => {
+  if (killRemaining === null) return false;
+  if (killRemaining === 0) return true;
+  killRemaining -= 1;
+  return false;
+};
+
 async function write(key: string, apply: () => void): Promise<void> {
+  if (killed()) throw new Error(`Write of "${key}" failed`);
   const fault = failWrite && --failWrite.remaining === 0 ? failWrite : null;
   if (fault) failWrite = null;
   if (!fault || fault.applied) {
@@ -67,9 +89,19 @@ async function write(key: string, apply: () => void): Promise<void> {
   if (fault) throw new Error(`Write of "${key}" failed`);
 }
 
+function readFault(key: string): ReadFault['kind'] | null {
+  const fault = readFaults.get(key);
+  if (!fault) return null;
+  if (fault.remaining === undefined) return fault.kind;
+  fault.remaining -= 1;
+  if (fault.remaining > 0) return null;
+  readFaults.delete(key);
+  return fault.kind;
+}
+
 const adapter: StorageAdapter = {
   getItem: async (key) => {
-    const fault = readFaults.get(key);
+    const fault = readFault(key);
     if (fault === 'fail') throw new Error(`Read of "${key}" failed`);
     if (fault === 'drop') return null;
     if (fault === 'garble') return GARBLED;
@@ -81,6 +113,7 @@ const adapter: StorageAdapter = {
 };
 
 async function stashWrite(apply: () => void): Promise<void> {
+  if (killRemaining === 0) throw new Error('Stash write failed');
   if (failStashRemaining > 0 && --failStashRemaining === 0) throw new Error('Stash write failed');
   apply();
 }
@@ -105,6 +138,7 @@ export async function startCrashStorage(): Promise<CrashStorage> {
   failWrite = null;
   failStashRemaining = 0;
   readFaults = new Map();
+  killRemaining = null;
   await install();
 
   return {
@@ -114,15 +148,19 @@ export async function startCrashStorage(): Promise<CrashStorage> {
     failStashAt: (n) => {
       failStashRemaining = n;
     },
-    failRead: (key) => readFaults.set(key, 'fail'),
-    dropRead: (key) => readFaults.set(key, 'drop'),
-    garbleRead: (key) => readFaults.set(key, 'garble'),
+    failRead: (key, { at } = {}) => readFaults.set(key, { kind: 'fail', remaining: at }),
+    dropRead: (key, { at } = {}) => readFaults.set(key, { kind: 'drop', remaining: at }),
+    garbleRead: (key, { at } = {}) => readFaults.set(key, { kind: 'garble', remaining: at }),
+    killAfter: (n) => {
+      killRemaining = n;
+    },
     snapshot,
     get writes() {
       return writes;
     },
     relaunch: async ({ keepStash = false } = {}) => {
       vi.resetModules();
+      killRemaining = null;
       if (!keepStash) stashed = new Map();
       await install();
     },
