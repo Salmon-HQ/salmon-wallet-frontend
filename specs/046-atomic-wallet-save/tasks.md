@@ -158,19 +158,19 @@ Raw output goes to the session scratchpad; the PR body carries each command and 
 
 ### 1. Unit suites and gates
 
-- [ ] T043 Unit suites, each green: `pnpm --filter @salmon/shared test`, `pnpm --filter @salmon/ui test`, `pnpm --filter @salmon/extension test`, and the mobile suite run alone: `cd apps/mobile && pnpm test`.
-- [ ] T044 `pnpm typecheck`, then `pnpm lint` (zero errors, zero warnings).
-- [ ] T045 Each green: `pnpm test:security`, `pnpm check:parity` (`0 findings`), `pnpm check:i18n`, then `git diff --name-only feat/045-bitcoin-network-choice... | xargs pnpm exec prettier --check --ignore-unknown`, `pnpm check:no-secrets`, `pnpm check:hidden-unicode`, `pnpm check:dead-code`, `pnpm check:cycles`, `pnpm check:single-kit`, `pnpm check:e2e-selectors`; `pnpm --filter @salmon/extension build && pnpm check:manifest` shows no permission change; `pnpm test:coverage`, raising `thresholds` (`packages/shared`, `packages/ui` Vitest configs) and `coverageThreshold` (`apps/mobile` Jest config) where coverage went up; `git diff --stat feat/045-bitcoin-network-choice... -- packages/shared/src/crypto packages/shared/src/storage` prints nothing.
+- [x] T043 Unit suites, each green: `pnpm --filter @salmon/shared test`, `pnpm --filter @salmon/ui test`, `pnpm --filter @salmon/extension test`, and the mobile suite run alone: `cd apps/mobile && pnpm test`.
+- [x] T044 `pnpm typecheck`, then `pnpm lint` (zero errors, zero warnings).
+- [x] T045 Each green: `pnpm test:security`, `pnpm check:parity` (`0 findings`), `pnpm check:i18n`, then `git diff --name-only feat/045-bitcoin-network-choice... | xargs pnpm exec prettier --check --ignore-unknown`, `pnpm check:no-secrets`, `pnpm check:hidden-unicode`, `pnpm check:dead-code`, `pnpm check:cycles`, `pnpm check:single-kit`, `pnpm check:e2e-selectors`; `pnpm --filter @salmon/extension build && pnpm check:manifest` shows no permission change; `pnpm test:coverage`, raising `thresholds` (`packages/shared`, `packages/ui` Vitest configs) and `coverageThreshold` (`apps/mobile` Jest config) where coverage went up; `git diff --stat feat/045-bitcoin-network-choice... -- packages/shared/src/crypto packages/shared/src/storage` prints nothing.
 
 ### 2. Reviewers (zero context, on the last commit)
 
-- [ ] T046 The main session runs `security-reviewer` (with the `web3-security-review` skill), `typescript-reviewer` and `expo-react-native-expert` on `git diff feat/045-bitcoin-network-choice...` once T043–T045 are green and nothing else is going in. They get the code and the spec, not this plan's conclusions.
-- [ ] T047 Each accepted finding fixed test-first (a failing test that reproduces it, then the fix), committed as `fix: …`; T043–T045 re-run green. Declined findings listed in the PR body with the reason.
+- [x] T046 The main session runs `security-reviewer` (with the `web3-security-review` skill), `typescript-reviewer` and `expo-react-native-expert` on `git diff feat/045-bitcoin-network-choice...` once T043–T045 are green and nothing else is going in. They get the code and the spec, not this plan's conclusions.
+- [x] T047 Each accepted finding fixed test-first (a failing test that reproduces it, then the fix), committed as `fix: …`; T043–T045 re-run green. Declined findings listed in the PR body with the reason.
 
 ### 3. End-to-end (FR-024)
 
-- [ ] T048 Playwright headless: `pnpm --filter @salmon/extension build`, then `SALMON_E2E_HEADLESS=1 pnpm --filter @salmon/extension e2e onboarding-grid settings analytics-consent-prompt legacy-migration lock auto-lock` green against a reachable salmon-api (a skip does not count).
-- [ ] T049 Maestro on the iPhone simulator (by UDID), from `apps/mobile/.maestro/`: `./run.sh flows/smoke/auth/create-account.yaml`, `./run.sh flows/smoke/auth/recover-account.yaml`, `./run.sh flows/actions/account/import-seed.yaml`, `./run.sh flows/actions/account/add-and-remove.yaml`, `./run.sh flows/actions/reset/remove-all-wallets.yaml`, each green; screenshots read, none showing a seed or a password.
+- [x] T048 Playwright headless: `pnpm --filter @salmon/extension build`, then `SALMON_E2E_HEADLESS=1 pnpm --filter @salmon/extension e2e onboarding-grid settings analytics-consent-prompt legacy-migration lock auto-lock` green against a reachable salmon-api (a skip does not count).
+- [x] T049 Maestro on the iPhone simulator (by UDID), from `apps/mobile/.maestro/`: `./run.sh flows/smoke/auth/create-account.yaml`, `./run.sh flows/smoke/auth/recover-account.yaml`, `./run.sh flows/actions/account/import-seed.yaml`, `./run.sh flows/actions/account/add-and-remove.yaml`, `./run.sh flows/actions/reset/remove-all-wallets.yaml`, each green; screenshots read, none showing a seed or a password.
 - [ ] T050 Maestro on the Android emulator: the same five flows green; on the Seeker emulator `./run.sh flows/actions/seed-vault/onboard-with-seed-vault.yaml` and `./run.sh flows/actions/seed-vault/add-seed-vault-wallet.yaml` green (FR-013 in setup and Add wallet).
 - [ ] T051 Hand test, quickstart.md §3 steps 1–7 (step 1 on two extension side panels, step 7 on a Seeker). On a real phone the owner taps and Claude only reads screenshots. Results in the PR body.
 
