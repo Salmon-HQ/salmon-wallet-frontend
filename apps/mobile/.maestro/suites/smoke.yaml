@@ -34,5 +34,6 @@ appId: io.salmonwallet.app
 - runFlow: ../flows/smoke/settings/address-book.yaml
 - runFlow: ../flows/smoke/settings/trusted-apps.yaml
 - runFlow: ../flows/smoke/settings/developer-networks.yaml
+- runFlow: ../flows/smoke/settings/bitcoin.yaml
 - runFlow: ../flows/smoke/settings/help.yaml
 - runFlow: ../flows/smoke/settings/about.yaml

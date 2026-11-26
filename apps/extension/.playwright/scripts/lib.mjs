@@ -183,6 +183,8 @@ export async function unlockOrRecover(page) {
     await sleep(500);
     await page.getByTestId('recover-next-button').click();
     await sleep(1500);
+    await page.getByTestId('onboarding-networks-option-solana-bitcoin').click();
+    await sleep(1500);
     await page.getByTestId('password-input').fill(PASSWORD);
     await page.getByTestId('password-confirm-input').fill(PASSWORD);
     await sleep(500);

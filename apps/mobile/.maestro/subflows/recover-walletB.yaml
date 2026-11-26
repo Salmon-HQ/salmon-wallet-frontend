@@ -24,6 +24,15 @@ appId: io.salmonwallet.app
     timeout: 10000
 - tapOn:
     id: 'recover-next-button'
+# The network question sits between the phrase and the password. The caller
+# picks with NETWORK_CHOICE (solana-bitcoin | solana-only); every flow that
+# does not name one keeps Bitcoin on, so it behaves as it always has.
+- extendedWaitUntil:
+    visible:
+      id: 'onboarding-networks-screen'
+    timeout: 30000
+- tapOn:
+    id: onboarding-networks-option-${NETWORK_CHOICE || 'solana-bitcoin'}
 - extendedWaitUntil:
     visible:
       id: 'password-input'

@@ -3,8 +3,8 @@
  *
  * Both the lock path and the recover/onboarding path select by the stable
  * data-testid contract (lock-*, select-recover-button, recover-word-input-*,
- * recover-next-button, password-input/confirm, password-submit-button,
- * success-go-to-wallet-button).
+ * recover-next-button, onboarding-networks-option-*, password-input/confirm,
+ * password-submit-button, success-go-to-wallet-button).
  */
 import { expect, type Page } from '@playwright/test';
 
@@ -15,15 +15,24 @@ export type EntryState = 'unlocked' | 'recovered' | 'home';
 
 export type Consent = 'accept' | 'decline';
 
+export type NetworkChoice = 'solana-bitcoin' | 'solana-only';
+
 /**
  * @param consent - Which button to press on the first-run consent screen.
  *   Defaults to `decline`, so analytics stay OFF unless a spec asks for them.
  * @param seed - Which wallet to recover. Defaults to Wallet A; pass
  *   SALMON_TEST_SEED_B when a spec needs Wallet B to sign.
+ * @param networks - The answer to "Choose your networks" between the phrase
+ *   and the password. Defaults to Solana + Bitcoin, so a spec that does not
+ *   ask keeps Bitcoin on.
  */
 export async function unlockOrRecover(
   page: Page,
-  { consent = 'decline', seed = seedA() }: { consent?: Consent; seed?: string } = {}
+  {
+    consent = 'decline',
+    seed = seedA(),
+    networks = 'solana-bitcoin',
+  }: { consent?: Consent; seed?: string; networks?: NetworkChoice } = {}
 ): Promise<EntryState> {
   // Wait for whichever entry screen the popup opens on. Counting elements
   // instead answers before the popup has rendered and reads as "home".
@@ -45,6 +54,7 @@ export async function unlockOrRecover(
   // recover-next-button shows only once the seed validates.
   await page.getByTestId('recover-word-input-1').fill(seed);
   await page.getByTestId('recover-next-button').click({ timeout: 30_000 });
+  await page.getByTestId(`onboarding-networks-option-${networks}`).click();
   await page.getByTestId('password-input').fill(password());
   await page.getByTestId('password-confirm-input').fill(password());
   await page.getByTestId('password-submit-button').click();
