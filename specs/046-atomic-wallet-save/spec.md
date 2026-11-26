@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-26
 
-**Status**: Draft — five owner questions open (see "Questions for the owner"); the spec is written with the recommended default of each, marked as an assumption
+**Status**: Draft — owner question 1 answered on 2026-11-26 (discard); questions 2 to 5 stand on their recommended default, marked as assumptions
 
 **Input**: The owner asked to close the partial-save defect properly: "Close it properly, no patches, rebuild what needs rebuilding, with test-driven development, spec and adversarial doubt." Security is this product's first priority: Salmon is a self-custody wallet (the user alone holds the keys that control the funds).
 
@@ -158,7 +158,7 @@ On the mobile setup password screen, the user goes back after a failed save; the
 - **FR-003**: Correctness MUST NOT depend on several records being written together. On every platform, a write of several records is treated as separate writes that can stop between any two.
 - **FR-004**: After a failed or interrupted save, the active wallet, its network, its account slot and the name counter MUST be what they were before the attempt.
 - **FR-005**: After a failed or interrupted save, the password that opened the wallet before the attempt MUST still open it.
-- **FR-006**: After a failed or interrupted first save on a fresh install, the next launch MUST behave as a fresh install: it opens to the welcome screen, and a new setup with any password succeeds. (Assumption, owner question 1: if that requires discarding the unreadable leftover of that one failed first save, it may be discarded.)
+- **FR-006**: When the wallet list is empty at launch, a vault left on the device MUST be discarded and the app MUST open to the welcome screen as a fresh install, where a new setup with any password succeeds. This covers a first save that failed or was interrupted, and a vault left behind after the last listed wallet was removed. A vault MUST NOT be discarded while any wallet is listed. (Owner decision, 2026-11-26.)
 
 **What the window shows follows storage**
 
@@ -222,13 +222,13 @@ On the mobile setup password screen, the user goes back after a failed save; the
 - **Stored format unchanged.** The records, their names and their contents stay as they are; only the order of writes, what is read before deciding, and how a load treats in-between states may change, so existing installs need no migration.
 - **Platform guarantees** are the ones stated under "What exists today": only a single-record write is all-or-nothing everywhere (Chromium `leveldb_value_store.cc`; AsyncStorage 2.2.0 `AsyncStorageModule.java` and `RNCAsyncStorage.mm`).
 - **The exclusive write turn already exists**: every change to the stored wallets runs one at a time, across extension windows and within the mobile app.
-- **Owner question defaults** (see below) are in force until answered: discard allowed only for the leftover of a failed first save (FR-006); a later-step failure after a save moves on (FR-015); duplicates are refused, not switched to (FR-012); Seed Vault replaces (FR-013); the mobile recover-with-a-new-password case keeps its behaviour except that a failed save never changes the password (FR-005).
+- **Owner question defaults** (see below) are in force until answered: a vault is discarded only when the wallet list is empty (FR-006, answered by the owner); a later-step failure after a save moves on (FR-015); duplicates are refused, not switched to (FR-012); Seed Vault replaces (FR-013); the mobile recover-with-a-new-password case keeps its behaviour except that a failed save never changes the password (FR-005).
 - **Sensitive area.** The change touches vault and storage writes; it gets human sign-off and an adversarial review before it merges, per the architecture guide.
 - **Out of scope**: changing the stored format or migrating existing data; changing the password, protecting a password-less wallet, and the legacy v2 migration; removing unlisted secrets other than the copy of the secret being saved; the storage library and what backs it; addresses added inside an existing wallet by the derived-account search ("Check derivables").
 
 ## Questions for the owner
 
-1. **Leftover of a failed first save.** If the very first save stops after the vault was written, the device holds a vault under a password whose setup never finished. Opening to setup again (FR-006) may require discarding it. Recommended default: allowed only for that case — a device with no listed wallet whose vault holds only secrets never listed — because the user still holds the phrase (they typed it, or it was created seconds earlier and no address was ever shown).
+1. **Leftover of a failed first save.** Answered by the owner on 2026-11-26: discard it. When the wallet list is empty, a vault left on the device is deleted and the app opens to the welcome screen. The owner accepted that the same stored state follows from removing the last listed wallet while the vault still held an unlisted secret, and that this secret is deleted too: it is invisible and unreachable today. The rule is decided on the empty list alone; a vault is never discarded while any wallet is listed.
 2. **A later step fails after the wallet was saved** (mobile setup: unlocking, analytics). Recommended default: the screen moves on to the app as if the step had worked; the app shows the lock screen if unlocking did not complete. No new UI or copy.
 3. **Adding a wallet the device already holds.** Recommended default: refuse with the existing "This wallet is already in your list." message. The alternative is to switch to the existing wallet silently.
 4. **Seed Vault account already listed.** Recommended default: replace it in the same save (today's behaviour in "Add wallet"), now also in setup and decided against storage.
