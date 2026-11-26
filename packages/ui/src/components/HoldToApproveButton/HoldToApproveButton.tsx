@@ -55,6 +55,12 @@ export function HoldToApproveButton({
 
   useEffect(() => stop, [stop]);
 
+  // Turned off mid-hold (the approval window went behind another): the hold
+  // ends there, it does not finish on a button the user can no longer see.
+  useEffect(() => {
+    if (disabled || loading) stop();
+  }, [disabled, loading, stop]);
+
   const start = useCallback(() => {
     if (disabled || loading || startedAt.current !== null) return;
     const began = performance.now();

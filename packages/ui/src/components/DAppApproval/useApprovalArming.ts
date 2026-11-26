@@ -38,7 +38,8 @@ const isActivationKey = (key: string) => key === 'Enter' || key === ' ' || key =
  * Whether the approval window's Approve button may take a click yet.
  *
  * False until the window has been visible for `delayMs`; then either focus
- * moves to one of its controls (Tab, a screen reader), or the pointer moves
+ * moves to one of its controls with no pointer button down (Tab, a screen
+ * reader; a click or the title's own focus does not count), or the pointer moves
  * inside the window and afterwards comes onto Approve. False again the moment
  * the window loses focus or is hidden, and armed afresh the same way when it
  * comes back — the same trick works on a window brought forward as on one just
@@ -93,10 +94,13 @@ export function useApprovalArming(delayMs: number = APPROVE_ARM_MS): ApprovalArm
     // A window that opens under a still pointer gets a pointer event at that
     // spot; only a second position is a person moving it.
     let lastPoint: string | null = null;
+    let pointerDown = false;
     const disarm = () => {
       clearTimeout(timer);
       stage.current = 'waiting';
       lastPoint = null;
+      // The release of a press that left the window never arrives.
+      pointerDown = false;
       setArmed(false);
     };
     const arm = () => {
@@ -111,8 +115,19 @@ export function useApprovalArming(delayMs: number = APPROVE_ARM_MS): ApprovalArm
       if (lastPoint !== null && point !== lastPoint) stage.current = 'moved';
       lastPoint = point;
     };
-    const onFocusIn = () => {
-      if (stage.current !== 'waiting') setArmed(true);
+    // Only a control Tab can reach: the title takes focus from code when the
+    // window opens (`tabIndex` -1), and that is nobody's choice. And never
+    // while a pointer button is down: a click focuses the control it lands
+    // on, and a page can lure a click onto a spot it can compute.
+    const onPointerDown = () => {
+      pointerDown = true;
+    };
+    const onPointerUp = () => {
+      pointerDown = false;
+    };
+    const onFocusIn = (event: FocusEvent) => {
+      if (stage.current === 'waiting' || pointerDown) return;
+      if (event.target instanceof HTMLElement && event.target.tabIndex >= 0) setArmed(true);
     };
     const onVisibility = () => (document.visibilityState === 'visible' ? arm() : disarm());
 
@@ -121,6 +136,9 @@ export function useApprovalArming(delayMs: number = APPROVE_ARM_MS): ApprovalArm
     window.addEventListener('blur', disarm);
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('focusin', onFocusIn);
+    window.addEventListener('pointerdown', onPointerDown, true);
+    window.addEventListener('pointerup', onPointerUp, true);
+    window.addEventListener('pointercancel', onPointerUp, true);
     document.addEventListener('visibilitychange', onVisibility);
     return () => {
       clearTimeout(timer);
@@ -128,6 +146,9 @@ export function useApprovalArming(delayMs: number = APPROVE_ARM_MS): ApprovalArm
       window.removeEventListener('blur', disarm);
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('focusin', onFocusIn);
+      window.removeEventListener('pointerdown', onPointerDown, true);
+      window.removeEventListener('pointerup', onPointerUp, true);
+      window.removeEventListener('pointercancel', onPointerUp, true);
       document.removeEventListener('visibilitychange', onVisibility);
     };
   }, [delayMs]);

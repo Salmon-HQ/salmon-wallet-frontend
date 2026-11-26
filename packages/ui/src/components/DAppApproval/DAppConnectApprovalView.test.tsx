@@ -92,6 +92,42 @@ describe('DAppConnectApprovalView', () => {
     expect(fireEvent.keyUp(approve, { key: ' ' })).toBe(true);
   });
 
+  it('opens with the focus on its title, and that alone never turns Approve on', () => {
+    vi.useFakeTimers();
+    render(
+      <DAppConnectApprovalView
+        origin="https://app.example.com"
+        address={ADDRESS}
+        onApprove={vi.fn()}
+        onReject={vi.fn()}
+      />
+    );
+    const title = screen.getByTestId('approval-title');
+    expect(document.activeElement).toBe(title);
+
+    act(() => vi.advanceTimersByTime(APPROVE_ARM_MS * 10));
+    expect(screen.getByTestId('dapp-approve-button')).toBeDisabled();
+
+    // Sent behind and brought back: the browser hands the focus to the title
+    // again, and the window has been in front long enough once more.
+    act(() => {
+      window.dispatchEvent(new Event('blur'));
+      title.blur();
+      window.dispatchEvent(new Event('focus'));
+      title.focus();
+    });
+    act(() => vi.advanceTimersByTime(APPROVE_ARM_MS * 10));
+    act(() => {
+      title.blur();
+      title.focus();
+    });
+    expect(screen.getByTestId('dapp-approve-button')).toBeDisabled();
+
+    // Tab reaches Deny, the first control: that is a person in the window.
+    act(() => screen.getByTestId('dapp-reject-button').focus());
+    expect(screen.getByTestId('dapp-approve-button')).not.toBeDisabled();
+  });
+
   it('tells assistive technology how to turn a waiting Approve on', () => {
     vi.useFakeTimers();
     render(

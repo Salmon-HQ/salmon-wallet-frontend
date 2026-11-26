@@ -126,6 +126,16 @@ test.describe('dApp security', () => {
     await startConnect(first);
     const window = await opened;
     await expect(window.getByTestId('dapp-connect-approval')).toBeVisible({ timeout: 30_000 });
+    // The window opens on its title, for a screen reader; Approve stays off.
+    await expect(window.getByTestId('approval-title')).toBeFocused();
+    // Past the arming delay (750 ms) with nobody acting: still off.
+    await window.waitForTimeout(1_500);
+    await expect(window.getByTestId('approval-title')).toBeFocused();
+    await expect(window.getByTestId('dapp-approve-button')).toBeDisabled();
+    // Tab reaches Deny: a person is in the window, and Approve turns on.
+    await window.keyboard.press('Tab');
+    await expect(window.getByTestId('dapp-reject-button')).toBeFocused();
+    await expect(window.getByTestId('dapp-approve-button')).toBeEnabled();
 
     // A second origin asks while the first window is open: refused outright.
     const second = await openDapp(context, '127.0.0.1');

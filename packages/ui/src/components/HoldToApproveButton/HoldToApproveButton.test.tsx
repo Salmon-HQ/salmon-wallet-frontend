@@ -100,6 +100,27 @@ describe('HoldToApproveButton', () => {
     expect(onApprove).toHaveBeenCalledTimes(1);
   });
 
+  // The approval window turns Approve off the moment it stops being in front:
+  // a hold already running must not finish behind the user's back.
+  it('drops a hold in progress when the button is turned off', () => {
+    const onApprove = vi.fn();
+    const { rerender } = render(
+      <HoldToApproveButton onApprove={onApprove}>Hold to approve</HoldToApproveButton>
+    );
+
+    fireEvent.pointerDown(screen.getByRole('button'));
+    advance(200);
+    rerender(
+      <HoldToApproveButton onApprove={onApprove} disabled>
+        Hold to approve
+      </HoldToApproveButton>
+    );
+    advance(600);
+
+    expect(onApprove).not.toHaveBeenCalled();
+    expect(screen.queryByTestId('hold-progress')).not.toBeInTheDocument();
+  });
+
   it('cannot be held while disabled', () => {
     const onApprove = vi.fn();
     render(

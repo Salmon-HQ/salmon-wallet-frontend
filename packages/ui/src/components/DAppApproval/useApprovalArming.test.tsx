@@ -89,6 +89,62 @@ describe('useApprovalArming', () => {
     button.remove();
   });
 
+  // The window's title takes focus from code so a screen reader says where
+  // the user is. Nobody chose that: only a control a person can Tab to counts.
+  it('stays unarmed when code puts the focus on something Tab cannot reach', () => {
+    const title = document.body.appendChild(document.createElement('h1'));
+    title.tabIndex = -1;
+    const { result } = renderHook(() => useApprovalArming());
+    wait();
+
+    act(() => title.focus());
+
+    expect(result.current.armed).toBe(false);
+    title.remove();
+  });
+
+  // A click puts the focus on the control it lands on, and a page can lure a
+  // click onto a spot it can compute. Only focus that moved with no pointer
+  // button down is a person using the keyboard or a screen reader.
+  it('stays unarmed when a click moves the focus onto a control', () => {
+    const button = document.body.appendChild(document.createElement('button'));
+    const { result } = renderHook(() => useApprovalArming());
+    wait();
+
+    act(() => {
+      window.dispatchEvent(new MouseEvent('pointerdown'));
+      button.focus();
+      window.dispatchEvent(new MouseEvent('pointerup'));
+    });
+    expect(result.current.armed).toBe(false);
+
+    act(() => {
+      button.blur();
+      button.focus();
+    });
+    expect(result.current.armed).toBe(true);
+    button.remove();
+  });
+
+  // A press that began in the window can end outside it, and that release
+  // never arrives here. The keyboard must still work when the window is back.
+  it('forgets a pointer press whose release it never saw', () => {
+    const button = document.body.appendChild(document.createElement('button'));
+    const { result } = renderHook(() => useApprovalArming());
+    wait();
+
+    act(() => {
+      window.dispatchEvent(new MouseEvent('pointerdown'));
+      window.dispatchEvent(new Event('blur'));
+      window.dispatchEvent(new Event('focus'));
+    });
+    wait();
+    act(() => button.focus());
+
+    expect(result.current.armed).toBe(true);
+    button.remove();
+  });
+
   it('disarms when the window loses focus and re-arms only after the delay and a move', () => {
     // Bringing an existing approval window forward is the same trick as
     // opening a new one.
