@@ -61,13 +61,11 @@ appId: io.salmonwallet.app
 - waitForAnimationToEnd:
     timeout: 3000
 - runFlow: ../../../subflows/open-accounts-panel.yaml
-# The row just added, not the first one: every row has a remove button once
-# there are two wallets, and a bare id match takes the first.
+# The row just added, which the list shows last: every row has a remove
+# button once there are two wallets, and a bare id match takes the first.
 - tapOn:
     id: 'account-remove-.*'
-    childOf:
-      id: 'account-item-.*'
-      text: 'Account 2, active'
+    index: 1
 - extendedWaitUntil:
     visible: 'Delete Account?'
     timeout: 5000
