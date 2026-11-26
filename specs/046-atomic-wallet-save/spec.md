@@ -47,7 +47,7 @@ A user creates or recovers a wallet, or adds one from the wallet switcher. Somet
 
 1. **Given** a device with wallets A and B and A active, **When** a save of wallet C fails at any write, **Then** the open window still shows A and B with A active, on the same network and slot, and the next launch shows the same.
 2. **Given** the same device, **When** the app or browser dies between any two writes of the save of C, **Then** the next launch shows either A and B exactly as before, or A, B and C fully saved — never a state in between (C half there, A opened on a slot chosen for C, a skipped wallet number).
-3. **Given** a fresh install, **When** the very first save fails or is interrupted after the vault was written, **Then** nothing is deleted: the password chosen in that attempt is the one that opens the device, a repeated setup with that password saves the wallet, and "Forgot password" is the other way out, as today.
+3. **Given** a fresh install, **When** the very first save fails or is interrupted after the vault was written, **Then** nothing is deleted: the password chosen in that attempt is the one that opens the device, a repeated setup with that password saves the wallet. Where the device offers "Forgot password" today (the extension's lock screen), it remains the other way out.
 4. **Given** a failed save, **When** the user retries with the same input, **Then** the wallet is saved once, and the user sees it.
 5. **Given** a failed save, **When** the user enters their password at the next unlock, **Then** the password that worked before the attempt still works.
 
@@ -98,7 +98,7 @@ A wallet created without confirming its recovery phrase is always marked "backup
 **Acceptance Scenarios**:
 
 1. **Given** a wallet created during setup without the phrase check, **When** its save completes, even if the app dies right after, **Then** the wallet is marked "backup pending".
-2. **Given** a save that fails, **When** the user looks at the pending list, **Then** it names no wallet that was not saved; after a failed or interrupted save, any such name is gone by the next completed save, or by the next launch at which the wallet list can be read.
+2. **Given** a save that fails, **When** the user looks at the pending list, **Then** it names no wallet that was not saved; after a failed or interrupted save, any such name is gone by the next completed save, and has no visible effect until then.
 3. **Given** retries of the same setup, **When** one finally succeeds, **Then** the pending list holds exactly one mark for that wallet.
 
 ---
@@ -141,7 +141,7 @@ On the mobile setup password screen, the user goes back after a failed save; the
 - **Two extension windows add the same wallet at once.** The second save, waiting for the first, finds the wallet stored and is refused; exactly one wallet results.
 - **A locked window** holds no addresses in memory; its duplicate decision still uses what storage holds.
 - **A follow-up write fails after the wallet is stored** (for example the active-wallet selection). The save reports success; the next launch opens on a listed wallet, on a network and slot that wallet holds.
-- **The name counter** advances only when a wallet is saved, and it advances from what storage holds, not from one window's copy, so two windows never hand out the same "Wallet N" from a stale count and a failed save never skips a number.
+- **The name counter after an interrupted save.** A save stopped between the list write and the counter write leaves the counter one behind; the next save brings it back to at least the number of listed wallets. How each screen proposes a default name does not change.
 - **Other windows react to the wallet list changing.** When they re-read, everything the list names is already stored (secret included).
 - **Wrong or expired vault key at save time.** The save is refused before any write, as today.
 - **iPhone multi-record writes are not all-or-nothing.** The design never relies on several records landing together; a test simulates every record of any multi-record write landing separately.
@@ -156,7 +156,7 @@ On the mobile setup password screen, the user goes back after a failed save; the
 - **FR-001**: A save, removal or edit of a wallet MUST end in exactly one of two states, as seen by the open window and by the next launch: the wallets before the change, or the wallets after it, each with its secret. This MUST hold when any single write fails and when the process dies between any two writes. What only follows the change (which wallet is active, and the counter that numbers default names) may stay as it was when the process dies after the deciding write: the next launch then shows the new wallet listed and the previous one still active, on a network and slot it holds.
 - **FR-002**: Each of these changes MUST have one single-record write that decides whether it happened. Writes before it MUST NOT change anything the next launch shows; writes after it MUST leave a state the next launch shows correctly if they never run.
 - **FR-003**: Correctness MUST NOT depend on several records being written together. On every platform, a write of several records is treated as separate writes that can stop between any two.
-- **FR-004**: After a failed or interrupted save, the active wallet, its network, its account slot and the name counter MUST be what they were before the attempt.
+- **FR-004**: After a failed or interrupted save, the active wallet, its network and its account slot MUST be what they were before the attempt, and a name counter left behind by an interrupted save MUST be brought back to at least the number of listed wallets by the next save.
 - **FR-005**: After a failed or interrupted save, the password that opened the wallet before the attempt MUST still open it.
 - **FR-006**: No vault is ever discarded automatically. A first save that fails or is interrupted after the vault was written leaves that vault in place: the password chosen in that attempt is the one that opens the device, a repeated setup with that password saves the wallet, and a repeated setup of the same recovery phrase takes over the copy already in the vault instead of adding a second one (FR-016). (Owner decision, 2026-11-26, after four review rounds each found a way an automatic discard could delete a real wallet's vault.)
 
@@ -168,17 +168,17 @@ On the mobile setup password screen, the user goes back after a failed save; the
 
 **One wallet per secret**
 
-- **FR-010**: Two listed wallets MUST NOT hold the same secret at the same position: the same recovery phrase at the same starting position, the same private key, the same watched address, or the same Seed Vault address.
+- **FR-010**: Two listed wallets of the same kind MUST NOT hold the same secret at the same position: the same recovery phrase at the same starting position, the same private key, the same watched address, or the same Seed Vault address.
 - **FR-011**: The duplicate decision MUST be made inside the same exclusive write turn as the save (no other save can run in between), against what storage holds at that moment, never only against one window's memory.
-- **FR-012**: A new wallet whose recovery phrase and starting position, private key or watched address matches a listed wallet, or whose address is an address a listed wallet already holds, MUST be refused with the existing message "This wallet is already in your list." / "Esta billetera ya está en tu lista.", storing nothing. This applies to setup (create and recover), "Add wallet" (imported phrase, derived account, private key, watched address) and every other path that adds a wallet. Earlier checks against the window's memory may stay as an early hint.
-- **FR-013**: A Seed Vault account whose address matches a listed Seed Vault wallet MUST replace that wallet in the same save (today's behaviour), decided against storage, in setup as well as "Add wallet". (Assumption, owner question 4.)
+- **FR-012**: A recovery phrase MUST be refused when a listed recovery-phrase wallet already holds that phrase at that position; it is not refused because a watched address, a private-key wallet or a Seed Vault wallet holds one of its addresses, so a user who watched an address or imported its key can still recover the phrase, as today. A private key or a watched address MUST be refused when any listed wallet already holds its address (today's rule). The refusal uses the existing message "This wallet is already in your list." / "Esta billetera ya está en tu lista." and stores nothing. This applies to setup (create and recover), "Add wallet" (imported phrase, derived account, private key, watched address) and every other path that adds a wallet. Earlier checks against the window's memory may stay as an early hint. Nothing that can be added today is newly refused across kinds.
+- **FR-013**: A Seed Vault account whose address matches a listed Seed Vault wallet MUST replace every listed Seed Vault wallet with that address in the same save (today's behaviour), decided against storage, in setup as well as "Add wallet". (Assumption, owner question 4.)
 - **FR-014**: Retrying a save after any failure, or pressing the button again after a save that succeeded and a later step that failed, MUST end with exactly one wallet for that secret.
 - **FR-015**: Once a screen's save has succeeded, that screen MUST NOT save again; a failure in a later step continues as the wallet already saved. (Assumption, owner question 2: on the mobile setup screen, the user moves on to the app, which shows the lock screen if unlocking did not complete.)
 
 **Reads and writes that lie**
 
 - **FR-015a**: A change MUST NOT proceed on a read that contradicts the rest of what the device holds: a vault that reads as missing while a wallet is listed or older-version data is present, a vault that is present but unreadable, or a wallet list that reads as empty while the open window holds wallets. The change is refused and nothing is written. An empty vault is assumed only for a first save.
-- **FR-015b**: When the deciding write reports a failure, the change MUST be settled by reading that record back: if it holds the change, the change is treated as done; if not, the change is refused with the window unchanged. A refused change is therefore safe to retry.
+- **FR-015b**: When the deciding write reports a failure, the change MUST be settled by reading that record back: if it holds the change, the change is treated as done; if not, the change is refused. Either way the window is then brought in line with what storage holds. A refused change is therefore safe to retry.
 
 **Key material**
 
@@ -188,7 +188,7 @@ On the mobile setup password screen, the user goes back after a failed save; the
 **Backup pending**
 
 - **FR-018**: A wallet created without the phrase check MUST be marked "backup pending" whenever it ends up saved, including when the app dies right after the deciding write.
-- **FR-019**: A mark is stale when no listed wallet carries its identifier, either as its own or as the wallet it was derived from (a derived wallet asks under its parent's mark). Stale marks MUST be removed at the next save, and at the next launch at which the wallet list can be read (a list that reads as missing prunes nothing, so a read error cannot wipe the marks), inside the exclusive write turn, so a save running in another window never loses its mark. A failed save does not take its mark back on the spot: a write that reports failure may still have landed, and an unmarked saved wallet is the dangerous direction. A prune that fails MUST NOT stop the wallet from loading.
+- **FR-019**: A mark is stale when no listed wallet carries its identifier, either as its own or as the wallet it was derived from (a derived wallet asks under its parent's mark). Stale marks MUST be removed at the next save, inside the exclusive write turn, as a separate write that cannot make the save fail and that writes nothing when no mark is stale. A failed save does not take its mark back on the spot: a write that reports failure may still have landed, and an unmarked saved wallet is the dangerous direction. Launch does no pruning, so a wallet list that reads wrongly at launch cannot wipe the marks.
 
 **Mobile password screen**
 
