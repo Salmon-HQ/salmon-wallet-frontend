@@ -10,16 +10,25 @@
  * @module hooks/useAccounts
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from 'react';
 import mapValues from 'lodash-es/mapValues';
 
-import { type DerivedKeyCache } from '../crypto/encryption';
+import { isKeyCacheValid, type DerivedKeyCache } from '../crypto/encryption';
+import { getStashItem, STASH_KEYS } from '../storage';
 import { useAccountsLoader } from './useAccountsLoader';
 import { useAccountsConnection } from './useAccountsConnection';
-import { useAccountsMutations } from './useAccountsMutations';
+import { useAccountsMutations, type AddAccountOptions } from './useAccountsMutations';
 import { useAccountsNetworkPreferences } from './useAccountsNetworkPreferences';
 import { useAccountsSelection } from './useAccountsSelection';
 import { useAccountsSecurity } from './useAccountsSecurity';
+import { getStoredMnemonics, resolveMnemonicsWithCachedKey } from './useAccountsSecurityHelpers';
 import {
   generateAccountId,
   createBlockchainAccountForNetwork,
@@ -115,8 +124,8 @@ export interface UseAccountsActions {
   getNetworkId: () => string | null;
   /** Change the active path index */
   changePathIndex: (targetIndex: number) => Promise<void>;
-  /** Add a new account; `replaces` drops the wallet it takes the place of in the same write */
-  addAccount: (account: Account, password?: string, replaces?: string) => Promise<void>;
+  /** Add a new account; it replaces stored Seed Vault wallets with its address */
+  addAccount: (account: Account, password?: string, options?: AddAccountOptions) => Promise<void>;
   /** Edit an existing account */
   editAccount: (targetId: string, params: EditAccountParams) => Promise<void>;
   /** Remove an account */
@@ -346,7 +355,14 @@ export function useAccounts(): [UseAccountsState, UseAccountsActions] {
   const [locked, setLocked] = useState(false);
   const [requiredLock, setRequiredLock] = useState(false);
   const [counter, setCounter] = useState(0);
-  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [accounts, setAccountsState] = useState<Account[]>([]);
+  // Memory as the last update left it, ahead of the render: a change reads it
+  // under the write lock, where the render's copy can miss another change.
+  const heldAccounts = useRef(accounts);
+  const setAccounts = useCallback<Dispatch<SetStateAction<Account[]>>>((next) => {
+    heldAccounts.current = typeof next === 'function' ? next(heldAccounts.current) : next;
+    setAccountsState(heldAccounts.current);
+  }, []);
   const [accountId, setAccountId] = useState<string | null>(null);
   const [networkId, setNetworkId] = useState<string | null>(null);
   const [pathIndex, setPathIndex] = useState(0);
@@ -435,11 +451,29 @@ export function useAccounts(): [UseAccountsState, UseAccountsActions] {
     networkId,
   });
 
+  // Memory catches up with storage after a list write that could not be
+  // settled. Unlike `unlockWithCachedKey` it sets no global error and no lock
+  // (a global error trips mobile's init-failed gate) and writes nothing back:
+  // the change already failed, and the caller reports that.
+  const refreshFromStorage = useCallback(async (): Promise<void> => {
+    try {
+      const keyCache = await getStashItem<DerivedKeyCache>(STASH_KEYS.DERIVED_KEY);
+      if (!isKeyCacheValid(keyCache)) return;
+      const storedMnemonics = await getStoredMnemonics();
+      if (!storedMnemonics) return;
+      const mnemonics = await resolveMnemonicsWithCachedKey(storedMnemonics, keyCache);
+      await loadAccounts(mnemonics, { persist: false });
+    } catch (err) {
+      console.warn('[accounts] could not reload the wallets from storage:', err);
+    }
+  }, [loadAccounts]);
+
   const { addAccount, editAccount, removeAccount, removeAllAccounts, forgetAccounts } =
     useAccountsMutations({
       counter,
       setCounter,
       accounts,
+      heldAccounts,
       setAccounts,
       accountId,
       setAccountId,
@@ -452,6 +486,7 @@ export function useAccounts(): [UseAccountsState, UseAccountsActions] {
       setTokens,
       setUnprotectedAddresses,
       formatAccountForStorage,
+      refreshFromStorage,
     });
 
   const resetError = useCallback(() => setError(null), []);

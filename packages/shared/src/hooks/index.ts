@@ -11,7 +11,11 @@
 // Account management hook
 export { useAccounts } from './useAccounts';
 export type { UseAccountsState, UseAccountsActions } from './useAccounts';
-export { isOwnStoredAccountsWrite } from './useAccountsMutationHelpers';
+export {
+  DuplicateAccountError,
+  isOwnStoredAccountsWrite,
+  withVaultWriteLock,
+} from './useAccountsMutationHelpers';
 
 // User configuration hook
 export { saveBitcoinChoice, useUserConfig } from './useUserConfig';

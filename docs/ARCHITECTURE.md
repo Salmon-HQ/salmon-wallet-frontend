@@ -39,7 +39,7 @@ Es el núcleo. Capas, de abajo hacia arriba:
 
 - `api/` — el contrato con el backend (`../salmon-wallet-backend`): cliente, configuración de entorno, servicios.
 - `blockchain/` — lógica por cadena (`solana` sobre `@solana/kit`, `bitcoin`, `ethereum` como andamiaje futuro). Firma en el cliente. Solana envía al RPC que el backend nombra en `/v1/networks` cuando es https y, en todo build que no sea local (staging y TestFlight incluidos), uno de los hosts compilados (Triton `*.rpcpool.com` y los clústeres públicos de Solana); si no, usa el endpoint compilado (`hooks/useAvailableNetworks.ts`). Bitcoin publica el hex firmado directamente a los relays públicos (`config/bitcoin-relays.ts`), nunca a nuestro backend.
-- `crypto/`, `storage/` — material de claves, cifrado del vault, persistencia. Área sensible: no se cambia sin firma humana.
+- `crypto/`, `storage/` — material de claves, cifrado del vault, persistencia. Área sensible: no se cambia sin firma humana. En las escrituras de wallets (`hooks/useAccountsMutations.ts`) la lista de wallets es la escritura que decide: guardar una wallet escribe el vault antes que la lista, quitarla escribe la lista antes que el vault, y un cambio no escribe nada si una lectura contradice al resto.
 - `theme/` — la única fuente de tokens (`createSemantic(mode)` para claro y oscuro, spacing, tipografía, sombras, geometría de la marca).
 - `motion/` — las constantes de movimiento que ambas plataformas leen.
 - `types/` — tipos de dominio; `types/ui/` los contratos de las gemelas.

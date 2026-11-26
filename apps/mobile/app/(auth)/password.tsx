@@ -37,23 +37,28 @@
 import {
   ApiError,
   createAccount,
+  DuplicateAccountError,
   importSeedVaultAccount,
+  IncorrectPasswordError,
   fontFamilyNative,
+  generateAccountId,
   generateAccountName,
   getMirrorNetworks,
+  getRandomAvatar,
   getScanNetworks,
   getStashItem,
   fontScaleCap,
   fontSize,
   lineHeight,
+  passwordCheckErrorKey,
   removeStashItem,
   setStashItem,
   s,
   spacing,
   STASH_KEYS,
   trackOnboardingEvent,
+  UnlockThrottledError,
   useAccountsContext,
-  usePhraseBackup,
   componentSizes,
   type Semantic,
   useSetupPasswordForm,
@@ -116,8 +121,13 @@ export default function PasswordScreen() {
   const mode = useThemeMode();
   const params = useLocalSearchParams<{ type?: string }>();
   const [state, actions] = useAccountsContext();
-  const { markUnconfirmed } = usePhraseBackup();
   const [mnemonic, setMnemonic] = useState<string | null>(null);
+  // The phrase this screen took from the stash and owes back until a wallet
+  // is saved from it.
+  const owedPhraseRef = useRef<string | null>(null);
+  // Picked on the first submit and kept: a retry saves the same wallet again
+  // instead of adding a second one.
+  const identityRef = useRef<{ id: string; avatar: string } | null>(null);
   // Only create and recover (the default) come here with a phrase in the
   // stash; protect and Seed Vault never take or put one back.
   const usesPhrase = !params.type || params.type === 'create' || params.type === 'recover';
@@ -127,6 +137,7 @@ export default function PasswordScreen() {
     const loadMnemonic = async () => {
       const stored = await getStashItem<string>(STASH_KEYS.PENDING_MNEMONIC);
       if (stored) {
+        owedPhraseRef.current = stored;
         setMnemonic(stored);
         await removeStashItem(STASH_KEYS.PENDING_MNEMONIC);
       }
@@ -136,17 +147,17 @@ export default function PasswordScreen() {
 
   // Back from here lands on the network question, whose choice opens a new
   // password screen that reads the phrase from the stash again. Leaving
-  // without a wallet written puts it back where this screen found it.
-  const walletAddedRef = useRef(false);
-  useEffect(() => {
-    if (!mnemonic) return;
-    return () => {
-      if (walletAddedRef.current) return;
-      setStashItem(STASH_KEYS.PENDING_MNEMONIC, mnemonic).catch((error) => {
+  // without a wallet saved puts it back where this screen found it.
+  useEffect(
+    () => () => {
+      const owed = owedPhraseRef.current;
+      if (!owed) return;
+      setStashItem(STASH_KEYS.PENDING_MNEMONIC, owed).catch((error) => {
         console.error('Failed to put the recovery phrase back:', error);
       });
-    };
-  }, [mnemonic]);
+    },
+    []
+  );
 
   // A Seed Vault wallet (spec 037) arrives instead of a phrase: which seed,
   // which path, which address. Nothing secret — the key stays in Seed Vault.
@@ -238,7 +249,9 @@ export default function PasswordScreen() {
    * unmounted wait is a wave cut mid-crossing. Consumed exactly once by
    * `handleWaitExited`.
    */
-  const pendingRouteRef = useRef<'/(auth)/biometric-setup' | '/(app)/(tabs)' | null>(null);
+  const pendingRouteRef = useRef<
+    '/(auth)/biometric-setup' | '/(auth)/success' | '/(app)/(tabs)' | null
+  >(null);
   const handleWaitExited = useCallback(() => {
     const route = pendingRouteRef.current;
     if (!route) return;
@@ -279,6 +292,7 @@ export default function PasswordScreen() {
       return;
     }
 
+    const t0 = Date.now();
     try {
       // Get counter from useAccounts state
       const accountName = generateAccountName(state.counter, t('wallet.name_template'));
@@ -286,7 +300,6 @@ export default function PasswordScreen() {
       // Create account using factory
       // Derives accounts for ALL networks (mainnet + devnet/testnet)
       // This ensures accounts are ready when user enables developer mode later
-      const t0 = Date.now();
       if (seedVault) {
         // Asked of Seed Vault again, so the wallet is only ever an account
         // Seed Vault itself reports for that authorization.
@@ -301,13 +314,16 @@ export default function PasswordScreen() {
       } else if (!mnemonic) {
         throw new Error('No recovery phrase to create the wallet from');
       }
+      identityRef.current ??= { id: generateAccountId(), avatar: getRandomAvatar() };
       const { account } = seedVault
         ? await importSeedVaultAccount({
+            ...identityRef.current,
             name: accountName,
             ...seedVault,
             networkId: 'solana-mainnet',
           })
         : await createAccount({
+            ...identityRef.current,
             name: accountName,
             mnemonic: mnemonic!,
             networkIds: [...(await getScanNetworks()), ...Object.values(await getMirrorNetworks())],
@@ -315,43 +331,13 @@ export default function PasswordScreen() {
           });
       console.log(`[perf] recovery: createAccount ${Date.now() - t0}ms`);
 
-      // Add account with password encryption
+      // Add account with password encryption. Created here without the phrase
+      // check: the save marks it, and the first send asks for it.
       const t1 = Date.now();
-      // Created here without the phrase check: the first send asks for it.
-      if (flowType === 'create' && !seedVault) await markUnconfirmed(account.id);
-      await actions.addAccount(account, password);
-      walletAddedRef.current = true;
-      setPendingSeedVaultSelection(null);
+      await actions.addAccount(account, password, {
+        unconfirmed: flowType === 'create' && !seedVault,
+      });
       console.log(`[perf] recovery: addAccount (encrypt + storage) ${Date.now() - t1}ms`);
-
-      // Unlock the wallet so no lock screen appears when navigating to the app.
-      // The derived key is already cached in stash from addAccount, so this is fast.
-      await actions.unlockAccounts(password);
-      console.log(`[perf] recovery: TOTAL ${Date.now() - t0}ms`);
-
-      // Pseudonymous funnel event: a wallet was created or recovered. No seed,
-      // address or key material — just which flow completed. The consent prompt
-      // comes a couple of steps later, so this defers on-device until it is
-      // answered (fires on accept, discarded on decline).
-      void trackOnboardingEvent(flowType === 'create' ? 'wallet_created' : 'wallet_recovered');
-
-      // Navigate to biometric setup (auto-skips to success if unavailable) —
-      // but not yet. Navigating here unmounts the wait mid-wave: the overlay
-      // used to vanish with the front still crossing, a hard cut on the one
-      // transition that should close the gesture. The route is parked and the
-      // wait is handed its exit instead (`isLoading` flips false in the
-      // finally below): the last front leaves the screen, the content sinks
-      // with the departing wave, and `onExited` performs the navigation — the
-      // arriving screen then floats in through the auth layout's FloatRegion,
-      // one beat later. LoadingScreen's own watchdog guarantees `onExited`
-      // fires even if the animation callback is dropped, so the route cannot
-      // be stranded.
-      // Parked for the enrolment step: arming biometrics seals this password,
-      // and that screen has no other way to reach it. Held in memory by the
-      // `(auth)` layout, taken and dropped there.
-      enrolmentPassword?.remember(password);
-
-      pendingRouteRef.current = '/(auth)/biometric-setup';
     } catch (err) {
       console.error('Failed to create account:', err);
       // Account setup calls the backend, so an unreachable server lands here
@@ -360,21 +346,65 @@ export default function PasswordScreen() {
       setError(
         isSeedVaultError(err)
           ? t(`wallet.seedVault.errors.${err.reason}`)
-          : err instanceof ApiError && err.isNetworkError()
-            ? t('wallet.create.recovery_network_error') ||
-              'Could not reach the server. Check your connection and try again. Your seed phrase is fine.'
-            : t('wallet.create.recovery_error') ||
-              'Failed to recover account. Please check your seed phrase and try again.'
+          : err instanceof DuplicateAccountError
+            ? t('wallet.import.errors.duplicate')
+            : err instanceof IncorrectPasswordError || err instanceof UnlockThrottledError
+              ? t(passwordCheckErrorKey(err, 'wallet.create.invalid_password'))
+              : err instanceof ApiError && err.isNetworkError()
+                ? t('wallet.create.recovery_network_error') ||
+                  'Could not reach the server. Check your connection and try again. Your seed phrase is fine.'
+                : t('wallet.create.recovery_error') ||
+                  'Failed to recover account. Please check your seed phrase and try again.'
       );
-    } finally {
       setIsLoading(false);
+      return;
     }
+
+    // The wallet is saved: the phrase leaves now, and nothing below may report
+    // the save as failed or offer it again.
+    owedPhraseRef.current = null;
+    setMnemonic(null);
+    setPendingSeedVaultSelection(null);
+
+    // Unlock the wallet so no lock screen appears when navigating to the app.
+    // The derived key is already cached in stash from addAccount, so this is
+    // fast. It reports failure by returning false; enrolment is then skipped,
+    // and the flow goes on to success and the consent question.
+    const unlocked = await actions.unlockAccounts(password);
+    console.log(`[perf] recovery: TOTAL ${Date.now() - t0}ms`);
+
+    // Navigate to biometric setup (auto-skips to success if unavailable) —
+    // but not yet. Navigating here unmounts the wait mid-wave: the overlay
+    // used to vanish with the front still crossing, a hard cut on the one
+    // transition that should close the gesture. The route is parked and the
+    // wait is handed its exit instead (`isLoading` flips false below): the
+    // last front leaves the screen, the content sinks with the departing
+    // wave, and `onExited` performs the navigation — the arriving screen then
+    // floats in through the auth layout's FloatRegion, one beat later.
+    // LoadingScreen's own watchdog guarantees `onExited` fires even if the
+    // animation callback is dropped, so the route cannot be stranded.
+    pendingRouteRef.current = unlocked ? '/(auth)/biometric-setup' : '/(auth)/success';
+
+    try {
+      // Parked for the enrolment step: arming biometrics seals this password,
+      // and that screen has no other way to reach it. Held in memory by the
+      // `(auth)` layout, taken and dropped there.
+      if (unlocked) enrolmentPassword?.remember(password);
+
+      // Pseudonymous funnel event: a wallet was created or recovered. No seed,
+      // address or key material — just which flow completed. The consent prompt
+      // comes a couple of steps later, so this defers on-device until it is
+      // answered (fires on accept, discarded on decline).
+      void trackOnboardingEvent(flowType === 'create' ? 'wallet_created' : 'wallet_recovered');
+    } catch (err) {
+      console.error('A step after the wallet was saved failed:', err);
+    }
+    setIsLoading(false);
   }, [
     isFormValid,
     begin,
     setError,
     setIsLoading,
-    markUnconfirmed,
     seedVault,
     mnemonic,
     password,

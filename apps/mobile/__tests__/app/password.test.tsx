@@ -16,6 +16,8 @@ const mockProtectWallet = jest.fn();
 const mockRemoveAllAccounts = jest.fn();
 const mockDisarm = jest.fn();
 const mockSeedVaultSelection = jest.fn((): unknown => null);
+const mockTrackOnboarding = jest.fn(async () => undefined);
+const mockRemember = jest.fn();
 /**
  * The wait's exit handoff, captured instead of auto-fired: navigation now
  * waits for the LoadingScreen's `onExited` (the wave must leave the screen
@@ -67,7 +69,6 @@ jest.mock('@salmon/shared', () =>
       needsBackup: false,
       requireBackup: async () => true,
       openBackup: () => {},
-      markUnconfirmed: async () => {},
     }),
     // Real tokens rather than a hand-listed subset — see test-utils/themeTokens.
     ...jest.requireActual('../../test-utils/themeTokens'),
@@ -84,7 +85,7 @@ jest.mock('@salmon/shared', () =>
     removeStashItem: (...args: unknown[]) => mockRemoveStashItem(...args),
     setStashItem: (...args: unknown[]) => mockSetStashItem(...args),
     STASH_KEYS: { PENDING_MNEMONIC: 'pending-mnemonic' },
-    trackOnboardingEvent: jest.fn(async () => undefined),
+    trackOnboardingEvent: (...args: unknown[]) => mockTrackOnboarding(...(args as [])),
     useAccountsContext: () => mockUseAccountsContext(),
   })
 );
@@ -235,6 +236,10 @@ jest.mock('../../src/components', () => {
   };
 });
 
+jest.mock('../../src/contexts/EnrolmentPasswordContext', () => ({
+  useEnrolmentPassword: () => ({ remember: (...args: unknown[]) => mockRemember(...args) }),
+}));
+
 jest.mock('../../src/contexts/BiometricContext', () => ({
   useBiometric: () => ({ disarm: (...args: unknown[]) => mockDisarm(...args) }),
 }));
@@ -249,6 +254,11 @@ const { useLocalSearchParams } = jest.requireMock('expo-router') as {
 
 import PasswordScreen from '../../app/(auth)/password';
 import { Linking } from 'react-native';
+import {
+  DuplicateAccountError,
+  IncorrectPasswordError,
+  UnlockThrottledError,
+} from '@salmon/shared';
 
 describe('PasswordScreen', () => {
   beforeEach(() => {
@@ -260,7 +270,7 @@ describe('PasswordScreen', () => {
     mockSetStashItem.mockResolvedValue(undefined);
     mockCreateAccount.mockResolvedValue({ account: { id: 'account-1' } });
     mockAddAccount.mockResolvedValue(undefined);
-    mockUnlockAccounts.mockResolvedValue(undefined);
+    mockUnlockAccounts.mockResolvedValue(true);
     mockCheckPassword.mockResolvedValue(true);
     useLocalSearchParams.mockReturnValue({ type: 'recover' });
     mockUseAccountsContext.mockReturnValue([
@@ -391,6 +401,158 @@ describe('PasswordScreen', () => {
       quiet.mockRestore();
     });
 
+    it('puts the phrase back when the screen is left after a refused save', async () => {
+      mockAddAccount.mockRejectedValueOnce(new Error('disk full'));
+      jest.spyOn(console, 'error').mockImplementation(() => {});
+      const view = render(<PasswordScreen />);
+      await waitFor(() => expect(stash.has('pending-mnemonic')).toBe(false));
+      await submit();
+      await waitFor(() => expect(screen.getByText('wallet.create.recovery_error')).toBeTruthy());
+
+      view.unmount();
+      await act(async () => {});
+
+      expect(stash.get('pending-mnemonic')).toBe(PHRASE);
+    });
+
+    it('drops the phrase once the save resolves: no second save, nothing put back', async () => {
+      const view = render(<PasswordScreen />);
+      await waitFor(() => expect(stash.has('pending-mnemonic')).toBe(false));
+      await submit();
+      await waitFor(() => expect(mockUnlockAccounts).toHaveBeenCalled());
+
+      fireEvent.press(screen.getByText('wallet.recover_wallet'));
+      await act(async () => {
+        jest.advanceTimersByTime(100);
+      });
+      expect(mockAddAccount).toHaveBeenCalledTimes(1);
+
+      view.unmount();
+      await act(async () => {});
+      expect(stash.has('pending-mnemonic')).toBe(false);
+    });
+
+    it('retries a refused save with the same wallet id and avatar', async () => {
+      mockAddAccount.mockRejectedValueOnce(new Error('disk full'));
+      mockCreateAccount.mockImplementation(async ({ id, avatar }) => ({ account: { id, avatar } }));
+      jest.spyOn(console, 'error').mockImplementation(() => {});
+      render(<PasswordScreen />);
+      await waitFor(() => expect(stash.has('pending-mnemonic')).toBe(false));
+      await submit();
+      await waitFor(() => expect(screen.getByText('wallet.create.recovery_error')).toBeTruthy());
+
+      fireEvent.press(screen.getByText('wallet.recover_wallet'));
+      await act(async () => {
+        jest.advanceTimersByTime(100);
+      });
+      await waitFor(() => expect(mockAddAccount).toHaveBeenCalledTimes(2));
+
+      const [first, second] = mockAddAccount.mock.calls.map(([account]) => account);
+      expect(first).toEqual({ id: expect.any(String), avatar: expect.any(String) });
+      expect(second).toEqual(first);
+    });
+
+    it.each([
+      [
+        'a wallet already in the list',
+        new DuplicateAccountError(),
+        'wallet.import.errors.duplicate',
+      ],
+      [
+        'a password that does not open the vault',
+        new IncorrectPasswordError(),
+        'wallet.create.invalid_password',
+      ],
+      [
+        'a password check still waiting out a penalty',
+        new UnlockThrottledError(5000),
+        'errors.password_throttled',
+      ],
+    ])('says so for %s', async (_, refusal, key) => {
+      mockAddAccount.mockRejectedValueOnce(refusal);
+      jest.spyOn(console, 'error').mockImplementation(() => {});
+      render(<PasswordScreen />);
+      await waitFor(() => expect(stash.has('pending-mnemonic')).toBe(false));
+
+      await submit();
+
+      await waitFor(() => expect(screen.getByText(key)).toBeTruthy());
+      expect(screen.queryByText('wallet.create.recovery_error')).toBeNull();
+    });
+
+    it('marks a wallet created here through the save', async () => {
+      useLocalSearchParams.mockReturnValue({ type: 'create' });
+      render(<PasswordScreen />);
+      await waitFor(() => expect(stash.has('pending-mnemonic')).toBe(false));
+
+      fireEvent.changeText(
+        screen.getByPlaceholderText('wallet.create.passwordNew'),
+        'pw-fixture-valid'
+      );
+      fireEvent.changeText(
+        screen.getByPlaceholderText('wallet.create.passwordRepeat'),
+        'pw-fixture-valid'
+      );
+      fireEvent.press(screen.getByText('wallet.create_wallet'));
+      await act(async () => {
+        jest.advanceTimersByTime(100);
+      });
+
+      await waitFor(() =>
+        expect(mockAddAccount).toHaveBeenCalledWith(expect.anything(), 'pw-fixture-valid', {
+          unconfirmed: true,
+        })
+      );
+    });
+
+    // Success leads to the consent question the deferred creation event waits on.
+    it('goes to success, without enrolment, when the unlock after the save fails', async () => {
+      mockUnlockAccounts.mockResolvedValue(false);
+      render(<PasswordScreen />);
+      await waitFor(() => expect(stash.has('pending-mnemonic')).toBe(false));
+      await submit();
+      await waitFor(() => expect(mockUnlockAccounts).toHaveBeenCalled());
+
+      act(() => {
+        mockWaitOnExited.current?.();
+      });
+
+      expect(mockReplace).toHaveBeenCalledWith('/(auth)/success');
+      expect(mockRemember).not.toHaveBeenCalled();
+      expect(screen.queryByText('wallet.create.recovery_error')).toBeNull();
+    });
+
+    it.each([
+      [
+        'the enrolment hand-off',
+        () =>
+          mockRemember.mockImplementationOnce(() => {
+            throw new Error('enrolment gone');
+          }),
+      ],
+      [
+        'analytics',
+        () =>
+          mockTrackOnboarding.mockImplementationOnce(() => {
+            throw new Error('analytics down');
+          }),
+      ],
+    ])('keeps the route to biometric setup when %s throws', async (_, breakIt) => {
+      breakIt();
+      jest.spyOn(console, 'error').mockImplementation(() => {});
+      render(<PasswordScreen />);
+      await waitFor(() => expect(stash.has('pending-mnemonic')).toBe(false));
+      await submit();
+      await waitFor(() => expect(mockUnlockAccounts).toHaveBeenCalled());
+
+      act(() => {
+        mockWaitOnExited.current?.();
+      });
+
+      expect(mockReplace).toHaveBeenCalledWith('/(auth)/biometric-setup');
+      expect(screen.queryByText('wallet.create.recovery_error')).toBeNull();
+    });
+
     it('leaves the stash empty once the wallet is written', async () => {
       const view = render(<PasswordScreen />);
       await waitFor(() => expect(stash.has('pending-mnemonic')).toBe(false));
@@ -436,7 +598,9 @@ describe('PasswordScreen', () => {
       );
     });
 
-    expect(mockAddAccount).toHaveBeenCalledWith({ id: 'account-1' }, 'pw-fixture-valid');
+    expect(mockAddAccount).toHaveBeenCalledWith({ id: 'account-1' }, 'pw-fixture-valid', {
+      unconfirmed: false,
+    });
     expect(mockUnlockAccounts).toHaveBeenCalledWith('pw-fixture-valid');
 
     // The route is parked until the wait has fully left the screen — the wave

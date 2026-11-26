@@ -17,6 +17,8 @@
  */
 
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { sha256 } from '@noble/hashes/sha2';
+import { bytesToHex, utf8ToBytes } from '@noble/hashes/utils';
 
 import { useAccountsContext } from '../contexts/AccountsContext';
 import { useDeveloperModeSettings } from '../contexts/DeveloperModeContext';
@@ -31,6 +33,8 @@ import {
 } from '../factories/account-factory';
 import { trackEvent } from '../analytics/client';
 import { getAccountMnemonic } from '../utils/account-secret';
+import { generateAccountId } from '../utils/account';
+import { getRandomAvatar } from '../utils/avatar';
 import {
   getScanNetworks,
   getScanNetworksWithMirrors,
@@ -49,6 +53,7 @@ import { isNetworkChosen } from '../utils/network';
 import { isSeedVaultError, type SeedVaultFailure } from '../blockchain/solana/seed-vault-signer';
 import { useImportPrivateKey, type UseImportPrivateKeyResult } from './useImportPrivateKey';
 import { useImportWatchOnly, type UseImportWatchOnlyResult } from './useImportWatchOnly';
+import { DuplicateAccountError } from './useAccountsMutationHelpers';
 
 /** The seed step's one error, as an i18n key. */
 export type SeedErrorKey = 'wallet.create.invalidSeed' | '';
@@ -117,8 +122,14 @@ export interface UseAccountAddFlowOptions {
    * the wait and closes settings under it.
    */
   onPersisted: () => void;
-  /** The write failed for a reason other than a lapsed vault key. */
-  onFailure: (error: unknown) => void;
+  /**
+   * The write failed for a reason other than a lapsed vault key. A wallet
+   * already in the list comes with the copy that says so.
+   */
+  onFailure: (
+    error: unknown,
+    duplicateKey?: 'wallet.import.errors.duplicate' | 'wallet.watchOnly.errors.duplicate'
+  ) => void;
   /** Seed Vault, where the device has one (Android Seeker); absent elsewhere. */
   seedVault?: SeedVaultAccess;
 }
@@ -399,6 +410,22 @@ export function useAccountAddFlow({
   }, []);
 
   /**
+   * The wallet id and avatar, kept while the input that makes the wallet stays
+   * the same, so a retry overwrites its own save instead of adding a second
+   * wallet. Keyed on a digest of the input: the ref outlives the private key,
+   * which is dropped once the wallet is stored.
+   */
+  const identityRef = useRef<{ key: string; id: string; avatar: string } | null>(null);
+  const identityFor = useCallback((input: unknown[]) => {
+    const key = bytesToHex(sha256(utf8ToBytes(JSON.stringify(input))));
+    if (identityRef.current?.key !== key) {
+      identityRef.current = { key, id: generateAccountId(), avatar: getRandomAvatar() };
+    }
+    const { id, avatar } = identityRef.current;
+    return { id, avatar };
+  }, []);
+
+  /**
    * Builds the account the current flow describes. Cheap enough to run twice
    * (once per confirm attempt) and free of side effects, so the re-auth path
    * can rebuild rather than park key material in state.
@@ -409,6 +436,7 @@ export function useAccountAddFlow({
     // import factory instead of the mnemonic fan-out across networks.
     if (privateKeyImport.privateKey) {
       return importAccountFromPrivateKey({
+        ...identityFor(['privateKey', privateKeyImport.privateKey]),
         name,
         privateKey: privateKeyImport.privateKey,
         networkId: privateKeyImport.networkId,
@@ -418,12 +446,14 @@ export function useAccountAddFlow({
     // lands on the selected network when that is Solana (Seed Vault holds
     // Solana keys only), so a devnet session adds a devnet wallet.
     if (selectedSeedVault) {
+      const { address, derivationPath, authToken } = selectedSeedVault;
       const current = accountActions.getNetworkId();
       return importSeedVaultAccount({
+        ...identityFor(['seedVault', address, derivationPath, authToken]),
         name,
-        authToken: selectedSeedVault.authToken,
-        derivationPath: selectedSeedVault.derivationPath,
-        address: selectedSeedVault.address,
+        authToken,
+        derivationPath,
+        address,
         networkId:
           current && getBlockchainFromNetworkId(current) === 'solana' ? current : 'solana-mainnet',
       });
@@ -431,12 +461,18 @@ export function useAccountAddFlow({
     // A watched address derives nothing either, and has no key to import.
     if (watchOnlyImport.address) {
       return importWatchOnlyAccount({
+        ...identityFor(['watchOnly', watchOnlyImport.address]),
         name,
         address: watchOnlyImport.address,
         networkId: watchOnlyImport.networkId,
       });
     }
     return createAccount({
+      ...identityFor(
+        selectedDerived
+          ? ['derived', selectedDerived.index, activeAccount?.id]
+          : ['phrase', seedPhrase]
+      ),
       name,
       mnemonic: selectedDerived ? (getAccountMnemonic(activeAccount) ?? '') : seedPhrase,
       networkIds: await getScanNetworksWithMirrors(),
@@ -447,6 +483,7 @@ export function useAccountAddFlow({
       ...(selectedDerived && activeAccount ? { derivedFrom: activeAccount.id } : {}),
     });
   }, [
+    identityFor,
     accountName,
     defaultName,
     privateKeyImport,
@@ -459,21 +496,40 @@ export function useAccountAddFlow({
   ]);
 
   /**
-   * Stores a freshly built account. Split out of `confirm` because the
-   * re-auth retry needs exactly this half: the account is already built, only
-   * the encrypted write is missing.
+   * Builds and stores the account. Shared by `confirm` and the re-auth retry,
+   * which differ only in the password the write is sealed under. A Seed Vault
+   * account under an access the user re-granted after revoking it replaces
+   * the stored wallet with its address; the save decides that.
    */
   const persistAccount = useCallback(
-    async (account: Account, password?: string) => {
-      // The same Seed Vault account under an access the user re-granted after
-      // revoking it: the wallet is replaced, not duplicated.
-      const stale = selectedSeedVault
-        ? accounts.find(
-            ({ secret }) =>
-              secret.kind === 'seedVault' && secret.address === selectedSeedVault.address
-          )
-        : undefined;
-      await accountActions.addAccount(account, password, stale?.id);
+    async (password?: string) => {
+      const { account } = await buildAccount();
+      await accountActions.addAccount(account, password);
+      // Saved: the same input again is a second wallet, which the save refuses
+      // as a duplicate rather than overwrite under the remembered id.
+      identityRef.current = null;
+    },
+    [buildAccount, accountActions]
+  );
+
+  const reportFailure = useCallback(
+    (err: unknown) => {
+      if (!(err instanceof DuplicateAccountError)) {
+        onFailure(err);
+        return;
+      }
+      const watched = !privateKeyImport.privateKey && !selectedSeedVault && watchOnlyImport.address;
+      onFailure(
+        err,
+        watched ? 'wallet.watchOnly.errors.duplicate' : 'wallet.import.errors.duplicate'
+      );
+    },
+    [onFailure, privateKeyImport, selectedSeedVault, watchOnlyImport]
+  );
+
+  /** What follows a stored wallet. The wallet is saved, so nothing here reports a failure. */
+  const afterPersisted = useCallback(() => {
+    try {
       // Anonymous funnel event: a derived account reuses the active seed
       // (create); an imported seed or private key is a recovery. No seed,
       // address or key material leaves here — just which flow completed.
@@ -482,18 +538,15 @@ export function useAccountAddFlow({
       // the panel happens to unmount.
       privateKeyImport.reset();
       watchOnlyImport.reset();
+    } catch (err) {
+      console.error('[AccountAdd] Cleanup after a stored wallet failed:', err);
+    }
+    try {
       onPersisted();
-    },
-    [
-      accountActions,
-      accounts,
-      selectedSeedVault,
-      selectedDerived,
-      privateKeyImport,
-      watchOnlyImport,
-      onPersisted,
-    ]
-  );
+    } catch (err) {
+      console.error('[AccountAdd] Hand-off after a stored wallet failed:', err);
+    }
+  }, [selectedDerived, privateKeyImport, watchOnlyImport, onPersisted]);
 
   const confirm = useCallback(async () => {
     if (busyRef.current) return;
@@ -509,8 +562,7 @@ export function useAccountAddFlow({
     busyRef.current = true;
     onWaitStart();
     try {
-      const { account } = await buildAccount();
-      await persistAccount(account);
+      await persistAccount();
     } catch (err) {
       onWaitEnd();
       // The cache can still lapse between the check and the write.
@@ -518,11 +570,13 @@ export function useAccountAddFlow({
         setStep('reauth');
         return;
       }
-      onFailure(err);
+      reportFailure(err);
+      return;
     } finally {
       busyRef.current = false;
     }
-  }, [buildAccount, persistAccount, onWaitStart, onWaitEnd, onFailure]);
+    afterPersisted();
+  }, [persistAccount, onWaitStart, onWaitEnd, reportFailure, afterPersisted]);
 
   /**
    * Completes the add with a password the user just supplied, after the vault
@@ -556,23 +610,24 @@ export function useAccountAddFlow({
     busyRef.current = true;
     onWaitStart();
     try {
-      const { account } = await buildAccount();
-      await persistAccount(account, reauthPassword);
-      setReauthPasswordState('');
+      await persistAccount(reauthPassword);
     } catch (err) {
       onWaitEnd();
-      onFailure(err);
+      reportFailure(err);
+      return;
     } finally {
       busyRef.current = false;
     }
+    setReauthPasswordState('');
+    afterPersisted();
   }, [
     reauthPassword,
     accountActions,
-    buildAccount,
     persistAccount,
     onWaitStart,
     onWaitEnd,
-    onFailure,
+    reportFailure,
+    afterPersisted,
   ]);
 
   const stepBack = useCallback(() => {

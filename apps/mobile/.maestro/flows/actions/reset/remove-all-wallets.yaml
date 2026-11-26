@@ -5,12 +5,11 @@ appId: io.salmonwallet.app
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - runFlow: ../../../subflows/open-settings.yaml
 # Scroll to Danger Zone
-- swipe:
-    direction: UP
-    from:
-      text: 'Address Book'
-- waitForAnimationToEnd:
-    timeout: 1500
+- scrollUntilVisible:
+    element:
+      id: 'settings-item-remove-all'
+    direction: DOWN
+    centerElement: true
 # UI label is "Remove All Accounts" (translation settings.wallets.remove_all_wallets);
 # the confirmation sheet's title is "Remove All Wallets?" (settings.remove_all_title).
 - assertVisible: 'Remove All Accounts'
@@ -24,7 +23,8 @@ appId: io.salmonwallet.app
 - tapOn:
     id: 'confirm-dialog-confirm'
 - extendedWaitUntil:
-    visible: 'Welcome'
+    visible:
+      id: 'welcome-screen'
     timeout: 30000
 - assertVisible:
     id: 'select-recover-button'

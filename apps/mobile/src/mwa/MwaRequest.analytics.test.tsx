@@ -40,7 +40,6 @@ jest.mock('@salmon/shared', () =>
       needsBackup: false,
       requireBackup: async () => true,
       openBackup: () => {},
-      markUnconfirmed: async () => {},
     }),
     // The detail cards draw the kit's real tokens.
     ...jest.requireActual('../../test-utils/themeTokens'),

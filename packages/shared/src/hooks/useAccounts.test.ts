@@ -232,6 +232,23 @@ function createMockAccount(): Account {
   };
 }
 
+/**
+ * Storage that reads back the wallet list and vault it was given, as a device
+ * does: a change refuses to write over a list that reads empty while wallets
+ * are open. The mocked vault opens with the session key to nothing.
+ */
+function keepWalletListAndVault(): void {
+  const kept = new Map<string, unknown>();
+  vi.mocked(storage.setStorageItem).mockImplementation(async (key: string, value: unknown) => {
+    if (key === 'salmon_accounts' || key === 'salmon_mnemonics') kept.set(key, value);
+  });
+  vi.mocked(storage.getStorageItem).mockImplementation(
+    async (key: string) => kept.get(key) ?? null
+  );
+  vi.mocked(encryption.isKeyCacheValid).mockReturnValue(true);
+  vi.mocked(encryption.unlockWithKey).mockReturnValue({});
+}
+
 // ============================================================================
 // Tests
 // ============================================================================
@@ -945,14 +962,25 @@ describe('useAccounts Hook', () => {
       await waitFor(() => {
         expect(result.current[0].ready).toBe(true);
       });
-      const stale = createMockAccount();
+      keepWalletListAndVault();
+      const seedVault = (authToken: string) =>
+        ({
+          kind: 'seedVault',
+          authToken,
+          derivationPath: "m/44'/501'/0'/0'",
+          address: 'AddrSeedVault',
+          networkId: 'solana-mainnet',
+        }) as const;
+      const stale = { ...createMockAccount(), secret: seedVault('1') };
       await act(async () => {
         await result.current[1].addAccount(stale);
       });
-      const fresh = { ...createMockAccount(), id: 'fresh-wallet' };
+      // The stored vault holds the stale wallet; the replace is read from it.
+      vi.mocked(encryption.unlockWithKey).mockReturnValue({ [stale.id]: stale.secret });
+      const fresh = { ...createMockAccount(), id: 'fresh-wallet', secret: seedVault('2') };
 
       await act(async () => {
-        await result.current[1].addAccount(fresh, undefined, stale.id);
+        await result.current[1].addAccount(fresh);
       });
 
       expect(result.current[0].accounts.map((a) => a.id)).toEqual(['fresh-wallet']);
@@ -1102,9 +1130,10 @@ describe('useAccounts Hook', () => {
       );
     });
 
-    it('never leaves a listed wallet without its secret when removeAccount stops between its writes', async () => {
-      // An app killed between the vault write and the list write must not leave
-      // a wallet listed whose secret is gone: unlock would then fail for every
+    it('rejects with the wallet gone from memory and list, its secret unlisted, when the vault write after the list fails', async () => {
+      // The list decides: once it no longer names the wallet, the window follows
+      // it, and the vault keeps a secret nothing lists. The other order would
+      // leave a listed wallet without its secret, and unlock fails for every
       // wallet with "wrong password".
       const mockAccount1 = createMockAccount();
       const mockAccount2 = { ...createMockAccount(), id: 'account_interrupted_remove' };
@@ -1145,13 +1174,9 @@ describe('useAccounts Hook', () => {
         vault: { ids: Object.keys(vault) },
         requiredLock: true,
       }));
-      let writes = 0;
       (storage.setStorageItem as any).mockImplementation(async (key: string, value: any) => {
-        if (key !== 'salmon_accounts' && key !== 'salmon_mnemonics') return;
-        writes += 1;
-        if (writes === 2) throw new Error('interrupted');
+        if (key === 'salmon_mnemonics') throw new Error('interrupted');
         if (key === 'salmon_accounts') persisted.list = value.map(({ id }: { id: string }) => id);
-        else persisted.vault = value.ids;
       });
 
       await act(async () => {
@@ -1160,6 +1185,9 @@ describe('useAccounts Hook', () => {
         );
       });
 
+      expect(persisted.list).toEqual([mockAccount2.id]);
+      expect(result.current[0].accounts.map(({ id }) => id)).toEqual([mockAccount2.id]);
+      expect(persisted.vault).toContain(mockAccount1.id);
       for (const id of persisted.list) expect(persisted.vault).toContain(id);
     });
 
@@ -1608,6 +1636,8 @@ describe('useAccounts Hook', () => {
       // Verify initial state: no accounts, networkId is null
       expect(result.current[0].accounts).toHaveLength(0);
       expect(result.current[0].networkId).toBeNull();
+
+      keepWalletListAndVault();
 
       const account1 = createMockAccount();
       const account2 = { ...createMockAccount(), id: 'account_second_xyz', name: 'Account 2' };

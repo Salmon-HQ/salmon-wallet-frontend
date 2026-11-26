@@ -16,9 +16,16 @@ import { useAccountsContext } from '../contexts/AccountsContext';
 import { SeedVaultError } from '../blockchain/solana/seed-vault-signer';
 import { isVaultKeyCached, EncryptionMaterialMissingError } from '../crypto/encrypt-mnemonics';
 import { validateMnemonic } from '../crypto/mnemonic';
-import { createAccount, importSeedVaultAccount } from '../factories/account-factory';
+import {
+  createAccount,
+  importAccountFromPrivateKey,
+  importSeedVaultAccount,
+  importWatchOnlyAccount,
+} from '../factories/account-factory';
 import { getScanNetworks, scanDerivedAccounts } from '../utils/derived-accounts';
 import { useDeveloperModeSettings } from '../contexts/DeveloperModeContext';
+import { trackEvent } from '../analytics/client';
+import { DuplicateAccountError } from './useAccountsMutationHelpers';
 
 vi.mock('../contexts/AccountsContext', () => ({ useAccountsContext: vi.fn() }));
 vi.mock('../contexts/DeveloperModeContext', () => ({ useDeveloperModeSettings: vi.fn() }));
@@ -26,7 +33,8 @@ vi.mock('../crypto/encrypt-mnemonics', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../crypto/encrypt-mnemonics')>()),
   isVaultKeyCached: vi.fn(),
 }));
-vi.mock('../crypto/mnemonic', () => ({
+vi.mock('../crypto/mnemonic', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../crypto/mnemonic')>()),
   validateMnemonic: vi.fn(),
   normalizeMnemonic: (phrase: string) => phrase.trim().replace(/\s+/g, ' '),
 }));
@@ -42,17 +50,24 @@ vi.mock('../utils/derived-accounts', () => ({
   getScanNetworksWithMirrors: vi.fn().mockResolvedValue(['solana-mainnet']),
   scanDerivedAccounts: vi.fn(),
 }));
+
+/** What the two import steps hold; each render returns a fresh object, as the real hooks do. */
+const imports = vi.hoisted(() => ({
+  privateKey: null as string | null,
+  watched: null as string | null,
+  reset: vi.fn(),
+}));
 vi.mock('./useImportPrivateKey', () => ({
   useImportPrivateKey: () => ({
     value: '',
     setValue: vi.fn(),
     error: null,
     address: null,
-    privateKey: null,
+    privateKey: imports.privateKey,
     validating: false,
     hasInput: false,
     validate: vi.fn(),
-    reset: vi.fn(),
+    reset: imports.reset,
     networkId: 'solana-mainnet',
   }),
 }));
@@ -61,10 +76,10 @@ vi.mock('./useImportWatchOnly', () => ({
     value: '',
     setValue: vi.fn(),
     error: null,
-    address: null,
+    address: imports.watched,
     hasInput: false,
     validate: vi.fn(),
-    reset: vi.fn(),
+    reset: imports.reset,
     networkId: 'solana-mainnet',
   }),
 }));
@@ -110,6 +125,9 @@ async function reachSetName(result: { current: ReturnType<typeof useAccountAddFl
 
 beforeEach(() => {
   vi.clearAllMocks();
+  imports.privateKey = null;
+  imports.watched = null;
+  imports.reset.mockReset();
   accountsMock.mockReturnValue([
     {
       accounts: [
@@ -244,7 +262,7 @@ describe('useAccountAddFlow', () => {
     await act(() => result.current.confirmReauth());
 
     expect(checkPassword).toHaveBeenCalledWith('correct-horse');
-    expect(addAccount).toHaveBeenCalledWith({ id: 'new' }, 'correct-horse', undefined);
+    expect(addAccount).toHaveBeenCalledWith({ id: 'new' }, 'correct-horse');
     expect(opts.onPersisted).toHaveBeenCalledTimes(1);
     expect(result.current.reauthPassword).toBe('');
   });
@@ -353,13 +371,15 @@ describe('useAccountAddFlow — Seed Vault', () => {
     await act(() => result.current.confirm());
 
     expect(importSeedVaultMock).toHaveBeenCalledWith({
+      id: expect.any(String),
+      avatar: expect.any(String),
       name: 'Account 3',
       authToken: '7',
       derivationPath: "bip32:/m/44'/501'/1'/0'",
       address: 'AddrB',
       networkId: 'solana-devnet',
     });
-    expect(addAccount).toHaveBeenCalledWith({ id: 'sv' }, undefined, undefined);
+    expect(addAccount).toHaveBeenCalledWith({ id: 'sv' }, undefined);
     expect(removeAccount).not.toHaveBeenCalled();
   });
 
@@ -373,8 +393,8 @@ describe('useAccountAddFlow — Seed Vault', () => {
     act(() => result.current.continueSeedVault());
     await act(() => result.current.confirm());
 
-    // One write that drops the stale wallet (spec US3 scenario 4).
-    expect(addAccount).toHaveBeenCalledWith({ id: 'sv' }, undefined, 'old');
+    // The save replaces the stale wallet, decided against storage (spec US3 scenario 4).
+    expect(addAccount).toHaveBeenCalledWith({ id: 'sv' }, undefined);
     expect(removeAccount).not.toHaveBeenCalled();
   });
 
@@ -435,5 +455,295 @@ describe('useAccountAddFlow — derive with the Bitcoin choice', () => {
     await act(() => result.current.selectDerive());
 
     expect(scanMock).toHaveBeenCalledWith('owner mnemonic', expected);
+  });
+});
+
+describe('useAccountAddFlow — one wallet id per input', () => {
+  const privateKeyMock = vi.mocked(importAccountFromPrivateKey);
+  const watchOnlyMock = vi.mocked(importWatchOnlyAccount);
+  const trackMock = vi.mocked(trackEvent);
+
+  /** The id and avatar each attempt handed the factory, in order. */
+  const identities = (factory: { mock: { calls: [{ id?: string; avatar?: string }][] } }) =>
+    factory.mock.calls.map(([{ id, avatar }]) => ({ id, avatar }));
+
+  const withActive = (active: { id: string; secret: unknown }) =>
+    accountsMock.mockReturnValue([
+      { accounts: [active], activeAccount: active },
+      { addAccount, removeAccount, checkPassword, getNetworkId: () => 'solana-devnet' },
+    ] as unknown as ReturnType<typeof useAccountsContext>);
+
+  /** Fails the first save, then runs `between`, then a second attempt. */
+  async function twoAttempts(
+    result: { current: ReturnType<typeof useAccountAddFlow> },
+    between: () => void = () => {}
+  ) {
+    addAccount.mockRejectedValueOnce(new Error('disk full'));
+    await act(() => result.current.confirm());
+    act(between);
+    await act(() => result.current.confirm());
+  }
+
+  beforeEach(() => {
+    privateKeyMock.mockResolvedValue({ account: { id: 'pk' } } as never);
+    watchOnlyMock.mockResolvedValue({ account: { id: 'wo' } } as never);
+    importSeedVaultMock.mockResolvedValue({ account: { id: 'sv' } } as never);
+  });
+
+  it('keeps the id and avatar across confirm attempts and rebuilds the account each time', async () => {
+    const { result } = renderHook(() => useAccountAddFlow(options()));
+    await reachSetName(result);
+
+    await twoAttempts(result);
+
+    expect(createMock).toHaveBeenCalledTimes(2);
+    const [first, second] = identities(createMock);
+    expect(first).toEqual({ id: expect.any(String), avatar: expect.any(String) });
+    expect(second).toEqual(first);
+  });
+
+  it('keeps the id and avatar through re-auth', async () => {
+    addAccount.mockRejectedValueOnce(new EncryptionMaterialMissingError());
+    const { result } = renderHook(() => useAccountAddFlow(options()));
+    await reachSetName(result);
+    await act(() => result.current.confirm());
+    expect(result.current.step).toBe('reauth');
+    act(() => result.current.setReauthPassword('correct-horse'));
+
+    await act(() => result.current.confirmReauth());
+
+    const [first, second] = identities(createMock);
+    expect(first).toEqual({ id: expect.any(String), avatar: expect.any(String) });
+    expect(second).toEqual(first);
+  });
+
+  it('keeps them across renders that return fresh import objects with the same key', async () => {
+    imports.privateKey = 'key-one';
+    const { result, rerender } = renderHook(() => useAccountAddFlow(options()));
+
+    await twoAttempts(result, () => rerender());
+
+    const [first, second] = identities(privateKeyMock);
+    expect(first).toEqual({ id: expect.any(String), avatar: expect.any(String) });
+    expect(second).toEqual(first);
+  });
+
+  it('keeps them on a rename, and on the same phrase typed with other spacing', async () => {
+    const { result } = renderHook(() => useAccountAddFlow(options()));
+    await reachSetName(result);
+
+    await twoAttempts(result, () => {
+      result.current.setAccountName('Savings');
+      result.current.setSeedWords(['valid', ' seed', 'phrase ']);
+    });
+
+    const [first, second] = identities(createMock);
+    expect(first).toEqual({ id: expect.any(String), avatar: expect.any(String) });
+    expect(second).toEqual(first);
+    expect(createMock.mock.calls[1]![0].name).toBe('Savings');
+  });
+
+  it('keeps them for an imported phrase when the active wallet changes', async () => {
+    const { result, rerender } = renderHook(() => useAccountAddFlow(options()));
+    await reachSetName(result);
+
+    await twoAttempts(result, () => {
+      withActive({ id: 'wallet-2', secret: activeAccount.secret });
+      rerender();
+    });
+
+    const [first, second] = identities(createMock);
+    expect(first).toEqual({ id: expect.any(String), avatar: expect.any(String) });
+    expect(second).toEqual(first);
+  });
+
+  /** Both attempts got an id and avatar, and the second got new ones. */
+  const expectRenewed = (factory: Parameters<typeof identities>[0]) => {
+    const [first, second] = identities(factory);
+    expect(first).toEqual({ id: expect.any(String), avatar: expect.any(String) });
+    expect(second).toEqual({ id: expect.any(String), avatar: expect.any(String) });
+    expect(second!.id).not.toBe(first!.id);
+  };
+
+  // With a new id the same phrase meets the stored wallet and gets the duplicate message.
+  it('renews them after a save that resolved, for the same input in a panel left open', async () => {
+    const { result } = renderHook(() => useAccountAddFlow(options()));
+    await reachSetName(result);
+
+    await act(() => result.current.confirm());
+    await act(() => result.current.confirm());
+
+    expectRenewed(createMock);
+  });
+
+  it('renews them when the phrase changes', async () => {
+    const { result } = renderHook(() => useAccountAddFlow(options()));
+    await reachSetName(result);
+
+    await twoAttempts(result, () => result.current.setSeedWords(['other', 'seed', 'phrase']));
+
+    expectRenewed(createMock);
+  });
+
+  it('renews them when the private key changes', async () => {
+    imports.privateKey = 'key-one';
+    const { result, rerender } = renderHook(() => useAccountAddFlow(options()));
+
+    await twoAttempts(result, () => {
+      imports.privateKey = 'key-two';
+      rerender();
+    });
+
+    expectRenewed(privateKeyMock);
+  });
+
+  it('renews them when the watched address changes', async () => {
+    imports.watched = 'AddrWatchedOne';
+    const { result, rerender } = renderHook(() => useAccountAddFlow(options()));
+
+    await twoAttempts(result, () => {
+      imports.watched = 'AddrWatchedTwo';
+      rerender();
+    });
+
+    expectRenewed(watchOnlyMock);
+  });
+
+  it('renews them when the Seed Vault access changes, even by its token alone', async () => {
+    const row = {
+      derivationPath: "bip32:/m/44'/501'/0'/0'",
+      address: 'AddrA',
+      name: 'AddrA',
+      isUserWallet: false,
+    };
+    const seedVault = {
+      listAccounts: vi.fn().mockResolvedValue([
+        { ...row, authToken: '7' },
+        { ...row, authToken: '8' },
+      ]),
+      authorizeAnother: vi.fn(),
+      createSeed: vi.fn(),
+      importSeed: vi.fn(),
+    };
+    withActive({ id: 'wallet-1', secret: activeAccount.secret });
+    const { result } = renderHook(() => useAccountAddFlow(options({ seedVault })));
+    await act(() => result.current.selectSeedVault());
+    act(() => result.current.toggleSeedVault(result.current.seedVaultAccounts[0]!));
+
+    await twoAttempts(result, () =>
+      result.current.toggleSeedVault(result.current.seedVaultAccounts[1]!)
+    );
+
+    expectRenewed(importSeedVaultMock);
+  });
+
+  describe('a derived account', () => {
+    const derived = (index: number) => ({
+      address: `derived-${index}`,
+      index,
+      networkId: 'solana-mainnet',
+    });
+
+    async function pick(result: { current: ReturnType<typeof useAccountAddFlow> }, index: number) {
+      scanMock.mockResolvedValue({
+        accounts: [derived(1), derived(2)],
+        failedNetworks: [],
+      } as never);
+      await act(() => result.current.selectDerive());
+      act(() => result.current.toggleDerived(derived(index) as never));
+    }
+
+    it('renews them when the derived position changes', async () => {
+      const { result } = renderHook(() => useAccountAddFlow(options()));
+      await pick(result, 1);
+
+      await twoAttempts(result, () => result.current.toggleDerived(derived(2) as never));
+
+      expectRenewed(createMock);
+    });
+
+    it('renews them when the active wallet it derives from changes', async () => {
+      const { result, rerender } = renderHook(() => useAccountAddFlow(options()));
+      await pick(result, 1);
+
+      await twoAttempts(result, () => {
+        withActive({ id: 'wallet-2', secret: activeAccount.secret });
+        rerender();
+      });
+
+      expectRenewed(createMock);
+    });
+  });
+
+  it('reports a duplicate with the import copy', async () => {
+    addAccount.mockRejectedValueOnce(new DuplicateAccountError());
+    const opts = options();
+    const { result } = renderHook(() => useAccountAddFlow(opts));
+    await reachSetName(result);
+
+    await act(() => result.current.confirm());
+
+    expect(opts.onFailure).toHaveBeenCalledWith(
+      expect.any(DuplicateAccountError),
+      'wallet.import.errors.duplicate'
+    );
+  });
+
+  it('reports a duplicate watched address with the watch-only copy', async () => {
+    imports.watched = 'AddrWatchedOne';
+    addAccount.mockRejectedValueOnce(new DuplicateAccountError());
+    const opts = options();
+    const { result } = renderHook(() => useAccountAddFlow(opts));
+
+    await act(() => result.current.confirm());
+
+    expect(opts.onFailure).toHaveBeenCalledWith(
+      expect.any(DuplicateAccountError),
+      'wallet.watchOnly.errors.duplicate'
+    );
+  });
+
+  it.each([
+    [
+      'analytics',
+      () =>
+        trackMock.mockImplementationOnce(() => {
+          throw new Error('analytics down');
+        }),
+    ],
+    [
+      'the import reset',
+      () =>
+        imports.reset.mockImplementationOnce(() => {
+          throw new Error('reset failed');
+        }),
+    ],
+  ])('never reports a stored wallet as failed when %s throws', async (_, breakIt) => {
+    breakIt();
+    const opts = options();
+    const { result } = renderHook(() => useAccountAddFlow(opts));
+    await reachSetName(result);
+
+    await act(() => result.current.confirm());
+
+    expect(addAccount).toHaveBeenCalledTimes(1);
+    expect(opts.onFailure).not.toHaveBeenCalled();
+    expect(opts.onWaitEnd).not.toHaveBeenCalled();
+  });
+
+  it('never reports a stored wallet as failed when onPersisted throws', async () => {
+    const opts = options({
+      onPersisted: vi.fn(() => {
+        throw new Error('hand-off failed');
+      }),
+    });
+    const { result } = renderHook(() => useAccountAddFlow(opts));
+    await reachSetName(result);
+
+    await act(() => result.current.confirm());
+
+    expect(opts.onPersisted).toHaveBeenCalledTimes(1);
+    expect(opts.onFailure).not.toHaveBeenCalled();
+    expect(opts.onWaitEnd).not.toHaveBeenCalled();
   });
 });

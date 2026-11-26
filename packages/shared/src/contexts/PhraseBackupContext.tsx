@@ -24,6 +24,7 @@ import React, {
   type ReactNode,
 } from 'react';
 
+import { withVaultWriteLock } from '../hooks/useAccountsMutationHelpers';
 import { getStorageItem, setStorageItem, STORAGE_KEYS } from '../storage';
 import { getAccountMnemonic } from '../utils/account-secret';
 import type { Account } from '../types/account';
@@ -43,8 +44,6 @@ export interface PhraseBackupValue {
   confirmBackup: () => Promise<void>;
   /** The sheet was left without passing: a waiting flow does not sign. */
   cancelBackup: () => void;
-  /** Called by sign-up for a wallet created without the check. */
-  markUnconfirmed: (walletId: string) => Promise<void>;
 }
 
 /** Outside a provider (tests, a surface that cannot sign) nothing is ever due. */
@@ -55,7 +54,6 @@ const NONE: PhraseBackupValue = {
   openBackup: () => {},
   confirmBackup: async () => {},
   cancelBackup: () => {},
-  markUnconfirmed: async () => {},
 };
 
 const PhraseBackupContext = createContext<PhraseBackupValue>(NONE);
@@ -71,13 +69,18 @@ export function PhraseBackupProvider({ children }: { children: ReactNode }) {
   const [unconfirmed, setUnconfirmed] = useState<string[]>([]);
   const [sheet, setSheet] = useState<PhraseBackupValue['sheet']>(null);
   const waiting = useRef<((confirmed: boolean) => void) | null>(null);
+  // A save marks a new wallet in storage; read again whenever the wallets change.
+  const listedIds = accounts?.accounts?.map(({ id }) => id).join('\n');
+  // Bumped by every update: a read started before one answers with what it replaced.
+  const generation = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
+    const started = generation.current;
     (async () => {
       try {
         const ids = await getStorageItem<string[]>(STORAGE_KEYS.UNCONFIRMED_PHRASES);
-        if (cancelled) return;
+        if (cancelled || generation.current !== started) return;
         if (Array.isArray(ids)) setUnconfirmed(ids);
       } catch (error) {
         console.error('[PhraseBackup] Failed to read backup state:', error);
@@ -86,17 +89,18 @@ export function PhraseBackupProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [listedIds]);
 
   const wallet = walletOf(activeAccount);
   const needsBackup =
     !!wallet && unconfirmed.includes(wallet) && !!getAccountMnemonic(activeAccount);
 
-  // Read-modify-write against storage, not against state: sign-up can mark a
-  // wallet before the first read has landed.
+  // Read-modify-write against storage, not against state: a save can mark a
+  // wallet before the last read has landed.
   const update = useCallback(async (change: (ids: string[]) => string[]) => {
     const stored = await getStorageItem<string[]>(STORAGE_KEYS.UNCONFIRMED_PHRASES);
     const ids = change(Array.isArray(stored) ? stored : []);
+    generation.current += 1;
     setUnconfirmed(ids);
     await setStorageItem(STORAGE_KEYS.UNCONFIRMED_PHRASES, ids);
   }, []);
@@ -112,9 +116,10 @@ export function PhraseBackupProvider({ children }: { children: ReactNode }) {
     if (!wallet || !getAccountMnemonic(activeAccount)) return true;
     // Read again rather than trust state: Android's dApp sheet is a second
     // React root with its own provider, and the check may have passed there.
+    const started = generation.current;
     const stored = await getStorageItem<string[]>(STORAGE_KEYS.UNCONFIRMED_PHRASES);
     const ids = Array.isArray(stored) ? stored : [];
-    setUnconfirmed(ids);
+    if (generation.current === started) setUnconfirmed(ids);
     if (!ids.includes(wallet)) return true;
     // One sheet at a time: a second request answers the first as not confirmed.
     waiting.current?.(false);
@@ -127,16 +132,15 @@ export function PhraseBackupProvider({ children }: { children: ReactNode }) {
   const openBackup = useCallback(() => setSheet({ reason: 'manual' }), []);
 
   const confirmBackup = useCallback(async () => {
-    if (wallet) await update((ids) => ids.filter((id) => id !== wallet));
+    // Inside the wallet write turn: a save prunes this same record there, and
+    // two interleaved read-modify-writes would undo one another.
+    if (wallet) {
+      await withVaultWriteLock(() => update((ids) => ids.filter((id) => id !== wallet)));
+    }
     settle(true);
   }, [wallet, update, settle]);
 
   const cancelBackup = useCallback(() => settle(false), [settle]);
-
-  const markUnconfirmed = useCallback(
-    (walletId: string) => update((ids) => (ids.includes(walletId) ? ids : [...ids, walletId])),
-    [update]
-  );
 
   const value = useMemo<PhraseBackupValue>(
     () => ({
@@ -146,9 +150,8 @@ export function PhraseBackupProvider({ children }: { children: ReactNode }) {
       openBackup,
       confirmBackup,
       cancelBackup,
-      markUnconfirmed,
     }),
-    [needsBackup, sheet, requireBackup, openBackup, confirmBackup, cancelBackup, markUnconfirmed]
+    [needsBackup, sheet, requireBackup, openBackup, confirmBackup, cancelBackup]
   );
 
   return <PhraseBackupContext.Provider value={value}>{children}</PhraseBackupContext.Provider>;

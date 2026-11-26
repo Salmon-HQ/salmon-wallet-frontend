@@ -3,8 +3,10 @@
  */
 
 import React from 'react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { withVaultWriteLock } from '@salmon/shared';
 
 import App from './App';
 
@@ -14,21 +16,33 @@ const mockUnlockWithCachedKey = vi.fn();
 const mockUseInactivityTimeout = vi.fn();
 const mockClearSessionKey = vi.fn();
 const mockUseSecretClipboardResume = vi.fn();
+const mockGetStashItem = vi.fn();
 const eventListeners = new Map<string, EventListener>();
-const { accountsState, mockUseLockAcrossWindows } = vi.hoisted(() => ({
+const { accountsState, mockUseLockAcrossWindows, passwordPage } = vi.hoisted(() => ({
   accountsState: {
     unprotectedAddresses: null as string[] | null,
     locked: false,
     accounts: [{ id: 'account-1' }] as { id: string }[],
   },
   mockUseLockAcrossWindows: vi.fn(),
+  // The props the password screen last rendered with.
+  passwordPage: { onBack: undefined as (() => void) | undefined },
 }));
 
 vi.mock('./useLockAcrossWindows', () => ({
   useLockAcrossWindows: (params: unknown) => mockUseLockAcrossWindows(params),
 }));
 
-vi.mock('@salmon/shared', () => ({
+vi.mock('@salmon/shared', async () => ({
+  // The real write lock: the reload must wait for a write turn it does not own.
+  withVaultWriteLock: (
+    await vi.importActual<typeof import('@salmon/shared/hooks/useAccountsMutationHelpers')>(
+      '@salmon/shared/hooks/useAccountsMutationHelpers'
+    )
+  ).withVaultWriteLock,
+  getStashItem: (...args: unknown[]) => mockGetStashItem(...args),
+  isKeyCacheValid: (cache: unknown) => cache != null,
+  STASH_KEYS: { DERIVED_KEY: 'derived_key' },
   SignatureRequestProvider: ({ children }: { children: React.ReactNode }) => children,
   isSignableSolanaAccount: () => false,
   colors: {
@@ -144,23 +158,30 @@ vi.mock('../../pages/auth/PasswordPage', () => ({
     addresses?: string[];
     onRemoveWallet?: () => Promise<void>;
     onBack?: () => void;
-  }) => (
-    <div data-testid="password-page" data-flow={props.flowType}>
-      {props.addresses?.join(',')}
-      {props.onRemoveWallet && (
-        <button data-testid="password-remove" onClick={() => void props.onRemoveWallet?.()} />
-      )}
-      {props.onBack && <button data-testid="password-back" onClick={props.onBack} />}
-    </div>
-  ),
+    onSuccess?: () => void;
+  }) => {
+    passwordPage.onBack = props.onBack;
+    return (
+      <div data-testid="password-page" data-flow={props.flowType}>
+        {props.addresses?.join(',')}
+        {props.onRemoveWallet && (
+          <button data-testid="password-remove" onClick={() => void props.onRemoveWallet?.()} />
+        )}
+        {props.onBack && <button data-testid="password-back" onClick={props.onBack} />}
+        {props.onSuccess && <button data-testid="password-success" onClick={props.onSuccess} />}
+      </div>
+    );
+  },
 }));
 
 vi.mock('../../pages/auth/SuccessPage', () => ({
-  SuccessPage: () => null,
+  SuccessPage: (props: { onGoToWallet: () => void }) => (
+    <button data-testid="success-go" onClick={props.onGoToWallet} />
+  ),
 }));
 
 vi.mock('../../pages/auth/AnalyticsConsentPage', () => ({
-  AnalyticsConsentPage: () => null,
+  AnalyticsConsentPage: () => <div data-testid="consent-page" />,
 }));
 
 describe('Extension popup inactivity lock', () => {
@@ -367,5 +388,148 @@ describe('Extension popup onboarding: choosing networks', () => {
 
     expect(screen.queryByTestId('onboarding-networks-screen')).toBeNull();
     expect(screen.queryByTestId('select-page')).toBeNull();
+  });
+
+  it('shows success and consent once the wallet is saved', () => {
+    render(<App />);
+    fireEvent.click(screen.getByTestId('select-create'));
+    fireEvent.click(screen.getByTestId('create-done'));
+    fireEvent.click(screen.getByTestId('networks-choose'));
+    fireEvent.click(screen.getByTestId('password-success'));
+
+    fireEvent.click(screen.getByTestId('success-go'));
+
+    expect(screen.getByTestId('consent-page')).toBeTruthy();
+  });
+
+  // Without the phrase the steps that need it fall back to the welcome screen.
+  it('drops the phrase once the wallet is saved', () => {
+    render(<App />);
+    fireEvent.click(screen.getByTestId('select-create'));
+    fireEvent.click(screen.getByTestId('create-done'));
+    fireEvent.click(screen.getByTestId('networks-choose'));
+    const back = passwordPage.onBack;
+    fireEvent.click(screen.getByTestId('password-success'));
+
+    act(() => back?.());
+
+    expect(screen.queryByTestId('onboarding-networks-screen')).toBeNull();
+    expect(screen.getByTestId('select-page')).toBeTruthy();
+  });
+});
+
+describe('Extension popup reload after a wallet list change elsewhere', () => {
+  // A turn left held by a failing case would block every later case's turn.
+  const heldTurns: (() => void)[] = [];
+
+  afterEach(() => {
+    heldTurns.splice(0).forEach((release) => release());
+    cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetStashItem.mockResolvedValue({ key: 'cached' });
+    vi.stubGlobal('chrome', {
+      storage: { onChanged: { addListener: vi.fn(), removeListener: vi.fn() } },
+    });
+  });
+
+  function holdWriteTurn(onRelease: () => void = () => {}) {
+    let release: () => void = () => {};
+    const ready = new Promise<void>((started) => {
+      void withVaultWriteLock(
+        () =>
+          new Promise<void>((done) => {
+            release = () => {
+              onRelease();
+              done();
+            };
+            heldTurns.push(done);
+            started();
+          })
+      );
+    });
+    return { ready, release: () => release() };
+  }
+
+  const reloadFromHost = () =>
+    (mockUseLockAcrossWindows.mock.lastCall?.[0] as { reload: () => Promise<boolean> }).reload;
+
+  it('waits for a write turn in flight before re-reading the wallets', async () => {
+    mockUnlockWithCachedKey.mockResolvedValue(true);
+    render(<App />);
+    const turn = holdWriteTurn();
+    await turn.ready;
+
+    const reloaded = reloadFromHost()();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(mockUnlockWithCachedKey).not.toHaveBeenCalled();
+
+    turn.release();
+    await expect(reloaded).resolves.toBe(true);
+    expect(mockUnlockWithCachedKey).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the wallet another window added together with the one this window saved', async () => {
+    // D was added in another window; this stale window is saving C.
+    const stored = { ids: ['A', 'D'], active: 'A' };
+    let shown: { ids: string[]; active: string } | null = null;
+    mockUnlockWithCachedKey.mockImplementation(async () => {
+      shown = { ids: [...stored.ids], active: stored.active };
+      return true;
+    });
+    render(<App />);
+    const save = holdWriteTurn(() => {
+      stored.ids.push('C');
+      stored.active = 'C';
+    });
+    await save.ready;
+
+    const reloaded = reloadFromHost()();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    save.release();
+    await reloaded;
+
+    expect(shown).toEqual({ ids: ['A', 'D', 'C'], active: 'C' });
+  });
+
+  /**
+   * The extension's windows take a Web Locks lock: this one admits one holder
+   * at a time and is not reentrant. jsdom has no `navigator.locks` of its own.
+   */
+  function exclusiveLocks() {
+    let tail: Promise<unknown> = Promise.resolve();
+    return {
+      request<T>(_name: string, write: () => Promise<T>): Promise<T> {
+        const run = tail.then(write);
+        tail = run.catch(() => undefined);
+        return run;
+      },
+    };
+  }
+
+  it('re-reads the wallets inside one write turn, so no save lands between its reads', async () => {
+    vi.stubGlobal('navigator', { locks: exclusiveLocks() });
+    let finishUnlock: () => void = () => {};
+    mockUnlockWithCachedKey.mockImplementation(
+      () => new Promise<boolean>((resolve) => (finishUnlock = () => resolve(true)))
+    );
+    render(<App />);
+
+    const reloaded = reloadFromHost()();
+    await vi.waitFor(() => expect(mockUnlockWithCachedKey).toHaveBeenCalledTimes(1));
+    let saved = false;
+    const save = withVaultWriteLock(async () => {
+      saved = true;
+    });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(saved).toBe(false);
+
+    finishUnlock();
+    await expect(reloaded).resolves.toBe(true);
+    await save;
+    expect(saved).toBe(true);
   });
 });

@@ -10,16 +10,21 @@ import { useTranslation } from 'react-i18next';
 import {
   ApiError,
   createAccount,
+  DuplicateAccountError,
   fontFamily,
   fontWeight,
   fontSize,
+  generateAccountId,
   getMirrorNetworks,
+  getRandomAvatar,
   getScanNetworks,
+  IncorrectPasswordError,
   lineHeight,
+  passwordCheckErrorKey,
   spacing,
   trackOnboardingEvent,
+  UnlockThrottledError,
   useAccountsContext,
-  usePhraseBackup,
   componentSizes,
   useSetupPasswordForm,
   useWaitExit,
@@ -76,7 +81,9 @@ export function PasswordPage(props: PasswordPageProps): React.ReactElement {
   const { t } = useTranslation();
   const { status, step, text } = useSemantic();
   const [state, actions] = useAccountsContext();
-  const { markUnconfirmed } = usePhraseBackup();
+  // Picked on the first submit and kept: a retry saves the same wallet again
+  // instead of adding a second one.
+  const identityRef = useRef<{ id: string; avatar: string } | null>(null);
 
   const errorText: CSSProperties = {
     color: status.danger,
@@ -179,7 +186,9 @@ export function PasswordPage(props: PasswordPageProps): React.ReactElement {
       const accountName = generateAccountName(state.counter, t('wallet.name_template'));
       const scanNetworks = await getScanNetworks();
       const mirrorNetworks = await getMirrorNetworks();
+      identityRef.current ??= { id: generateAccountId(), avatar: getRandomAvatar() };
       const { account } = await createAccount({
+        ...identityRef.current,
         name: accountName,
         mnemonic,
         networkIds: [...scanNetworks, ...Object.values(mirrorNetworks)],
@@ -187,9 +196,9 @@ export function PasswordPage(props: PasswordPageProps): React.ReactElement {
       });
 
       onCreating?.();
-      // Created here without the phrase check: the first send asks for it.
-      if (flowType === 'create') await markUnconfirmed(account.id);
-      await actions.addAccount(account, password);
+      // Created here without the phrase check: the save marks it, and the
+      // first send asks for it.
+      await actions.addAccount(account, password, { unconfirmed: flowType === 'create' });
       // Pseudonymous funnel event: a wallet was created or recovered. No seed,
       // address or key material — just which flow completed. The consent prompt
       // comes a step later, so this defers on-device until it is answered
@@ -205,17 +214,20 @@ export function PasswordPage(props: PasswordPageProps): React.ReactElement {
       // too. Blaming the seed phrase for that sends users hunting for a lost
       // wallet when all they need is a connection.
       setError(
-        err instanceof ApiError && err.isNetworkError()
-          ? t('wallet.create.recovery_network_error') ||
-              'Could not reach the server. Check your connection and try again. Your seed phrase is fine.'
-          : t('wallet.create.recovery_error') ||
-              'Failed to create account. Please check your seed phrase and try again.'
+        err instanceof DuplicateAccountError
+          ? t('wallet.import.errors.duplicate')
+          : err instanceof IncorrectPasswordError || err instanceof UnlockThrottledError
+            ? t(passwordCheckErrorKey(err, 'wallet.create.invalid_password'))
+            : err instanceof ApiError && err.isNetworkError()
+              ? t('wallet.create.recovery_network_error') ||
+                'Could not reach the server. Check your connection and try again. Your seed phrase is fine.'
+              : t('wallet.create.recovery_error') ||
+                'Failed to create account. Please check your seed phrase and try again.'
       );
     } finally {
       setIsLoading(false);
     }
   }, [
-    markUnconfirmed,
     actions,
     begin,
     flowType,
