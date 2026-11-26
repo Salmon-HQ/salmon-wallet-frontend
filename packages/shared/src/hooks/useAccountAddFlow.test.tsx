@@ -244,7 +244,7 @@ describe('useAccountAddFlow', () => {
     await act(() => result.current.confirmReauth());
 
     expect(checkPassword).toHaveBeenCalledWith('correct-horse');
-    expect(addAccount).toHaveBeenCalledWith({ id: 'new' }, 'correct-horse', undefined);
+    expect(addAccount).toHaveBeenCalledWith({ id: 'new' }, 'correct-horse');
     expect(opts.onPersisted).toHaveBeenCalledTimes(1);
     expect(result.current.reauthPassword).toBe('');
   });
@@ -359,7 +359,7 @@ describe('useAccountAddFlow — Seed Vault', () => {
       address: 'AddrB',
       networkId: 'solana-devnet',
     });
-    expect(addAccount).toHaveBeenCalledWith({ id: 'sv' }, undefined, undefined);
+    expect(addAccount).toHaveBeenCalledWith({ id: 'sv' }, undefined);
     expect(removeAccount).not.toHaveBeenCalled();
   });
 
@@ -373,8 +373,8 @@ describe('useAccountAddFlow — Seed Vault', () => {
     act(() => result.current.continueSeedVault());
     await act(() => result.current.confirm());
 
-    // One write that drops the stale wallet (spec US3 scenario 4).
-    expect(addAccount).toHaveBeenCalledWith({ id: 'sv' }, undefined, 'old');
+    // The save replaces the stale wallet, decided against storage (spec US3 scenario 4).
+    expect(addAccount).toHaveBeenCalledWith({ id: 'sv' }, undefined);
     expect(removeAccount).not.toHaveBeenCalled();
   });
 

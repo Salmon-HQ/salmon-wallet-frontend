@@ -963,14 +963,24 @@ describe('useAccounts Hook', () => {
         expect(result.current[0].ready).toBe(true);
       });
       keepWalletListAndVault();
-      const stale = createMockAccount();
+      const seedVault = (authToken: string) =>
+        ({
+          kind: 'seedVault',
+          authToken,
+          derivationPath: "m/44'/501'/0'/0'",
+          address: 'AddrSeedVault',
+          networkId: 'solana-mainnet',
+        }) as const;
+      const stale = { ...createMockAccount(), secret: seedVault('1') };
       await act(async () => {
         await result.current[1].addAccount(stale);
       });
-      const fresh = { ...createMockAccount(), id: 'fresh-wallet' };
+      // The stored vault holds the stale wallet; the replace is read from it.
+      vi.mocked(encryption.unlockWithKey).mockReturnValue({ [stale.id]: stale.secret });
+      const fresh = { ...createMockAccount(), id: 'fresh-wallet', secret: seedVault('2') };
 
       await act(async () => {
-        await result.current[1].addAccount(fresh, undefined, stale.id);
+        await result.current[1].addAccount(fresh);
       });
 
       expect(result.current[0].accounts.map((a) => a.id)).toEqual(['fresh-wallet']);

@@ -41,6 +41,7 @@ vi.mock('./useAccountsConnection', () => ({ useAccountsConnection: () => undefin
 vi.mock('../utils/account', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../utils/account')>()),
   createBlockchainAccountForNetwork: vi.fn(async () => null),
+  createBlockchainAccountForSeedVault: vi.fn(async () => ({ network: { id: 'solana-mainnet' } })),
 }));
 
 const ACCOUNTS = 'salmon_accounts';
@@ -91,7 +92,7 @@ const stored = ({ id, name, avatar }: Account): StoredAccount => ({
 
 const secretsOf = (wallets: Account[]) =>
   Object.fromEntries(
-    wallets.map(({ id, secret }) => [id, (secret as { mnemonic: string }).mnemonic])
+    wallets.map(({ id, secret }) => [id, secret.kind === 'mnemonic' ? secret.mnemonic : secret])
   );
 
 let crash: CrashStorage;
@@ -593,5 +594,296 @@ describe('a launch over what a stopped save leaves', () => {
 
     expect(crash.writes.slice(mark)).toEqual([]);
     expect(crash.snapshot()).toEqual(before);
+  });
+});
+
+const seedVaultWallet = (name: string, address: string, authToken: string): Account => ({
+  ...wallet(name),
+  secret: {
+    kind: 'seedVault',
+    authToken,
+    derivationPath: "m/44'/501'/0'/0'",
+    address,
+    networkId: NETWORK,
+  },
+});
+
+describe('a Seed Vault account whose address only storage lists', () => {
+  // Two Seed Vault wallets for one address, a third on another address sharing
+  // the second one's access token, and the account that replaces the first two.
+  const S1 = seedVaultWallet('sv-one', 'AddrY', '1');
+  const S2 = seedVaultWallet('sv-two', 'AddrY', '2');
+  const S3 = seedVaultWallet('sv-three', 'AddrZ', '2');
+  const SC = seedVaultWallet('sv-new', 'AddrY', '9');
+  const released: string[] = [];
+
+  const prepare = async () => {
+    await seed([A]);
+    const view = await mount();
+    await seed([A, S1, S2, S3]);
+    released.length = 0;
+    (await import('../blockchain/solana/seed-vault-signer')).registerSeedVault({
+      bridge: { signTransactions: vi.fn(), signMessages: vi.fn() },
+      maxPerRequest: 3,
+      release: (token) => released.push(token),
+    });
+    return view;
+  };
+  const change: Change = (view) => actions(view).addAccount(SC);
+
+  /** One wallet for the address, every listed id unlockable, no token given up while in use. */
+  async function expectReplaceSettled(label: string): Promise<void> {
+    const ids = storedIds();
+    const secrets = await storedSecrets();
+    expect(secrets, label).not.toBeNull();
+    for (const id of ids) expect(secrets?.[id], label).toBeDefined();
+    expect(ids, label).toEqual(expect.arrayContaining([A.id, S3.id]));
+    expect(
+      ids.filter((id) => [S1.id, S2.id, SC.id].includes(id)),
+      label
+    ).toEqual(ids.includes(SC.id) ? [SC.id] : [S1.id, S2.id]);
+    const tokensInUse = Object.values(secrets ?? {}).flatMap((secret) =>
+      typeof secret === 'object' && (secret as { kind?: string }).kind === 'seedVault'
+        ? [(secret as { authToken: string }).authToken]
+        : []
+    );
+    for (const token of released) expect(tokensInUse, label).not.toContain(token);
+  }
+
+  it('replaces both, drops their entries after the list, and gives up only the unused token', async () => {
+    const view = await prepare();
+    const mark = crash.writes.length;
+
+    await act(() => change(view));
+
+    const keys = crash.writes.slice(mark).map(({ key }) => key);
+    expect(keys.indexOf(MNEMONICS)).toBeLessThan(keys.indexOf(ACCOUNTS));
+    expect(keys.lastIndexOf(MNEMONICS)).toBeGreaterThan(keys.indexOf(ACCOUNTS));
+    expect(storedIds()).toEqual([A.id, S3.id, SC.id]);
+    expect(await storedSecrets()).toEqual(secretsOf([A, S3, SC]));
+    expect(heldIds(view)).toEqual([A.id, SC.id]);
+    expect(released).toEqual(['1']);
+  });
+
+  it('leaves one wallet for the address, whichever write fails', async () => {
+    silence();
+    const keys = await cleanRun(prepare, change);
+
+    for (let n = 1; n <= keys.length; n += 1) {
+      const label = `fail at write ${n} (${keys[n - 1]})`;
+      await restart();
+      const view = await prepare();
+      crash.failAt(n);
+
+      await attempt(() => change(view));
+
+      await expectReplaceSettled(label);
+      await act(() => change(view));
+      await expectReplaceSettled(`${label}, then a retry`);
+      expect(storedIds(), label).toContain(SC.id);
+    }
+  });
+
+  it('leaves one wallet for the address, whichever write is the last to land', async () => {
+    silence();
+    const keys = await cleanRun(prepare, change);
+
+    for (let n = 0; n < keys.length; n += 1) {
+      const label = `killed after write ${n}`;
+      await restart();
+      const view = await prepare();
+      crash.killAfter(n);
+      await attempt(() => change(view));
+      cleanup();
+      await crash.relaunch({ keepStash: true });
+
+      const relaunched = await mount();
+
+      await expectReplaceSettled(label);
+      expect(heldIds(relaunched), label).toEqual(storedIds());
+      await act(() => change(relaunched));
+      await expectReplaceSettled(`${label}, then a retry`);
+      expect(storedIds(), label).toContain(SC.id);
+    }
+  });
+});
+
+describe('the duplicate check against storage', () => {
+  it('refuses, in a stale window, a wallet another window stored under another id', async () => {
+    await seed([A, B]);
+    const stale = await mount();
+    const staleHelpers = (await runtime()).helpers;
+    await crash.relaunch({ keepStash: true });
+    const other = await mount();
+    await act(() => actions(other).addAccount(D));
+
+    const error = await attempt(() => actions(stale).addAccount({ ...D, id: 'id-delta-again' }));
+
+    expect(error).toBeInstanceOf(staleHelpers.DuplicateAccountError);
+    expect(storedIds()).toEqual([A.id, B.id, D.id]);
+    expect(Object.keys((await storedSecrets()) ?? {})).not.toContain('id-delta-again');
+  });
+
+  it('refuses the same phrase from a new screen after a save whose read-back failed', async () => {
+    const keys = await cleanRun(
+      () => listed([A, B]),
+      (view) => actions(view).addAccount(C)
+    );
+    const view = await listed([A, B]);
+    const { helpers } = await runtime();
+    crash.failAt(keys.indexOf(ACCOUNTS) + 1, { applied: true });
+    // The save's own list read passes; the read-back after the throw fails.
+    crash.failRead(ACCOUNTS, { at: 2 });
+    expect(await attempt(() => actions(view).addAccount(C))).toBeInstanceOf(Error);
+
+    const error = await attempt(() => actions(view).addAccount({ ...C, id: 'id-gamma-again' }));
+
+    expect(error).toBeInstanceOf(helpers.DuplicateAccountError);
+    expect(storedIds()).toEqual([A.id, B.id, C.id]);
+  });
+
+  // Guards: a save removes no vault entry, whatever it looks like.
+  it('keeps an unlisted copy, the same phrase spaced otherwise, and another phrase', async () => {
+    const copy = { ...C, id: 'id-copy' };
+    const spaced = wallet('spaced', '  phrase  of   gamma ');
+    const other = wallet('other');
+    await seed([A, B], { vault: [A, B, copy, spaced, other] });
+    const view = await mount();
+
+    await act(() => actions(view).addAccount(C));
+
+    expect(await storedSecrets()).toEqual(secretsOf([A, B, copy, spaced, other, C]));
+  });
+
+  it("keeps a listed wallet's entry when the list reads absent with nothing open", async () => {
+    await seed([A]);
+    crash.dropRead(ACCOUNTS);
+    const view = await mount();
+    expect(heldIds(view)).toEqual([]);
+
+    await act(() => actions(view).addAccount(C));
+
+    expect(await storedSecrets()).toMatchObject(secretsOf([A, C]));
+  });
+
+  it('asks nothing of the network while saving', async () => {
+    const view = await listed([A, B]);
+    const fetchSpy = vi.fn();
+    vi.stubGlobal('fetch', fetchSpy);
+    const watched: Account = {
+      ...wallet('watched'),
+      secret: { kind: 'watchOnly', address: 'AddrW', networkId: NETWORK },
+    };
+
+    await act(() => actions(view).addAccount(watched));
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(storedIds()).toContain(watched.id);
+  });
+});
+
+describe('backup-pending marks', () => {
+  const MARKS = 'salmon_unconfirmed_phrases';
+  /** A mark no stored wallet carries, left by a save that failed or stopped. */
+  const GHOST = 'id-ghost-7f3';
+
+  const marks = () => crash.snapshot()[MARKS] as string[] | undefined;
+
+  async function writeMarks(ids: string[]): Promise<void> {
+    const { storage } = await runtime();
+    await storage.setStorageItem(MARKS, ids);
+  }
+
+  const unconfirmed = (view: View, account: Account, password?: string) =>
+    actions(view).addAccount(account, password, { unconfirmed: true });
+
+  it('marks a wallet saved by a save killed right after its list, and the next save prunes a stale mark', async () => {
+    const prepare = async () => {
+      const view = await listed([A, B]);
+      await writeMarks([GHOST]);
+      return view;
+    };
+    const keys = await cleanRun(prepare, (view) => unconfirmed(view, C, 'P1'));
+    const view = await prepare();
+    crash.killAfter(keys.indexOf(ACCOUNTS) + 1);
+    await attempt(() => unconfirmed(view, C, 'P1'));
+    cleanup();
+    await crash.relaunch({ keepStash: true });
+    expect(storedIds()).toContain(C.id);
+    expect(marks()).toContain(C.id);
+
+    const relaunched = await mount();
+    await act(() => actions(relaunched).addAccount(D));
+
+    expect(marks()).toEqual([C.id]);
+  });
+
+  it('keeps a mark a stored wallet carries as the wallet it was derived from', async () => {
+    await seed([A, B]);
+    const { storage } = await runtime();
+    await storage.setStorageItem(ACCOUNTS, [stored(A), { ...stored(B), derivedFrom: 'id-parent' }]);
+    await writeMarks(['id-parent', GHOST]);
+    const view = await mount();
+
+    await act(() => actions(view).addAccount(C));
+
+    expect(marks()).toEqual(['id-parent']);
+  });
+
+  it("keeps another window's mark for a wallet it stored", async () => {
+    await seed([A, B]);
+    const stale = await mount();
+    await crash.relaunch({ keepStash: true });
+    const other = await mount();
+    await act(() => unconfirmed(other, D));
+    await writeMarks([...(marks() ?? []), GHOST]);
+
+    await act(() => actions(stale).addAccount(C));
+
+    expect(marks()).toEqual([D.id]);
+  });
+
+  it('writes no mark when none is stale', async () => {
+    const view = await listed([A, B]);
+    await writeMarks([A.id]);
+    const mark = crash.writes.length;
+
+    await act(() => actions(view).addAccount(C));
+
+    expect(crash.writes.slice(mark).map(({ key }) => key)).not.toContain(MARKS);
+    expect(marks()).toEqual([A.id]);
+  });
+
+  it('resolves when pruning a stale mark fails', async () => {
+    const prepare = async () => {
+      const view = await listed([A, B]);
+      await writeMarks([GHOST]);
+      return view;
+    };
+    const change: Change = (view) => actions(view).addAccount(C);
+    const keys = await cleanRun(prepare, change);
+    expect(keys).toContain(MARKS);
+    const view = await prepare();
+    silence();
+    crash.failAt(keys.lastIndexOf(MARKS) + 1);
+
+    expect(await attempt(() => change(view))).toBeUndefined();
+
+    expect(storedIds()).toContain(C.id);
+    expect(marks()).toEqual([GHOST]);
+  });
+
+  it('keeps the mark of a save that failed before its list, and a retry leaves one mark', async () => {
+    const keys = await cleanRun(mount, (view) => unconfirmed(view, C, 'P1'));
+    const view = await mount();
+    crash.failAt(keys.indexOf(MNEMONICS) + 1);
+
+    expect(await attempt(() => unconfirmed(view, C, 'P1'))).toBeInstanceOf(Error);
+    expect(marks()).toEqual([C.id]);
+
+    await act(() => unconfirmed(view, C, 'P1'));
+
+    expect(storedIds()).toEqual([C.id]);
+    expect(marks()).toEqual([C.id]);
   });
 });

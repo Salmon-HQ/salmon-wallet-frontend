@@ -17,7 +17,7 @@ import { isKeyCacheValid, type DerivedKeyCache } from '../crypto/encryption';
 import { getStashItem, STASH_KEYS } from '../storage';
 import { useAccountsLoader } from './useAccountsLoader';
 import { useAccountsConnection } from './useAccountsConnection';
-import { useAccountsMutations } from './useAccountsMutations';
+import { useAccountsMutations, type AddAccountOptions } from './useAccountsMutations';
 import { useAccountsNetworkPreferences } from './useAccountsNetworkPreferences';
 import { useAccountsSelection } from './useAccountsSelection';
 import { useAccountsSecurity } from './useAccountsSecurity';
@@ -117,8 +117,8 @@ export interface UseAccountsActions {
   getNetworkId: () => string | null;
   /** Change the active path index */
   changePathIndex: (targetIndex: number) => Promise<void>;
-  /** Add a new account; `replaces` drops the wallet it takes the place of in the same write */
-  addAccount: (account: Account, password?: string, replaces?: string) => Promise<void>;
+  /** Add a new account; it replaces stored Seed Vault wallets with its address */
+  addAccount: (account: Account, password?: string, options?: AddAccountOptions) => Promise<void>;
   /** Edit an existing account */
   editAccount: (targetId: string, params: EditAccountParams) => Promise<void>;
   /** Remove an account */

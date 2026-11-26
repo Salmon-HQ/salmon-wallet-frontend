@@ -24,6 +24,14 @@ import {
   type StoredMnemonics,
 } from './useAccountsSecurityHelpers';
 
+/** A save refused because a stored wallet already holds the same secret. */
+export class DuplicateAccountError extends Error {
+  constructor() {
+    super('This wallet is already stored');
+    this.name = 'DuplicateAccountError';
+  }
+}
+
 /** The Web Locks name every read-modify-write of the stored wallets holds. */
 const VAULT_WRITE_LOCK = 'salmon-vault-write';
 
@@ -184,6 +192,19 @@ export function isOwnStoredAccountsWrite(ids: readonly string[]): boolean {
   const own = ownAccountsWrite === idsKey(ids);
   ownAccountsWrite = null;
   return own;
+}
+
+/**
+ * Drops the backup-pending marks no stored wallet carries, as its own id or as
+ * the wallet it was derived from. Writes only when a mark goes.
+ */
+export async function pruneMarks(list: StoredAccount[]): Promise<void> {
+  const ids = await getStorageItem<string[]>(STORAGE_KEYS.UNCONFIRMED_PHRASES);
+  if (!Array.isArray(ids)) return;
+  const kept = ids.filter((mark) =>
+    list.some(({ id, derivedFrom }) => id === mark || derivedFrom === mark)
+  );
+  if (kept.length < ids.length) await setStorageItem(STORAGE_KEYS.UNCONFIRMED_PHRASES, kept);
 }
 
 /**

@@ -15,9 +15,11 @@ import type { TrustedApps } from '../types/trusted-app';
 import { resolveActiveSlot } from '../utils/active-selection';
 import { seedVaultAccessToRelease, toAccountSecret, toStoredSecret } from '../utils/account-secret';
 import { releaseSeedVaultAccess } from '../blockchain/solana/seed-vault-signer';
+import { findStoredClash } from '../utils/stored-clash';
 import {
   clearAccountsStorage,
   persistActiveSelection,
+  pruneMarks,
   readStoredList,
   readStoredWallets,
   withVaultWriteLock,
@@ -61,9 +63,13 @@ async function bestEffort(what: string, write: () => Promise<void>): Promise<voi
   }
 }
 
+export interface AddAccountOptions {
+  /** Created without the phrase check: marked backup-pending before the vault is written. */
+  unconfirmed?: boolean;
+}
+
 interface UseAccountsMutationsResult {
-  /** `replaces`: the id of a wallet the new one takes the place of, in the same write. */
-  addAccount: (account: Account, password?: string, replaces?: string) => Promise<void>;
+  addAccount: (account: Account, password?: string, options?: AddAccountOptions) => Promise<void>;
   editAccount: (targetId: string, params: EditAccountParams) => Promise<void>;
   removeAccount: (targetId: string, password?: string) => Promise<void>;
   removeAllAccounts: () => Promise<void>;
@@ -163,7 +169,11 @@ export function useAccountsMutations({
   );
 
   const addAccount = useCallback(
-    async (account: Account, password?: string, replaces?: string): Promise<void> => {
+    async (
+      account: Account,
+      password?: string,
+      { unconfirmed = false }: AddAccountOptions = {}
+    ): Promise<void> => {
       try {
         await withListWrite(async (writeList) => {
           // The new wallet becomes the active one, so the session's network and
@@ -183,6 +193,10 @@ export function useAccountsMutations({
           if (ownEntry !== undefined && !isEqual(ownEntry, secret)) {
             throw new Error('Another secret is stored under the id of the wallet being saved');
           }
+          // Decided on storage, not on this window: another window may hold a
+          // wallet this one has not loaded.
+          const { replace } = await findStoredClash(account, stored, secrets);
+          const kept = ({ id }: { id: string }) => id !== account.id && !replace.includes(id);
           const storedCounter = await getStorageItem<unknown>(STORAGE_KEYS.COUNTER);
           const alreadyListed = stored.some(({ id }) => id === account.id);
           const newCounter = alreadyListed
@@ -193,18 +207,31 @@ export function useAccountsMutations({
           // make a listed wallet look unlisted, and a listed wallet without its
           // secret fails every unlock. A leftover copy is ciphertext nothing reads.
           const newVault = { ...secrets, [account.id]: secret };
-          const newStored = [
-            ...stored.filter(({ id }) => id !== replaces && id !== account.id),
-            formatAccountForStorage(account),
-          ];
-          const newAccounts = [
-            ...accounts.filter(({ id }) => id !== replaces && id !== account.id),
-            account,
-          ];
+          const newStored = [...stored.filter(kept), formatAccountForStorage(account)];
+          const newAccounts = [...accounts.filter(kept), account];
 
           const encryptResult = await encryptMnemonics(newVault, password, {
             cacheNewKey: !!password,
           });
+          // The replaced Seed Vault wallets keep their entries until the list
+          // no longer names them.
+          const vaultAfterList = Object.fromEntries(
+            Object.entries(newVault).filter(([id]) => !replace.includes(id))
+          );
+          const encryptedAfterList =
+            replace.length > 0 ? (await encryptMnemonics(vaultAfterList, password)).vault : null;
+
+          // Marked before anything is stored: a save reported as failed may
+          // still have landed, and a saved wallet without its mark never asks
+          // for the backup. A mark left by a save that did not land is pruned
+          // by the next one.
+          if (unconfirmed) {
+            const marks = await getStorageItem<string[]>(STORAGE_KEYS.UNCONFIRMED_PHRASES);
+            const ids = Array.isArray(marks) ? marks : [];
+            if (!ids.includes(account.id)) {
+              await setStorageItem(STORAGE_KEYS.UNCONFIRMED_PHRASES, [...ids, account.id]);
+            }
+          }
           await setStorageItem(STORAGE_KEYS.MNEMONICS, encryptResult.vault);
 
           // The counter is the witness that this device holds a vault, so it
@@ -235,6 +262,21 @@ export function useAccountsMutations({
           // sits at a derived path, or on a single network, would otherwise come
           // back on an empty slot after the next launch.
           await bestEffort('active selection', () => persistActiveSelection(account.id, newSlot));
+
+          if (encryptedAfterList) {
+            await bestEffort('vault without the replaced wallets', async () => {
+              await setStorageItem(STORAGE_KEYS.MNEMONICS, encryptedAfterList);
+              // A seed's access is given up only when no stored wallet uses it.
+              const remaining = Object.values(vaultAfterList).map((entry) => ({
+                secret: toAccountSecret(entry),
+              }));
+              const tokens = replace.map((id) =>
+                seedVaultAccessToRelease({ secret: toAccountSecret(secrets[id]) }, remaining)
+              );
+              new Set(tokens).forEach((token) => token && releaseSeedVaultAccess(token));
+            });
+          }
+          await bestEffort('backup-pending marks', () => pruneMarks(newStored));
         });
       } catch (err) {
         // The setup form asks for the existing password once a vault it can

@@ -465,15 +465,9 @@ export function useAccountAddFlow({
    */
   const persistAccount = useCallback(
     async (account: Account, password?: string) => {
-      // The same Seed Vault account under an access the user re-granted after
-      // revoking it: the wallet is replaced, not duplicated.
-      const stale = selectedSeedVault
-        ? accounts.find(
-            ({ secret }) =>
-              secret.kind === 'seedVault' && secret.address === selectedSeedVault.address
-          )
-        : undefined;
-      await accountActions.addAccount(account, password, stale?.id);
+      // A Seed Vault account under an access the user re-granted after revoking
+      // it replaces the stored wallet with its address; the save decides that.
+      await accountActions.addAccount(account, password);
       // Anonymous funnel event: a derived account reuses the active seed
       // (create); an imported seed or private key is a recovery. No seed,
       // address or key material leaves here — just which flow completed.
@@ -484,15 +478,7 @@ export function useAccountAddFlow({
       watchOnlyImport.reset();
       onPersisted();
     },
-    [
-      accountActions,
-      accounts,
-      selectedSeedVault,
-      selectedDerived,
-      privateKeyImport,
-      watchOnlyImport,
-      onPersisted,
-    ]
+    [accountActions, selectedDerived, privateKeyImport, watchOnlyImport, onPersisted]
   );
 
   const confirm = useCallback(async () => {
