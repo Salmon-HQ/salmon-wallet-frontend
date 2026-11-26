@@ -549,7 +549,7 @@
       "solana_bitcoin": "Solana + Bitcoin",
       "solana_bitcoin_description": "Use Solana and Bitcoin in one wallet.",
       "solana_only": "Solana only",
-      "solana_only_description": "Just Solana. You can add Bitcoin later in Settings."
+      "solana_only_description": "You can add Bitcoin later in Settings."
     },
     "recover": {
       "messageTitle": "Recover Existing Account",

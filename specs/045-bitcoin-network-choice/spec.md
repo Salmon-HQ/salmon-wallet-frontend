@@ -174,7 +174,7 @@ The onboarding question and the Settings switch look and behave the same on the 
 **Onboarding**
 
 - **FR-005**: When a wallet is created or recovered from a recovery phrase during first setup, and only then, the setup MUST ask "Solana + Bitcoin" or "Solana only", MUST NOT continue until one is picked, and MUST save the answer before the wallet opens. Seed Vault setup, private-key import and watch-only import MUST NOT ask; they leave the choice as it is (on for a fresh install).
-- **FR-006**: The screen is titled "Choose your networks" ("Elegí tus redes"). The two options, "Solana + Bitcoin" — "Use Solana and Bitcoin in one wallet." and "Solana only" — "Just Solana. You can add Bitcoin later in Settings." ("Solana + Bitcoin" — "Usá Solana y Bitcoin en una sola wallet.", "Solo Solana" — "Solo Solana. Podés sumar Bitcoin después en Configuración."), MUST be presented with equal weight. Neither option is preselected.
+- **FR-006**: The screen is titled "Choose your networks" ("Elegí tus redes"). The two options, "Solana + Bitcoin" — "Use Solana and Bitcoin in one wallet." and "Solana only" — "You can add Bitcoin later in Settings." ("Solana + Bitcoin" — "Usá Solana y Bitcoin en una sola wallet.", "Solo Solana" — "Podés sumar Bitcoin después en Configuración."), MUST be presented with equal weight. Neither option is preselected.
 - **FR-007**: The question MUST appear at the same step on both apps: right before the password screen, after the phrase is shown (create) or entered (recover).
 - **FR-008**: Adding another wallet after setup MUST NOT ask the question.
 - **FR-009**: Setting up again after "Remove all wallets" MUST ask the question again and save the new answer.

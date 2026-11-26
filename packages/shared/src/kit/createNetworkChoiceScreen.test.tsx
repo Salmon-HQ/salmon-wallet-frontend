@@ -109,7 +109,7 @@ describe('createNetworkChoiceScreen', () => {
       'Solana + BitcoinUse Solana and Bitcoin in one wallet.'
     );
     expect(screen.getByTestId(ONLY).textContent).toBe(
-      'Solana onlyJust Solana. You can add Bitcoin later in Settings.'
+      'Solana onlyYou can add Bitcoin later in Settings.'
     );
     for (const id of [BOTH, ONLY]) {
       expect(screen.getByTestId(id).getAttribute('aria-pressed')).toBe('false');
