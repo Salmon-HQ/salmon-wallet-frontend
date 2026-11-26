@@ -21,6 +21,7 @@
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",
     "test": "turbo run test",
+    "test:all": "pnpm --filter @salmon/shared test && pnpm --filter @salmon/ui test && pnpm --filter @salmon/extension test && pnpm --filter @salmon/mobile test",
     "test:coverage": "turbo run test:coverage",
     "test:security": "pnpm --filter @salmon/shared test .security.test.",
     "mobile": "pnpm --filter @salmon/mobile",

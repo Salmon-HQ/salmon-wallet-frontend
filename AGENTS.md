@@ -322,6 +322,14 @@ keep, and `scripts/check-dom-parity.mjs` enforces:
   prototypes, storage, `Platform.OS`, queued `mock…Once` answers). A failure
   prints its seed: replay it with `--seed=<n>` (Jest) or
   `--sequence.seed=<n>` (Vitest).
+- A change under `packages/shared` runs all four unit suites before it is
+  called green: `pnpm test:all` (shared, ui, extension, then mobile on its
+  own). The apps' tests assert on the shape of shared's calls, so a suite
+  left out hides a break until the next group of work.
+- Code that decides on a read made after a failed write is checked against
+  each platform's storage source, not its documentation: on iOS, AsyncStorage
+  answers a read with the value of a write that failed, while the disk keeps
+  the old one. A reviewer asks for the file and line that back the claim.
 - An end-to-end flow reaches its main assertion on the test wallet it runs
   with. A flow whose core sits inside "when this element is visible" passes
   on a wallet that never shows the element, having tested nothing: arrange
@@ -358,9 +366,10 @@ Suite-local outputs (`screenshots/`, `snapshots/`, `reports/`, `profiles/`,
 `fixtures/`) are gitignored. Cross-suite code belongs in `packages/shared`
 or `packages/ui` only when more than one suite needs it.
 
-Maestro must be invoked from `apps/mobile/.maestro/` — screenshot paths
-resolve against the cwd, so any other cwd litters stray directories. Details
-in `apps/mobile/.maestro/AGENTS.md`.
+Before running a Maestro flow, read `apps/mobile/.maestro/AGENTS.md` and run
+it through `apps/mobile/.maestro/run.sh`, one run at a time: the runner holds
+the preconditions (secrets, backend, Metro, device lock, a time limit) that a
+bare `maestro test` skips.
 
 ## i18n
 

@@ -74,3 +74,13 @@ test('each alternative of an either-or id must exist', () => {
     'f.yaml:1  id  receive-address',
   ]);
 });
+
+test('a swipe that starts from a text is a finding, one from an id is not', () => {
+  const fromText = ['- swipe:', '    direction: UP', '    from:', "      text: 'Address Book'"];
+  const fromId = ['- swipe:', '    from:', "      id: 'receive-qr'", '    direction: DOWN'];
+  const exists = { idExists, textExists: () => true };
+  assert.deepEqual(auditMaestroFlow('f.yaml', fromText.join('\n'), exists), [
+    "f.yaml:4  swipe-from-text  text: 'Address Book'",
+  ]);
+  assert.deepEqual(auditMaestroFlow('f.yaml', fromId.join('\n'), exists), []);
+});
