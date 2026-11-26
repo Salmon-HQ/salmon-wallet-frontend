@@ -210,19 +210,23 @@ export async function persistActiveSelection(
  * Erases every stored wallet: the vault, the account list, the selection, and
  * a v2 record that was never migrated (a wallet stored without a password
  * waits as one), so nothing of it comes back on the next launch.
+ *
+ * Every record that shows the device has wallets goes before the list and the
+ * vault: a reset stopped in between then leaves wallets that still load, or
+ * nothing that refuses the next setup for a vault that is gone.
  */
 export async function clearAccountsStorage(): Promise<void> {
   ownAccountsWrite = idsKey([]);
   await removeStorageItem(STORAGE_KEYS.COUNTER);
-  await removeStorageItem(STORAGE_KEYS.ACCOUNTS);
-  await removeStorageItem(STORAGE_KEYS.MNEMONICS);
-  await removeStorageItem(STORAGE_KEYS.ACCOUNT_ID);
-  await removeStorageItem(STORAGE_KEYS.NETWORK_ID);
-  await removeStorageItem(STORAGE_KEYS.PATH_INDEX);
-  await removeStorageItem(STORAGE_KEYS.TRUSTED_APPS);
-  await removeStorageItem(STORAGE_KEYS.CUSTOM_TOKENS);
-  await removeStorageItem(STORAGE_KEYS.CONNECTION);
   await removeStorageItem(STORAGE_KEYS.WALLETS);
   await removeStorageItem(STORAGE_KEYS.ACTIVE);
   await removeStorageItem(STORAGE_KEYS.ENDPOINTS);
+  await removeStorageItem(STORAGE_KEYS.ACCOUNT_ID);
+  await removeStorageItem(STORAGE_KEYS.NETWORK_ID);
+  await removeStorageItem(STORAGE_KEYS.PATH_INDEX);
+  await removeStorageItem(STORAGE_KEYS.ACCOUNTS);
+  await removeStorageItem(STORAGE_KEYS.MNEMONICS);
+  await removeStorageItem(STORAGE_KEYS.TRUSTED_APPS);
+  await removeStorageItem(STORAGE_KEYS.CUSTOM_TOKENS);
+  await removeStorageItem(STORAGE_KEYS.CONNECTION);
 }

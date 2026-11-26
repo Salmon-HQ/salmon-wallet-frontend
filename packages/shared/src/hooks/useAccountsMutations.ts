@@ -1,7 +1,14 @@
 import { useCallback, type Dispatch, type SetStateAction } from 'react';
+import isEqual from 'lodash-es/isEqual';
 
 import { encryptMnemonics } from '../crypto/encrypt-mnemonics';
-import { removeStashItem, setStorageItem, STASH_KEYS, STORAGE_KEYS } from '../storage';
+import {
+  getStorageItem,
+  removeStashItem,
+  setStorageItem,
+  STASH_KEYS,
+  STORAGE_KEYS,
+} from '../storage';
 import type { Account, EditAccountParams, StoredAccount } from '../types/account';
 import type { CustomTokens } from '../types/token';
 import type { TrustedApps } from '../types/trusted-app';
@@ -16,6 +23,7 @@ import {
   withVaultWriteLock,
   writeStoredAccounts,
 } from './useAccountsMutationHelpers';
+import { getEncryptedStoredMnemonics } from './useAccountsSecurityHelpers';
 
 interface UseAccountsMutationsParams {
   counter: number;
@@ -39,7 +47,19 @@ interface UseAccountsMutationsParams {
 }
 
 /** Writes the stored list; a write that threw unsettled is remembered by the caller. */
-type WriteList = (stored: StoredAccount[]) => Promise<void>;
+type WriteList = (stored: StoredAccount[], own?: boolean) => Promise<void>;
+
+const sameIds = (held: readonly { id: string }[], stored: readonly { id: string }[]): boolean =>
+  held.length === stored.length && stored.every(({ id }) => held.some((h) => h.id === id));
+
+/** A write the save does not depend on: its failure is logged, never thrown. */
+async function bestEffort(what: string, write: () => Promise<void>): Promise<void> {
+  try {
+    await write();
+  } catch (err) {
+    console.warn(`[accounts] could not store the ${what}:`, err);
+  }
+}
 
 interface UseAccountsMutationsResult {
   /** `replaces`: the id of a wallet the new one takes the place of, in the same write. */
@@ -55,7 +75,6 @@ interface UseAccountsMutationsResult {
 }
 
 export function useAccountsMutations({
-  counter,
   setCounter,
   accounts,
   setAccounts,
@@ -80,9 +99,9 @@ export function useAccountsMutations({
   const withListWrite = useCallback(
     async (change: (writeList: WriteList) => Promise<void>): Promise<void> => {
       let unsettled = false;
-      const writeList: WriteList = async (stored) => {
+      const writeList: WriteList = async (stored, own = true) => {
         try {
-          await writeStoredAccounts(stored, { own: true });
+          await writeStoredAccounts(stored, { own });
         } catch (err) {
           unsettled = true;
           throw err;
@@ -127,10 +146,11 @@ export function useAccountsMutations({
     const seedVaultTokens = new Set(
       accounts.flatMap(({ secret }) => (secret.kind === 'seedVault' ? [secret.authToken] : []))
     );
-    // Memory first: the decrypted keys go before anything else can fail.
+    // Key material first: the decrypted keys, then the session key, before
+    // anything in storage can fail.
     forgetAccounts();
-    await clearAccountsStorage();
     await removeStashItem(STASH_KEYS.DERIVED_KEY);
+    await clearAccountsStorage();
     // Every Seed Vault seed Salmon was using is given up with the wallets.
     // (A reset from the lock screen has no wallets in memory; Seed Vault's
     // own settings still list Salmon then, and the user can revoke there.)
@@ -143,60 +163,92 @@ export function useAccountsMutations({
   );
 
   const addAccount = useCallback(
-    (account: Account, password?: string, replaces?: string): Promise<void> =>
-      withListWrite(async (writeList) => {
-        const newCounter = counter + 1;
-        const newAccounts = [...accounts.filter(({ id }) => id !== replaces), account];
-        const newAccountId = account.id;
-        // The new wallet becomes the active one, so the session's network and
-        // slot must be ones *it* holds. Keeping the session's network unchecked
-        // is what stranded a watch-only import (Solana-mainnet only) on whatever
-        // chain page the user happened to be reading — persisted, and therefore
-        // still there on the next launch.
-        const newSlot = resolveActiveSlot(account, { networkId, pathIndex: null });
+    async (account: Account, password?: string, replaces?: string): Promise<void> => {
+      try {
+        await withListWrite(async (writeList) => {
+          // The new wallet becomes the active one, so the session's network and
+          // slot must be ones *it* holds. Keeping the session's network unchecked
+          // is what stranded a watch-only import (Solana-mainnet only) on whatever
+          // chain page the user happened to be reading — persisted, and therefore
+          // still there on the next launch.
+          const newSlot = resolveActiveSlot(account, { networkId, pathIndex: null });
 
-        // The change lands on what storage holds, not on this window's copy:
-        // another window may have added a wallet this one has not loaded.
-        const { list: stored, secrets } = await readStoredWallets(accounts.length > 0, password);
-        const newVault = { ...secrets, [account.id]: toStoredSecret(account.secret) };
-        if (replaces) delete newVault[replaces];
-        const newStored = [
-          ...stored.filter(({ id }) => id !== replaces && id !== account.id),
-          formatAccountForStorage(account),
-        ];
+          // The change lands on what storage holds, not on this window's copy:
+          // another window may have added a wallet this one has not loaded.
+          const { list: stored, secrets } = await readStoredWallets(accounts.length > 0, password);
+          const secret = toStoredSecret(account.secret);
+          // A retry reuses its wallet's id, so an entry under it is normally this
+          // very secret; any other secret there belongs to another wallet.
+          const ownEntry = secrets[account.id];
+          if (ownEntry !== undefined && !isEqual(ownEntry, secret)) {
+            throw new Error('Another secret is stored under the id of the wallet being saved');
+          }
+          const storedCounter = await getStorageItem<unknown>(STORAGE_KEYS.COUNTER);
+          const alreadyListed = stored.some(({ id }) => id === account.id);
+          const newCounter = alreadyListed
+            ? null
+            : Math.max(typeof storedCounter === 'number' ? storedCounter : 0, stored.length) + 1;
 
-        // Re-encrypt first. If we cannot produce an encrypted vault (e.g. the
-        // cached derived key has expired and no password was supplied), abort
-        // before touching any state — runtime and storage stay consistent and
-        // the caller can surface the error to prompt the user for a password.
-        const encryptResult = await encryptMnemonics(newVault, password, {
-          cacheNewKey: !!password,
+          // Nothing leaves the vault before the list: a list read that lied can
+          // make a listed wallet look unlisted, and a listed wallet without its
+          // secret fails every unlock. A leftover copy is ciphertext nothing reads.
+          const newVault = { ...secrets, [account.id]: secret };
+          const newStored = [
+            ...stored.filter(({ id }) => id !== replaces && id !== account.id),
+            formatAccountForStorage(account),
+          ];
+          const newAccounts = [
+            ...accounts.filter(({ id }) => id !== replaces && id !== account.id),
+            account,
+          ];
+
+          const encryptResult = await encryptMnemonics(newVault, password, {
+            cacheNewKey: !!password,
+          });
+          await setStorageItem(STORAGE_KEYS.MNEMONICS, encryptResult.vault);
+
+          // The counter is the witness that this device holds a vault, so it
+          // goes in before the list when there is none yet.
+          if (storedCounter == null && newCounter !== null) {
+            await bestEffort('counter', () => setStorageItem(STORAGE_KEYS.COUNTER, newCounter));
+          }
+
+          // The deciding write. Marked as this window's own only when the window
+          // then holds exactly the stored wallets; otherwise the window missed
+          // another one's wallet, and the list listener must reload it.
+          await writeList(newStored, sameIds(newAccounts, newStored));
+
+          if (newCounter !== null) setCounter(newCounter);
+          setAccounts(newAccounts);
+          setAccountId(account.id);
+          if (newSlot) {
+            setNetworkId(newSlot.networkId);
+            setPathIndex(newSlot.pathIndex);
+          }
+          if (password) setRequiredLock(true);
+
+          // The wallet is stored. A launch heals a counter or selection left behind.
+          if (newCounter !== null) {
+            await bestEffort('counter', () => setStorageItem(STORAGE_KEYS.COUNTER, newCounter));
+          }
+          // The same pair the runtime was just put on: a wallet whose only address
+          // sits at a derived path, or on a single network, would otherwise come
+          // back on an empty slot after the next launch.
+          await bestEffort('active selection', () => persistActiveSelection(account.id, newSlot));
         });
-
-        setCounter(newCounter);
-        setAccounts(newAccounts);
-        setAccountId(newAccountId);
-        if (newSlot) {
-          setNetworkId(newSlot.networkId);
-          setPathIndex(newSlot.pathIndex);
+      } catch (err) {
+        // The setup form asks for the existing password once a vault it can
+        // check is stored, as it does after a relaunch.
+        try {
+          if (await getEncryptedStoredMnemonics()) setRequiredLock(true);
+        } catch {
+          // The save's own error is the one to report.
         }
-
-        await setStorageItem(STORAGE_KEYS.MNEMONICS, encryptResult.vault);
-        if (password) {
-          setRequiredLock(true);
-        }
-
-        await setStorageItem(STORAGE_KEYS.COUNTER, newCounter);
-        // The same pair the runtime was just put on: a wallet whose only address
-        // sits at a derived path, or on a single network, would otherwise come
-        // back on an empty slot after the next launch.
-        await persistActiveSelection(newAccountId, newSlot);
-        // The list goes last: a window that re-reads on it finds the rest written.
-        await writeList(newStored);
-      }),
+        throw err;
+      }
+    },
     [
       accounts,
-      counter,
       formatAccountForStorage,
       networkId,
       withListWrite,
@@ -247,10 +299,10 @@ export function useAccountsMutations({
         const newStored = [...stored];
         newStored[index] = formatAccountForStorage(newAccount);
 
+        await writeList(newStored);
         setAccounts((held) =>
           held.map((account) => (account.id === targetId ? newAccount : account))
         );
-        await writeList(newStored);
       }),
     [accounts, formatAccountForStorage, setAccounts, withListWrite]
   );
@@ -258,8 +310,6 @@ export function useAccountsMutations({
   const removeAccount = useCallback(
     (targetId: string, password?: string): Promise<void> =>
       withListWrite(async (writeList) => {
-        const newAccounts = accounts.filter(({ id }) => id !== targetId);
-
         // Removed from what storage holds, not from this window's copy: the
         // last wallet here need not be the last one stored, and the vault can
         // hold a seed the list no longer names.
@@ -274,18 +324,25 @@ export function useAccountsMutations({
         }
 
         // Re-encrypt first. If we cannot produce an encrypted vault, abort
-        // before mutating state so runtime, persisted accounts, and the
-        // active selection do not drift apart from storage.
+        // before writing anything.
         const encryptResult = await encryptMnemonics(newVault, password, { cacheNewKey: false });
 
+        // The list decides, and the window follows it. The vault comes after:
+        // stopped in between, it keeps one secret too many, which nothing
+        // reads. The other order would leave a listed wallet without its
+        // secret, and unlock fails for every wallet.
+        await writeList(newStored);
+        const newAccounts = accounts.filter(({ id }) => id !== targetId);
         setAccounts(newAccounts);
 
         if (accountId === targetId) {
-          const account = accounts.find(({ id }) => id !== targetId);
+          const account = newStored
+            .map(({ id }) => newAccounts.find((held) => held.id === id))
+            .find((held) => held !== undefined);
           if (account) {
             // Removing the active wallet hands the session to another one, which
             // holds its own networks: the pair moves with it, exactly as it does
-            // on an explicit switch.
+            // on an explicit switch. A launch heals a selection left behind.
             const nextSlot = resolveActiveSlot(account, { networkId, pathIndex: null });
             setAccountId(account.id);
             if (nextSlot) {
@@ -293,15 +350,12 @@ export function useAccountsMutations({
               setPathIndex(nextSlot.pathIndex);
             }
 
-            await persistActiveSelection(account.id, nextSlot);
+            await bestEffort('active selection', () =>
+              persistActiveSelection(account.id, nextSlot)
+            );
           }
         }
 
-        // The list, then the vault: stopped in between, the vault keeps one
-        // secret too many, which nothing reads. The other order would leave a
-        // listed wallet without its secret, and unlock fails for every wallet.
-        // A window that re-reads on the list still finds every secret it lists.
-        await writeList(newStored);
         await setStorageItem(STORAGE_KEYS.MNEMONICS, encryptResult.vault);
         if (password) {
           setRequiredLock(true);
