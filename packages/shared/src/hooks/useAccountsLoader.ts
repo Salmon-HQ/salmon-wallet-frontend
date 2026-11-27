@@ -24,8 +24,15 @@ interface UseAccountsLoaderParams {
 
 interface UseAccountsLoaderResult {
   loadMetadata: () => Promise<void>;
-  /** `persist: false` loads into memory only and writes nothing back. */
-  loadAccounts: (mnemonics: SecretVault, options?: { persist?: boolean }) => Promise<void>;
+  /**
+   * `persist: false` loads into memory only and writes nothing back. `list` is
+   * the wallet list read together with these secrets; without it the list is
+   * read from storage now.
+   */
+  loadAccounts: (
+    mnemonics: SecretVault,
+    options?: { persist?: boolean; list?: StoredAccount[] | null }
+  ) => Promise<void>;
 }
 
 export function useAccountsLoader({
@@ -82,8 +89,12 @@ export function useAccountsLoader({
   ]);
 
   const loadAccounts = useCallback(
-    async (mnemonics: SecretVault, { persist = true } = {}): Promise<void> => {
-      const storedAccounts = await getStorageItem<StoredAccount[]>(STORAGE_KEYS.ACCOUNTS);
+    async (
+      mnemonics: SecretVault,
+      { persist = true, list }: { persist?: boolean; list?: StoredAccount[] | null } = {}
+    ): Promise<void> => {
+      const storedAccounts =
+        list === undefined ? await getStorageItem<StoredAccount[]>(STORAGE_KEYS.ACCOUNTS) : list;
       if (!storedAccounts) {
         setLoaded(true);
         return;
