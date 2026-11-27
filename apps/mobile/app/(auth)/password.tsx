@@ -58,6 +58,7 @@ import {
   STASH_KEYS,
   trackOnboardingEvent,
   UnlockThrottledError,
+  VaultReadRefusedError,
   useAccountsContext,
   componentSizes,
   type Semantic,
@@ -101,6 +102,7 @@ import {
   ReservedSlot,
   ScreenHeader,
   SecondaryButton,
+  VaultRefusedDialog,
 } from '../../src/components';
 
 /** Warning, phrase, networks, password. */
@@ -196,6 +198,7 @@ export default function PasswordScreen() {
   // the same removal as removing every wallet, then the welcome screen.
   const { disarm: disarmBiometric } = useBiometric();
   const [removeOpen, setRemoveOpen] = useState(false);
+  const [vaultRefused, setVaultRefused] = useState(false);
   const handleRemoveWallet = useCallback(async () => {
     await disarmBiometric();
     await actions.removeAllAccounts();
@@ -340,6 +343,12 @@ export default function PasswordScreen() {
       console.log(`[perf] recovery: addAccount (encrypt + storage) ${Date.now() - t1}ms`);
     } catch (err) {
       console.error('Failed to create account:', err);
+      if (err instanceof VaultReadRefusedError) {
+        setError(null);
+        setVaultRefused(true);
+        setIsLoading(false);
+        return;
+      }
       // Account setup calls the backend, so an unreachable server lands here
       // too. Blaming the seed phrase for that sends users hunting for a lost
       // wallet when all they need is a connection.
@@ -613,6 +622,13 @@ export default function PasswordScreen() {
           onConfirm={handleRemoveWallet}
         />
       )}
+
+      {/* A refused save offers the same reset as removing the wallet above. */}
+      <VaultRefusedDialog
+        visible={vaultRefused}
+        onClose={() => setVaultRefused(false)}
+        onReset={handleRemoveWallet}
+      />
 
       {/* Loading Screen Overlay */}
       <LoadingScreen

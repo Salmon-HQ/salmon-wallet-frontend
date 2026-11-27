@@ -283,7 +283,8 @@ export type {
 export type { BrandMarkPropsBase, WordmarkPropsBase } from './brand-mark';
 
 // Lock Screen
-export type { LockScreenPropsBase } from './lock-screen';
+export type { LockScreenPropsBase, ResetConfirmPropsBase } from './lock-screen';
+export { resetSheetsCopy } from './lock-screen';
 
 // Password Input
 export type { PasswordInputPropsBase, PasswordStrengthBarPropsBase } from './password-input';

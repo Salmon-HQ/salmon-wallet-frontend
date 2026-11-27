@@ -25,7 +25,7 @@ import {
 import { getScanNetworks, scanDerivedAccounts } from '../utils/derived-accounts';
 import { useDeveloperModeSettings } from '../contexts/DeveloperModeContext';
 import { trackEvent } from '../analytics/client';
-import { DuplicateAccountError } from './useAccountsMutationHelpers';
+import { DuplicateAccountError, VaultReadRefusedError } from './useAccountsMutationHelpers';
 
 vi.mock('../contexts/AccountsContext', () => ({ useAccountsContext: vi.fn() }));
 vi.mock('../contexts/DeveloperModeContext', () => ({ useDeveloperModeSettings: vi.fn() }));
@@ -687,6 +687,22 @@ describe('useAccountAddFlow — one wallet id per input', () => {
       expect.any(DuplicateAccountError),
       'wallet.import.errors.duplicate'
     );
+  });
+
+  // The panel tells a refusal apart by its class, so it arrives as itself and
+  // without a duplicate's copy.
+  it('reports a refused save as the refusal itself, with no copy key', async () => {
+    const refusal = new VaultReadRefusedError('The stored wallet list is unreadable');
+    addAccount.mockRejectedValueOnce(refusal);
+    const opts = options();
+    const { result } = renderHook(() => useAccountAddFlow(opts));
+    await reachSetName(result);
+
+    await act(() => result.current.confirm());
+
+    expect(opts.onWaitEnd).toHaveBeenCalledTimes(1);
+    expect(opts.onFailure).toHaveBeenCalledWith(refusal);
+    expect(opts.onPersisted).not.toHaveBeenCalled();
   });
 
   it('reports a duplicate watched address with the watch-only copy', async () => {

@@ -4,14 +4,15 @@
 
 import React from 'react';
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
-import { DuplicateAccountError } from '@salmon/shared';
+import { DuplicateAccountError, VaultReadRefusedError } from '@salmon/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { renderInMode } from '../../test/renderInMode';
 import { AccountAddPanel } from './AccountAddPanel';
 
-const { mockAddAccount, privateKeyImport, watchOnlyImport } = vi.hoisted(() => ({
+const { mockAddAccount, mockResetSalmon, privateKeyImport, watchOnlyImport } = vi.hoisted(() => ({
   mockAddAccount: vi.fn(),
+  mockResetSalmon: vi.fn(),
   privateKeyImport: {
     value: '',
     setValue: vi.fn(),
@@ -75,6 +76,7 @@ function renderPanel() {
       onBack={vi.fn()}
       onWait={vi.fn()}
       onCloseSettings={vi.fn()}
+      onResetSalmon={mockResetSalmon}
     />
   );
 }
@@ -143,5 +145,79 @@ describe('AccountAddPanel failure notice', () => {
       expect(screen.getByText('settings.account_add.creation_error')).toBeTruthy()
     );
     expect(screen.getByText('general.error')).toBeTruthy();
+    expect(screen.queryByText('lock.vault_refused_title')).toBeNull();
+  });
+});
+
+/**
+ * A save refused because storage read in a way that contradicts the rest
+ * shows one dialog with a way out: close, or the lock screen's two-step reset.
+ */
+describe('AccountAddPanel when the save is refused', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    mockResetSalmon.mockResolvedValue(undefined);
+    mockAddAccount.mockRejectedValueOnce(
+      new VaultReadRefusedError('The stored wallet secrets are unreadable')
+    );
+  });
+
+  afterEach(() => {
+    cleanup();
+    privateKeyImport.hasInput = false;
+    privateKeyImport.privateKey = null;
+  });
+
+  async function pressWhenAlone(testID: string) {
+    await waitFor(() => expect(screen.getAllByTestId(testID)).toHaveLength(1));
+    fireEvent.click(screen.getByTestId(testID));
+  }
+
+  const gone = (text: string) => waitFor(() => expect(screen.queryByText(text)).toBeNull());
+
+  async function refuse() {
+    await confirmPrivateKey();
+    expect(await screen.findByText('lock.vault_refused_title')).toBeTruthy();
+  }
+
+  it('shows the refusal instead of the creation error', async () => {
+    await refuse();
+    expect(screen.queryByText('settings.account_add.creation_error')).toBeNull();
+  });
+
+  it('closes on close and erases nothing', async () => {
+    await refuse();
+    fireEvent.click(screen.getByTestId('vault-refused-close-button'));
+
+    await gone('lock.vault_refused_title');
+    expect(mockResetSalmon).not.toHaveBeenCalled();
+  });
+
+  it('resets Salmon after both reset sheets, once', async () => {
+    await refuse();
+    fireEvent.click(screen.getByTestId('vault-refused-reset-button'));
+    await gone('lock.vault_refused_title');
+    await pressWhenAlone('confirm-dialog-confirm');
+    await screen.findByText('lock.confirm_title');
+    expect(mockResetSalmon).not.toHaveBeenCalled();
+    await gone('lock.reset_wallet_title');
+    await pressWhenAlone('confirm-dialog-confirm');
+
+    await waitFor(() => expect(mockResetSalmon).toHaveBeenCalledTimes(1));
+  });
+
+  it.each([1, 2])('erases nothing when the reset is cancelled at step %i', async (step) => {
+    await refuse();
+    fireEvent.click(screen.getByTestId('vault-refused-reset-button'));
+    await gone('lock.vault_refused_title');
+    if (step === 2) {
+      await pressWhenAlone('confirm-dialog-confirm');
+      await screen.findByText('lock.confirm_title');
+      await gone('lock.reset_wallet_title');
+    }
+    await pressWhenAlone('confirm-dialog-cancel');
+
+    await gone(step === 1 ? 'lock.reset_wallet_title' : 'lock.confirm_title');
+    expect(mockResetSalmon).not.toHaveBeenCalled();
   });
 });

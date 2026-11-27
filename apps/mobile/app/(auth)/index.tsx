@@ -19,18 +19,24 @@ import {
   lineHeight,
   onboardingIdentityGridFull,
   s,
+  spacing,
+  useAccountsContext,
   type Semantic,
 } from '@salmon/shared';
 import {
   BrandMark,
   OnboardingLayout,
   PrimaryButton,
+  ResetConfirm,
   SecondaryButton,
+  TextButton,
   Wordmark,
 } from '../../src/components';
+import { useBiometric } from '../../src/contexts/BiometricContext';
 import { useThemedStyles } from '../../src/theme/useThemedStyles';
 import { useSeedVaultAccess } from '../../src/seed-vault/useSeedVaultAccess';
 import { router } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useSemantic } from '../../src/theme/useThemedStyles';
@@ -42,10 +48,21 @@ import { StyleSheet, Text, View } from 'react-native';
 
 export default function WelcomeScreen() {
   const { t } = useTranslation();
-  const { accent } = useSemantic();
+  const { accent, text } = useSemantic();
   const styles = useThemedStyles(stylesFor);
   // On a Seeker the wallet usually already lives in Seed Vault (spec 037).
   const seedVault = useSeedVaultAccess();
+
+  // A vault stored with no wallet listed lands here, behind a password this
+  // screen cannot take: the lock screen's reset is the way out, and erasing
+  // the vault ends that state, so the link leaves with it.
+  const [{ requiredLock, accounts }, accountActions] = useAccountsContext();
+  const { disarm: disarmBiometric } = useBiometric();
+  const [resetOpen, setResetOpen] = useState(false);
+  const handleReset = useCallback(async () => {
+    await disarmBiometric();
+    await accountActions.removeAllAccounts();
+  }, [accountActions, disarmBiometric]);
 
   /**
    * Navigate to account creation flow
@@ -62,60 +79,83 @@ export default function WelcomeScreen() {
   };
 
   return (
-    <OnboardingLayout
-      testID="welcome-screen"
-      // Arrivals float — including backing out of recover/seed-warning to
-      // here. The fish stays: welcome and the lock are the identity pair, the
-      // only screens that keep the brand mark (owner, 2026-08-18).
-      float
-      /*
-        The fish, drawn at the grid's own size — this fish and the lock's are
-        the same fish at the same Y (markSize is identical at both rungs; the
-        full table is safe to read). No accessible name here: the wordmark
-        below is the screen's header and announces "Salmon" — labelling the
-        fish too would say it twice.
-      */
-      mark={
-        <View testID="welcome-brand-mark">
-          {/* The fish at the door is the brand accent, as it is on the lock and
-              the wait (owner, 2026-09-02). */}
-          <BrandMark size={onboardingIdentityGridFull.markSize} color={accent.fill} />
-        </View>
-      }
-      /*
-        The name and the lema (owner, 2026-08-18): the wordmark in the title
-        band — its own pinned gap puts it at the grid's fish→title distance —
-        and the slogan in the description band, so both live in bands the grid
-        already reserved and nothing below them moves.
-      */
-      title={<Wordmark />}
-      description={
-        // Brand line, not UI copy — deliberately untranslated, like the wordmark itself (PRODUCT.md §Positioning).
-        <Text style={styles.slogan} testID="welcome-slogan">
-          Open code. Open ownership.
-        </Text>
-      }
-      assist={
-        seedVault ? (
-          <SecondaryButton
-            onPress={() => router.push('/(auth)/seed-vault')}
-            testID="select-seed-vault-button"
-          >
-            {t('settings.account_add.import_seed_vault')}
+    <>
+      <OnboardingLayout
+        testID="welcome-screen"
+        // Arrivals float — including backing out of recover/seed-warning to
+        // here. The fish stays: welcome and the lock are the identity pair, the
+        // only screens that keep the brand mark (owner, 2026-08-18).
+        float
+        /*
+          The fish, drawn at the grid's own size — this fish and the lock's are
+          the same fish at the same Y (markSize is identical at both rungs; the
+          full table is safe to read). No accessible name here: the wordmark
+          below is the screen's header and announces "Salmon" — labelling the
+          fish too would say it twice.
+        */
+        mark={
+          <View testID="welcome-brand-mark">
+            {/* The fish at the door is the brand accent, as it is on the lock and
+                the wait (owner, 2026-09-02). */}
+            <BrandMark size={onboardingIdentityGridFull.markSize} color={accent.fill} />
+          </View>
+        }
+        /*
+          The name and the lema (owner, 2026-08-18): the wordmark in the title
+          band — its own pinned gap puts it at the grid's fish→title distance —
+          and the slogan in the description band, so both live in bands the grid
+          already reserved and nothing below them moves.
+        */
+        title={<Wordmark />}
+        description={
+          // Brand line, not UI copy — deliberately untranslated, like the wordmark itself (PRODUCT.md §Positioning).
+          <Text style={styles.slogan} testID="welcome-slogan">
+            Open code. Open ownership.
+          </Text>
+        }
+        /*
+          In `body`, as the lock keeps its own: the action band is one button
+          tall, and a link under the button there is drawn past the screen's
+          edge. Anchored to the band's floor, it sits over the buttons it is an
+          alternative to; `body` keeps at least its height on the smallest phone.
+        */
+        body={
+          requiredLock && accounts.length === 0 ? (
+            <View style={styles.forgotRow}>
+              <TextButton
+                onPress={() => setResetOpen(true)}
+                color={text.primary}
+                testID="welcome-forgot-password-button"
+              >
+                {t('lock.forgot_password')}
+              </TextButton>
+            </View>
+          ) : undefined
+        }
+        assist={
+          seedVault ? (
+            <SecondaryButton
+              onPress={() => router.push('/(auth)/seed-vault')}
+              testID="select-seed-vault-button"
+            >
+              {t('settings.account_add.import_seed_vault')}
+            </SecondaryButton>
+          ) : undefined
+        }
+        secondary={
+          <SecondaryButton onPress={handleRecoverAccount} testID="select-recover-button">
+            {t('wallet.recover_wallet')}
           </SecondaryButton>
-        ) : undefined
-      }
-      secondary={
-        <SecondaryButton onPress={handleRecoverAccount} testID="select-recover-button">
-          {t('wallet.recover_wallet')}
-        </SecondaryButton>
-      }
-      action={
-        <PrimaryButton onPress={handleCreateAccount} testID="select-create-button">
-          {t('wallet.create_wallet')}
-        </PrimaryButton>
-      }
-    />
+        }
+        action={
+          <PrimaryButton onPress={handleCreateAccount} testID="select-create-button">
+            {t('wallet.create_wallet')}
+          </PrimaryButton>
+        }
+      />
+
+      <ResetConfirm visible={resetOpen} onClose={() => setResetOpen(false)} onReset={handleReset} />
+    </>
   );
 }
 
@@ -133,5 +173,11 @@ const stylesFor = (t: Semantic) =>
       fontSize: s(fontSize.body),
       lineHeight: fontSize.body * lineHeight.normal,
       textAlign: 'center',
+    },
+    forgotRow: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'flex-end',
+      paddingBottom: spacing.sm,
     },
   });

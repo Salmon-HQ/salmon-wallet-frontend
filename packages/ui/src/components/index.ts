@@ -288,6 +288,9 @@ export type {
 export { ConfirmDialog } from './ConfirmDialog';
 export type { ConfirmDialogProps } from './ConfirmDialog';
 
+// VaultRefusedDialog - a refused save, with the lock screen's reset as the way out
+export { VaultRefusedDialog } from './ResetConfirm';
+
 // TextInput - a Card holding an input, the settings screens' plain field
 export { TextInput } from './TextInput';
 export type { TextInputProps } from './TextInput';

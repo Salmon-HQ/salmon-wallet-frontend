@@ -170,6 +170,42 @@ describe('LockScreen', () => {
   });
 });
 
+describe('LockScreen reset', () => {
+  beforeEach(() => {
+    mockThrottle.remainingMs = 0;
+    mockThrottle.remainingSeconds = 0;
+  });
+
+  afterEach(cleanup);
+
+  async function resetThroughBothSheets(onRemoveAllAccounts: () => Promise<void>) {
+    render(<LockScreen onUnlock={vi.fn()} onRemoveAllAccounts={onRemoveAllAccounts} />);
+    fireEvent.click(screen.getByTestId('lock-forgot-password-button'));
+    expect(screen.getByText('lock.reset_wallet_title')).toBeTruthy();
+    fireEvent.click(screen.getByTestId('confirm-dialog-confirm'));
+    // The last word waits for the warning to leave: never two sheets at once.
+    expect(screen.queryByText('lock.confirm_title')).toBeNull();
+    expect(await screen.findByText('lock.confirm_title')).toBeTruthy();
+    expect(screen.queryByText('lock.reset_wallet_title')).toBeNull();
+    expect(onRemoveAllAccounts).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByTestId('confirm-dialog-confirm'));
+  }
+
+  it('erases after the warning and the last word, once', async () => {
+    const onRemoveAllAccounts = vi.fn().mockResolvedValue(undefined);
+    await resetThroughBothSheets(onRemoveAllAccounts);
+    await waitFor(() => expect(onRemoveAllAccounts).toHaveBeenCalledTimes(1));
+  });
+
+  it('says the reset failed in the feedback band', async () => {
+    await resetThroughBothSheets(vi.fn().mockRejectedValue(new Error('storage gone')));
+    expect(await screen.findByTestId('lock-error')).toHaveProperty(
+      'textContent',
+      'lock.reset_failed'
+    );
+  });
+});
+
 /** jsdom reports inline colours as `rgb(...)`, the tokens are hex. */
 function hexToRgb(hex: string): string {
   const value = hex.replace('#', '');

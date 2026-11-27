@@ -55,6 +55,7 @@ jest.mock('../../../hooks/useKeyboardHeight', () => ({
 }));
 
 import {
+  componentSizes,
   onboardingContentGridFull,
   onboardingIdentityGridFull,
   onboardingLockGridFull,
@@ -395,6 +396,32 @@ describe('OnboardingLayout', () => {
     expect(identityLead).toBe(ceiling);
     expect(leadAt('lock')).toBe(identityLead);
   });
+
+  it.each([
+    ['without', undefined],
+    ['with', <Text key="assist">Seed Vault</Text>],
+  ])(
+    'leaves welcome room for a text link in body on the smallest phone, %s an assist',
+    (_, assist) => {
+      // A 360×640dp Android phone less its status bar (24) and three-button
+      // navigation (48). Welcome's "Forgot my password" lives in `body`, the
+      // only band with height to spare; the action band is one button tall.
+      const SMALLEST = 568;
+      render(
+        <OnboardingLayout
+          title={<Text>Salmon</Text>}
+          assist={assist}
+          secondary={<Text>Recover</Text>}
+          action={<Text>Create</Text>}
+        />
+      );
+      layout(SMALLEST);
+
+      expect(reservedHeights().body).toBeGreaterThanOrEqual(
+        spacing.sm + componentSizes.buttonHeightSmall
+      );
+    }
+  );
 
   it('drops the description first when the keyboard costs a little room', () => {
     // Explanatory, and not what someone is reading while they type. `body`

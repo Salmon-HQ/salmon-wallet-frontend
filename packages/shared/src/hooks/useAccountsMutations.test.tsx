@@ -61,7 +61,7 @@ import {
   type LockedVault,
 } from '../crypto/encryption';
 import { useAccountsMutations } from './useAccountsMutations';
-import { isOwnStoredAccountsWrite } from './useAccountsMutationHelpers';
+import { isOwnStoredAccountsWrite, VaultReadRefusedError } from './useAccountsMutationHelpers';
 import { releaseSeedVaultAccess } from '../blockchain/solana/seed-vault-signer';
 import {
   getUnlockPenalty,
@@ -299,7 +299,7 @@ describe('useAccountsMutations editing from a stale window', () => {
     await act(async () => {
       await expect(
         sidePanel.result.current.editAccount('W', { name: 'Renamed' })
-      ).rejects.toThrow();
+      ).rejects.toBeInstanceOf(VaultReadRefusedError);
     });
 
     expect(storage.setStorageItem).not.toHaveBeenCalled();

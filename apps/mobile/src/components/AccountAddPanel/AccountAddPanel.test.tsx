@@ -2,6 +2,7 @@ import React from 'react';
 import { act, render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 
 const mockAddAccount = jest.fn();
+const mockResetSalmon = jest.fn();
 const mockScanDerivedAccounts = jest.fn();
 const mockCreateAccount = jest.fn();
 const mockImportAccountFromPrivateKey = jest.fn();
@@ -225,17 +226,10 @@ jest.mock('../Button', () => {
 });
 
 // The failure notice renders through ConfirmSheet; the stub shows its title
-// and message as plain text only while visible, like the real sheet does.
+// and message as plain text only while visible, like the real sheet does. A
+// sheet with buttons (the refusal and the reset after it) is the shared stand-in.
 jest.mock('../ConfirmSheet', () => ({
-  ConfirmSheet: ({
-    visible,
-    title,
-    message,
-    acknowledgeOnly,
-    requirePassword,
-    validatePassword,
-    onConfirm,
-  }: {
+  ConfirmSheet: (props: {
     visible: boolean;
     title: string;
     message: string;
@@ -244,14 +238,23 @@ jest.mock('../ConfirmSheet', () => ({
     validatePassword?: (password: string) => Promise<boolean>;
     onConfirm?: (password?: string) => Promise<void>;
   }) => {
-    if (!visible) return null;
+    const {
+      visible,
+      title,
+      message,
+      acknowledgeOnly,
+      requirePassword,
+      validatePassword,
+      onConfirm,
+    } = props;
     const React = require('react');
+    if (!acknowledgeOnly && !requirePassword) {
+      const { ConfirmSheetStandIn } = jest.requireActual('../../../test-utils/confirmSheetStandIn');
+      return React.createElement(ConfirmSheetStandIn, props);
+    }
+    if (!visible) return null;
     const { Text, View, TouchableOpacity } = require('react-native');
-    const testID = requirePassword
-      ? 'confirm-sheet-password'
-      : acknowledgeOnly
-        ? 'confirm-sheet-acknowledge'
-        : 'confirm-sheet';
+    const testID = requirePassword ? 'confirm-sheet-password' : 'confirm-sheet-acknowledge';
     return React.createElement(
       View,
       { testID },
@@ -337,7 +340,23 @@ jest.mock('../SeedPhrase', () => ({
   },
 }));
 
+import { finishClosing } from '../../../test-utils/confirmSheetStandIn';
 import { AccountAddPanel } from './AccountAddPanel';
+
+/**
+ * The save failed: the wait is going down, and what follows it may show only
+ * once the wait reports it has left (iOS presents one modal at a time, and the
+ * full-screen wait is one).
+ */
+async function failedSaveLeavesWait(stillHidden: string) {
+  await waitFor(() => expect(mockAddAccount).toHaveBeenCalled());
+  await act(async () => {});
+  expect(mockLoadingScreenProps.visible).toBe(false);
+  expect(screen.queryByText(stillHidden)).toBeNull();
+  await act(async () => {
+    mockLoadingScreenProps.onExited?.();
+  });
+}
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -374,7 +393,9 @@ describe('AccountAddPanel', () => {
     mockPrivateKeyImport.hasInput = true;
     mockValidatePrivateKey.mockResolvedValue(false);
 
-    render(<AccountAddPanel onComplete={jest.fn()} onBack={jest.fn()} />);
+    render(
+      <AccountAddPanel onComplete={jest.fn()} onBack={jest.fn()} onResetSalmon={mockResetSalmon} />
+    );
 
     fireEvent.press(screen.getByText('settings.account_add.import_private_key'));
     fireEvent.press(screen.getByText('actions.continue'));
@@ -389,7 +410,9 @@ describe('AccountAddPanel', () => {
   it('imports a wallet from a private key without going through createAccount', async () => {
     mockPrivateKeyImport.hasInput = true;
 
-    render(<AccountAddPanel onComplete={jest.fn()} onBack={jest.fn()} />);
+    render(
+      <AccountAddPanel onComplete={jest.fn()} onBack={jest.fn()} onResetSalmon={mockResetSalmon} />
+    );
 
     fireEvent.press(screen.getByText('settings.account_add.import_private_key'));
     // The field is masked by default — PasswordInput owns the reveal toggle.
@@ -422,7 +445,9 @@ describe('AccountAddPanel', () => {
   });
 
   it('offers Continue only once the phrase checks out, and says so when a full grid does not', () => {
-    render(<AccountAddPanel onComplete={jest.fn()} onBack={jest.fn()} />);
+    render(
+      <AccountAddPanel onComplete={jest.fn()} onBack={jest.fn()} onResetSalmon={mockResetSalmon} />
+    );
 
     fireEvent.press(screen.getByText('settings.account_add.import_seed'));
 
@@ -454,7 +479,9 @@ describe('AccountAddPanel', () => {
   it('imports a valid seed phrase and completes account creation', async () => {
     const onComplete = jest.fn();
 
-    render(<AccountAddPanel onComplete={onComplete} onBack={jest.fn()} />);
+    render(
+      <AccountAddPanel onComplete={onComplete} onBack={jest.fn()} onResetSalmon={mockResetSalmon} />
+    );
 
     fireEvent.press(screen.getByText('settings.account_add.import_seed'));
     fireEvent.changeText(screen.getByTestId('account-add-seed-entry'), '  valid   seed phrase  ');
@@ -495,7 +522,9 @@ describe('AccountAddPanel', () => {
   it('falls back to the generic creation_error notice when addAccount throws another error', async () => {
     mockAddAccount.mockRejectedValueOnce(new Error('boom'));
 
-    render(<AccountAddPanel onComplete={jest.fn()} onBack={jest.fn()} />);
+    render(
+      <AccountAddPanel onComplete={jest.fn()} onBack={jest.fn()} onResetSalmon={mockResetSalmon} />
+    );
     fireEvent.press(screen.getByText('settings.account_add.import_seed'));
     fireEvent.changeText(screen.getByTestId('account-add-seed-entry'), 'valid seed phrase');
     fireEvent.press(screen.getByText('actions.continue'));
@@ -505,15 +534,16 @@ describe('AccountAddPanel', () => {
     });
 
     fireEvent.press(screen.getByText('settings.account_add.confirm'));
+    await failedSaveLeavesWait('settings.account_add.creation_error');
 
-    await waitFor(() => {
-      expect(screen.getByTestId('confirm-sheet-acknowledge')).toBeTruthy();
-      expect(screen.getByText('settings.account_add.creation_error')).toBeTruthy();
-    });
+    expect(screen.getByTestId('confirm-sheet-acknowledge')).toBeTruthy();
+    expect(screen.getByText('settings.account_add.creation_error')).toBeTruthy();
   });
 
   it('scans derived accounts and creates from selected derivation index', async () => {
-    render(<AccountAddPanel onComplete={jest.fn()} onBack={jest.fn()} />);
+    render(
+      <AccountAddPanel onComplete={jest.fn()} onBack={jest.fn()} onResetSalmon={mockResetSalmon} />
+    );
 
     fireEvent.press(screen.getByText('settings.account_add.create_new'));
 
@@ -544,7 +574,9 @@ describe('AccountAddPanel', () => {
 async function reachConfirmWithPrivateKey() {
   mockPrivateKeyImport.hasInput = true;
 
-  render(<AccountAddPanel onComplete={jest.fn()} onBack={jest.fn()} />);
+  render(
+    <AccountAddPanel onComplete={jest.fn()} onBack={jest.fn()} onResetSalmon={mockResetSalmon} />
+  );
 
   fireEvent.press(screen.getByText('settings.account_add.import_private_key'));
   await act(async () => {
@@ -620,16 +652,17 @@ describe('AccountAddPanel failure notice', () => {
     mockPrivateKeyImport.privateKey = 'base58-secret-key';
     mockAddAccount.mockRejectedValueOnce(new Error('disk on fire'));
 
-    render(<AccountAddPanel onComplete={jest.fn()} onBack={jest.fn()} />);
+    render(
+      <AccountAddPanel onComplete={jest.fn()} onBack={jest.fn()} onResetSalmon={mockResetSalmon} />
+    );
 
     fireEvent.press(screen.getByText('settings.account_add.import_private_key'));
     fireEvent.press(screen.getByText('actions.continue'));
     await waitFor(() => expect(screen.getByDisplayValue('Account 3')).toBeTruthy());
     fireEvent.press(screen.getByText('settings.account_add.confirm'));
+    await failedSaveLeavesWait('general.error');
 
-    await waitFor(() => {
-      expect(screen.getByText('general.error')).toBeTruthy();
-    });
+    expect(screen.getByText('general.error')).toBeTruthy();
     expect(screen.getByText('settings.account_add.creation_error')).toBeTruthy();
   });
 
@@ -641,16 +674,17 @@ describe('AccountAddPanel failure notice', () => {
     mockPrivateKeyImport.privateKey = 'base58-secret-key';
     mockAddAccount.mockRejectedValueOnce(new DuplicateAccountError());
 
-    render(<AccountAddPanel onComplete={jest.fn()} onBack={jest.fn()} />);
+    render(
+      <AccountAddPanel onComplete={jest.fn()} onBack={jest.fn()} onResetSalmon={mockResetSalmon} />
+    );
 
     fireEvent.press(screen.getByText('settings.account_add.import_private_key'));
     fireEvent.press(screen.getByText('actions.continue'));
     await waitFor(() => expect(screen.getByDisplayValue('Account 3')).toBeTruthy());
     fireEvent.press(screen.getByText('settings.account_add.confirm'));
+    await failedSaveLeavesWait('wallet.import.errors.duplicate');
 
-    await waitFor(() => {
-      expect(screen.getByText('wallet.import.errors.duplicate')).toBeTruthy();
-    });
+    expect(screen.getByText('wallet.import.errors.duplicate')).toBeTruthy();
     expect(screen.getByTestId('confirm-sheet-acknowledge')).toBeTruthy();
     expect(screen.getByText('general.error')).toBeTruthy();
     expect(screen.queryByText('settings.account_add.creation_error')).toBeNull();
@@ -667,16 +701,21 @@ describe('AccountAddPanel failure notice', () => {
     mockAddAccount.mockRejectedValueOnce(new DuplicateAccountError());
 
     try {
-      render(<AccountAddPanel onComplete={jest.fn()} onBack={jest.fn()} />);
+      render(
+        <AccountAddPanel
+          onComplete={jest.fn()}
+          onBack={jest.fn()}
+          onResetSalmon={mockResetSalmon}
+        />
+      );
 
       fireEvent.press(screen.getByText('settings.account_add.import_watch_only'));
       fireEvent.press(screen.getByTestId('account-add-watch-only-continue-button'));
       await waitFor(() => expect(screen.getByDisplayValue('Account 3')).toBeTruthy());
       fireEvent.press(screen.getByText('settings.account_add.confirm'));
+      await failedSaveLeavesWait('wallet.watchOnly.errors.duplicate');
 
-      await waitFor(() => {
-        expect(screen.getByText('wallet.watchOnly.errors.duplicate')).toBeTruthy();
-      });
+      expect(screen.getByText('wallet.watchOnly.errors.duplicate')).toBeTruthy();
       expect(screen.getByTestId('confirm-sheet-acknowledge')).toBeTruthy();
       expect(screen.queryByText('settings.account_add.creation_error')).toBeNull();
     } finally {
@@ -686,13 +725,96 @@ describe('AccountAddPanel failure notice', () => {
   });
 });
 
+/**
+ * A save refused because storage read in a way that contradicts the rest
+ * shows one dialog with a way out: close, or the lock screen's two-step reset.
+ */
+describe('AccountAddPanel when the save is refused', () => {
+  const press = (testID: string) => act(async () => fireEvent.press(screen.getByTestId(testID)));
+  const leave = () => act(() => finishClosing());
+
+  /** Presses `testID`; `next` shows only once the pressed sheet has left. */
+  async function pressThenLeave(testID: string, next: string) {
+    await press(testID);
+    expect(screen.queryByText(next)).toBeNull();
+    await leave();
+    expect(screen.getByText(next)).toBeTruthy();
+  }
+
+  async function refuse() {
+    const { VaultReadRefusedError } = jest.requireActual(
+      '@salmon/shared/src/hooks/useAccountsMutationHelpers'
+    );
+    mockPrivateKeyImport.hasInput = true;
+    mockPrivateKeyImport.privateKey = 'base58-secret-key';
+    mockAddAccount.mockRejectedValueOnce(
+      new VaultReadRefusedError('The stored wallet secrets are unreadable')
+    );
+    mockResetSalmon.mockResolvedValue(undefined);
+
+    render(
+      <AccountAddPanel onComplete={jest.fn()} onBack={jest.fn()} onResetSalmon={mockResetSalmon} />
+    );
+    fireEvent.press(screen.getByText('settings.account_add.import_private_key'));
+    fireEvent.press(screen.getByText('actions.continue'));
+    await waitFor(() => expect(screen.getByDisplayValue('Account 3')).toBeTruthy());
+    fireEvent.press(screen.getByText('settings.account_add.confirm'));
+    await failedSaveLeavesWait('lock.vault_refused_title');
+    expect(screen.getByText('lock.vault_refused_title')).toBeTruthy();
+  }
+
+  afterEach(() => {
+    mockPrivateKeyImport.hasInput = false;
+    mockPrivateKeyImport.privateKey = null;
+  });
+
+  it('shows the refusal instead of the creation error', async () => {
+    await refuse();
+    expect(screen.queryByText('settings.account_add.creation_error')).toBeNull();
+    expect(screen.queryByTestId('confirm-sheet-acknowledge')).toBeNull();
+  });
+
+  it('closes on close and erases nothing', async () => {
+    await refuse();
+    await press('vault-refused-close-button');
+    await leave();
+
+    expect(screen.queryByText('lock.vault_refused_title')).toBeNull();
+    expect(mockResetSalmon).not.toHaveBeenCalled();
+  });
+
+  it('resets Salmon after both reset sheets, once', async () => {
+    await refuse();
+    await pressThenLeave('vault-refused-reset-button', 'lock.reset_wallet_title');
+    await pressThenLeave('confirm-dialog-confirm', 'lock.confirm_title');
+    expect(mockResetSalmon).not.toHaveBeenCalled();
+    await press('confirm-dialog-confirm');
+
+    expect(mockResetSalmon).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([1, 2])('erases nothing when the reset is cancelled at step %i', async (step) => {
+    await refuse();
+    await pressThenLeave('vault-refused-reset-button', 'lock.reset_wallet_title');
+    if (step === 2) await pressThenLeave('confirm-dialog-confirm', 'lock.confirm_title');
+    await press('confirm-dialog-cancel');
+    await leave();
+
+    expect(screen.queryByText('lock.reset_wallet_title')).toBeNull();
+    expect(screen.queryByText('lock.confirm_title')).toBeNull();
+    expect(mockResetSalmon).not.toHaveBeenCalled();
+  });
+});
+
 describe('AccountAddPanel derive card', () => {
   afterEach(() => {
     mockActiveAccount = { secret: { kind: 'mnemonic', mnemonic: 'owner mnemonic' } };
   });
 
   it('offers deriving when the active account has a seed phrase', () => {
-    render(<AccountAddPanel onComplete={() => {}} onBack={() => {}} />);
+    render(
+      <AccountAddPanel onComplete={() => {}} onBack={() => {}} onResetSalmon={mockResetSalmon} />
+    );
 
     expect(screen.getByTestId('account-add-method-derive')).toBeTruthy();
   });
@@ -702,7 +824,9 @@ describe('AccountAddPanel derive card', () => {
     // silently without a mnemonic, so tapping it did nothing at all.
     mockActiveAccount = { secret: { kind: 'privateKey', address: 'Addr111' } };
 
-    render(<AccountAddPanel onComplete={() => {}} onBack={() => {}} />);
+    render(
+      <AccountAddPanel onComplete={() => {}} onBack={() => {}} onResetSalmon={mockResetSalmon} />
+    );
 
     expect(screen.queryByTestId('account-add-method-derive')).toBeNull();
     // The other methods stay: importing is still possible from here.
@@ -712,7 +836,9 @@ describe('AccountAddPanel derive card', () => {
   it('does not offer deriving from a watch-only account either', () => {
     mockActiveAccount = { secret: { kind: 'watchOnly', address: 'Addr222' } };
 
-    render(<AccountAddPanel onComplete={() => {}} onBack={() => {}} />);
+    render(
+      <AccountAddPanel onComplete={() => {}} onBack={() => {}} onResetSalmon={mockResetSalmon} />
+    );
 
     expect(screen.queryByTestId('account-add-method-derive')).toBeNull();
   });

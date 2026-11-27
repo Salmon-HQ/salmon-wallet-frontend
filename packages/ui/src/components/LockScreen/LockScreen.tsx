@@ -58,9 +58,9 @@ import { useTranslation } from 'react-i18next';
 import { useSemantic } from '../../theme/ThemeProvider';
 import { FIELD_SHELL_CLASS, FIELD_SHELL_ERROR_CLASS } from '../../theme';
 import { PrimaryButton, TextButton } from '../Button';
-import { ConfirmDialog } from '../ConfirmDialog';
 import { LoadingScreen } from '../LoadingScreen';
 import { OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
+import { ResetConfirm } from '../ResetConfirm';
 import { WaterColumn } from '../WaterColumn';
 
 export interface LockScreenProps extends LockScreenPropsBase {
@@ -111,7 +111,6 @@ export function LockScreen({
   const [error, setError] = useState<string | null>(null);
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showLoadingScreen, setShowLoadingScreen] = useState(false);
   /**
    * Held from a successful unlock until this screen is released: the form sank
@@ -325,29 +324,10 @@ export function LockScreen({
         }
       />
 
-      <ConfirmDialog
+      <ResetConfirm
         visible={showResetDialog}
         onClose={() => setShowResetDialog(false)}
-        title={t('lock.reset_wallet_title')}
-        message={t('lock.reset_wallet_message')}
-        confirmText={t('lock.reset_button')}
-        cancelText={t('lock.cancel')}
-        isDanger
-        onConfirm={async () => {
-          setShowResetDialog(false);
-          setShowConfirmDialog(true);
-        }}
-      />
-
-      <ConfirmDialog
-        visible={showConfirmDialog}
-        onClose={() => setShowConfirmDialog(false)}
-        title={t('lock.confirm_title')}
-        message={t('lock.confirm_message')}
-        confirmText={t('lock.delete_button')}
-        cancelText={t('lock.cancel')}
-        isDanger
-        onConfirm={handleFinalConfirm}
+        onReset={handleFinalConfirm}
       />
 
       {held && (

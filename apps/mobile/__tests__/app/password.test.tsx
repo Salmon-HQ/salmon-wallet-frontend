@@ -90,6 +90,12 @@ jest.mock('@salmon/shared', () =>
   })
 );
 
+// The refusal dialog and the reset behind it are the real ones, over the
+// shared stand-in sheet.
+jest.mock('../../src/components/ConfirmSheet', () => ({
+  ConfirmSheet: jest.requireActual('../../test-utils/confirmSheetStandIn').ConfirmSheetStandIn,
+}));
+
 jest.mock('../../src/components', () => {
   const React = require('react');
   const { TextInput, Text, TouchableOpacity } = require('react-native');
@@ -210,6 +216,7 @@ jest.mock('../../src/components', () => {
             React.createElement(TouchableOpacity, { testID: 'sheet-cancel', onPress: onClose })
           )
         : null,
+    VaultRefusedDialog: jest.requireActual('../../src/components/ResetConfirm').VaultRefusedDialog,
     ScreenHeader: ({
       onBack,
       stepIndicator,
@@ -253,9 +260,11 @@ const { useLocalSearchParams } = jest.requireMock('expo-router') as {
 };
 
 import PasswordScreen from '../../app/(auth)/password';
+import { finishClosing } from '../../test-utils/confirmSheetStandIn';
 import { Linking } from 'react-native';
 import {
   DuplicateAccountError,
+  VaultReadRefusedError,
   IncorrectPasswordError,
   UnlockThrottledError,
 } from '@salmon/shared';
@@ -478,6 +487,95 @@ describe('PasswordScreen', () => {
 
       await waitFor(() => expect(screen.getByText(key)).toBeTruthy());
       expect(screen.queryByText('wallet.create.recovery_error')).toBeNull();
+    });
+
+    describe('when storage refuses the save', () => {
+      const press = (testID: string) =>
+        act(async () => fireEvent.press(screen.getByTestId(testID)));
+      const leave = () => act(() => finishClosing());
+
+      /** Presses `testID`; `next` shows only once the pressed sheet has left. */
+      async function pressThenLeave(testID: string, next: string) {
+        await press(testID);
+        expect(screen.queryByText(next)).toBeNull();
+        await leave();
+        expect(screen.getByText(next)).toBeTruthy();
+      }
+
+      beforeEach(() => {
+        jest.spyOn(console, 'error').mockImplementation(() => {});
+        mockRemoveAllAccounts.mockResolvedValue(undefined);
+        mockDisarm.mockResolvedValue(undefined);
+        mockAddAccount.mockRejectedValue(
+          new VaultReadRefusedError(
+            'The stored wallet secrets read absent while wallets are stored'
+          )
+        );
+        mockUseAccountsContext.mockReturnValue([
+          { requiredLock: false, counter: 2 },
+          {
+            checkPassword: mockCheckPassword,
+            addAccount: mockAddAccount,
+            unlockAccounts: mockUnlockAccounts,
+            removeAllAccounts: mockRemoveAllAccounts,
+          },
+        ]);
+      });
+
+      async function refuse() {
+        render(<PasswordScreen />);
+        await waitFor(() => expect(stash.has('pending-mnemonic')).toBe(false));
+        await submit();
+        await waitFor(() => expect(screen.getByText('lock.vault_refused_title')).toBeTruthy());
+      }
+
+      it('shows the refusal instead of the seed-phrase message', async () => {
+        await refuse();
+        expect(screen.queryByText('wallet.create.recovery_error')).toBeNull();
+      });
+
+      it('closes on close and erases nothing', async () => {
+        await refuse();
+        await press('vault-refused-close-button');
+        await leave();
+
+        expect(screen.queryByText('lock.vault_refused_title')).toBeNull();
+        expect(mockRemoveAllAccounts).not.toHaveBeenCalled();
+      });
+
+      it('resets Salmon after both reset sheets, once, as the lock screen does', async () => {
+        await refuse();
+        await pressThenLeave('vault-refused-reset-button', 'lock.reset_wallet_title');
+        await pressThenLeave('confirm-dialog-confirm', 'lock.confirm_title');
+        expect(mockRemoveAllAccounts).not.toHaveBeenCalled();
+        await press('confirm-dialog-confirm');
+
+        expect(mockDisarm).toHaveBeenCalledTimes(1);
+        expect(mockRemoveAllAccounts).toHaveBeenCalledTimes(1);
+        expect(mockReplace).toHaveBeenCalledWith('/(auth)');
+      });
+
+      it.each([1, 2])('erases nothing when the reset is cancelled at step %i', async (step) => {
+        await refuse();
+        await pressThenLeave('vault-refused-reset-button', 'lock.reset_wallet_title');
+        if (step === 2) await pressThenLeave('confirm-dialog-confirm', 'lock.confirm_title');
+        await press('confirm-dialog-cancel');
+        await leave();
+
+        expect(screen.queryByText('lock.reset_wallet_title')).toBeNull();
+        expect(screen.queryByText('lock.confirm_title')).toBeNull();
+        expect(mockRemoveAllAccounts).not.toHaveBeenCalled();
+      });
+
+      it('keeps the seed-phrase message and no dialog for any other failure', async () => {
+        mockAddAccount.mockRejectedValue(new Error('disk full'));
+        render(<PasswordScreen />);
+        await waitFor(() => expect(stash.has('pending-mnemonic')).toBe(false));
+        await submit();
+
+        await waitFor(() => expect(screen.getByText('wallet.create.recovery_error')).toBeTruthy());
+        expect(screen.queryByText('lock.vault_refused_title')).toBeNull();
+      });
     });
 
     it('marks a wallet created here through the save', async () => {

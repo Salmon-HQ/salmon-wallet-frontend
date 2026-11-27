@@ -157,6 +157,7 @@ vi.mock('../../pages/auth/PasswordPage', () => ({
     flowType: string;
     addresses?: string[];
     onRemoveWallet?: () => Promise<void>;
+    onResetSalmon?: () => Promise<void>;
     onBack?: () => void;
     onSuccess?: () => void;
   }) => {
@@ -169,6 +170,12 @@ vi.mock('../../pages/auth/PasswordPage', () => ({
         )}
         {props.onBack && <button data-testid="password-back" onClick={props.onBack} />}
         {props.onSuccess && <button data-testid="password-success" onClick={props.onSuccess} />}
+        {props.onResetSalmon && (
+          <button
+            data-testid="password-reset-salmon"
+            onClick={() => void props.onResetSalmon?.()}
+          />
+        )}
       </div>
     );
   },
@@ -388,6 +395,22 @@ describe('Extension popup onboarding: choosing networks', () => {
 
     expect(screen.queryByTestId('onboarding-networks-screen')).toBeNull();
     expect(screen.queryByTestId('select-page')).toBeNull();
+  });
+
+  // A refused first save offers the lock screen's reset: the session key and
+  // every wallet go, and the welcome screen opens.
+  it('resets Salmon from the password step the way the lock screen does', async () => {
+    mockRemoveAllAccounts.mockResolvedValue(undefined);
+    render(<App />);
+    fireEvent.click(screen.getByTestId('select-create'));
+    fireEvent.click(screen.getByTestId('create-done'));
+    fireEvent.click(screen.getByTestId('networks-choose'));
+
+    fireEvent.click(screen.getByTestId('password-reset-salmon'));
+
+    await vi.waitFor(() => expect(mockRemoveAllAccounts).toHaveBeenCalledTimes(1));
+    expect(mockClearSessionKey).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() => expect(screen.getByTestId('select-create')).toBeTruthy());
   });
 
   it('shows success and consent once the wallet is saved', () => {

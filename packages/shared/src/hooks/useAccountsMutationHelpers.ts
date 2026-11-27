@@ -27,6 +27,18 @@ import {
 
 export { DuplicateAccountError } from '../utils/stored-clash';
 
+/**
+ * A change refused because storage read in a way that contradicts the rest
+ * (Rule 1): writing over such a read could erase wallets that are still there.
+ * The message names no wallet.
+ */
+export class VaultReadRefusedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'VaultReadRefusedError';
+  }
+}
+
 /** The Web Locks name every read-modify-write of the stored wallets holds. */
 const VAULT_WRITE_LOCK = 'salmon-vault-write';
 
@@ -64,11 +76,11 @@ export function withVaultWriteLock<T>(write: () => Promise<T>): Promise<T> {
 export async function readStoredList(memoryHoldsWallets: boolean): Promise<StoredAccount[]> {
   const list = await getStorageItem<unknown>(STORAGE_KEYS.ACCOUNTS);
   if (list != null && !Array.isArray(list)) {
-    throw new Error('The stored wallet list is unreadable');
+    throw new VaultReadRefusedError('The stored wallet list is unreadable');
   }
   const stored = (list ?? []) as StoredAccount[];
   if (memoryHoldsWallets && stored.length === 0) {
-    throw new Error('The stored wallet list reads empty while wallets are open');
+    throw new VaultReadRefusedError('The stored wallet list reads empty while wallets are open');
   }
   return stored;
 }
@@ -106,7 +118,7 @@ export async function readStoredWallets(
   const readable = typeof vault === 'object' && !Array.isArray(vault);
 
   if (hasVault && !readable && list.length > 0) {
-    throw new Error('The stored wallet secrets are unreadable');
+    throw new VaultReadRefusedError('The stored wallet secrets are unreadable');
   }
   if (
     !hasVault &&
@@ -114,7 +126,9 @@ export async function readStoredWallets(
       (await getStorageItem(STORAGE_KEYS.WALLETS)) != null ||
       (await getStorageItem(STORAGE_KEYS.COUNTER)) != null)
   ) {
-    throw new Error('The stored wallet secrets read absent while wallets are stored');
+    throw new VaultReadRefusedError(
+      'The stored wallet secrets read absent while wallets are stored'
+    );
   }
   if (!hasVault || !readable) {
     await removeStashItem(STASH_KEYS.DERIVED_KEY);

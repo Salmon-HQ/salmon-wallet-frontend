@@ -7,7 +7,7 @@
  * it. `validatePassword` and `onConfirm` are injected — this hook never
  * touches storage or keys itself.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { UnlockThrottledError } from '../utils/unlock-throttle';
 
@@ -49,9 +49,14 @@ export function usePasswordConfirm({
   const [passwordError, setPasswordError] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
   const [actionError, setActionError] = useState<string | undefined>();
+  // `loading` is the render's copy: two taps in one tick both read it false,
+  // and after success the button is live again while the sheet slides out.
+  // Held from a press until a failure, or until the sheet opens again.
+  const claimed = useRef(false);
 
   useEffect(() => {
     if (visible) {
+      claimed.current = false;
       setPasswordValue('');
       setPasswordError(undefined);
       setActionError(undefined);
@@ -60,12 +65,14 @@ export function usePasswordConfirm({
   }, [visible]);
 
   const confirm = useCallback(async () => {
-    if (loading) return;
+    if (claimed.current) return;
+    claimed.current = true;
     setActionError(undefined);
 
     if (requirePassword && validatePassword) {
       if (!password) {
         setPasswordError(t('errors.password_required', 'Password is required'));
+        claimed.current = false;
         return;
       }
       setLoading(true);
@@ -74,9 +81,11 @@ export function usePasswordConfirm({
         if (!isValid) {
           setPasswordError(t('errors.invalid_password', 'Invalid password'));
           setLoading(false);
+          claimed.current = false;
           return;
         }
       } catch (err) {
+        claimed.current = false;
         setPasswordError(
           err instanceof UnlockThrottledError
             ? t(
@@ -97,10 +106,11 @@ export function usePasswordConfirm({
     } catch (err) {
       console.error('Confirm action failed:', err);
       setActionError(errorText);
+      claimed.current = false;
     } finally {
       setLoading(false);
     }
-  }, [loading, requirePassword, validatePassword, password, t, onConfirm, onClose, errorText]);
+  }, [requirePassword, validatePassword, password, t, onConfirm, onClose, errorText]);
 
   const setPassword = useCallback(
     (value: string) => {

@@ -64,6 +64,7 @@ import {
 import { useDeveloperMode } from '../contexts/DeveloperModeContext';
 import { useLanguage } from '../i18n';
 import { useBiometric } from '../contexts/BiometricContext';
+import { useResetSalmon } from '../../hooks/useResetSalmon';
 import type { MobilePanelRegistry } from './types';
 import { useOpenExternalLink } from '../../hooks/useOpenExternalLink';
 
@@ -188,6 +189,9 @@ export function useSettingsPanelRegistry(): MobilePanelRegistry {
     const result = await biometricUnlock();
     return result.status === 'ok';
   }, [biometricUnlock]);
+
+  // A refused add offers the lock screen's reset.
+  const resetSalmon = useResetSalmon();
 
   return useMemo<MobilePanelRegistry>(
     () => ({
@@ -449,7 +453,9 @@ export function useSettingsPanelRegistry(): MobilePanelRegistry {
       // Settings → Accounts → Add). Completing pops the flow, so it lands on
       // whichever screen pushed it — the same way its own back does. The new
       // wallet is already active by then; nothing needs to be replaced.
-      'account-add': ({ onBack }) => <AccountAddPanel onComplete={onBack} onBack={onBack} />,
+      'account-add': ({ onBack }) => (
+        <AccountAddPanel onComplete={onBack} onBack={onBack} onResetSalmon={resetSalmon} />
+      ),
       backup: ({ onBack }) => (
         <BackupPanel
           onBack={onBack}
@@ -498,6 +504,7 @@ export function useSettingsPanelRegistry(): MobilePanelRegistry {
       showAddressBookWriteError,
       activeTrustedApps,
       openLink,
+      resetSalmon,
       t,
     ]
   );

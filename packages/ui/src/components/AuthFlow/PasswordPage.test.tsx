@@ -10,6 +10,7 @@ import {
   DuplicateAccountError,
   IncorrectPasswordError,
   UnlockThrottledError,
+  VaultReadRefusedError,
 } from '@salmon/shared';
 import { PasswordPage } from './PasswordPage';
 
@@ -43,6 +44,7 @@ const mockCheckPassword = vi.fn();
 const mockAddAccount = vi.fn();
 const mockProtectWallet = vi.fn();
 const mockMarkUnconfirmed = vi.fn();
+const mockResetSalmon = vi.fn();
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -83,6 +85,7 @@ function renderPage() {
       flowType="recover"
       onSuccess={vi.fn()}
       onBack={vi.fn()}
+      onResetSalmon={mockResetSalmon}
     />
   );
 }
@@ -172,6 +175,7 @@ describe('PasswordPage step', () => {
         flowType={flowType}
         onSuccess={vi.fn()}
         onBack={vi.fn()}
+        onResetSalmon={mockResetSalmon}
       />
     );
 
@@ -335,6 +339,7 @@ describe('PasswordPage saving the wallet', () => {
         flowType={flowType}
         onSuccess={vi.fn()}
         onBack={vi.fn()}
+        onResetSalmon={mockResetSalmon}
       />
     );
   }
@@ -408,5 +413,93 @@ describe('PasswordPage saving the wallet', () => {
     expect(screen.queryByText(SEED_KEY)).toBeNull();
     expect(screen.queryByText(NETWORK_KEY)).toBeNull();
     expect(console.error).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * A save refused because storage read in a way that contradicts the rest
+ * shows one dialog with a way out: close, or the lock screen's two-step reset.
+ */
+describe('PasswordPage when the save is refused', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    accountsState.requiredLock = true;
+    mockCheckPassword.mockResolvedValue(true);
+    mockResetSalmon.mockResolvedValue(undefined);
+    mockCreateAccount.mockImplementation(
+      async ({ id, avatar }: { id: string; avatar: string }) => ({
+        account: { id, avatar },
+      })
+    );
+    mockAddAccount.mockRejectedValueOnce(
+      new VaultReadRefusedError('The stored wallet list is unreadable')
+    );
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  });
+
+  afterEach(cleanup);
+
+  async function pressWhenAlone(testID: string) {
+    await waitFor(() => expect(screen.getAllByTestId(testID)).toHaveLength(1));
+    fireEvent.click(screen.getByTestId(testID));
+  }
+
+  const gone = (text: string) => waitFor(() => expect(screen.queryByText(text)).toBeNull());
+
+  async function refuse() {
+    renderPage();
+    await submitPassword();
+    expect(await screen.findByText('lock.vault_refused_title')).toBeTruthy();
+  }
+
+  it('shows the refusal instead of the seed-phrase message', async () => {
+    await refuse();
+    expect(screen.queryByText(SEED_KEY)).toBeNull();
+  });
+
+  it('closes on close and erases nothing', async () => {
+    await refuse();
+    fireEvent.click(screen.getByTestId('vault-refused-close-button'));
+
+    await gone('lock.vault_refused_title');
+    expect(mockResetSalmon).not.toHaveBeenCalled();
+  });
+
+  it('resets Salmon after both reset sheets, once', async () => {
+    await refuse();
+    fireEvent.click(screen.getByTestId('vault-refused-reset-button'));
+    await gone('lock.vault_refused_title');
+    await pressWhenAlone('confirm-dialog-confirm');
+    await screen.findByText('lock.confirm_title');
+    expect(mockResetSalmon).not.toHaveBeenCalled();
+    await gone('lock.reset_wallet_title');
+    await pressWhenAlone('confirm-dialog-confirm');
+
+    await waitFor(() => expect(mockResetSalmon).toHaveBeenCalledTimes(1));
+  });
+
+  it.each([1, 2])('erases nothing when the reset is cancelled at step %i', async (step) => {
+    await refuse();
+    fireEvent.click(screen.getByTestId('vault-refused-reset-button'));
+    await gone('lock.vault_refused_title');
+    if (step === 2) {
+      await pressWhenAlone('confirm-dialog-confirm');
+      await screen.findByText('lock.confirm_title');
+      await gone('lock.reset_wallet_title');
+    }
+    await pressWhenAlone('confirm-dialog-cancel');
+
+    await gone(step === 1 ? 'lock.reset_wallet_title' : 'lock.confirm_title');
+    expect(mockResetSalmon).not.toHaveBeenCalled();
+  });
+
+  it('keeps the seed-phrase message and no dialog for any other failure', async () => {
+    mockAddAccount.mockReset();
+    mockAddAccount.mockRejectedValueOnce(new Error('disk full'));
+    renderPage();
+    await submitPassword();
+
+    await waitFor(() => expect(screen.getByText(SEED_KEY)).toBeTruthy());
+    expect(screen.queryByText('lock.vault_refused_title')).toBeNull();
   });
 });

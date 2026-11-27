@@ -127,6 +127,37 @@ describe('usePasswordConfirm', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
+  // Two taps in one tick both read the `loading` of the render before them,
+  // and after success the button is live again while the sheet slides out:
+  // either way the action (a reset, a removal) would run twice.
+  it('runs the action once for two presses in the same tick, and not again while it leaves', async () => {
+    const { result, onConfirm, onClose } = setup({ requirePassword: false });
+    await act(async () => {
+      void result.current.confirm();
+      await result.current.confirm();
+    });
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledTimes(1);
+
+    await act(() => result.current.confirm());
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  it('runs the action again after it failed, and once more after the sheet reopens', async () => {
+    const quiet = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const onConfirm = vi.fn().mockRejectedValueOnce(new Error('storage gone'));
+    const { result, rerender, params } = setup({ requirePassword: false, onConfirm });
+    await act(() => result.current.confirm());
+    quiet.mockRestore();
+    await act(() => result.current.confirm());
+    expect(onConfirm).toHaveBeenCalledTimes(2);
+
+    rerender({ ...params, visible: false });
+    rerender({ ...params, visible: true });
+    await act(() => result.current.confirm());
+    expect(onConfirm).toHaveBeenCalledTimes(3);
+  });
+
   it('clears the action error when the sheet opens again', async () => {
     const quiet = vi.spyOn(console, 'error').mockImplementation(() => {});
     const { result, rerender, params } = setup({

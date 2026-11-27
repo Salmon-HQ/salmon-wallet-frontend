@@ -156,9 +156,10 @@ async function refused(change: () => Promise<unknown>): Promise<Error> {
   return error as Error;
 }
 
-/** Rule 1 refuses with a plain `Error` that names no wallet. */
-function expectRuleOne(error: Error): void {
-  expect(Object.getPrototypeOf(error)).toBe(Error.prototype);
+/** Rule 1 refuses with a `VaultReadRefusedError` that names no wallet. */
+async function expectRuleOne(error: Error): Promise<void> {
+  expect(error).toBeInstanceOf((await runtime()).helpers.VaultReadRefusedError);
+  expect(error.name).toBe('VaultReadRefusedError');
   for (const word of LEAKS) expect(error.message).not.toContain(word);
 }
 
@@ -187,7 +188,7 @@ function ruleCases(kind: Platform): void {
         const view = await mount();
         crash[fault](MNEMONICS);
 
-        expectRuleOne(await refused(() => actions(view).addAccount(C)));
+        await expectRuleOne(await refused(() => actions(view).addAccount(C)));
         expect(heldIds(view)).toEqual([A.id, B.id]);
       }
     );
@@ -199,7 +200,7 @@ function ruleCases(kind: Platform): void {
         const view = await mount();
         crash[fault](MNEMONICS);
 
-        expectRuleOne(await refused(() => actions(view).removeAccount(B.id)));
+        await expectRuleOne(await refused(() => actions(view).removeAccount(B.id)));
         expect(heldIds(view)).toEqual([A.id, B.id]);
       }
     );
@@ -210,8 +211,8 @@ function ruleCases(kind: Platform): void {
       const { storage } = await runtime();
       await storage.setStorageItem(MNEMONICS, ['not', 'a', 'vault']);
 
-      expectRuleOne(await refused(() => actions(view).addAccount(C)));
-      expectRuleOne(await refused(() => actions(view).removeAccount(B.id)));
+      await expectRuleOne(await refused(() => actions(view).addAccount(C)));
+      await expectRuleOne(await refused(() => actions(view).removeAccount(B.id)));
     });
 
     it('overwrites a vault stored as an array beside an empty list with a first save', async () => {
@@ -232,8 +233,8 @@ function ruleCases(kind: Platform): void {
       const view = await mount();
       expect(heldIds(view)).toEqual([]);
 
-      expectRuleOne(await refused(() => actions(view).addAccount(C)));
-      expectRuleOne(await refused(() => actions(view).removeAccount(A.id)));
+      await expectRuleOne(await refused(() => actions(view).addAccount(C)));
+      await expectRuleOne(await refused(() => actions(view).removeAccount(A.id)));
     });
 
     it('refuses an add when the vault is absent while a v2 record is stored', async () => {
@@ -241,7 +242,7 @@ function ruleCases(kind: Platform): void {
       await storage.setStorageItem(WALLETS, { passwordRequired: true, wallets: [] });
       const view = await mount();
 
-      expectRuleOne(await refused(() => actions(view).addAccount(C, 'P2')));
+      await expectRuleOne(await refused(() => actions(view).addAccount(C, 'P2')));
       expect(crash.snapshot()[WALLETS]).toEqual({ passwordRequired: true, wallets: [] });
     });
 
@@ -250,23 +251,26 @@ function ruleCases(kind: Platform): void {
       const view = await mount();
       crash.dropRead(ACCOUNTS);
 
-      expectRuleOne(await refused(() => actions(view).addAccount(C)));
-      expectRuleOne(await refused(() => actions(view).removeAccount(B.id)));
-      expectRuleOne(await refused(() => actions(view).editAccount(A.id, { name: 'renamed' })));
+      await expectRuleOne(await refused(() => actions(view).addAccount(C)));
+      await expectRuleOne(await refused(() => actions(view).removeAccount(B.id)));
+      await expectRuleOne(
+        await refused(() => actions(view).editAccount(A.id, { name: 'renamed' }))
+      );
       expect(heldIds(view)).toEqual([A.id, B.id]);
       expect(view.result.current[0].accounts[0].name).toBe(A.name);
     });
 
-    // Guard: today `.filter` and `.findIndex` on it throw a TypeError first.
-    it('stops an add, a removal and an edit before any write when the list is not an array', async () => {
+    it('refuses an add, a removal and an edit before any write when the list is not an array', async () => {
       await seed([A, B]);
       const view = await mount();
       const { storage } = await runtime();
       await storage.setStorageItem(ACCOUNTS, { broken: true });
 
-      await refused(() => actions(view).addAccount(C));
-      await refused(() => actions(view).removeAccount(B.id));
-      await refused(() => actions(view).editAccount(A.id, { name: 'renamed' }));
+      await expectRuleOne(await refused(() => actions(view).addAccount(C)));
+      await expectRuleOne(await refused(() => actions(view).removeAccount(B.id)));
+      await expectRuleOne(
+        await refused(() => actions(view).editAccount(A.id, { name: 'renamed' }))
+      );
     });
 
     // Guard: a user who still has the phrase gets back in.

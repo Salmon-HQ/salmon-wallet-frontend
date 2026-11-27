@@ -41,7 +41,8 @@ export function ConfirmDialog({
   validatePassword,
   onConfirm,
   errorText,
-  confirmTestID,
+  confirmTestID = 'confirm-dialog-confirm',
+  cancelTestID = 'confirm-dialog-cancel',
   children,
   bedrock = false,
 }: ConfirmDialogProps): React.ReactElement {
@@ -163,32 +164,28 @@ export function ConfirmDialog({
           <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}>
             {isDanger ? (
               <>
-                <PrimaryButton onPress={onClose} disabled={loading} testID="confirm-dialog-cancel">
+                <PrimaryButton onPress={onClose} disabled={loading} testID={cancelTestID}>
                   {cancelText || t('actions.cancel', 'Cancel')}
                 </PrimaryButton>
                 <SecondaryButton
                   onPress={handleConfirm}
                   disabled={!canConfirm || loading}
                   tone="danger-fill"
-                  testID={confirmTestID ?? 'confirm-dialog-confirm'}
+                  testID={confirmTestID}
                 >
                   {confirmText || t('actions.confirm', 'Confirm')}
                 </SecondaryButton>
               </>
             ) : (
               <>
-                <SecondaryButton
-                  onPress={onClose}
-                  disabled={loading}
-                  testID="confirm-dialog-cancel"
-                >
+                <SecondaryButton onPress={onClose} disabled={loading} testID={cancelTestID}>
                   {cancelText || t('actions.cancel', 'Cancel')}
                 </SecondaryButton>
                 <PrimaryButton
                   onPress={handleConfirm}
                   disabled={!canConfirm}
                   loading={loading}
-                  testID={confirmTestID ?? 'confirm-dialog-confirm'}
+                  testID={confirmTestID}
                 >
                   {confirmText || t('actions.confirm', 'Confirm')}
                 </PrimaryButton>
