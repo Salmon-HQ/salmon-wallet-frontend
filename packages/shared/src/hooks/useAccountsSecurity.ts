@@ -47,7 +47,10 @@ interface UseAccountsSecurityParams {
    */
   setUnprotectedAddresses: Dispatch<SetStateAction<string[] | null>>;
   loadMetadata: () => Promise<void>;
-  loadAccounts: (mnemonics: SecretVault) => Promise<void>;
+  loadAccounts: (
+    mnemonics: SecretVault,
+    options?: { list?: StoredAccount[] | null }
+  ) => Promise<void>;
   restoreAccount: (options: {
     name?: string;
     avatar?: string;
@@ -167,21 +170,26 @@ export function useAccountsSecurity({
   const changePassword = useCallback(
     async (oldPassword: string, newPassword: string): Promise<boolean> => {
       try {
-        const storedMnemonics = await getEncryptedStoredMnemonics();
-        if (!storedMnemonics) {
-          return false;
-        }
+        // One turn of the lock every wallet write takes, from the read to the
+        // write: the vault sealed again is the one the password was checked
+        // against, and a copy read before the turn would seal over a wallet
+        // saved meanwhile.
+        return await withVaultWriteLock(async () => {
+          const storedMnemonics = await getEncryptedStoredMnemonics();
+          if (!storedMnemonics) {
+            return false;
+          }
 
-        // Verify through the throttled path first: changing the password is
-        // another way to ask "is this the right one?", and an unthrottled one
-        // would hand back the free guesses checkPassword denies.
-        if (!(await checkPassword(oldPassword))) {
-          return false;
-        }
+          // Verify through the throttled path first: changing the password is
+          // another way to ask "is this the right one?", and an unthrottled one
+          // would hand back the free guesses checkPassword denies.
+          if (!(await checkPassword(oldPassword))) {
+            return false;
+          }
 
-        await changeStoredPassword(storedMnemonics, oldPassword, newPassword);
-
-        return true;
+          await changeStoredPassword(storedMnemonics, oldPassword, newPassword);
+          return true;
+        });
       } catch (err) {
         // A wait is not a wrong password; the screen says which it was.
         if (err instanceof UnlockThrottledError) throw err;
@@ -199,45 +207,66 @@ export function useAccountsSecurity({
   const unlockAccounts = useCallback(
     async (password: string): Promise<boolean> => {
       try {
-        // The prompt is the only place an attacker can guess for free. Refuse
-        // to even touch the vault while a penalty from earlier failures stands.
-        const penalty = await getUnlockPenalty();
-        if (penalty.remainingMs > 0) {
+        // One turn of the lock every wallet write takes, from the penalty check
+        // to the vault opened. The migration writes the vault and the list,
+        // and opening an outdated vault seals it again: a copy read before the
+        // turn would seal over a wallet saved meanwhile. The list is read in
+        // the same turn, so it names no wallet this vault copy has no secret
+        // for. The wallets are derived after the turn, which asks the network.
+        const opened = await withVaultWriteLock(async () => {
+          // The prompt is the only place an attacker can guess for free. Refuse
+          // to even touch the vault while a penalty from earlier failures
+          // stands, read here so an attempt that waited for the turn sees the
+          // penalty earned while it waited.
+          const penalty = await getUnlockPenalty();
+          if (penalty.remainingMs > 0) {
+            return 'throttled' as const;
+          }
+
+          try {
+            // A legacy record still on disk decrypts here, not below, so a wrong
+            // password rejected by the migration has to cost an attempt too —
+            // otherwise the throttle never starts on exactly the installs that
+            // are still carrying a v2 vault.
+            await runUpgrades(password);
+          } catch (err) {
+            await recordFailedUnlock();
+            throw err;
+          }
+
+          const storedMnemonics = await getStoredMnemonics();
+          if (!storedMnemonics) {
+            return 'empty' as const;
+          }
+
+          let mnemonics: SecretVault;
+          try {
+            mnemonics = await resolveMnemonicsWithPassword(storedMnemonics, password, {
+              upgradeOutdatedVault: true,
+            });
+          } catch (err) {
+            // Only a rejected password counts against the user — a storage or
+            // migration failure must not lock a legitimate owner out.
+            await recordFailedUnlock();
+            throw err;
+          }
+
+          await clearUnlockPenalty();
+          const list = await getStorageItem<StoredAccount[]>(STORAGE_KEYS.ACCOUNTS);
+          return { mnemonics, list };
+        });
+
+        if (opened === 'throttled') {
           setError('unlock-throttled');
           return false;
         }
-
-        try {
-          // A legacy record still on disk decrypts here, not below, so a wrong
-          // password rejected by the migration has to cost an attempt too —
-          // otherwise the throttle never starts on exactly the installs that
-          // are still carrying a v2 vault.
-          await runUpgrades(password);
-        } catch (err) {
-          await recordFailedUnlock();
-          throw err;
-        }
-
-        const storedMnemonics = await getStoredMnemonics();
-        if (!storedMnemonics) {
+        if (opened === 'empty') {
           setLocked(false);
           return true;
         }
 
-        let mnemonics: SecretVault;
-        try {
-          mnemonics = await resolveMnemonicsWithPassword(storedMnemonics, password, {
-            upgradeOutdatedVault: true,
-          });
-        } catch (err) {
-          // Only a rejected password counts against the user — a storage or
-          // migration failure must not lock a legitimate owner out.
-          await recordFailedUnlock();
-          throw err;
-        }
-
-        await clearUnlockPenalty();
-        await finalizeUnlockedAccounts(mnemonics, loadAccounts, setLocked);
+        await loadAccounts(opened.mnemonics, { list: opened.list });
+        setLocked(false);
         // Typing the password is the user acting. Unlocking through the cached
         // key is not: every window the wallet opens does it, including an
         // approval window a web page asked for, and counting it let a page
