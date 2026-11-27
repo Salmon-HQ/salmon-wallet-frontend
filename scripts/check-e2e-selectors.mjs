@@ -12,6 +12,8 @@
  *  - Maestro (apps/mobile/.maestro): every `id:` and every text anchor
  *    (tapOn / assertVisible / visible / notVisible / text) against the mobile
  *    and shared source and the English copy.
+ *    A coordinate tap or swipe, and a swipe that starts from a text, are
+ *    findings whatever they name.
  *  - Playwright (apps/extension/.playwright): every `getByTestId('…')` against
  *    the extension, ui and shared source.
  *
@@ -139,9 +141,20 @@ const TEXT_LINE =
 /** Maestro findings for one flow's text. */
 export function auditMaestroFlow(file, text, { idExists, textExists }) {
   const findings = [];
+  // Where the scan is inside a `swipe:` step: 'swipe', then 'from' once its
+  // `from:` key was seen.
+  let swipe = null;
   text.split('\n').forEach((raw, i) => {
     const line = raw.trim();
     if (line.startsWith('#')) return;
+    if (line.startsWith('- ')) swipe = /^-\s*swipe:/.test(line) ? 'swipe' : null;
+    else if (swipe && /^from:/.test(line)) swipe = 'from';
+    // A swipe from a text needs that text on screen already; below the fold
+    // the swipe never runs, and whether it is below depends on the layout of
+    // the day. `scrollUntilVisible` on the target's id retries instead.
+    else if (swipe === 'from' && /^text:/.test(line)) {
+      findings.push(`${file}:${i + 1}  swipe-from-text  ${line}`);
+    }
     const id = line.match(ID_LINE)?.[1]?.trim();
     // `a|b` waits for whichever appears first: each alternative must exist.
     for (const alt of id && !id.includes('${') ? id.split('|') : []) {
