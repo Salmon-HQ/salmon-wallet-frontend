@@ -480,7 +480,7 @@
     "unlock_failed": "Error al desbloquear la billetera. Por favor, intentalo de nuevo.",
     "reset_failed": "Error al restablecer la billetera. Por favor, intentalo de nuevo.",
     "vault_refused_title": "No pudimos leer tus billeteras guardadas",
-    "vault_refused_message": "Salmon no guardó el cambio para no pisar lo que ya tenés. Cerrá la app y volvé a abrirla. Si sigue pasando, podés reiniciar Salmon y restaurar tus billeteras con sus frases de recuperación.",
+    "vault_refused_message": "Salmon no guardó el cambio para no pisar lo que ya tenés. Cerrá la app y volvé a abrirla. Si sigue pasando, podés reiniciar Salmon: se borran las billeteras de este dispositivo y solo vas a poder restaurar las que tengas respaldadas con su frase de recuperación o su clave privada.",
     "reset_salmon": "Reiniciar Salmon",
     "unlocking": "Desbloqueando billetera",
     "use_biometric": "Usar Biometría",
