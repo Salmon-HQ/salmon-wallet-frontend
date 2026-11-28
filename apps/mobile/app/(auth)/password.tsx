@@ -32,6 +32,10 @@
  * - In RECOVER flow, always show 2 inputs to set new password (seed phrase proves ownership)
  * - Call checkPassword() to validate when showSingleInput is true
  * - If valid, proceed to create account
+ * - A vault stored with no wallet listed is checked against a password the
+ *   user may not know, so the screen offers the lock screen's reset ("Forgot
+ *   my password"): under the single field, and in RECOVER only once that
+ *   vault rejected the password, since its fields ask for a new one
  */
 
 import {
@@ -100,8 +104,10 @@ import {
   PasswordStrengthBar,
   PrimaryButton,
   ReservedSlot,
+  ResetConfirm,
   ScreenHeader,
   SecondaryButton,
+  TextButton,
   VaultRefusedDialog,
 } from '../../src/components';
 
@@ -199,6 +205,11 @@ export default function PasswordScreen() {
   const { disarm: disarmBiometric } = useBiometric();
   const [removeOpen, setRemoveOpen] = useState(false);
   const [vaultRefused, setVaultRefused] = useState(false);
+  // Either flow here proves the password against that vault: the single field
+  // asks for it, and recover's new password fails unless it matches.
+  const offerReset = requiredLock && !protect && state.accounts.length === 0;
+  const [passwordRejected, setPasswordRejected] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
   const handleRemoveWallet = useCallback(async () => {
     await disarmBiometric();
     await actions.removeAllAccounts();
@@ -349,6 +360,9 @@ export default function PasswordScreen() {
         setIsLoading(false);
         return;
       }
+      if (err instanceof IncorrectPasswordError || err instanceof UnlockThrottledError) {
+        setPasswordRejected(true);
+      }
       // Account setup calls the backend, so an unreachable server lands here
       // too. Blaming the seed phrase for that sends users hunting for a lost
       // wallet when all they need is a connection.
@@ -424,6 +438,19 @@ export default function PasswordScreen() {
     flowType,
     enrolmentPassword,
   ]);
+
+  const forgotLink = offerReset && (
+    <View style={styles.forgotRow}>
+      <TextButton
+        testID="password-forgot-button"
+        onPress={() => setResetOpen(true)}
+        disabled={isLoading || isChecking}
+        color={semantic.text.primary}
+      >
+        {t('lock.forgot_password')}
+      </TextButton>
+    </View>
+  );
 
   // Loading screen title based on flow
   const loadingTitle = protect
@@ -529,6 +556,7 @@ export default function PasswordScreen() {
                       }
                     }}
                   />
+                  {showSingleInput && forgotLink}
 
                   {/*
                 Feedback about the field above it, so it sits against that
@@ -565,6 +593,7 @@ export default function PasswordScreen() {
                 <ReservedSlot visible={!!error}>
                   <Text style={styles.generalError}>{error ?? ' '}</Text>
                 </ReservedSlot>
+                {!showSingleInput && passwordRejected && forgotLink}
               </>
             }
             assist={
@@ -630,6 +659,12 @@ export default function PasswordScreen() {
         onReset={handleRemoveWallet}
       />
 
+      <ResetConfirm
+        visible={resetOpen}
+        onClose={() => setResetOpen(false)}
+        onReset={handleRemoveWallet}
+      />
+
       {/* Loading Screen Overlay */}
       <LoadingScreen
         visible={isLoading}
@@ -656,6 +691,10 @@ const stylesFor = (t: Semantic) =>
     inputContainer: {
       width: '100%',
       marginBottom: spacing.lg,
+    },
+    forgotRow: {
+      alignItems: 'center',
+      marginTop: spacing.sm,
     },
     strengthContainer: {
       marginTop: spacing.sm,

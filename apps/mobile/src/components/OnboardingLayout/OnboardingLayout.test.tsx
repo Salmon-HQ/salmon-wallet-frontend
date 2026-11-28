@@ -397,31 +397,24 @@ describe('OnboardingLayout', () => {
     expect(leadAt('lock')).toBe(identityLead);
   });
 
-  it.each([
-    ['without', undefined],
-    ['with', <Text key="assist">Seed Vault</Text>],
-  ])(
-    'leaves welcome room for a text link in body on the smallest phone, %s an assist',
-    (_, assist) => {
-      // A 360×640dp Android phone less its status bar (24) and three-button
-      // navigation (48). Welcome's "Forgot my password" lives in `body`, the
-      // only band with height to spare; the action band is one button tall.
-      const SMALLEST = 568;
-      render(
-        <OnboardingLayout
-          title={<Text>Salmon</Text>}
-          assist={assist}
-          secondary={<Text>Recover</Text>}
-          action={<Text>Create</Text>}
-        />
-      );
-      layout(SMALLEST);
+  it('holds the password field and the forgot row in body on the smallest phone', () => {
+    // A 360×640dp Android phone less its status bar (24) and three-button
+    // navigation (48), keyboard down. The password screen passes an assist and
+    // no secondary, and puts "Forgot my password" under its single field.
+    render(
+      <OnboardingLayout
+        variant="content"
+        scrollBody
+        assist={<Text>Terms</Text>}
+        action={<Text>Create</Text>}
+      />
+    );
+    layout(568);
 
-      expect(reservedHeights().body).toBeGreaterThanOrEqual(
-        spacing.sm + componentSizes.buttonHeightSmall
-      );
-    }
-  );
+    expect(reservedHeights().body).toBeGreaterThanOrEqual(
+      componentSizes.inputHeight + spacing.sm + componentSizes.buttonHeightSmall
+    );
+  });
 
   it('drops the description first when the keyboard costs a little room', () => {
     // Explanatory, and not what someone is reading while they type. `body`
