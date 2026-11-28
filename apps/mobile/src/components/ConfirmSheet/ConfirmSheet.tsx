@@ -67,6 +67,8 @@ export function ConfirmSheet({
   validatePassword,
   onConfirm,
   errorText,
+  confirmTestID = 'confirm-dialog-confirm',
+  cancelTestID = 'confirm-dialog-cancel',
   children,
   bedrock = false,
 }: ConfirmSheetProps) {
@@ -160,7 +162,7 @@ export function ConfirmSheet({
           <View style={styles.actions}>
             {isDanger ? (
               <>
-                <PrimaryButton onPress={onClose} disabled={loading} testID="confirm-dialog-cancel">
+                <PrimaryButton onPress={onClose} disabled={loading} testID={cancelTestID}>
                   {cancelText || t('actions.cancel', 'Cancel')}
                 </PrimaryButton>
                 {requiresHold ? (
@@ -177,7 +179,7 @@ export function ConfirmSheet({
                     onPress={handleConfirm}
                     disabled={!canConfirm || loading || confirmDisabled}
                     tone="danger-fill"
-                    testID="confirm-dialog-confirm"
+                    testID={confirmTestID}
                   >
                     {confirmText || t('actions.confirm', 'Confirm')}
                   </SecondaryButton>
@@ -185,11 +187,7 @@ export function ConfirmSheet({
               </>
             ) : (
               <>
-                <SecondaryButton
-                  onPress={onClose}
-                  disabled={loading}
-                  testID="confirm-dialog-cancel"
-                >
+                <SecondaryButton onPress={onClose} disabled={loading} testID={cancelTestID}>
                   {cancelText || t('actions.cancel', 'Cancel')}
                 </SecondaryButton>
                 {requiresHold ? (
@@ -205,7 +203,7 @@ export function ConfirmSheet({
                     onPress={handleConfirm}
                     disabled={!canConfirm || confirmDisabled}
                     loading={loading}
-                    testID="confirm-dialog-confirm"
+                    testID={confirmTestID}
                   >
                     {confirmText || t('actions.confirm', 'Confirm')}
                   </PrimaryButton>

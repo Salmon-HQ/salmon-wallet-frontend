@@ -38,6 +38,7 @@ export {
   TextButton,
   TokenAbout,
   TokenDetailPage,
+  VaultRefusedDialog,
   TokenList,
   TokenListFoldRow,
   TokenListItem,

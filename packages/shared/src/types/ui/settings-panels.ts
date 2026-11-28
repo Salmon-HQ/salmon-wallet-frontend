@@ -149,6 +149,10 @@ export interface ConfirmSheetPropsBase {
    * open on a rejection either way; without this it says nothing.
    */
   errorText?: string;
+  /** Test id for the confirm button; `confirm-dialog-confirm` without it. */
+  confirmTestID?: string;
+  /** Test id for the cancel button; `confirm-dialog-cancel` without it. */
+  cancelTestID?: string;
 }
 
 /** DerivedAccountCard — a selectable account found by a derivation scan. */

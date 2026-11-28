@@ -138,6 +138,7 @@ export type { SubAccount, SubAccountSelectorProps } from './SubAccountSelector';
 
 export { ConfirmSheet } from './ConfirmSheet';
 export type { ConfirmSheetProps } from './ConfirmSheet';
+export { ResetConfirm, VaultRefusedDialog } from './ResetConfirm';
 
 export { WarningNotice } from './WarningNotice';
 export type { WarningNoticeProps, WarningNoticeTone } from './WarningNotice';

@@ -26,6 +26,7 @@ import {
   spacing,
   useAccountsContext,
   useAccountAddFlow,
+  VaultReadRefusedError,
   accountAddMethods,
   ACCOUNT_ADD_STEP_TITLE_KEYS,
   ACCOUNT_ADD_STEP_SUBTITLE_KEYS,
@@ -51,6 +52,7 @@ import { IconBubble } from '../IconBubble';
 import { ListRow } from '../ListRow';
 import { ReservedSlot } from '../OnboardingLayout';
 import { PasswordInput } from '../PasswordInput';
+import { VaultRefusedDialog } from '../ResetConfirm';
 import { SectionLabel } from '../SectionLabel';
 import { SeedPhraseEntry } from '../SeedPhrase';
 import { SettingsPanelContent } from '../SettingsPanelContent';
@@ -68,6 +70,7 @@ export function AccountAddPanel({
   onBack,
   onWait,
   onCloseSettings,
+  onResetSalmon,
 }: AccountAddPanelProps): React.ReactElement {
   const { t } = useTranslation();
   const { text, status } = useSemantic();
@@ -77,6 +80,7 @@ export function AccountAddPanel({
   const [creationError, setCreationError] = useState<{ title: string; message: string } | null>(
     null
   );
+  const [vaultRefused, setVaultRefused] = useState(false);
 
   // A wait this panel raised may not outlive the panel unnoticed. Read
   // through a ref so only unmount — never a new `onWait` identity — lowers it.
@@ -119,6 +123,10 @@ export function AccountAddPanel({
   const onFailure = useCallback(
     (err: unknown, duplicateKey?: string) => {
       console.error('Failed to add account:', err);
+      if (err instanceof VaultReadRefusedError) {
+        setVaultRefused(true);
+        return;
+      }
       setCreationError({
         title: t('general.error'),
         message: t(duplicateKey ?? 'settings.account_add.creation_error'),
@@ -454,6 +462,12 @@ export function AccountAddPanel({
         message={creationError?.message ?? ''}
         acknowledgeOnly
         onConfirm={async () => {}}
+      />
+
+      <VaultRefusedDialog
+        visible={vaultRefused}
+        onClose={() => setVaultRefused(false)}
+        onReset={onResetSalmon}
       />
     </>
   );

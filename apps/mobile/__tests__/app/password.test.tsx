@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react-native';
+import { render, screen, fireEvent, waitFor, act, within } from '@testing-library/react-native';
 
 const mockReplace = jest.fn();
 const mockBack = jest.fn();
@@ -90,6 +90,12 @@ jest.mock('@salmon/shared', () =>
   })
 );
 
+// The refusal dialog and the reset behind it are the real ones, over the
+// shared stand-in sheet.
+jest.mock('../../src/components/ConfirmSheet', () => ({
+  ConfirmSheet: jest.requireActual('../../test-utils/confirmSheetStandIn').ConfirmSheetStandIn,
+}));
+
 jest.mock('../../src/components', () => {
   const React = require('react');
   const { TextInput, Text, TouchableOpacity } = require('react-native');
@@ -110,17 +116,28 @@ jest.mock('../../src/components', () => {
       React.createElement(Text, null, children),
     OnboardingDescription: ({ children }: { children?: React.ReactNode }) =>
       React.createElement(Text, null, children),
+    // Each slot in its own view, so a test can say which band a control is in.
     OnboardingLayout: (props: Record<string, React.ReactNode>) =>
       React.createElement(
         View,
         null,
-        props.chrome,
-        props.title,
-        props.description,
-        props.body,
-        props.assist,
-        props.secondary,
-        props.action
+        ...['chrome', 'title', 'description', 'body', 'assist', 'secondary', 'action'].map((slot) =>
+          React.createElement(View, { key: slot, testID: `slot-${slot}` }, props[slot])
+        )
+      ),
+    TextButton: ({
+      children,
+      onPress,
+      testID,
+    }: {
+      children?: React.ReactNode;
+      onPress?: () => void;
+      testID?: string;
+    }) =>
+      React.createElement(
+        TouchableOpacity,
+        { onPress, testID, accessibilityRole: 'button' },
+        React.createElement(Text, null, children)
       ),
     PasswordInput: ({
       value,
@@ -155,14 +172,16 @@ jest.mock('../../src/components', () => {
       children,
       onPress,
       disabled,
+      testID,
     }: {
       children?: React.ReactNode;
       onPress?: () => void;
       disabled?: boolean;
+      testID?: string;
     }) =>
       React.createElement(
         TouchableOpacity,
-        { onPress, disabled, accessibilityRole: 'button' },
+        { onPress, disabled, testID, accessibilityRole: 'button' },
         React.createElement(Text, null, children)
       ),
     SecondaryButton: ({
@@ -210,6 +229,8 @@ jest.mock('../../src/components', () => {
             React.createElement(TouchableOpacity, { testID: 'sheet-cancel', onPress: onClose })
           )
         : null,
+    VaultRefusedDialog: jest.requireActual('../../src/components/ResetConfirm').VaultRefusedDialog,
+    ResetConfirm: jest.requireActual('../../src/components/ResetConfirm').ResetConfirm,
     ScreenHeader: ({
       onBack,
       stepIndicator,
@@ -253,9 +274,11 @@ const { useLocalSearchParams } = jest.requireMock('expo-router') as {
 };
 
 import PasswordScreen from '../../app/(auth)/password';
+import { finishClosing } from '../../test-utils/confirmSheetStandIn';
 import { Linking } from 'react-native';
 import {
   DuplicateAccountError,
+  VaultReadRefusedError,
   IncorrectPasswordError,
   UnlockThrottledError,
 } from '@salmon/shared';
@@ -480,6 +503,95 @@ describe('PasswordScreen', () => {
       expect(screen.queryByText('wallet.create.recovery_error')).toBeNull();
     });
 
+    describe('when storage refuses the save', () => {
+      const press = (testID: string) =>
+        act(async () => fireEvent.press(screen.getByTestId(testID)));
+      const leave = () => act(() => finishClosing());
+
+      /** Presses `testID`; `next` shows only once the pressed sheet has left. */
+      async function pressThenLeave(testID: string, next: string) {
+        await press(testID);
+        expect(screen.queryByText(next)).toBeNull();
+        await leave();
+        expect(screen.getByText(next)).toBeTruthy();
+      }
+
+      beforeEach(() => {
+        jest.spyOn(console, 'error').mockImplementation(() => {});
+        mockRemoveAllAccounts.mockResolvedValue(undefined);
+        mockDisarm.mockResolvedValue(undefined);
+        mockAddAccount.mockRejectedValue(
+          new VaultReadRefusedError(
+            'The stored wallet secrets read absent while wallets are stored'
+          )
+        );
+        mockUseAccountsContext.mockReturnValue([
+          { requiredLock: false, counter: 2 },
+          {
+            checkPassword: mockCheckPassword,
+            addAccount: mockAddAccount,
+            unlockAccounts: mockUnlockAccounts,
+            removeAllAccounts: mockRemoveAllAccounts,
+          },
+        ]);
+      });
+
+      async function refuse() {
+        render(<PasswordScreen />);
+        await waitFor(() => expect(stash.has('pending-mnemonic')).toBe(false));
+        await submit();
+        await waitFor(() => expect(screen.getByText('lock.vault_refused_title')).toBeTruthy());
+      }
+
+      it('shows the refusal instead of the seed-phrase message', async () => {
+        await refuse();
+        expect(screen.queryByText('wallet.create.recovery_error')).toBeNull();
+      });
+
+      it('closes on close and erases nothing', async () => {
+        await refuse();
+        await press('vault-refused-close-button');
+        await leave();
+
+        expect(screen.queryByText('lock.vault_refused_title')).toBeNull();
+        expect(mockRemoveAllAccounts).not.toHaveBeenCalled();
+      });
+
+      it('resets Salmon after both reset sheets, once, as the lock screen does', async () => {
+        await refuse();
+        await pressThenLeave('vault-refused-reset-button', 'lock.reset_wallet_title');
+        await pressThenLeave('confirm-dialog-confirm', 'lock.confirm_title');
+        expect(mockRemoveAllAccounts).not.toHaveBeenCalled();
+        await press('confirm-dialog-confirm');
+
+        expect(mockDisarm).toHaveBeenCalledTimes(1);
+        expect(mockRemoveAllAccounts).toHaveBeenCalledTimes(1);
+        expect(mockReplace).toHaveBeenCalledWith('/(auth)');
+      });
+
+      it.each([1, 2])('erases nothing when the reset is cancelled at step %i', async (step) => {
+        await refuse();
+        await pressThenLeave('vault-refused-reset-button', 'lock.reset_wallet_title');
+        if (step === 2) await pressThenLeave('confirm-dialog-confirm', 'lock.confirm_title');
+        await press('confirm-dialog-cancel');
+        await leave();
+
+        expect(screen.queryByText('lock.reset_wallet_title')).toBeNull();
+        expect(screen.queryByText('lock.confirm_title')).toBeNull();
+        expect(mockRemoveAllAccounts).not.toHaveBeenCalled();
+      });
+
+      it('keeps the seed-phrase message and no dialog for any other failure', async () => {
+        mockAddAccount.mockRejectedValue(new Error('disk full'));
+        render(<PasswordScreen />);
+        await waitFor(() => expect(stash.has('pending-mnemonic')).toBe(false));
+        await submit();
+
+        await waitFor(() => expect(screen.getByText('wallet.create.recovery_error')).toBeTruthy());
+        expect(screen.queryByText('lock.vault_refused_title')).toBeNull();
+      });
+    });
+
     it('marks a wallet created here through the save', async () => {
       useLocalSearchParams.mockReturnValue({ type: 'create' });
       render(<PasswordScreen />);
@@ -614,7 +726,7 @@ describe('PasswordScreen', () => {
 
   it('verifies existing password in single-input flow and blocks on wrong password', async () => {
     mockUseAccountsContext.mockReturnValue([
-      { requiredLock: true, counter: 1 },
+      { requiredLock: true, counter: 1, accounts: [{ id: 'account-1' }] },
       {
         checkPassword: mockCheckPassword,
         addAccount: mockAddAccount,
@@ -665,6 +777,167 @@ describe('PasswordScreen', () => {
 
     // The same slot, now revealed — nothing was added to the tree.
     expect(screen.getByText(/^strength:/)).toBeTruthy();
+  });
+
+  // An encrypted vault with no wallet listed: this screen checks the password
+  // against that vault, single field (create) or new password (recover), so a
+  // user who does not know it needs the lock screen's way out here.
+  describe('a vault stored with no wallet listed', () => {
+    const ADDRESSES = ['AddressOne111'];
+    const FORGOT = 'password-forgot-button';
+    const press = (testID: string) => act(async () => fireEvent.press(screen.getByTestId(testID)));
+    const leave = () => act(() => finishClosing());
+
+    /** Presses `testID`; `next` shows only once the pressed sheet has left. */
+    async function pressThenLeave(testID: string, next: string) {
+      await press(testID);
+      expect(screen.queryByText(next)).toBeNull();
+      await leave();
+      expect(screen.getByText(next)).toBeTruthy();
+    }
+
+    function withState(state: Record<string, unknown>) {
+      mockUseAccountsContext.mockReturnValue([
+        { counter: 1, ...state },
+        {
+          checkPassword: mockCheckPassword,
+          addAccount: mockAddAccount,
+          unlockAccounts: mockUnlockAccounts,
+          removeAllAccounts: mockRemoveAllAccounts,
+        },
+      ]);
+    }
+
+    beforeEach(() => {
+      mockRemoveAllAccounts.mockResolvedValue(undefined);
+      mockDisarm.mockResolvedValue(undefined);
+      withState({ requiredLock: true, accounts: [] });
+    });
+
+    it('offers the reset under the field on create', () => {
+      useLocalSearchParams.mockReturnValue({ type: 'create' });
+      render(<PasswordScreen />);
+
+      expect(within(screen.getByTestId('slot-body')).getByTestId(FORGOT)).toBeTruthy();
+      expect(screen.getByText('lock.forgot_password')).toBeTruthy();
+    });
+
+    /** Recover asks for a new password: submits one the stored vault rejects. */
+    async function submitRejectedRecover() {
+      mockAddAccount.mockRejectedValue(new IncorrectPasswordError());
+      useLocalSearchParams.mockReturnValue({ type: 'recover' });
+      render(<PasswordScreen />);
+      await waitFor(() => expect(mockGetStashItem).toHaveBeenCalled());
+      expect(screen.queryByTestId(FORGOT)).toBeNull();
+
+      fireEvent.changeText(
+        screen.getByPlaceholderText('wallet.create.passwordNew'),
+        'pw-fixture-valid'
+      );
+      fireEvent.changeText(
+        screen.getByPlaceholderText('wallet.create.passwordRepeat'),
+        'pw-fixture-valid'
+      );
+      fireEvent.press(screen.getByText('wallet.recover_wallet'));
+      await waitFor(() => expect(screen.getByText('wallet.create.invalid_password')).toBeTruthy());
+    }
+
+    // "Choose a password" with a forgot link reads as nonsense: on recover the
+    // link shows only once the stored vault rejected the password.
+    it('offers the reset on recover only after the password was rejected', async () => {
+      await submitRejectedRecover();
+
+      expect(within(screen.getByTestId('slot-body')).getByTestId(FORGOT)).toBeTruthy();
+    });
+
+    it('offers no reset on recover when the save fails for another reason', async () => {
+      mockAddAccount.mockRejectedValue(new Error('storage'));
+      useLocalSearchParams.mockReturnValue({ type: 'recover' });
+      render(<PasswordScreen />);
+      await waitFor(() => expect(mockGetStashItem).toHaveBeenCalled());
+      fireEvent.changeText(
+        screen.getByPlaceholderText('wallet.create.passwordNew'),
+        'pw-fixture-valid'
+      );
+      fireEvent.changeText(
+        screen.getByPlaceholderText('wallet.create.passwordRepeat'),
+        'pw-fixture-valid'
+      );
+      fireEvent.press(screen.getByText('wallet.recover_wallet'));
+      await waitFor(() => expect(screen.getByText('wallet.create.recovery_error')).toBeTruthy());
+
+      expect(screen.queryByTestId(FORGOT)).toBeNull();
+    });
+
+    // The link takes room only inside `body`: the bands below it hold the same
+    // controls, and `secondary` stays empty, so the layout gives `body` the
+    // same height and nothing under it moves.
+    it.each([
+      ['with', []],
+      ['without', [{ id: 'account-1' }]],
+    ])('keeps assist, secondary and action as they are %s the link', (_, accounts) => {
+      withState({ requiredLock: true, accounts });
+      useLocalSearchParams.mockReturnValue({ type: 'create' });
+      render(<PasswordScreen />);
+
+      expect(
+        within(screen.getByTestId('slot-assist')).getByTestId('password-terms-link')
+      ).toBeTruthy();
+      expect(screen.getByTestId('slot-secondary').props.children).toBeUndefined();
+      expect(
+        within(screen.getByTestId('slot-action')).getByTestId('password-submit-button')
+      ).toBeTruthy();
+      expect(within(screen.getByTestId('slot-action')).queryByTestId(FORGOT)).toBeNull();
+      expect(within(screen.getByTestId('slot-assist')).queryByTestId(FORGOT)).toBeNull();
+    });
+
+    it.each([
+      ['no vault is stored', { requiredLock: false, accounts: [] }, 'create'],
+      ['wallets are listed', { requiredLock: true, accounts: [{ id: 'account-1' }] }, 'create'],
+      [
+        'the screen protects a wallet',
+        { requiredLock: true, accounts: [], unprotectedAddresses: ADDRESSES },
+        'protect',
+      ],
+    ])('offers no reset when %s', (_, state, type) => {
+      withState(state);
+      useLocalSearchParams.mockReturnValue({ type });
+      render(<PasswordScreen />);
+
+      expect(screen.getByTestId('password-submit-button')).toBeTruthy();
+      expect(screen.queryByTestId(FORGOT)).toBeNull();
+    });
+
+    it('resets after both sheets, the second only once the first has left, then opens welcome', async () => {
+      useLocalSearchParams.mockReturnValue({ type: 'create' });
+      render(<PasswordScreen />);
+
+      await press(FORGOT);
+      expect(screen.getByText('lock.reset_wallet_title')).toBeTruthy();
+      await pressThenLeave('confirm-dialog-confirm', 'lock.confirm_title');
+      expect(mockRemoveAllAccounts).not.toHaveBeenCalled();
+      await press('confirm-dialog-confirm');
+
+      expect(mockDisarm).toHaveBeenCalledTimes(1);
+      expect(mockRemoveAllAccounts).toHaveBeenCalledTimes(1);
+      expect(mockReplace).toHaveBeenCalledTimes(1);
+      expect(mockReplace).toHaveBeenCalledWith('/(auth)');
+    });
+
+    it.each([1, 2])('erases nothing when the reset is cancelled at step %i', async (step) => {
+      await submitRejectedRecover();
+
+      await press(FORGOT);
+      if (step === 2) await pressThenLeave('confirm-dialog-confirm', 'lock.confirm_title');
+      await press('confirm-dialog-cancel');
+      await leave();
+
+      expect(screen.queryByText('lock.reset_wallet_title')).toBeNull();
+      expect(screen.queryByText('lock.confirm_title')).toBeNull();
+      expect(mockDisarm).not.toHaveBeenCalled();
+      expect(mockRemoveAllAccounts).not.toHaveBeenCalled();
+      expect(mockReplace).not.toHaveBeenCalled();
+    });
   });
 
   describe('protecting a wallet stored without a password', () => {
@@ -755,7 +1028,12 @@ describe('PasswordScreen', () => {
 
     it('takes the addresses from the wallet, never from the link that opened the screen', () => {
       mockUseAccountsContext.mockReturnValue([
-        { requiredLock: true, counter: 1, unprotectedAddresses: null },
+        {
+          requiredLock: true,
+          counter: 1,
+          accounts: [{ id: 'account-1' }],
+          unprotectedAddresses: null,
+        },
         { protectWallet: mockProtectWallet },
       ]);
 

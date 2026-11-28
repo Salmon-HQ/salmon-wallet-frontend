@@ -30,6 +30,7 @@ import {
   spacing,
   useAccountsContext,
   useAccountAddFlow,
+  VaultReadRefusedError,
   getShortAddress,
   NETWORK_DISPLAY,
   accountAddMethods,
@@ -53,6 +54,7 @@ import { LoadingScreen } from '../LoadingScreen';
 import { WarningNotice } from '../WarningNotice';
 import { SeedPhraseEntry } from '../SeedPhrase';
 import { PasswordInput } from '../PasswordInput';
+import { VaultRefusedDialog } from '../ResetConfirm';
 import { useSecretScreen } from '../../../hooks/useSecretScreen';
 import { useWaitPassage } from '../../utils/useWaitPassage';
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
@@ -68,7 +70,11 @@ import { useSeedVaultAccess } from '../../seed-vault/useSeedVaultAccess';
 /** The leading well every settings row carries. */
 const ROW_BUBBLE_SIZE = 40;
 
-export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): React.ReactElement {
+export function AccountAddPanel({
+  onComplete,
+  onBack,
+  onResetSalmon,
+}: AccountAddPanelProps): React.ReactElement {
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
   const { text, accent } = useSemantic();
@@ -88,19 +94,22 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
   const [creationError, setCreationError] = useState<{ title: string; message: string } | null>(
     null
   );
+  const [vaultRefused, setVaultRefused] = useState(false);
 
   // The wait's passage: the panel keeps the wait mounted until its closing
-  // wave has left, and the completion handoff is parked behind that report —
-  // completing earlier unmounts the wait mid-wave. LoadingScreen's watchdog
-  // guarantees the report, so the handoff cannot be stranded.
+  // wave has left, and what follows the wait is parked behind that report —
+  // completing earlier unmounts the wait mid-wave, and a failure sheet raised
+  // earlier is asked for while the wait's own window is still up (iOS
+  // presents one at a time). LoadingScreen's watchdog guarantees the report,
+  // so nothing parked can be stranded.
   const { onExited: waitExited } = useWaitPassage(loading);
-  const pendingCompleteRef = useRef(false);
+  const afterWaitRef = useRef<(() => void) | null>(null);
   const handleWaitExited = useCallback(() => {
     waitExited();
-    if (!pendingCompleteRef.current) return;
-    pendingCompleteRef.current = false;
-    onComplete();
-  }, [waitExited, onComplete]);
+    const next = afterWaitRef.current;
+    afterWaitRef.current = null;
+    next?.();
+  }, [waitExited]);
 
   const defaultName = useMemo(
     () => t('settings.account_add.default_name', { number: accounts.length + 1 }),
@@ -112,16 +121,21 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
   // Parked, not fired: dropping `loading` starts the wait's exit, and
   // `handleWaitExited` completes once the last wave has left the screen.
   const onPersisted = useCallback(() => {
-    pendingCompleteRef.current = true;
+    afterWaitRef.current = onComplete;
     setLoading(false);
-  }, []);
+  }, [onComplete]);
+  // `useAccountAddFlow` reports a failure in the same tick as `onWaitEnd`.
   const onFailure = useCallback(
     (err: unknown, duplicateKey?: string) => {
       console.error('Failed to add account:', err);
-      setCreationError({
-        title: t('general.error'),
-        message: t(duplicateKey ?? 'settings.account_add.creation_error'),
-      });
+      afterWaitRef.current =
+        err instanceof VaultReadRefusedError
+          ? () => setVaultRefused(true)
+          : () =>
+              setCreationError({
+                title: t('general.error'),
+                message: t(duplicateKey ?? 'settings.account_add.creation_error'),
+              });
     },
     [t]
   );
@@ -493,6 +507,12 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
         message={creationError?.message ?? ''}
         acknowledgeOnly
         onConfirm={async () => {}}
+      />
+
+      <VaultRefusedDialog
+        visible={vaultRefused}
+        onClose={() => setVaultRefused(false)}
+        onReset={onResetSalmon}
       />
     </>
   );

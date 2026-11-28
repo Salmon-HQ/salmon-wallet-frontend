@@ -14,6 +14,7 @@ export type { UseAccountsState, UseAccountsActions } from './useAccounts';
 export {
   DuplicateAccountError,
   isOwnStoredAccountsWrite,
+  VaultReadRefusedError,
   withVaultWriteLock,
 } from './useAccountsMutationHelpers';
 
@@ -261,6 +262,7 @@ export type { DerivedFindRow, UseDerivedFindRowsResult } from './useDerivedFindR
 
 // Form state the kit renders on both platforms; the vault calls are injected
 export { usePasswordConfirm } from './usePasswordConfirm';
+export { useOpenAfterClosed } from './useOpenAfterClosed';
 export { useSecretCopied } from './useSecretCopied';
 export { usePhraseBackupSheet } from './usePhraseBackupSheet';
 export type { PhraseBackupStep, UsePhraseBackupSheetResult } from './usePhraseBackupSheet';

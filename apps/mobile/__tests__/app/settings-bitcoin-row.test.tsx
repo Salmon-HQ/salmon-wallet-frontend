@@ -126,6 +126,8 @@ jest.mock('../../src/components', () => {
         </View>
       ) : null,
     DepthBackground: () => null,
+    // A refused removal's dialog; these rows never raise it.
+    VaultRefusedDialog: () => null,
     ScalesBackground: () => null,
     SectionLabel: ({ children }: { children?: React.ReactNode }) => <Text>{children}</Text>,
     ScreenHeader: ({ title }: { title?: string }) => <Text>{title}</Text>,

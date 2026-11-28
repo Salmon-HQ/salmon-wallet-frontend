@@ -28,7 +28,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   AccessibilityInfo,
-  Alert,
   AppState,
   findNodeHandle,
   Keyboard,
@@ -43,10 +42,10 @@ import Animated from 'react-native-reanimated';
 import { useSemantic, useThemeMode, useThemedStyles } from '../../theme/useThemedStyles';
 import { useWaitPassage } from '../../utils/useWaitPassage';
 import { PrimaryButton, TextButton } from '../Button';
-import { ConfirmSheet } from '../ConfirmSheet';
 import { DepthBackground } from '../DepthBackground';
 import { LoadingScreen } from '../LoadingScreen';
 import { OnboardingLayout, OnboardingTitle, ReservedSlot } from '../OnboardingLayout';
+import { ResetConfirm } from '../ResetConfirm';
 import { ScalesBackground } from '../ScalesBackground';
 import type { LockContentProps } from './types';
 
@@ -457,25 +456,9 @@ export function LockContent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locked, biometricReady, canUseBiometric, autoPrompt]);
 
-  // Forgot password: two sheets, one at a time — the warning, then the last
-  // word. The second opens once the first has left (iOS presents one sheet
-  // at a time), and only if the user went on rather than backing out.
-  const [resetStep, setResetStep] = useState<'warn' | 'confirm' | null>(null);
-  const resetAdvancing = useRef(false);
-  const handleForgotPassword = useCallback(() => setResetStep('warn'), []);
-  const handleResetWarnClosed = useCallback(() => {
-    if (!resetAdvancing.current) return;
-    resetAdvancing.current = false;
-    setResetStep('confirm');
-  }, []);
-  const handleResetConfirmed = useCallback(async () => {
-    try {
-      await onRemoveAllAccounts();
-    } catch (err) {
-      console.error('Failed to reset wallet:', err);
-      Alert.alert(t('general.error'), t('lock.reset_failed'));
-    }
-  }, [onRemoveAllAccounts, t]);
+  // Forgot password: the two-step reset, one sheet at a time.
+  const [resetOpen, setResetOpen] = useState(false);
+  const handleForgotPassword = useCallback(() => setResetOpen(true), []);
 
   const inputBorderColor = error
     ? semantic.status.danger
@@ -658,29 +641,10 @@ export function LockContent({
         surfaces={false}
       />
 
-      <ConfirmSheet
-        visible={resetStep === 'warn'}
-        onClose={() => setResetStep((step) => (step === 'warn' ? null : step))}
-        onClosed={handleResetWarnClosed}
-        title={t('lock.reset_wallet_title')}
-        message={t('lock.reset_wallet_message')}
-        confirmText={t('lock.reset_button')}
-        cancelText={t('lock.cancel')}
-        isDanger
-        onConfirm={() => {
-          resetAdvancing.current = true;
-        }}
-      />
-
-      <ConfirmSheet
-        visible={resetStep === 'confirm'}
-        onClose={() => setResetStep(null)}
-        title={t('lock.confirm_title')}
-        message={t('lock.confirm_message')}
-        confirmText={t('lock.delete_button')}
-        cancelText={t('lock.cancel')}
-        isDanger
-        onConfirm={handleResetConfirmed}
+      <ResetConfirm
+        visible={resetOpen}
+        onClose={() => setResetOpen(false)}
+        onReset={onRemoveAllAccounts}
       />
     </>
   );

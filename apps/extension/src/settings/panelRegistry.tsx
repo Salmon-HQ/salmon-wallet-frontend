@@ -66,7 +66,8 @@ const TokenListPanel = createTokenListPanel({
   SettingsSelectorList,
 });
 
-export function useSettingsPanelRegistry(): PanelRegistry {
+/** `onResetSalmon` erases every wallet: the reset a refused add offers. */
+export function useSettingsPanelRegistry(onResetSalmon: () => Promise<void>): PanelRegistry {
   const { t } = useTranslation();
 
   const [accountState, actions] = useAccountsContext();
@@ -321,6 +322,7 @@ export function useSettingsPanelRegistry(): PanelRegistry {
           onBack={onBack}
           onWait={onWait}
           onCloseSettings={onClose}
+          onResetSalmon={onResetSalmon}
         />
       ),
     }),
@@ -354,6 +356,7 @@ export function useSettingsPanelRegistry(): PanelRegistry {
       editingContact,
       editingAccountId,
       activeTrustedApps,
+      onResetSalmon,
       t,
     ]
   );

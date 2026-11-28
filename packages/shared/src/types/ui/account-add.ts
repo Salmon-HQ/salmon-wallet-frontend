@@ -47,4 +47,6 @@ export interface AccountAddPanelPropsBase {
   onComplete: () => void;
   /** Callback to navigate back / cancel */
   onBack: () => void;
+  /** Erases every wallet: the lock screen's reset, offered when the save is refused. */
+  onResetSalmon: () => Promise<void>;
 }

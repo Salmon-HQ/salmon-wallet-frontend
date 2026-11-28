@@ -46,7 +46,7 @@ _Twin components_: two existing pairs change, no new pair. Measured before any c
 
 ## The two rules
 
-**Rule 1 — fail closed.** Before its first write of a wallet record, a mutation rejects with a plain `Error` (no new class, no new copy; screens keep today's generic message), leaving memory untouched, when:
+**Rule 1 — fail closed.** Before its first write of a wallet record, a mutation rejects with a `VaultReadRefusedError` whose message names no wallet, leaving memory untouched, when:
 
 - **list conditions** (add, remove, edit): the list is present but not an array; or the list reads absent or `[]` while the calling hook's `accounts` holds wallets;
 - **vault conditions** (add, remove): the raw vault key is present but unparseable while the list names a wallet; or the vault key is absent while the list names a wallet, `WALLETS` is present, or `COUNTER` is present.
@@ -153,7 +153,7 @@ When `addAccount` rejects, it reads `getEncryptedStoredMnemonics()` and sets `re
 
 ## First save that stops after its vault (FR-006)
 
-Nothing is discarded. The vault stays; the list is absent. Extension: the lock screen (`App.tsx:488-496`); the password just chosen unlocks it, and with no wallet listed the window shows the setup screens (`App.tsx:508`; reasoned from code). Mobile: welcome (`apps/mobile/app/_layout.tsx:221-226`), which has no reset; create asks for the existing password (`password.tsx:179`); recover asks for a new password (`:169`, `:179`) and only the password chosen in the failed attempt passes the proof; each wrong one counts a failed unlock, as an unlock attempt does today. A retry on the same screen reuses the id and overwrites its own entry, so the vault holds the secret once. A repeated setup from a new screen (new id) adds a second entry; the first attempt's entry stays as unlisted ciphertext, which nothing reads (FR-016: no removal as a side effect). A repeated create on a new screen generates a new phrase, with the same result.
+Nothing is discarded. The vault stays; the list is absent. Extension: the lock screen (`App.tsx:488-496`); the password just chosen unlocks it, and with no wallet listed the window shows the setup screens (`App.tsx:508`; reasoned from code). Mobile: welcome (`apps/mobile/app/_layout.tsx:221-226`), which asks for no password and has no reset; create asks for the existing password; recover asks for a new password and only the password chosen in the failed attempt passes the proof; each wrong one counts a failed unlock, as an unlock attempt does today. The password screen offers "Forgot my password": under the field in create, and in recover once the vault rejected the password (below). A retry on the same screen reuses the id and overwrites its own entry, so the vault holds the secret once. A repeated setup from a new screen (new id) adds a second entry; the first attempt's entry stays as unlisted ciphertext, which nothing reads (FR-016: no removal as a side effect). A repeated create on a new screen generates a new phrase, with the same result.
 
 ## Retry safety (FR-014, FR-015)
 
@@ -320,12 +320,12 @@ R = red first; G = guard (passes today, kept).
 
 - If the read-back fails after a list write that landed and the user restarts from a new screen, the save is refused as a duplicate; the wallet shows once memory reloads (the reload after the reject, else the next unlock or launch).
 - On mobile a list write that reached the disk while reporting failure is reported as failed: the window shows the state before the change until the next unlock or launch. A removal reported that way keeps the removed wallet's vault entry, unlisted, which nothing reads; an add reported that way is listed at the next launch, and a retry from a new screen is refused as a duplicate.
-- On mobile, a vault with no list has no in-app reset on the welcome screen, so a user who forgot the password chosen in a failed first save has no way out there (pre-existing; follow-up ticket). Mobile recover there asks for a new password, but only the earlier one opens the vault, and each wrong one counts a failed unlock.
+- On mobile, a vault with no list lands on the welcome screen, which asks for no password and offers no reset. The next screen, the password screen, offers "Forgot my password" whenever a vault is stored, no wallet is listed and it is not protecting a cleartext wallet: in create under the one field for the existing password; in recover, whose fields ask for a new password that only the earlier one passes (each wrong one counts a failed unlock), under the error once the vault rejected the password. It runs the lock screen's two-step reset, then returns to welcome.
 - The same vault-and-no-list state follows from removing the last listed wallet while the vault kept unlisted entries.
 - Rule 1 has no witness at the first change after a launch whose list read lied (memory empty): that change writes a list without the other wallets, whose entries stay in the vault, unlisted.
 - The extension's cached key is lost when the MV3 worker is suspended; the reload after a Rule 2 reject then does nothing, and the window catches up at the next unlock.
 - A removal whose vault write fails, or a Seed Vault replace stopped before its last vault write, leaves unlisted entries.
-- **A vault that reads as missing or unreadable while wallets are listed.** If, after a relaunch (nothing in memory yet), the list names wallets but the vault reads as absent, or as present but unreadable, every add and removal is refused, on the extension and on mobile. Neither app offers a way out from there: the setup screens show without the lock page, and saving is refused. A read fault that comes and goes clears on the next relaunch. A lasting one needs the app or the extension reinstalled, and the wallets restored from their recovery phrases. Today's code saves over the vault instead, which destroys every stored secret when the read had lied. This change adds no new screen and no automatic reset (follow-up issue below).
+- **A vault that reads as missing or unreadable while wallets are listed.** If, after a relaunch (nothing in memory yet), the list names wallets but the vault reads as absent, or as present but unreadable, every add and removal is refused, on the extension and on mobile. Each refusal on the first save, on adding a wallet and on removing one opens one dialog: nothing was saved, close the app and open it again, and if it keeps happening, reset Salmon and restore the wallets from their recovery phrases. Its "Reset Salmon" runs the lock screen's two-step reset; nothing is erased without both confirmations. A read fault that comes and goes clears on the next relaunch. Today's code saves over the vault instead, which destroys every stored secret when the read had lied.
 - When `COUNTER` was absent (a first save, or the first save after a reset) and the save stops between row 2a and the list, the next setup proposes a default name one number higher.
 - A null read of the backup-pending record is taken as empty and written back, wiping other wallets' marks (pre-existing, `PhraseBackupContext.tsx:97-102`); the save's own mark write inherits it.
 - After a rejected save, mobile recover still shows the new-password form in the same session (it never shows the single input); only the stored password passes the proof.
@@ -333,8 +333,6 @@ R = red first; G = guard (passes today, kept).
 
 ## Follow-up issues
 
-- A Rule 1 refusal with nothing in memory (vault absent or unreadable while the list names wallets) should lead to the existing reset screen instead of leaving the setup screens refusing every save.
-- A way out on the mobile welcome screen for a vault with no list.
 - The three vault writers outside the write lock.
 
 ## Project Structure

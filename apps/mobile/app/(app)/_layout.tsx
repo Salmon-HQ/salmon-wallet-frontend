@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useReducedMotion } from 'react-native-reanimated';
-import { Stack, useRouter } from 'expo-router';
+import { Stack } from 'expo-router';
 
 import {
   SignatureRequestProvider,
@@ -14,6 +14,7 @@ import {
   PhraseBackupSheet,
 } from '../../src/components';
 import { useBiometric } from '../../src/contexts/BiometricContext';
+import { useResetSalmon } from '../../hooks/useResetSalmon';
 import { TaskChromeProvider } from '../../src/contexts/TaskChromeContext';
 import { DerivedAccountsProvider } from '../../src/contexts/DerivedAccountsContext';
 import { DeveloperModeProvider } from '../../src/contexts/DeveloperModeContext';
@@ -38,7 +39,6 @@ import { FLOAT_DELAY_MS } from '../../src/utils/sinkAndFloat';
  * starts on the first unlocked mount and is not restarted by navigation.
  */
 export default function AppLayout() {
-  const router = useRouter();
   const [accountState, accountActions] = useAccountsContext();
   const mwaSessionOpen = useMwaSessionOpen();
 
@@ -48,7 +48,6 @@ export default function AppLayout() {
     kind: biometricKind,
     needsReArm: biometricNeedsReArm,
     unlock: biometricUnlock,
-    disarm: disarmBiometric,
     refresh: refreshBiometricState,
   } = useBiometric();
 
@@ -123,11 +122,7 @@ export default function AppLayout() {
     }, FLOAT_DELAY_MS);
   }, [isReduceMotionEnabled, release]);
 
-  const handleRemoveAllAccountsFromLock = useCallback(async () => {
-    await disarmBiometric();
-    await accountActions.removeAllAccounts();
-    router.replace('/(auth)');
-  }, [accountActions, router, disarmBiometric]);
+  const handleRemoveAllAccountsFromLock = useResetSalmon();
 
   const lockBiometricConfig = React.useMemo(
     () => ({

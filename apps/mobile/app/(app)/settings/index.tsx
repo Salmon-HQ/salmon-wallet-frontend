@@ -53,6 +53,8 @@ import {
   vs,
   SETTINGS_GROUPS,
   settingsRowValues,
+  useOpenAfterClosed,
+  VaultReadRefusedError,
   type SettingsIconName,
   type SettingsRowDef,
   type SettingsToggleKey,
@@ -66,9 +68,10 @@ import {
   ScalesBackground,
   ScreenHeader,
   SectionLabel,
+  VaultRefusedDialog,
 } from '../../../src/components';
 import { useLanguage } from '../../../src/i18n';
-import { useBiometric } from '../../../src/contexts/BiometricContext';
+import { useResetSalmon } from '../../../hooks/useResetSalmon';
 import { useSemantic, useThemedStyles } from '../../../src/theme/useThemedStyles';
 
 /** The leading well every settings row carries. */
@@ -107,7 +110,7 @@ export default function SettingsScreenIndex() {
   const styles = useThemedStyles(stylesFor);
   const semantic = useSemantic();
 
-  const [accountState, accountActions] = useAccountsContext();
+  const [accountState] = useAccountsContext();
   const { activeAccount, activeBlockchainAccount, networkId } = accountState;
 
   const userConfigAccount = useMemo(
@@ -160,9 +163,13 @@ export default function SettingsScreenIndex() {
   const [{ currency }] = useCurrencyContext();
   const { preference: appearancePreference } = useTheme();
   const { rowValue: tokenListValue } = useTokenListLabels();
-  const { disarm: disarmBiometric } = useBiometric();
   const accountRemoval = useAccountRemoval();
   const [removeWalletVisible, setRemoveWalletVisible] = useState(false);
+  const [vaultRefused, setVaultRefused] = useState(false);
+  const { onConfirm: markRefused, onClosed: openRefusalAfterClosed } = useOpenAfterClosed(
+    useCallback(() => setVaultRefused(true), [])
+  );
+  const resetSalmon = useResetSalmon();
 
   const appearanceLabels: Record<typeof appearancePreference, string> = useMemo(
     () => ({
@@ -195,14 +202,12 @@ export default function SettingsScreenIndex() {
   const handleRemoveAllWallets = useCallback(() => setRemoveAllVisible(true), []);
   const confirmRemoveAllWallets = useCallback(async () => {
     try {
-      await disarmBiometric();
-      await accountActions.removeAllAccounts();
-      router.replace('/(auth)');
+      await resetSalmon();
     } catch (error) {
       console.error('Failed to remove all wallets:', error);
       Alert.alert(t('general.error'), t('settings.remove_wallets_error'));
     }
-  }, [accountActions, router, disarmBiometric, t]);
+  }, [resetSalmon, t]);
 
   // Removing one wallet re-encrypts the ones that are left, so it asks for the
   // password whenever the unlock key cache has lapsed — which an `Alert` has
@@ -229,13 +234,18 @@ export default function SettingsScreenIndex() {
         router.back();
       } catch (error) {
         console.error('Failed to remove wallet:', error);
+        // The refusal opens once this sheet has left (one sheet at a time).
+        if (error instanceof VaultReadRefusedError) {
+          markRefused();
+          return;
+        }
         Alert.alert(t('general.error'), t('settings.remove_wallet_error'));
         // Rethrown so the sheet stays open: when the vault key had just
         // expired it now carries the password field.
         throw error;
       }
     },
-    [accountRemoval, activeAccount, router, t]
+    [accountRemoval, activeAccount, markRefused, router, t]
   );
 
   const handleRowPress = useCallback(
@@ -376,7 +386,14 @@ export default function SettingsScreenIndex() {
         isDanger
         requirePassword={accountRemoval.requiresPassword}
         validatePassword={accountRemoval.validatePassword}
+        onClosed={openRefusalAfterClosed}
         onConfirm={confirmRemoveWallet}
+      />
+
+      <VaultRefusedDialog
+        visible={vaultRefused}
+        onClose={() => setVaultRefused(false)}
+        onReset={resetSalmon}
       />
 
       <ConfirmSheet

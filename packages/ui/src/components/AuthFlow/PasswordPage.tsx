@@ -24,6 +24,7 @@ import {
   spacing,
   trackOnboardingEvent,
   UnlockThrottledError,
+  VaultReadRefusedError,
   useAccountsContext,
   componentSizes,
   useSetupPasswordForm,
@@ -36,6 +37,7 @@ import { PrimaryButton, SecondaryButton } from '../Button';
 import { ConfirmDialog } from '../ConfirmDialog';
 import { LoadingScreen } from '../LoadingScreen';
 import { PasswordInput, PasswordStrengthBar } from '../PasswordInput';
+import { VaultRefusedDialog } from '../ResetConfirm';
 import { ScreenHeader } from '../ScreenHeader';
 import {
   OnboardingDescription,
@@ -78,6 +80,7 @@ export function PasswordPage(props: PasswordPageProps): React.ReactElement {
   const mnemonic = props.flowType === 'protect' ? '' : props.mnemonic;
   const onCreating = props.flowType === 'protect' ? undefined : props.onCreating;
   const onBack = props.flowType === 'protect' ? undefined : props.onBack;
+  const onResetSalmon = props.flowType === 'protect' ? undefined : props.onResetSalmon;
   const { t } = useTranslation();
   const { status, step, text } = useSemantic();
   const [state, actions] = useAccountsContext();
@@ -124,6 +127,7 @@ export function PasswordPage(props: PasswordPageProps): React.ReactElement {
   const showSingleInput = !protect && state.requiredLock;
   // A wallet the owner does not recognise leaves by removal, after its sheet.
   const [removeOpen, setRemoveOpen] = useState(false);
+  const [vaultRefused, setVaultRefused] = useState(false);
   const {
     password,
     confirmPassword,
@@ -210,6 +214,11 @@ export function PasswordPage(props: PasswordPageProps): React.ReactElement {
       setSubmerged(true);
     } catch (err) {
       console.error('Failed to create account:', err);
+      if (err instanceof VaultReadRefusedError) {
+        setError(null);
+        setVaultRefused(true);
+        return;
+      }
       // Account setup calls the backend, so an unreachable server lands here
       // too. Blaming the seed phrase for that sends users hunting for a lost
       // wallet when all they need is a connection.
@@ -406,6 +415,14 @@ export function PasswordPage(props: PasswordPageProps): React.ReactElement {
           cancelText={t('actions.cancel')}
           isDanger
           onConfirm={protect.onRemoveWallet}
+        />
+      )}
+
+      {onResetSalmon && (
+        <VaultRefusedDialog
+          visible={vaultRefused}
+          onClose={() => setVaultRefused(false)}
+          onReset={onResetSalmon}
         />
       )}
 

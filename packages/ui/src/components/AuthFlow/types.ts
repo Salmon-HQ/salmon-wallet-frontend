@@ -36,6 +36,11 @@ interface CreatePasswordPageProps {
   onCreating?: () => void;
   onSuccess: () => void;
   onBack: () => void;
+  /**
+   * Erases every wallet and returns to the first setup step: the lock screen's
+   * reset, offered when the save is refused because storage read wrong.
+   */
+  onResetSalmon: () => Promise<void>;
 }
 
 /**

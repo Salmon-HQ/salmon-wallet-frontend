@@ -55,6 +55,7 @@ jest.mock('../../../hooks/useKeyboardHeight', () => ({
 }));
 
 import {
+  componentSizes,
   onboardingContentGridFull,
   onboardingIdentityGridFull,
   onboardingLockGridFull,
@@ -394,6 +395,25 @@ describe('OnboardingLayout', () => {
     const identityLead = leadAt('identity');
     expect(identityLead).toBe(ceiling);
     expect(leadAt('lock')).toBe(identityLead);
+  });
+
+  it('holds the password field and the forgot row in body on the smallest phone', () => {
+    // A 360×640dp Android phone less its status bar (24) and three-button
+    // navigation (48), keyboard down. The password screen passes an assist and
+    // no secondary, and puts "Forgot my password" under its single field.
+    render(
+      <OnboardingLayout
+        variant="content"
+        scrollBody
+        assist={<Text>Terms</Text>}
+        action={<Text>Create</Text>}
+      />
+    );
+    layout(568);
+
+    expect(reservedHeights().body).toBeGreaterThanOrEqual(
+      componentSizes.inputHeight + spacing.sm + componentSizes.buttonHeightSmall
+    );
   });
 
   it('drops the description first when the keyboard costs a little room', () => {

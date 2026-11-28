@@ -24,11 +24,13 @@ import {
   useLanguage,
   useTheme,
   useTokenListLabels,
+  useOpenAfterClosed,
   useUserConfig,
+  VaultReadRefusedError,
   type SettingsPanelEntry,
 } from '@salmon/shared';
 
-import { ConfirmDialog, SettingsPanelStack } from '../../components';
+import { ConfirmDialog, SettingsPanelStack, VaultRefusedDialog } from '../../components';
 import { useSettingsPanelRegistry } from '../../settings/panelRegistry';
 import { clearSessionKey } from '../../utils/sessionKeyCache';
 
@@ -61,7 +63,15 @@ export function SettingsPage({ onClose, initialPanels }: SettingsPageProps): Rea
     },
   });
 
-  const panelRegistry = useSettingsPanelRegistry();
+  // The lock screen's reset, from Settings. Home shows only after setup, so
+  // the welcome screen this leaves to is the first setup step, as after the
+  // popup's own reset.
+  const confirmRemoveAllWallets = useCallback(async () => {
+    await clearSessionKey();
+    await actions.removeAllAccounts();
+  }, [actions]);
+
+  const panelRegistry = useSettingsPanelRegistry(confirmRemoveAllWallets);
 
   // What the four choosable rows currently read. Proper nouns and a currency
   // code — identical in both languages, so the list states the user's own
@@ -89,6 +99,10 @@ export function SettingsPage({ onClose, initialPanels }: SettingsPageProps): Rea
   // reason).
   const [removeWalletDialogVisible, setRemoveWalletDialogVisible] = useState(false);
   const [removeAllWalletsDialogVisible, setRemoveAllWalletsDialogVisible] = useState(false);
+  const [vaultRefused, setVaultRefused] = useState(false);
+  const { onConfirm: markRefused, onClosed: openRefusalAfterClosed } = useOpenAfterClosed(
+    useCallback(() => setVaultRefused(true), [])
+  );
 
   // Removing re-encrypts what is left, so it needs the password whenever the
   // unlock key cache has lapsed; the sheet already collects and checks it —
@@ -97,17 +111,17 @@ export function SettingsPage({ onClose, initialPanels }: SettingsPageProps): Rea
 
   const confirmRemoveWallet = useCallback(
     async (password?: string) => {
-      if (activeAccount?.id) {
+      if (!activeAccount?.id) return;
+      try {
         await remove(activeAccount.id, password);
+      } catch (err) {
+        if (!(err instanceof VaultReadRefusedError)) throw err;
+        // The refusal opens once this sheet has left (one sheet at a time).
+        markRefused();
       }
     },
-    [remove, activeAccount]
+    [remove, activeAccount, markRefused]
   );
-
-  const confirmRemoveAllWallets = useCallback(async () => {
-    await clearSessionKey();
-    await actions.removeAllAccounts();
-  }, [actions]);
 
   return (
     <>
@@ -134,6 +148,7 @@ export function SettingsPage({ onClose, initialPanels }: SettingsPageProps): Rea
         isDanger
         requirePassword
         validatePassword={validatePassword}
+        onClosed={openRefusalAfterClosed}
         onConfirm={confirmRemoveWallet}
       />
 
@@ -148,6 +163,12 @@ export function SettingsPage({ onClose, initialPanels }: SettingsPageProps): Rea
         confirmText={t('actions.remove_all', 'Remove All')}
         isDanger
         onConfirm={confirmRemoveAllWallets}
+      />
+
+      <VaultRefusedDialog
+        visible={vaultRefused}
+        onClose={() => setVaultRefused(false)}
+        onReset={confirmRemoveAllWallets}
       />
     </>
   );

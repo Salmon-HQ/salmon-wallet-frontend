@@ -554,6 +554,7 @@ function App() {
             onCreating={handleCreating}
             onSuccess={handlePasswordSuccess}
             onBack={handlePasswordBack}
+            onResetSalmon={handleRemoveAllAccounts}
           />
         );
       case 'analytics-consent':
